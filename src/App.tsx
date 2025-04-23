@@ -1,8 +1,12 @@
-
+import { Outlet } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 const App = () => {
   return (
-    <div>Coldop web version </div>
-  )
-}
+    <>
+      <Toaster position="top-center" reverseOrder={false} />
+      <Outlet />
+    </>
+  );
+};
 
-export default App
+export default App;
