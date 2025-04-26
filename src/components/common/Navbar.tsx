@@ -70,7 +70,7 @@ const Navbar = () => {
         style={navbarStyle}
       >
         <Link to="/">
-          <h1 className="text-2xl">Logo</h1>
+          <img src="/coldop-logo.png" alt="Coldop Logo" className="w-10" />
         </Link>
         <nav>
           <Sheet>
@@ -135,11 +135,11 @@ const Navbar = () => {
 
       {/* Desktop Navbar */}
       <header
-        className={`${navbarClass} hidden h-20 items-center justify-between px-12 lg:flex`}
+        className={`${navbarClass} hidden h-20 items-center justify-between px-16 lg:flex`}
         style={navbarStyle}
       >
         <Link to="/">
-          <h1 className="text-2xl">Logo</h1>
+          <img src="/coldop-logo.png" alt="Coldop Logo" className="w-16" />
         </Link>
         <nav>
           <ul className="flex list-none items-center gap-12">

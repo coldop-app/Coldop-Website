@@ -11,7 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store.ts";
 import "./index.css";
 import App from "./App.tsx";
-import HomeScreen from "./screens/HomeScreen.tsx";
+import HomeScreen from "./screens/HomeScreen/HomeScreen.tsx";
 
 // Initialize the Query Client
 const queryClient = new QueryClient();
