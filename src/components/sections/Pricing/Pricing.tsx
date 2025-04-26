@@ -33,7 +33,7 @@ const Pricing = ({
   features
 }: PricingData) => {
   return (
-    <>
+       <>
       {/*-----------------------MOBILE VIEW STARTS HERE----------------- */}
       <section className="section-pricing py-24 sm:hidden" id="pricing">
         <div className="container mx-auto max-w-[75rem] px-8 ">
@@ -48,7 +48,7 @@ const Pricing = ({
           {plans.map((plan, index) => (
             <div 
               key={`mobile-plan-${index}`} 
-              className={`w-[100%] justify-center rounded-[11px] border-4 border-solid ${plan.highlighted ? 'border-secondary' : 'border-secondary'} p-12`}
+              className="w-[100%] justify-center rounded-[11px] border-4 border-solid border-secondary p-12"
             >
               <header className="plan-header mb-12 text-center">
                 <p className="plan-name mb-8 text-base font-semibold uppercase tracking-[0.75] text-primary">
@@ -121,44 +121,73 @@ const Pricing = ({
         </div>
     
         <div className="mx-auto mb-12 grid max-w-[75rem] grid-cols-2 items-center justify-center gap-x-16 gap-y-24 px-8">
-          {plans.map((plan, index) => (
-            <div 
-              key={`desktop-plan-${index}`} 
-              className={`w-[75%] ${index === 0 ? 'justify-self-end' : ''} rounded-[11px] border-${plan.highlighted ? '2' : '4'} border-solid border-[#fdf2e9] p-${index === 0 ? '11' : '12'} ${plan.highlighted ? 'relative' : ''}`}
-            >
-              <header className="plan-header mb-12 text-center">
-                <p className={`plan-name mb-8 ${plan.highlighted ? 'bg-secondary' : ''} text-2xl font-semibold uppercase tracking-[0.75] text-primary`}>
-                  {plan.name}
-                </p>
-                <p className="plan-price mb-4 text-6xl font-semibold text-foreground">
-                  <span className="mr-2 text-3xl font-medium">{plan.currency}</span>
-                  {plan.price}
-                </p>
-                <p className="plan-text text-base leading-[1.6] text-[#6f6f6f]">
-                  {plan.period}
-                </p>
-              </header>
-              <ul className="list flex list-none flex-col gap-4">
-                {plan.features.map((feature, featureIndex) => (
-                  <li key={`desktop-feature-${index}-${featureIndex}`} className="flex items-center gap-4 text-lg leading-[1.2]">
-                    {/* <ion-icon
-                      className="w-[3rem] h-[3rem] text-[#e67e22]"
-                      name="checkmark-outline"
-                    ></ion-icon> */}
-                    <span dangerouslySetInnerHTML={{ __html: feature }}></span>
-                  </li>
-                ))}
-              </ul>
-              <div className={`mt-${index === 0 ? '[4.8rem]' : '12'} text-center`}>
-                <a
-                  href={plan.cta.link}
-                  className="font-custom mr-4 inline-block rounded-[9px] bg-primary px-12 py-1.5 text-xl font-semibold text-secondary no-underline shadow duration-100 hover:bg-primary/85 md:px-8 md:py-4 whitespace-nowrap"
-                >
-                  {plan.cta.text}
-                </a>
-              </div>
+          <div className="w-[75%] justify-self-end rounded-[11px] border-4 border-solid border-[#fdf2e9] p-11">
+            <header className="plan-header mb-12 text-center">
+              <p className="plan-name mb-8 text-2xl font-semibold uppercase tracking-[0.75] text-primary">
+                {plans[0].name}
+              </p>
+              <p className="plan-price mb-4 text-6xl font-semibold text-foreground">
+                <span className="mr-2 text-3xl font-medium">{plans[0].currency}</span>
+                {plans[0].price}
+              </p>
+              <p className="plan-text text-base leading-[1.6] text-[#6f6f6f]">
+                {plans[0].period}
+              </p>
+            </header>
+            <ul className="list flex list-none flex-col gap-4">
+              {plans[0].features.map((feature, featureIndex) => (
+                <li key={`desktop-feature-0-${featureIndex}`} className="flex items-center gap-4 text-lg leading-[1.2]">
+                  {/* <ion-icon
+                    className="w-[3rem] h-[3rem] text-[#e67e22]"
+                    name="checkmark-outline"
+                  ></ion-icon> */}
+                  <span dangerouslySetInnerHTML={{ __html: feature }}></span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-[4.8rem] text-center">
+              <a
+                href={plans[0].cta.link}
+                className="font-custom mr-4 inline-block rounded-[9px] bg-primary px-12 py-1.5 text-xl font-semibold text-secondary no-underline shadow duration-100 hover:bg-primary/85 md:px-8 md:py-4 whitespace-nowrap"
+              >
+                {plans[0].cta.text}
+              </a>
             </div>
-          ))}
+          </div>
+
+          <div className="relative w-[75%] rounded-[11px] border-2 border-solid border-[#fdf2e9] p-12">
+            <header className="plan-header mb-12 text-center">
+              <p className="plan-name mb-8 bg-secondary text-2xl font-semibold uppercase tracking-[0.75] text-primary">
+                {plans[1].name}
+              </p>
+              <p className="plan-price mb-4 text-6xl font-semibold text-foreground">
+                <span className="mr-2 text-3xl font-medium">{plans[1].currency}</span>
+                {plans[1].price}
+              </p>
+              <p className="plan-text text-base leading-[1.6] text-[#6f6f6f]">
+                {plans[1].period}
+              </p>
+            </header>
+            <ul className="list flex list-none flex-col gap-4">
+              {plans[1].features.map((feature, featureIndex) => (
+                <li key={`desktop-feature-1-${featureIndex}`} className="leading-1.2 flex items-center gap-4 text-lg">
+                  {/* <ion-icon
+                    className="w-[3rem] h-[3rem] text-[#e67e22]"
+                    name="checkmark-outline"
+                  ></ion-icon> */}
+                  <span dangerouslySetInnerHTML={{ __html: feature }}></span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-12 text-center">
+              <a
+                href={plans[1].cta.link}
+                className="font-custom mr-4 inline-block rounded-[9px] bg-primary px-12 py-1.5 text-xl font-semibold text-secondary no-underline shadow duration-100 hover:bg-primary/85 md:px-8 md:py-4 whitespace-nowrap"
+              >
+                {plans[1].cta.text}
+              </a>
+            </div>
+          </div>
         </div>
 
         <div className="gapy-y-24 container mx-auto mb-12 grid max-w-[75rem] items-center gap-x-16 px-8">
