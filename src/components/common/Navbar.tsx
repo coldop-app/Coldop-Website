@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 
 import {
   Sheet,
@@ -9,10 +8,14 @@ import {
   SheetTrigger,
   SheetClose
 } from "@/components/ui/sheet";
+import SignInModal from "@/components/auth/SignInModal";
+import { Link } from "react-router-dom";
+import { Menu } from "lucide-react";
 
 const Navbar = () => {
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isFullySticky, setIsFullySticky] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -47,6 +50,21 @@ const Navbar = () => {
     };
   }, []);
 
+  const handleSectionClick = (sectionId: string) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const openSignInModal = () => {
+    setIsSignInModalOpen(true);
+  };
+
+  const closeSignInModal = () => {
+    setIsSignInModalOpen(false);
+  };
+
   const side = 'right';
 
   // Calculate styles based on scroll progress
@@ -57,7 +75,7 @@ const Navbar = () => {
   };
 
   const navbarClass = `
-    fixed top-0 left-0 right-0 z-50 
+    fixed top-0 left-0 right-0 z-50
     transition-all duration-300 ease-out
     ${scrollProgress === 0 ? 'bg-gray-100' : ''}
   `;
@@ -69,13 +87,13 @@ const Navbar = () => {
         className={`${navbarClass} flex h-16 items-center justify-between px-6 lg:hidden`}
         style={navbarStyle}
       >
-        <Link to="/">
+        <Link to="/" className="cursor-pointer">
           <img src="/coldop-logo.png" alt="Coldop Logo" className="w-10" />
         </Link>
         <nav>
           <Sheet>
             <SheetTrigger>
-              <p className="text-2xl">E</p>
+              <Menu size={24} />
             </SheetTrigger>
             <SheetContent side={side}>
               <SheetHeader className="mt-20">
@@ -83,45 +101,45 @@ const Navbar = () => {
                   <nav>
                     <ul className="flex list-none flex-col items-center gap-8">
                       <li>
-                        <Link
-                          to="/how-it-works"
+                        <button
+                          onClick={() => handleSectionClick('how-it-works')}
                           className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
                         >
                           How it works
-                        </Link>
+                        </button>
                       </li>
                       <li>
-                        <Link
-                          to="/testimonials"
+                        <button
+                          onClick={() => handleSectionClick('testimonials')}
                           className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
                         >
                           Testimonials
-                        </Link>
+                        </button>
                       </li>
                       <li>
-                        <Link
-                          to="/pricing"
+                        <button
+                          onClick={() => handleSectionClick('pricing')}
                           className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
                         >
                           Pricing
-                        </Link>
+                        </button>
                       </li>
                       <li>
-                        <Link
-                          to="/about"
+                        <button
+                          onClick={() => handleSectionClick('about')}
                           className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
                         >
                           About
-                        </Link>
+                        </button>
                       </li>
                       <li>
                         <SheetClose asChild>
-                          <Link
-                            to="/login"
+                          <button
+                            onClick={openSignInModal}
                             className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
                           >
                             Sign in
-                          </Link>
+                          </button>
                         </SheetClose>
                       </li>
                     </ul>
@@ -138,57 +156,60 @@ const Navbar = () => {
         className={`${navbarClass} hidden h-20 items-center justify-between px-16 lg:flex`}
         style={navbarStyle}
       >
-        <Link to="/">
+        <Link to="/" className="cursor-pointer">
           <img src="/coldop-logo.png" alt="Coldop Logo" className="w-16" />
         </Link>
         <nav>
           <ul className="flex list-none items-center gap-12">
             <li>
-              <Link
-                to="/how-it-works"
+              <button
+                onClick={() => handleSectionClick('how-it-works')}
                 className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
               >
                 How it works
-              </Link>
+              </button>
             </li>
             <li>
-              <Link
-                to="/testimonials"
+              <button
+                onClick={() => handleSectionClick('testimonials')}
                 className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
               >
                 Testimonials
-              </Link>
+              </button>
             </li>
             <li>
-              <Link
-                to="/pricing"
+              <button
+                onClick={() => handleSectionClick('pricing')}
                 className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
               >
                 Pricing
-              </Link>
+              </button>
             </li>
             <li>
-              <Link
-                to="/about"
+              <button
+                onClick={() => handleSectionClick('about')}
                 className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
               >
                 About
-              </Link>
+              </button>
             </li>
             <li>
-              <Link
-                to="/login"
+              <button
+                onClick={openSignInModal}
                 className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
               >
                 Sign in
-              </Link>
+              </button>
             </li>
           </ul>
         </nav>
       </header>
-      
+
       {/* Spacer to prevent content from jumping when navbar becomes fixed */}
-      <div className="h-20" />
+      <div className="h-16 lg:h-20" />
+
+      {/* Sign In Modal */}
+      <SignInModal isOpen={isSignInModalOpen} onClose={closeSignInModal} />
     </>
   );
 };

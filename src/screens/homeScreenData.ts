@@ -26,9 +26,11 @@ export interface HeroData {
 }
 
 // Hero section data
+// //The complete cold storage management platform.
+// Mobile app, web dashboard, WhatsApp updates, and instant receipt printing — all in one system.
 export const heroData: HeroData = {
-  heading: "All-in-one app for cold storage and farmers.",
-  description: "Say goodbye to paperwork — Coldop is your all-in-one mobile ERP for cold storage, logging every transaction from arrival to release, ready to print or sync anytime.",
+  heading: "The complete cold storage management platform.",
+  description: "Mobile app, Web Dashboard, WhatsApp Updates, and Instant Receipt Printing, all in one system.                                                                                   Stay connected and in control. Anytime, Anywhere.",
   ctaButtons: [
     { text: "Start managing", link: "#" },
     { text: "How it works ↓", link: "#" }
@@ -83,7 +85,7 @@ export interface PricingData {
 // Pricing data
 export const pricingData: PricingData = {
   title: "Pricing",
-  heading: "Smart crop storage that's easy on the wallet",
+  heading: "Smart pricing for complete control.",
   plans: [
     {
       name: "Starter",
@@ -161,20 +163,20 @@ export const howItWorksData: HowItWorksData = {
   steps: [
     {
       number: "01",
-      heading: "Register with your store-Admin",
-      description: "Start your farming journey by swiftly registering with a dedicated store admin. This personalized connection unlocks tailored features, ensuring efficient communication and setting the stage for a productive farming experience.",
+      heading: "Create Farmer Accounts",
+      description: "Add farmers quickly with just a name and mobile number. Each farmer gets a digital ledger, no more handwritten records.",
       image: "./app-screen-1.png"
     },
     {
       number: "02",
-      heading: "Fill in details about the crop",
-      description: "Next, farmers input crucial details about themselves and the stored crop. This ensures accurate records and personalized assistance, contributing to efficient crop management tailored to individual needs.",
+      heading: "Make Incoming and Outgoing Orders",
+      description: "Record incoming stock and outgoing stock/dispatch outgoing stock in seconds through mobile or web. Coldop automatically updates farmer balances and lot numbers.",
       image: "./app-screen-2.png"
     },
     {
       number: "03",
       heading: "Receive confirmation on WhatsApp",
-      description: "Upon successful storage of your crops, you'll instantly receive a confirmation on WhatsApp. This ensures swift acknowledgment and provides peace of mind, allowing you to proceed confidently with the knowledge that your harvest is securely stored and ready for future use.",
+      description: "Upon successful storage of your crops, you and your client instantly receives a confirmation on WhatsApp. Full Transparency",
       image: "./app-screen-3.png"
     }
   ]

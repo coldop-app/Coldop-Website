@@ -39,7 +39,7 @@ const Hero = ({
       <section className="bg-secondary px-8 pb-16  pt-6 sm:py-24">
         <div className="mx-auto grid max-w-[75rem] grid-cols-1 items-center py-8 sm:gap-12 md:gap-16 md:py-2 lg:grid-cols-2 lg:gap-24 xl:max-w-[81.25rem] ">
           <div className="text-center lg:text-left">
-          <h1 className="mb-[2rem] font-custom text-[2.1rem] font-bold leading-[1.05] tracking-[-0.5px] text-[#333] xl:text-[3rem] ">
+          <h1 className="mb-[2rem] pt-2 md:pt-0 font-custom text-[2.1rem] font-bold leading-[1.05] tracking-[-0.5px] text-[#333] xl:text-[3rem] ">
               {heading}
             </h1>
             <p className="font-custom mb-12 text-base md:text-xl font-normal leading-[1.6]   ">
@@ -56,7 +56,7 @@ const Hero = ({
                   {button.text}
                 </Link>
               ))}
-            </div> 
+            </div>
 
             <div className=" mt-10 flex items-center justify-center   lg:mt-20  ">
               <div className="flex ">
