@@ -1,7 +1,10 @@
-import { useState, useEffect, ReactNode, useRef } from "react";
+import { useState, useEffect, ReactNode, useRef, RefObject } from "react";
 import { Link } from "react-router-dom";
 import { Pencil, Check, X, Trash2, Plus, Phone } from "lucide-react";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { BASE_URL } from "@/utils/const";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import toast from "react-hot-toast";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -78,6 +81,13 @@ const StoreAdminSignupForm = () => {
   const resendTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
+
+  const otpInputRefs: RefObject<HTMLInputElement | null>[] = [
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null),
+    useRef<HTMLInputElement>(null)
+  ];
 
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -167,42 +177,102 @@ const StoreAdminSignupForm = () => {
     setCurrentStep(prev => prev - 1);
   };
 
-  // Handle mobile number input with validation
+  // Add mutation for editing mobile number
+  const editMobileMutation = useMutation({
+    mutationFn: async (mobileNumber: string) => {
+      const formData = new URLSearchParams();
+      formData.append('mobileNumber', mobileNumber);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/store-admin/edit-mobile`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      setIsMobileVerified(false);
+      setShowOtpInput(false);
+      setOtp("");
+      setMobileError("");
+      toast.success("Mobile number updated successfully!");
+    },
+    onError: (error) => {
+      setMobileError("Failed to update mobile number. Please try again.");
+      toast.error("Failed to update mobile number");
+      console.error("Error updating mobile number:", error);
+    },
+  });
+
+  // Update handleMobileNumberChange to handle editing
   const handleMobileNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
     setFormData(prev => ({ ...prev, mobileNumber: value }));
     setMobileError("");
+
+    // If mobile was previously verified, trigger edit mobile mutation
     if (isMobileVerified) {
-      setIsMobileVerified(false);
-      setShowOtpInput(false);
-      setOtp("");
+      editMobileMutation.mutate(value);
     }
   };
 
-  // Handle sending OTP
+  // Add mutation for sending OTP
+  const sendOtpMutation = useMutation({
+    mutationFn: async (mobileNumber: string) => {
+      const formData = new URLSearchParams();
+      formData.append('mobileNumber', mobileNumber);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/store-admin/send-otp`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      setShowOtpInput(true);
+      setCanResendOtp(false);
+      setResendTimer(30);
+      setMobileError("");
+      setOtp(""); // Reset OTP when sending new OTP
+      // Clear any existing interval before starting a new one
+      if (resendTimerRef.current) {
+        clearInterval(resendTimerRef.current);
+      }
+      resendTimerRef.current = setInterval(() => {
+        setResendTimer(prev => {
+          if (prev <= 1) {
+            if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+            setCanResendOtp(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      toast.success("OTP sent successfully!");
+    },
+    onError: (error) => {
+      setMobileError("Failed to send OTP. Please try again.");
+      toast.error("Failed to send OTP");
+      console.error("Error sending OTP:", error);
+    },
+  });
+
+  // Update handleSendOtp to use the mutation
   const handleSendOtp = () => {
     if (formData.mobileNumber.length !== 10) {
       setMobileError("Please enter a valid 10 digit mobile number.");
       return;
     }
-    setShowOtpInput(true);
-    setCanResendOtp(false);
-    setResendTimer(30);
-    setMobileError("");
-    // Clear any existing interval before starting a new one
-    if (resendTimerRef.current) {
-      clearInterval(resendTimerRef.current);
-    }
-    resendTimerRef.current = setInterval(() => {
-      setResendTimer(prev => {
-        if (prev <= 1) {
-          if (resendTimerRef.current) clearInterval(resendTimerRef.current);
-          setCanResendOtp(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    sendOtpMutation.mutate(formData.mobileNumber);
   };
 
   // Clean up interval on unmount
@@ -212,20 +282,94 @@ const StoreAdminSignupForm = () => {
     };
   }, []);
 
-  // Handle OTP verification
-  const handleVerifyOtp = () => {
-    if (otp.length === 4) {
-      // Here you would typically verify the OTP with your backend
-      // For now, we'll just simulate successful verification
+  // Add mutation for verifying OTP
+  const verifyOtpMutation = useMutation({
+    mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
+      const formData = new URLSearchParams();
+      formData.append('mobileNumber', mobileNumber);
+      formData.append('enteredOtp', otp);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/store-admin/verify-mobile`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
       setIsMobileVerified(true);
       setShowOtpInput(false);
+      toast.success("Mobile number verified successfully!");
+    },
+    onError: (error) => {
+      setMobileError("Invalid OTP. Please try again.");
+      toast.error("Failed to verify OTP");
+      console.error("Error verifying OTP:", error);
+    },
+  });
+
+  // Update handleVerifyOtp to use the mutation
+  const handleVerifyOtp = () => {
+    if (otp.length === 4) {
+      verifyOtpMutation.mutate({
+        mobileNumber: formData.mobileNumber,
+        otp: otp
+      });
     }
   };
 
-  // Handle resend OTP
+  // Add mutation for resending OTP
+  const resendOtpMutation = useMutation({
+    mutationFn: async (mobileNumber: string) => {
+      const formData = new URLSearchParams();
+      formData.append('mobileNumber', mobileNumber);
+
+      const response = await axios.post(
+        `${BASE_URL}/api/store-admin/resend-otp`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      setCanResendOtp(false);
+      setResendTimer(30);
+      setOtp(""); // Reset OTP when resending
+      // Clear any existing interval before starting a new one
+      if (resendTimerRef.current) {
+        clearInterval(resendTimerRef.current);
+      }
+      resendTimerRef.current = setInterval(() => {
+        setResendTimer(prev => {
+          if (prev <= 1) {
+            if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+            setCanResendOtp(true);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      toast.success("OTP resent successfully!");
+    },
+    onError: (error) => {
+      setMobileError("Failed to resend OTP. Please try again.");
+      toast.error("Failed to resend OTP");
+      console.error("Error resending OTP:", error);
+    },
+  });
+
+  // Update handleResendOtp to use the mutation
   const handleResendOtp = () => {
     if (canResendOtp) {
-      handleSendOtp();
+      resendOtpMutation.mutate(formData.mobileNumber);
     }
   };
 
@@ -377,23 +521,61 @@ const StoreAdminSignupForm = () => {
                   {showOtpInput && !isMobileVerified && (
                     <div className="space-y-2 mt-2">
                       <div className="flex items-center gap-2">
-                        <InputOTP
-                          maxLength={4}
-                          value={otp}
-                          onChange={(value) => setOtp(value)}
-                          render={({ slots }) => (
-                            <InputOTPGroup>
-                              {slots.map((slot, index) => (
-                                <InputOTPSlot key={index} index={index} {...slot} />
-                              ))}
-                            </InputOTPGroup>
-                          )}
-                        />
+                        <div className="flex gap-2">
+                          {[0, 1, 2, 3].map((index) => (
+                            <input
+                              key={index}
+                              ref={otpInputRefs[index]}
+                              type="text"
+                              maxLength={1}
+                              value={otp[index] || ''}
+                              onChange={(e) => {
+                                const value = e.target.value.replace(/\D/g, '');
+                                if (value.length === 1) {
+                                  const newOtp = otp.split('');
+                                  newOtp[index] = value;
+                                  setOtp(newOtp.join(''));
+                                  // Move to next input if not last
+                                  if (index < 3) {
+                                    otpInputRefs[index + 1].current?.focus();
+                                  }
+                                } else if (value.length === 0) {
+                                  // If cleared, just update
+                                  const newOtp = otp.split('');
+                                  newOtp[index] = '';
+                                  setOtp(newOtp.join(''));
+                                }
+                              }}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Backspace') {
+                                  if (otp[index]) {
+                                    // Just clear current
+                                    const newOtp = otp.split('');
+                                    newOtp[index] = '';
+                                    setOtp(newOtp.join(''));
+                                  } else if (index > 0) {
+                                    // Move to previous
+                                    otpInputRefs[index - 1].current?.focus();
+                                    const newOtp = otp.split('');
+                                    newOtp[index - 1] = '';
+                                    setOtp(newOtp.join(''));
+                                  }
+                                } else if (e.key.match(/^[0-9]$/) && otp[index] && index < 3) {
+                                  // If already filled, move to next
+                                  otpInputRefs[index + 1].current?.focus();
+                                }
+                              }}
+                              className="w-12 h-12 text-center text-lg border border-border rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                              inputMode="numeric"
+                              autoComplete="one-time-code"
+                            />
+                          ))}
+                        </div>
                         <button
                           type="button"
                           onClick={handleVerifyOtp}
                           disabled={otp.length !== 4}
-                          className={`h-[40px] px-5 rounded-md font-semibold text-base transition-colors duration-100 focus:outline-none focus:ring-2 focus:ring-primary/50 border border-border ml-1 ${
+                          className={`h-[48px] px-5 rounded-md font-semibold text-base transition-colors duration-100 focus:outline-none focus:ring-2 focus:ring-primary/50 border border-border ml-1 ${
                             otp.length === 4
                               ? "bg-primary text-secondary hover:bg-primary/85"
                               : "bg-muted text-muted-foreground cursor-not-allowed"
