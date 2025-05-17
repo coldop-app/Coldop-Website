@@ -1,6 +1,7 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, ReactNode, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Pencil, Check, X, Trash2, Plus } from "lucide-react";
+import { Pencil, Check, X, Trash2, Plus, Phone } from "lucide-react";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -62,6 +63,19 @@ const StoreAdminSignupForm = () => {
   const [newBagSize, setNewBagSize] = useState("");
   const [editingBagSize, setEditingBagSize] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
+
+  // Add new state for OTP verification
+  const [isMobileVerified, setIsMobileVerified] = useState(false);
+  const [showOtpInput, setShowOtpInput] = useState(false);
+  const [otp, setOtp] = useState("");
+  const [canResendOtp, setCanResendOtp] = useState(false);
+  const [resendTimer, setResendTimer] = useState(30);
+
+  // Add new state for error message
+  const [mobileError, setMobileError] = useState("");
+
+  // Ref to store the resend timer interval id
+  const resendTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
 
@@ -151,6 +165,68 @@ const StoreAdminSignupForm = () => {
 
   const prevStep = () => {
     setCurrentStep(prev => prev - 1);
+  };
+
+  // Handle mobile number input with validation
+  const handleMobileNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
+    setFormData(prev => ({ ...prev, mobileNumber: value }));
+    setMobileError("");
+    if (isMobileVerified) {
+      setIsMobileVerified(false);
+      setShowOtpInput(false);
+      setOtp("");
+    }
+  };
+
+  // Handle sending OTP
+  const handleSendOtp = () => {
+    if (formData.mobileNumber.length !== 10) {
+      setMobileError("Please enter a valid 10 digit mobile number.");
+      return;
+    }
+    setShowOtpInput(true);
+    setCanResendOtp(false);
+    setResendTimer(30);
+    setMobileError("");
+    // Clear any existing interval before starting a new one
+    if (resendTimerRef.current) {
+      clearInterval(resendTimerRef.current);
+    }
+    resendTimerRef.current = setInterval(() => {
+      setResendTimer(prev => {
+        if (prev <= 1) {
+          if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+          setCanResendOtp(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Clean up interval on unmount
+  useEffect(() => {
+    return () => {
+      if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+    };
+  }, []);
+
+  // Handle OTP verification
+  const handleVerifyOtp = () => {
+    if (otp.length === 4) {
+      // Here you would typically verify the OTP with your backend
+      // For now, we'll just simulate successful verification
+      setIsMobileVerified(true);
+      setShowOtpInput(false);
+    }
+  };
+
+  // Handle resend OTP
+  const handleResendOtp = () => {
+    if (canResendOtp) {
+      handleSendOtp();
+    }
   };
 
   return (
@@ -255,15 +331,97 @@ const StoreAdminSignupForm = () => {
                 <label htmlFor="mobileNumber" className="block text-sm font-medium mb-1">
                   Mobile Number <span className="text-red-500">*</span>
                 </label>
-                <input
-                  type="tel"
-                  id="mobileNumber"
-                  name="mobileNumber"
-                  value={formData.mobileNumber}
-                  onChange={updateFormData}
-                  className="w-full p-3 border border-border rounded-md bg-background"
-                  required
-                />
+                <div className="space-y-1">
+                  <div className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                    <div className="relative flex-1">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        <Phone size={18} />
+                      </span>
+                      <input
+                        type="tel"
+                        id="mobileNumber"
+                        name="mobileNumber"
+                        value={formData.mobileNumber}
+                        onChange={handleMobileNumberChange}
+                        className={`w-full pl-10 pr-10 p-3 border border-border rounded-md bg-background font-medium text-base transition focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-muted/50 disabled:cursor-not-allowed ${isMobileVerified ? 'pr-10' : ''}`}
+                        placeholder="Enter 10 digit mobile number"
+                        required
+                        disabled={isMobileVerified}
+                        maxLength={10}
+                      />
+                      {isMobileVerified && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-green-600">
+                          <Check size={20} />
+                        </span>
+                      )}
+                    </div>
+                    {!isMobileVerified && (
+                      <button
+                        type="button"
+                        onClick={handleSendOtp}
+                        disabled={formData.mobileNumber.length !== 10 || showOtpInput}
+                        className={`w-full sm:w-auto h-[42px] sm:h-[48px] px-4 sm:px-6 rounded-md font-semibold text-base transition-colors duration-100 focus:outline-none focus:ring-2 focus:ring-primary/50 border border-border ${
+                          formData.mobileNumber.length === 10 && !showOtpInput
+                            ? "bg-primary text-secondary hover:bg-primary/85"
+                            : "bg-muted text-muted-foreground cursor-not-allowed"
+                        }`}
+                        style={{ minWidth: 0 }}
+                      >
+                        Send OTP
+                      </button>
+                    )}
+                  </div>
+                  {mobileError && (
+                    <div className="text-xs text-red-500 mt-1 ml-1">{mobileError}</div>
+                  )}
+                  {showOtpInput && !isMobileVerified && (
+                    <div className="space-y-2 mt-2">
+                      <div className="flex items-center gap-2">
+                        <InputOTP
+                          maxLength={4}
+                          value={otp}
+                          onChange={(value) => setOtp(value)}
+                          render={({ slots }) => (
+                            <InputOTPGroup>
+                              {slots.map((slot, index) => (
+                                <InputOTPSlot key={index} index={index} {...slot} />
+                              ))}
+                            </InputOTPGroup>
+                          )}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleVerifyOtp}
+                          disabled={otp.length !== 4}
+                          className={`h-[40px] px-5 rounded-md font-semibold text-base transition-colors duration-100 focus:outline-none focus:ring-2 focus:ring-primary/50 border border-border ml-1 ${
+                            otp.length === 4
+                              ? "bg-primary text-secondary hover:bg-primary/85"
+                              : "bg-muted text-muted-foreground cursor-not-allowed"
+                          }`}
+                        >
+                          Verify
+                        </button>
+                      </div>
+                      <div className="flex items-center justify-between text-xs mt-1">
+                        <button
+                          type="button"
+                          onClick={handleResendOtp}
+                          disabled={!canResendOtp}
+                          className={`font-medium text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/30 transition ${
+                            !canResendOtp ? "opacity-50 cursor-not-allowed" : ""
+                          }`}
+                        >
+                          Resend OTP
+                        </button>
+                        {!canResendOtp && (
+                          <span className="text-muted-foreground">
+                            Resend available in {resendTimer}s
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div>
@@ -483,7 +641,7 @@ const StoreAdminSignupForm = () => {
                     </div>
                   ))}
                 </div>
-                <div className="flex mt-4 gap-2 flex-col sm:flex-row">
+                <div className="flex mt-4 gap-2">
                   <input
                     type="text"
                     value={newBagSize}
@@ -495,7 +653,8 @@ const StoreAdminSignupForm = () => {
                   <button
                     type="button"
                     onClick={handleAddBagSize}
-                    className="flex items-center justify-center gap-1 px-4 py-2 bg-primary text-secondary rounded-md font-medium hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                    className="flex items-center justify-center gap-1 px-3 py-2 bg-primary text-secondary rounded-md font-medium text-base hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition min-w-[40px] h-[40px]"
+                    style={{ minWidth: '40px' }}
                   >
                     <Plus size={18} />
                     <span className="hidden sm:inline">Add</span>
@@ -503,17 +662,19 @@ const StoreAdminSignupForm = () => {
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-between">
+              <div className="pt-6 flex gap-4">
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="font-custom inline-block cursor-pointer rounded-lg bg-secondary border border-primary px-8 py-3 text-lg font-semibold text-primary no-underline duration-100 hover:bg-secondary/90"
+                  className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                  style={{ minWidth: 0 }}
                 >
                   Back
                 </button>
                 <button
                   type="submit"
-                  className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary"
+                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                  style={{ minWidth: 0 }}
                 >
                   Create Account
                 </button>
