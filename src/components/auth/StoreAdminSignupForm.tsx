@@ -1,5 +1,6 @@
 import { useState, useEffect, ReactNode } from "react";
 import { Link } from "react-router-dom";
+import { Pencil, Check, X, Trash2, Plus } from "lucide-react";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -58,6 +59,11 @@ const StoreAdminSignupForm = () => {
     // Preferences
     bagSizes: ["ration", "seed", "number-12", "goli", "cut-tok"]
   });
+  const [newBagSize, setNewBagSize] = useState("");
+  const [editingBagSize, setEditingBagSize] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+
+  const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
 
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -67,7 +73,6 @@ const StoreAdminSignupForm = () => {
   const handleBagSizeToggle = (bagSize: string) => {
     setFormData(prev => {
       const currentBagSizes = [...prev.bagSizes];
-
       if (currentBagSizes.includes(bagSize)) {
         return {
           ...prev,
@@ -80,6 +85,57 @@ const StoreAdminSignupForm = () => {
         };
       }
     });
+  };
+
+  const handleAddBagSize = () => {
+    const trimmed = newBagSize.trim();
+    if (!trimmed) return;
+    // Prevent duplicates (case-insensitive)
+    if (formData.bagSizes.some(size => size.toLowerCase() === trimmed.toLowerCase())) return;
+    setFormData(prev => ({
+      ...prev,
+      bagSizes: [...prev.bagSizes, trimmed]
+    }));
+    setNewBagSize("");
+  };
+
+  const handleRemoveCustomBagSize = (bagSize: string) => {
+    // Only allow removing if not a default
+    if (!defaultBagSizes.includes(bagSize)) {
+      setFormData(prev => ({
+        ...prev,
+        bagSizes: prev.bagSizes.filter(size => size !== bagSize)
+      }));
+    }
+  };
+
+  const handleEditBagSize = (bagSize: string) => {
+    setEditingBagSize(bagSize);
+    setEditingValue(bagSize);
+  };
+
+  const handleSaveEditBagSize = () => {
+    const trimmed = editingValue.trim();
+    if (!trimmed) return;
+    // Prevent duplicates (case-insensitive, except for the one being edited)
+    if (
+      formData.bagSizes.some(
+        size => size.toLowerCase() === trimmed.toLowerCase() && size !== editingBagSize
+      )
+    ) return;
+    setFormData(prev => ({
+      ...prev,
+      bagSizes: prev.bagSizes.map(size =>
+        size === editingBagSize ? trimmed : size
+      )
+    }));
+    setEditingBagSize(null);
+    setEditingValue("");
+  };
+
+  const handleCancelEditBagSize = () => {
+    setEditingBagSize(null);
+    setEditingValue("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -355,20 +411,95 @@ const StoreAdminSignupForm = () => {
                 </p>
 
                 <div className="space-y-3">
-                  {["ration", "seed", "number-12", "goli", "cut-tok"].map((size) => (
-                    <div key={size} className="flex items-center">
+                  {[...new Set([...defaultBagSizes, ...formData.bagSizes])].map((size) => (
+                    <div
+                      key={size}
+                      className="flex items-center group gap-2 sm:gap-3 py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
+                    >
                       <input
                         type="checkbox"
                         id={size}
                         checked={formData.bagSizes.includes(size)}
                         onChange={() => handleBagSizeToggle(size)}
                         className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
+                        disabled={editingBagSize !== null && editingBagSize !== size}
                       />
-                      <label htmlFor={size} className="ml-2 text-sm font-medium">
-                        {size.charAt(0).toUpperCase() + size.slice(1).replace("-", " ")}
-                      </label>
+                      {editingBagSize === size ? (
+                        <>
+                          <input
+                            type="text"
+                            value={editingValue}
+                            onChange={e => setEditingValue(e.target.value)}
+                            className="ml-2 p-1 border border-border rounded w-32 sm:w-40 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition"
+                            autoFocus
+                            onKeyDown={e => {
+                              if (e.key === 'Enter') { e.preventDefault(); handleSaveEditBagSize(); }
+                              if (e.key === 'Escape') { e.preventDefault(); handleCancelEditBagSize(); }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            onClick={handleSaveEditBagSize}
+                            className="ml-1 p-1 rounded hover:bg-green-100 text-green-600 focus:outline-none focus:ring-2 focus:ring-green-400"
+                            aria-label="Save"
+                          >
+                            <Check size={18} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleCancelEditBagSize}
+                            className="ml-1 p-1 rounded hover:bg-gray-100 text-gray-500 focus:outline-none focus:ring-2 focus:ring-gray-300"
+                            aria-label="Cancel"
+                          >
+                            <X size={18} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <label htmlFor={size} className="ml-2 text-sm font-medium flex-1 truncate">
+                            {size.charAt(0).toUpperCase() + size.slice(1).replace(/-/g, " ")}
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => handleEditBagSize(size)}
+                            className="ml-1 p-1 rounded hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                            aria-label="Edit"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          {!defaultBagSizes.includes(size) && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomBagSize(size)}
+                              className="ml-1 p-1 rounded hover:bg-red-100 text-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                              aria-label="Remove"
+                              title="Remove custom bag size"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          )}
+                        </>
+                      )}
                     </div>
                   ))}
+                </div>
+                <div className="flex mt-4 gap-2 flex-col sm:flex-row">
+                  <input
+                    type="text"
+                    value={newBagSize}
+                    onChange={e => setNewBagSize(e.target.value)}
+                    placeholder="Add custom bag size"
+                    className="p-2 border border-border rounded-md bg-background flex-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition"
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddBagSize(); } }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddBagSize}
+                    className="flex items-center justify-center gap-1 px-4 py-2 bg-primary text-secondary rounded-md font-medium hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                  >
+                    <Plus size={18} />
+                    <span className="hidden sm:inline">Add</span>
+                  </button>
                 </div>
               </div>
 
