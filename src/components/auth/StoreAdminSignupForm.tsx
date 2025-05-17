@@ -1,10 +1,11 @@
 import { useState, useEffect, ReactNode, useRef, RefObject } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Check, X, Trash2, Plus, Phone } from "lucide-react";
 import { BASE_URL } from "@/utils/const";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import toast from "react-hot-toast";
+import Loader from "@/components/common/Loader";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -44,6 +45,7 @@ const AnimatedFormStep = ({ isVisible, children }: AnimatedFormStepProps) => {
 };
 
 const StoreAdminSignupForm = () => {
+  const navigate = useNavigate();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Personal details
@@ -79,6 +81,8 @@ const StoreAdminSignupForm = () => {
 
   // Ref to store the resend timer interval id
   const resendTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
 
@@ -162,11 +166,65 @@ const StoreAdminSignupForm = () => {
     setEditingValue("");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, this would call an API
-    console.log("Form submitted:", formData);
-    // Navigate to success page or show success message
+
+    // Validate passwords match
+    if (formData.password !== formData.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+
+    // Validate mobile verification
+    if (!isMobileVerified) {
+      toast.error("Please verify your mobile number first");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await axios.post(
+        `${BASE_URL}/api/store-admin/register`,
+        {
+          name: formData.name,
+          personalAddress: formData.personalAddress,
+          mobileNumber: formData.mobileNumber,
+          coldStorageName: formData.coldStorageName,
+          coldStorageAddress: formData.coldStorageAddress,
+          coldStorageContactNumber: formData.coldStorageContactNumber,
+          capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
+          password: formData.password,
+          imageUrl: formData.imageUrl || "",
+          isVerified: true,
+          isMobile: true,
+          preferences: {
+            bagSizes: formData.bagSizes
+          }
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      if (response.data) {
+        toast.success("Account created successfully!");
+        // Add a small delay before navigation to show the success message
+        setTimeout(() => {
+          navigate('/erp/daybook');
+        }, 1000);
+      }
+    } catch (error: unknown) {
+      console.error("Error creating account:", error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to create account");
+      } else {
+        toast.error("Failed to create account");
+      }
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const nextStep = () => {
@@ -720,18 +778,20 @@ const StoreAdminSignupForm = () => {
                 </p>
               </div>
 
-              <div className="pt-4 flex justify-between">
+              <div className="pt-6 flex gap-4">
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="font-custom inline-block cursor-pointer rounded-lg bg-secondary border border-primary px-8 py-3 text-lg font-semibold text-primary no-underline duration-100 hover:bg-secondary/90"
+                  className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                  style={{ minWidth: 0 }}
                 >
                   Back
                 </button>
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary"
+                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                  style={{ minWidth: 0 }}
                 >
                   Next
                 </button>
@@ -850,15 +910,24 @@ const StoreAdminSignupForm = () => {
                   onClick={prevStep}
                   className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                   style={{ minWidth: 0 }}
+                  disabled={isSubmitting}
                 >
                   Back
                 </button>
                 <button
                   type="submit"
-                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
                   style={{ minWidth: 0 }}
+                  disabled={isSubmitting}
                 >
-                  Create Account
+                  {isSubmitting ? (
+                    <div className="flex items-center justify-center">
+                      <Loader size="sm" className="mr-2" />
+                      <span>Creating Account...</span>
+                    </div>
+                  ) : (
+                    "Create Account"
+                  )}
                 </button>
               </div>
             </div>

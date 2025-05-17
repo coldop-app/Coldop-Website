@@ -15,6 +15,7 @@ import HomeScreen from "./screens/HomeScreen/HomeScreen.tsx";
 import StoreAdminSignup from "./screens/Signup/StoreAdminSignup.tsx";
 import StoreAdminLogin from "./screens/Login/StoreAdminLogin.tsx";
 import FarmerLogin from "./screens/Login/FarmerLogin.tsx";
+import DaybookScreen from "./screens/Erp/DaybookScreen.tsx";
 
 // Initialize the Query Client
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const router = createBrowserRouter(
       <Route path="signup/store-admin" element={<StoreAdminSignup />} />
       <Route path="login/store-admin" element={<StoreAdminLogin />} />
       <Route path="login/farmer" element={<FarmerLogin />} />
+      <Route path="erp/daybook" element={<DaybookScreen />} />
     </Route>
   )
 );
