@@ -1,6 +1,6 @@
 import { motion } from "motion/react";
-import Navbar from "@/components/common/Navbar";
-import Footer from "../../components/common/Footer";
+import Navbar from "@/components/common/Navbar/Navbar";
+import Footer from "../../components/common/Footer/Footer";
 import Hero from "@/components/sections/Hero/Hero";
 import HowItWorks from "@/components/sections/HowItWorks/HowItWorks";
 import Testimonials from "@/components/sections/Testimonials/Testimonials";

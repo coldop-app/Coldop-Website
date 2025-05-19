@@ -5,7 +5,9 @@ import { BASE_URL } from "@/utils/const";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import toast from "react-hot-toast";
-import Loader from "@/components/common/Loader";
+import Loader from "@/components/common/Loader/Loader";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/slices/authSlice";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -46,6 +48,7 @@ const AnimatedFormStep = ({ isVisible, children }: AnimatedFormStepProps) => {
 
 const StoreAdminSignupForm = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Personal details
@@ -96,23 +99,6 @@ const StoreAdminSignupForm = () => {
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleBagSizeToggle = (bagSize: string) => {
-    setFormData(prev => {
-      const currentBagSizes = [...prev.bagSizes];
-      if (currentBagSizes.includes(bagSize)) {
-        return {
-          ...prev,
-          bagSizes: currentBagSizes.filter(size => size !== bagSize)
-        };
-      } else {
-        return {
-          ...prev,
-          bagSizes: [...currentBagSizes, bagSize]
-        };
-      }
-    });
   };
 
   const handleAddBagSize = () => {
@@ -209,6 +195,8 @@ const StoreAdminSignupForm = () => {
       );
 
       if (response.data) {
+        // Dispatch the setCredentials action with the response data
+        dispatch(setCredentials(response.data));
         toast.success("Account created successfully!");
         // Add a small delay before navigation to show the success message
         setTimeout(() => {
@@ -814,16 +802,8 @@ const StoreAdminSignupForm = () => {
                   {[...new Set([...defaultBagSizes, ...formData.bagSizes])].map((size) => (
                     <div
                       key={size}
-                      className="flex items-center group gap-2 sm:gap-3 py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-2 sm:gap-3 py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
                     >
-                      <input
-                        type="checkbox"
-                        id={size}
-                        checked={formData.bagSizes.includes(size)}
-                        onChange={() => handleBagSizeToggle(size)}
-                        className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
-                        disabled={editingBagSize !== null && editingBagSize !== size}
-                      />
                       {editingBagSize === size ? (
                         <>
                           <input
@@ -856,28 +836,26 @@ const StoreAdminSignupForm = () => {
                         </>
                       ) : (
                         <>
-                          <label htmlFor={size} className="ml-2 text-sm font-medium flex-1 truncate">
+                          <label className="ml-2 text-sm font-medium flex-1 truncate">
                             {size.charAt(0).toUpperCase() + size.slice(1).replace(/-/g, " ")}
                           </label>
                           <button
                             type="button"
                             onClick={() => handleEditBagSize(size)}
-                            className="ml-1 p-1 rounded hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                            className="ml-1 p-1 rounded hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
                             aria-label="Edit"
                           >
                             <Pencil size={18} />
                           </button>
-                          {!defaultBagSizes.includes(size) && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveCustomBagSize(size)}
-                              className="ml-1 p-1 rounded hover:bg-red-100 text-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                              aria-label="Remove"
-                              title="Remove custom bag size"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCustomBagSize(size)}
+                            className="ml-1 p-1 rounded hover:bg-red-100 text-red-500 focus:outline-none focus:ring-2 focus:ring-red-400"
+                            aria-label="Remove"
+                            title="Remove bag size"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </>
                       )}
                     </div>
