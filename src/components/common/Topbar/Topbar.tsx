@@ -13,11 +13,12 @@ import { Button } from "@/components/ui/button";
 
 interface TopBarProps {
   isSidebarOpen: boolean;
+  setIsSidebarOpen: () => void;
   title?: string;
 }
 
 const logoutUser = async () => {
-  await axios.post(`${BASE_URL}/logout`, {});
+  await axios.post(`${BASE_URL}/api/store-admin/logout`, {});
 };
 
 const TopBar: React.FC<TopBarProps> = ({
@@ -31,7 +32,7 @@ const TopBar: React.FC<TopBarProps> = ({
     onSuccess: () => {
       dispatch(logout());
       toast.success("Logged out successfully!");
-      navigate("/login");
+      navigate("/");
     },
     onError: () => {
       toast.error("Logout failed. Please try again.");
