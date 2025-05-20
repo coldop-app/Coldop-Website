@@ -1,7 +1,16 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { BASE_URL } from "@/utils/const";
+import { useMutation } from "@tanstack/react-query";
+import axios from "axios";
+import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/slices/authSlice";
+import Loader from "@/components/common/Loader/Loader";
 
 const StoreAdminLoginForm = () => {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     mobileNumber: "",
     password: "",
@@ -16,11 +25,40 @@ const StoreAdminLoginForm = () => {
     }));
   };
 
+  const loginMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const response = await axios.post(
+        `${BASE_URL}/api/store-admin/login`,
+        {
+          mobileNumber: data.mobileNumber,
+          password: data.password,
+          isMobile: true
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      dispatch(setCredentials(data.data));
+      toast.success("Login successful!");
+      navigate('/erp/daybook');
+    },
+    onError: (error: unknown) => {
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Login failed");
+      } else {
+        toast.error("Login failed. Please try again.");
+      }
+    }
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, this would call an API
-    console.log("Login form submitted:", formData);
-    // Navigate to dashboard upon successful login
+    loginMutation.mutate(formData);
   };
 
   return (
@@ -83,8 +121,16 @@ const StoreAdminLoginForm = () => {
         <button
           type="submit"
           className="w-full font-custom inline-block cursor-pointer rounded-lg bg-primary px-6 sm:px-8 py-3 text-base sm:text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary"
+          disabled={loginMutation.isPending}
         >
-          Sign in
+          {loginMutation.isPending ? (
+            <div className="flex items-center justify-center">
+              <Loader size="sm" className="mr-2" />
+              <span>Signing in...</span>
+            </div>
+          ) : (
+            "Sign in"
+          )}
         </button>
       </form>
 

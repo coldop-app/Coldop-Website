@@ -85,8 +85,6 @@ const StoreAdminSignupForm = () => {
   // Ref to store the resend timer interval id
   const resendTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
 
   const otpInputRefs: RefObject<HTMLInputElement | null>[] = [
@@ -152,6 +150,52 @@ const StoreAdminSignupForm = () => {
     setEditingValue("");
   };
 
+  // Add mutation for account creation
+  const createAccountMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const response = await axios.post(
+        `${BASE_URL}/api/store-admin/register`,
+        {
+          name: data.name,
+          personalAddress: data.personalAddress,
+          mobileNumber: data.mobileNumber,
+          coldStorageName: data.coldStorageName,
+          coldStorageAddress: data.coldStorageAddress,
+          coldStorageContactNumber: data.coldStorageContactNumber,
+          capacity: data.capacity ? parseInt(data.capacity) : undefined,
+          password: data.password,
+          imageUrl: data.imageUrl || "",
+          isVerified: true,
+          isMobile: true,
+          preferences: {
+            bagSizes: data.bagSizes
+          }
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+      return response.data;
+    },
+    onSuccess: (data) => {
+      dispatch(setCredentials(data.data));
+      toast.success("Account created successfully!");
+      setTimeout(() => {
+        navigate('/erp/daybook');
+      }, 1000);
+    },
+    onError: (error: unknown) => {
+      console.error("Error creating account:", error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to create account");
+      } else {
+        toast.error("Failed to create account");
+      }
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -167,52 +211,7 @@ const StoreAdminSignupForm = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/register`,
-        {
-          name: formData.name,
-          personalAddress: formData.personalAddress,
-          mobileNumber: formData.mobileNumber,
-          coldStorageName: formData.coldStorageName,
-          coldStorageAddress: formData.coldStorageAddress,
-          coldStorageContactNumber: formData.coldStorageContactNumber,
-          capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
-          password: formData.password,
-          imageUrl: formData.imageUrl || "",
-          isVerified: true,
-          isMobile: true,
-          preferences: {
-            bagSizes: formData.bagSizes
-          }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (response.data) {
-        // Dispatch the setCredentials action with the response data
-        dispatch(setCredentials(response.data.data));
-        toast.success("Account created successfully!");
-        // Add a small delay before navigation to show the success message
-        setTimeout(() => {
-          navigate('/erp/daybook');
-        }, 1000);
-      }
-    } catch (error: unknown) {
-      console.error("Error creating account:", error);
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || "Failed to create account");
-      } else {
-        toast.error("Failed to create account");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    createAccountMutation.mutate(formData);
   };
 
   const nextStep = () => {
@@ -888,7 +887,6 @@ const StoreAdminSignupForm = () => {
                   onClick={prevStep}
                   className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                   style={{ minWidth: 0 }}
-                  disabled={isSubmitting}
                 >
                   Back
                 </button>
@@ -896,9 +894,9 @@ const StoreAdminSignupForm = () => {
                   type="submit"
                   className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
                   style={{ minWidth: 0 }}
-                  disabled={isSubmitting}
+                  disabled={createAccountMutation.isPending}
                 >
-                  {isSubmitting ? (
+                  {createAccountMutation.isPending ? (
                     <div className="flex items-center justify-center">
                       <Loader size="sm" className="mr-2" />
                       <span>Creating Account...</span>
