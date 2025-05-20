@@ -16,6 +16,9 @@ import StoreAdminSignup from "./screens/Signup/StoreAdminSignup.tsx";
 import StoreAdminLogin from "./screens/Login/StoreAdminLogin.tsx";
 import FarmerLogin from "./screens/Login/FarmerLogin.tsx";
 import DaybookScreen from "./screens/Erp/DaybookScreen.tsx";
+import PrivateRoute from "./components/auth/PrivateRoute.tsx";
+import PublicRoute from "./components/auth/PublicRoute.tsx";
+import DaybookScreen2 from "./screens/Erp/DaybookScreen2.tsx";
 
 // Initialize the Query Client
 const queryClient = new QueryClient();
@@ -24,11 +27,16 @@ const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
       <Route index element={<HomeScreen />} />
+      <Route path="" element={<PublicRoute />}>
       <Route path="signup" element={<StoreAdminSignup />} />
       <Route path="signup/store-admin" element={<StoreAdminSignup />} />
       <Route path="login/store-admin" element={<StoreAdminLogin />} />
       <Route path="login/farmer" element={<FarmerLogin />} />
-      <Route path="erp/daybook" element={<DaybookScreen />} />
+      </Route>
+      <Route path="" element={<PrivateRoute />}>
+        <Route path="erp/daybook" element={<DaybookScreen />} />
+        <Route path="erp/daybook2" element={<DaybookScreen2 />} />
+      </Route>
     </Route>
   )
 );

@@ -196,7 +196,7 @@ const StoreAdminSignupForm = () => {
 
       if (response.data) {
         // Dispatch the setCredentials action with the response data
-        dispatch(setCredentials(response.data));
+        dispatch(setCredentials(response.data.data));
         toast.success("Account created successfully!");
         // Add a small delay before navigation to show the success message
         setTimeout(() => {

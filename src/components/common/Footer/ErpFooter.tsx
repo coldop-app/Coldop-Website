@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { BookOpen, Users, BarChart2, Settings } from 'lucide-react';
 
-const Navbar = () => {
+const ErpFooter= () => {
   const location = useLocation();
 
   const navItems = [
@@ -37,4 +37,4 @@ const Navbar = () => {
   );
 };
 
-export default Navbar;
+export default ErpFooter;
