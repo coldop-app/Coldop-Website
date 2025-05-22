@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BASE_URL } from "@/utils/const";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/slices/authSlice";
 import Loader from "@/components/common/Loader/Loader";
+import { storeAdminApi } from "@/lib/api/storeAdmin";
+import axios from "axios";
 
 const StoreAdminLoginForm = () => {
   const navigate = useNavigate();
@@ -27,20 +27,11 @@ const StoreAdminLoginForm = () => {
 
   const loginMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/login`,
-        {
-          mobileNumber: data.mobileNumber,
-          password: data.password,
-          isMobile: true
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-      return response.data;
+      return storeAdminApi.login({
+        mobileNumber: data.mobileNumber,
+        password: data.password,
+        isMobile: true
+      });
     },
     onSuccess: (data) => {
       dispatch(setCredentials(data.data));

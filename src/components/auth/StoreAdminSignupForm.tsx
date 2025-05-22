@@ -1,13 +1,13 @@
 import { useState, useEffect, ReactNode, useRef, RefObject } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Check, X, Trash2, Plus, Phone } from "lucide-react";
-import { BASE_URL } from "@/utils/const";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
 import toast from "react-hot-toast";
 import Loader from "@/components/common/Loader/Loader";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/slices/authSlice";
+import { storeAdminApi } from "@/lib/api/storeAdmin";
+import axios from "axios";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -153,31 +153,22 @@ const StoreAdminSignupForm = () => {
   // Add mutation for account creation
   const createAccountMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/register`,
-        {
-          name: data.name,
-          personalAddress: data.personalAddress,
-          mobileNumber: data.mobileNumber,
-          coldStorageName: data.coldStorageName,
-          coldStorageAddress: data.coldStorageAddress,
-          coldStorageContactNumber: data.coldStorageContactNumber,
-          capacity: data.capacity ? parseInt(data.capacity) : undefined,
-          password: data.password,
-          imageUrl: data.imageUrl || "",
-          isVerified: true,
-          isMobile: true,
-          preferences: {
-            bagSizes: data.bagSizes
-          }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
+      return storeAdminApi.register({
+        name: data.name,
+        personalAddress: data.personalAddress,
+        mobileNumber: data.mobileNumber,
+        coldStorageName: data.coldStorageName,
+        coldStorageAddress: data.coldStorageAddress,
+        coldStorageContactNumber: data.coldStorageContactNumber,
+        capacity: data.capacity ? parseInt(data.capacity) : undefined,
+        password: data.password,
+        imageUrl: data.imageUrl || "",
+        isVerified: true,
+        isMobile: true,
+        preferences: {
+          bagSizes: data.bagSizes
         }
-      );
-      return response.data;
+      });
     },
     onSuccess: (data) => {
       dispatch(setCredentials(data.data));
@@ -225,19 +216,7 @@ const StoreAdminSignupForm = () => {
   // Add mutation for editing mobile number
   const editMobileMutation = useMutation({
     mutationFn: async (mobileNumber: string) => {
-      const formData = new URLSearchParams();
-      formData.append('mobileNumber', mobileNumber);
-
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/edit-mobile`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      return response.data;
+      return storeAdminApi.editMobile(mobileNumber);
     },
     onSuccess: () => {
       setIsMobileVerified(false);
@@ -268,19 +247,7 @@ const StoreAdminSignupForm = () => {
   // Add mutation for sending OTP
   const sendOtpMutation = useMutation({
     mutationFn: async (mobileNumber: string) => {
-      const formData = new URLSearchParams();
-      formData.append('mobileNumber', mobileNumber);
-
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/send-otp`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      return response.data;
+      return storeAdminApi.sendOtp(mobileNumber);
     },
     onSuccess: () => {
       setShowOtpInput(true);
@@ -330,20 +297,7 @@ const StoreAdminSignupForm = () => {
   // Add mutation for verifying OTP
   const verifyOtpMutation = useMutation({
     mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
-      const formData = new URLSearchParams();
-      formData.append('mobileNumber', mobileNumber);
-      formData.append('enteredOtp', otp);
-
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/verify-mobile`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      return response.data;
+      return storeAdminApi.verifyOtp(mobileNumber, otp);
     },
     onSuccess: () => {
       setIsMobileVerified(true);
@@ -370,19 +324,7 @@ const StoreAdminSignupForm = () => {
   // Add mutation for resending OTP
   const resendOtpMutation = useMutation({
     mutationFn: async (mobileNumber: string) => {
-      const formData = new URLSearchParams();
-      formData.append('mobileNumber', mobileNumber);
-
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/resend-otp`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      return response.data;
+      return storeAdminApi.resendOtp(mobileNumber);
     },
     onSuccess: () => {
       setCanResendOtp(false);
