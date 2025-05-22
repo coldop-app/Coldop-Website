@@ -26,8 +26,8 @@ const queryClient = new QueryClient();
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />}>
-      <Route index element={<HomeScreen />} />
       <Route path="" element={<PublicRoute />}>
+        <Route index element={<HomeScreen />} />
         <Route path="signup" element={<StoreAdminSignup />} />
         <Route path="signup/store-admin" element={<StoreAdminSignup />} />
         <Route path="login/store-admin" element={<StoreAdminLogin />} />
