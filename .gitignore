@@ -23,5 +23,3 @@ dist-ssr
 *.sln
 *.sw?
 .qodo
-
-src/utils/const.ts
