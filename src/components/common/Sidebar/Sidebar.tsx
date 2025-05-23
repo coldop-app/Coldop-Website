@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Home, ShoppingBag, Users, Settings } from "lucide-react";
@@ -8,11 +8,12 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ className }: SidebarProps) => {
+  const location = useLocation();
   const menuItems = [
-    { icon: Home, label: "Dashboard", href: "/dashboard" },
-    { icon: ShoppingBag, label: "Products", href: "/products" },
-    { icon: Users, label: "Customers", href: "/customers" },
-    { icon: Settings, label: "Settings", href: "/settings" },
+    { icon: Home, label: "Daybook", href: "/erp/daybook" },
+    { icon: Users, label: "People", href: "/erp/people" },
+    { icon: ShoppingBag, label: "Analytics", href: "/erp/analytics" },
+    { icon: Settings, label: "Settings", href: "/erp/settings" },
   ];
 
   const SidebarContent = () => (
@@ -31,7 +32,8 @@ const Sidebar = ({ className }: SidebarProps) => {
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 "hover:bg-primary hover:text-secondary",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                location.pathname === item.href && "bg-primary text-secondary"
               )}
             >
               <item.icon className="h-5 w-5" />

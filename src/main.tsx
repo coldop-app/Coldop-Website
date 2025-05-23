@@ -12,8 +12,9 @@ import store from "./store.ts";
 import "./index.css";
 import App from "./App.tsx";
 import PrivateRoute from "./components/auth/PrivateRoute.tsx";
-import PublicRoute from "./components/auth/PublicRoute.tsx";
 import ERPLayout from "./components/layouts/ERPLayout.tsx";
+import NotFound from "./screens/NotFound/NotFound";
+import Error from "./screens/Error/Error";
 
 // Lazy load components
 const HomeScreen = lazy(() => import("./screens/HomeScreen/HomeScreen.tsx"));
@@ -21,6 +22,8 @@ const StoreAdminSignup = lazy(() => import("./screens/Signup/StoreAdminSignup.ts
 const StoreAdminLogin = lazy(() => import("./screens/Login/StoreAdminLogin.tsx"));
 const FarmerLogin = lazy(() => import("./screens/Login/FarmerLogin.tsx"));
 const DaybookScreen = lazy(() => import("./screens/Erp/DaybookScreen.tsx"));
+const PeopleScreen = lazy(() => import("./screens/Erp/PeopleScreen.tsx"));
+const FarmerProfileScreen = lazy(() => import("./screens/Erp/FarmerProfileScreen.tsx"));
 
 // Loading component
 const LoadingFallback = () => (
@@ -34,8 +37,7 @@ const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<App />}>
-      <Route path="" element={<PublicRoute />}>
+    <Route path="/" element={<App />} errorElement={<Error />}>
         <Route index element={
           <Suspense fallback={<LoadingFallback />}>
             <HomeScreen />
@@ -61,7 +63,6 @@ const router = createBrowserRouter(
             <FarmerLogin />
           </Suspense>
         } />
-      </Route>
       <Route path="" element={<PrivateRoute />}>
         <Route path="erp" element={<ERPLayout />}>
           <Route path="daybook" element={
@@ -69,9 +70,20 @@ const router = createBrowserRouter(
               <DaybookScreen />
             </Suspense>
           } />
+          <Route path="people" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PeopleScreen />
+            </Suspense>
+          } />
+          <Route path="people/:id" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <FarmerProfileScreen />
+            </Suspense>
+          } />
           {/* Add more ERP routes here */}
         </Route>
       </Route>
+      <Route path="*" element={<NotFound />} />
     </Route>
   )
 );

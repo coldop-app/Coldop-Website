@@ -152,5 +152,29 @@ export const storeAdminApi = {
       }
     );
     return response.data;
+  },
+
+  getFarmers: async (token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/farmers`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  getFarmerStockSummary: async (farmerId: string, token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/stock-summary`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
   }
 };

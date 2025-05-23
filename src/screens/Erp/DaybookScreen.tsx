@@ -340,6 +340,20 @@ const DaybookScreen = () => {
               <option value="latest">Latest First</option>
               <option value="oldest">Oldest First</option>
             </select>
+            <div className="flex gap-2">
+              <button
+                onClick={() => alert('incoming')}
+                className="w-full sm:w-auto px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-colors text-sm sm:text-base font-medium"
+              >
+               Add Incoming
+              </button>
+              <button
+                onClick={() => alert('outgoing')}
+                className="w-full sm:w-auto px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-colors text-sm sm:text-base font-medium"
+              >
+                Add Outgoing
+              </button>
+            </div>
           </div>
         </div>
 
@@ -396,7 +410,7 @@ const DaybookScreen = () => {
                         <div key={idx} className="bg-gray-50 p-2 sm:p-3 rounded-lg">
                           <p className="text-xs sm:text-sm text-gray-600">{bagSize.size}</p>
                           <p className="text-sm sm:text-base font-medium">
-                            {bagSize.quantity.currentQuantity}/{bagSize.quantity.initialQuantity}
+                            {bagSize?.quantity?.currentQuantity}/{bagSize?.quantity?.initialQuantity}
                           </p>
                         </div>
                       ))}
