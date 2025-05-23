@@ -24,6 +24,7 @@ const FarmerLogin = lazy(() => import("./screens/Login/FarmerLogin.tsx"));
 const DaybookScreen = lazy(() => import("./screens/Erp/DaybookScreen.tsx"));
 const PeopleScreen = lazy(() => import("./screens/Erp/PeopleScreen.tsx"));
 const FarmerProfileScreen = lazy(() => import("./screens/Erp/FarmerProfileScreen.tsx"));
+const ColdStorageSummaryScreen = lazy(() => import("./screens/Erp/ColdStorageSummaryScreen.tsx"));
 
 // Loading component
 const LoadingFallback = () => (
@@ -78,6 +79,11 @@ const router = createBrowserRouter(
           <Route path="people/:id" element={
             <Suspense fallback={<LoadingFallback />}>
               <FarmerProfileScreen />
+            </Suspense>
+          } />
+          <Route path="analytics" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ColdStorageSummaryScreen />
             </Suspense>
           } />
           {/* Add more ERP routes here */}

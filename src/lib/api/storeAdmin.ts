@@ -176,5 +176,17 @@ export const storeAdminApi = {
       }
     );
     return response.data;
+  },
+
+  getColdStorageSummary: async (token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/cold-storage-summary`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
   }
 };
