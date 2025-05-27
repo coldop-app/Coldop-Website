@@ -35,6 +35,31 @@ interface SearchReceiptParams {
   receiptNumber: number;
 }
 
+interface BagSizeQuantity {
+  initialQuantity: number;
+  currentQuantity: number;
+}
+
+interface BagSize {
+  size: string;
+  quantity: BagSizeQuantity;
+}
+
+interface OrderDetail {
+  variety: string;
+  bagSizes: BagSize[];
+  location: string;
+}
+
+interface CreateOrderPayload {
+  coldStorageId: string;
+  farmerId: string;
+  voucherNumber: number;
+  dateOfSubmission: string;
+  remarks: string;
+  orderDetails: OrderDetail[];
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -182,6 +207,33 @@ export const storeAdminApi = {
     const response = await axios.get(
       `${BASE_URL}/api/store-admin/cold-storage-summary`,
       {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  createIncomingOrder: async (payload: CreateOrderPayload, token: string) => {
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/orders`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  searchFarmers: async (coldStorageId: string, query: string, token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/${coldStorageId}/farmers/search`,
+      {
+        params: { query },
         headers: {
           'Authorization': `Bearer ${token}`
         }

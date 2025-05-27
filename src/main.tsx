@@ -15,6 +15,7 @@ import PrivateRoute from "./components/auth/PrivateRoute.tsx";
 import ERPLayout from "./components/layouts/ERPLayout.tsx";
 import NotFound from "./screens/NotFound/NotFound";
 import Error from "./screens/Error/Error";
+import IncomingOrderForm from "./screens/Erp/IncomingOrderForm.tsx";
 
 // Lazy load components
 const HomeScreen = lazy(() => import("./screens/HomeScreen/HomeScreen.tsx"));
@@ -86,8 +87,14 @@ const router = createBrowserRouter(
               <ColdStorageSummaryScreen />
             </Suspense>
           } />
+          <Route path="incoming-order" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <IncomingOrderForm />
+            </Suspense>
+          } />
           {/* Add more ERP routes here */}
         </Route>
+
       </Route>
       <Route path="*" element={<NotFound />} />
     </Route>
