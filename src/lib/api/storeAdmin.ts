@@ -240,5 +240,17 @@ export const storeAdminApi = {
       }
     );
     return response.data;
+  },
+
+  getVarieties: async (token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/varieties`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
   }
 };

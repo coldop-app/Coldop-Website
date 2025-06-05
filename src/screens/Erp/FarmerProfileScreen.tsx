@@ -1,13 +1,14 @@
-import { useLocation, useParams } from 'react-router-dom';
+import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Phone, MapPin, Calendar, Package, Boxes, TrendingUp } from 'lucide-react';
+import { Phone, MapPin, Calendar, Package, Boxes, TrendingUp, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 interface Farmer {
   _id: string;
@@ -54,6 +55,7 @@ const calculateFarmerTotalBags = (stockSummary: StockSummary[]) => {
 const FarmerProfileScreen = () => {
   const location = useLocation();
   const { id } = useParams();
+  const navigate = useNavigate();
   const farmer = location.state?.farmer as Farmer;
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
 
@@ -95,7 +97,27 @@ const FarmerProfileScreen = () => {
 
               {/* Info */}
               <div className="flex-1 w-full text-center md:text-left">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">{farmer.name}</h1>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
+                  <h1 className="text-xl md:text-2xl font-bold text-gray-900">{farmer.name}</h1>
+                  <div className="flex items-center justify-center md:justify-end gap-3">
+                    <Button
+                      onClick={() => navigate(`/erp/incoming-order`, { state: { farmer } })}
+                      variant="outline"
+                      className="bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
+                    >
+                      <ArrowDownCircle className="mr-2 h-4 w-4 text-primary" />
+                      Incoming Order
+                    </Button>
+                    <Button
+                      onClick={() => navigate(`/erp/orders/outgoing/create`, { state: { farmer } })}
+                      variant="outline"
+                      className="bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
+                    >
+                      <ArrowUpCircle className="mr-2 h-4 w-4 text-primary" />
+                      Outgoing Order
+                    </Button>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-lg">
                     <Phone size={18} className="text-primary flex-shrink-0" />

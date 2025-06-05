@@ -166,7 +166,7 @@ const StoreAdminSignupForm = () => {
         isVerified: true,
         isMobile: true,
         preferences: {
-          bagSizes: data.bagSizes
+          bagSizes: data.bagSizes.map(size => size.charAt(0).toUpperCase() + size.slice(1))
         }
       });
     },

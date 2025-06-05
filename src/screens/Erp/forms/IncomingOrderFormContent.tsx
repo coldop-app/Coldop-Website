@@ -1,13 +1,21 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useNavigate, useLocation } from "react-router-dom";
+import { Plus, Loader2 } from "lucide-react";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
 import Loader from "@/components/common/Loader/Loader";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { cn } from "@/lib/utils";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -46,12 +54,27 @@ const AnimatedFormStep = ({ isVisible, children }: AnimatedFormStepProps) => {
 };
 
 interface BagQuantities {
-  ration: string;
-  seed: string;
-  number12: string;
-  goli: string;
-  cutTok: string;
+  [key: string]: string;  // Make it an index signature to accept any string key
 }
+
+// Helper function to format bag size label
+const formatBagSizeLabel = (bagSize: string): string => {
+  // Handle special cases first
+  if (bagSize === 'number-12') return 'Number-12';
+  if (bagSize === 'cut-tok') return 'Cut & Tok';
+
+  // For other cases, capitalize and format
+  return bagSize
+    .split('-')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+};
+
+// Helper function to convert bag size to field name
+const getBagSizeFieldName = (bagSize: string): string => {
+  // Convert from kebab-case to camelCase
+  return bagSize.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+};
 
 interface FormData {
   // Step 1
@@ -64,37 +87,101 @@ interface FormData {
   remarks: string;
 
   // Additional fields for API
-  voucherNumber: string;
+  voucherNumber: number;
   dateOfSubmission: string;
   variety: string;
 }
 
+interface CreateOrderPayload {
+  coldStorageId: string;
+  farmerId: string;
+  voucherNumber: number;
+  dateOfSubmission: string;
+  remarks: string;
+  orderDetails: {
+    variety: string;
+    bagSizes: {
+      size: string;
+      quantity: {
+        initialQuantity: number;
+        currentQuantity: number;
+      };
+    }[];
+    location: string;
+  }[];
+}
+
+interface ApiError extends Error {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}
+
+interface Farmer {
+  _id: string;
+  name: string;
+  address?: string;
+  mobileNumber?: string;
+}
+
 const IncomingOrderFormContent = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const farmer = location.state?.farmer as Farmer | undefined;
+
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormData>({
-    farmerName: "",
-    farmerId: "",
-    quantities: {
-      ration: "",
-      seed: "",
-      number12: "",
-      goli: "",
-      cutTok: ""
-    },
+    farmerName: farmer?.name || "",
+    farmerId: farmer?._id || "",
+    quantities: {},  // Initialize as empty object
     mainLocation: "",
     remarks: "",
-    voucherNumber: "",
+    voucherNumber: 0,
     dateOfSubmission: new Date().toISOString().split('T')[0],
-    variety: "K Pukhraj" // Default variety
+    variety: ""  // Changed to empty string initially
   });
+
+  // Fetch varieties
+  const { data: varietiesData, isLoading: isLoadingVarieties } = useQuery({
+    queryKey: ['varieties'],
+    queryFn: () => storeAdminApi.getVarieties(adminInfo?.token || ''),
+    enabled: !!adminInfo?.token,
+  });
+
+  // Initialize quantities based on admin preferences
+  useEffect(() => {
+    if (adminInfo?.preferences?.bagSizes) {
+      const initialQuantities: BagQuantities = {};
+      adminInfo.preferences.bagSizes.forEach(bagSize => {
+        const fieldName = getBagSizeFieldName(bagSize);
+        initialQuantities[fieldName] = "";
+      });
+      setFormData(prev => ({
+        ...prev,
+        quantities: initialQuantities
+      }));
+    }
+  }, [adminInfo?.preferences?.bagSizes]);
+
+  // Add useEffect to update form when farmer changes
+  useEffect(() => {
+    if (farmer) {
+      setFormData(prev => ({
+        ...prev,
+        farmerName: farmer.name,
+        farmerId: farmer._id
+      }));
+    }
+  }, [farmer]);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const updateQuantity = (bagType: keyof BagQuantities, value: string) => {
+  const updateQuantity = (bagType: string, value: string) => {
     // Only allow numbers
     const numericValue = value.replace(/\D/g, '');
     setFormData(prev => ({
@@ -107,20 +194,18 @@ const IncomingOrderFormContent = () => {
   };
 
   const calculateTotal = () => {
-    const { ration, seed, number12, goli, cutTok } = formData.quantities;
-    return (
-      (parseInt(ration) || 0) +
-      (parseInt(seed) || 0) +
-      (parseInt(number12) || 0) +
-      (parseInt(goli) || 0) +
-      (parseInt(cutTok) || 0)
-    );
+    return Object.values(formData.quantities)
+      .reduce((sum, quantity) => sum + (parseInt(quantity) || 0), 0);
   };
 
   const nextStep = () => {
     // Validate step 1
     if (!formData.farmerName.trim()) {
       toast.error("Please enter farmer name");
+      return;
+    }
+    if (!formData.variety) {
+      toast.error("Please select a variety");
       return;
     }
     if (calculateTotal() === 0) {
@@ -136,7 +221,7 @@ const IncomingOrderFormContent = () => {
 
   // Create incoming order mutation
   const createOrderMutation = useMutation({
-    mutationFn: async (orderData: any) => {
+    mutationFn: async (orderData: CreateOrderPayload) => {
       if (!adminInfo?.token) {
         throw new Error("No authentication token found");
       }
@@ -148,26 +233,25 @@ const IncomingOrderFormContent = () => {
       setFormData({
         farmerName: "",
         farmerId: "",
-        quantities: {
-          ration: "",
-          seed: "",
-          number12: "",
-          goli: "",
-          cutTok: ""
-        },
+        quantities: {},
         mainLocation: "",
         remarks: "",
-        voucherNumber: "",
+        voucherNumber: 0,
         dateOfSubmission: new Date().toISOString().split('T')[0],
-        variety: "K Pukhraj"
+        variety: ""
       });
       setCurrentStep(1);
       // Navigate back or to orders list
       navigate('/erp/daybook');
     },
-    onError: (error: any) => {
+    onError: (error: unknown) => {
       console.error("Error creating order:", error);
-      toast.error(error.response?.data?.message || "Failed to create order");
+      if (error instanceof Error) {
+        const apiError = error as ApiError;
+        toast.error(apiError.response?.data?.message || "Failed to create order");
+      } else {
+        toast.error("Failed to create order");
+      }
     }
   });
 
@@ -184,52 +268,22 @@ const IncomingOrderFormContent = () => {
     const voucherNumber = Math.floor(Math.random() * 100000);
 
     // Prepare order data according to API structure
-    const orderData = {
-      coldStorageId: adminInfo?.coldStorageId || "", // You might need to get this from admin info
-      farmerId: formData.farmerId || "temp-farmer-id", // You might need to handle farmer creation
+    const orderData: CreateOrderPayload = {
+      coldStorageId: adminInfo?._id || "",
+      farmerId: formData.farmerId || "temp-farmer-id",
       voucherNumber: voucherNumber,
       dateOfSubmission: formData.dateOfSubmission,
       remarks: formData.remarks,
       orderDetails: [
         {
           variety: formData.variety,
-          bagSizes: [
-            ...(formData.quantities.ration ? [{
-              size: "Ration",
-              quantity: {
-                initialQuantity: parseInt(formData.quantities.ration),
-                currentQuantity: parseInt(formData.quantities.ration)
-              }
-            }] : []),
-            ...(formData.quantities.seed ? [{
-              size: "Seed",
-              quantity: {
-                initialQuantity: parseInt(formData.quantities.seed),
-                currentQuantity: parseInt(formData.quantities.seed)
-              }
-            }] : []),
-            ...(formData.quantities.number12 ? [{
-              size: "Number-12",
-              quantity: {
-                initialQuantity: parseInt(formData.quantities.number12),
-                currentQuantity: parseInt(formData.quantities.number12)
-              }
-            }] : []),
-            ...(formData.quantities.goli ? [{
-              size: "Goli",
-              quantity: {
-                initialQuantity: parseInt(formData.quantities.goli),
-                currentQuantity: parseInt(formData.quantities.goli)
-              }
-            }] : []),
-            ...(formData.quantities.cutTok ? [{
-              size: "Cut-tok",
-              quantity: {
-                initialQuantity: parseInt(formData.quantities.cutTok),
-                currentQuantity: parseInt(formData.quantities.cutTok)
-              }
-            }] : [])
-          ].filter(bagSize => bagSize.quantity.initialQuantity > 0),
+          bagSizes: adminInfo?.preferences?.bagSizes?.map(bagSize => ({
+            size: bagSize,
+            quantity: {
+              initialQuantity: parseInt(formData.quantities[getBagSizeFieldName(bagSize)] || "0"),
+              currentQuantity: parseInt(formData.quantities[getBagSizeFieldName(bagSize)] || "0")
+            }
+          })).filter(bagSize => bagSize.quantity.initialQuantity > 0) || [],
           location: formData.mainLocation
         }
       ]
@@ -282,7 +336,7 @@ const IncomingOrderFormContent = () => {
       </div>
 
       <form onSubmit={handleSubmit}>
-        {/* Step 1: Farmer and Quantities */}
+        {/* Step 1: Farmer, Variety and Quantities */}
         <AnimatedFormStep isVisible={currentStep === 1}>
           {currentStep === 1 && (
             <div className="space-y-6">
@@ -297,85 +351,105 @@ const IncomingOrderFormContent = () => {
                     value={formData.farmerName}
                     onChange={(e) => updateFormData('farmerName', e.target.value)}
                     placeholder="Search or Create Farmer"
-                    className="flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                    className={`flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition ${farmer ? 'bg-gray-100' : ''}`}
                     required
+                    disabled={!!farmer}
                   />
-                  <button
-                    type="button"
-                    className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  {!farmer && (
+                    <button
+                      type="button"
+                      className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      <Plus size={18} />
+                      <span className="text-sm">New Farmer</span>
+                    </button>
+                  )}
+                </div>
+                {farmer && (
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Creating order for pre-selected farmer
+                  </p>
+                )}
+              </div>
+
+              {/* Variety Selection */}
+              <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+                <h3 className="text-lg font-medium mb-2">Select Variety</h3>
+                <p className="text-sm text-muted-foreground mb-4">Choose the potato variety for this order</p>
+
+                <div className="relative">
+                  <Select
+                    value={formData.variety}
+                    onValueChange={(value) => updateFormData('variety', value)}
+                    disabled={isLoadingVarieties}
                   >
-                    <Plus size={18} />
-                    <span className="text-sm">New Farmer</span>
-                  </button>
+                    <SelectTrigger className="w-full bg-background">
+                      {isLoadingVarieties ? (
+                        <div className="flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span>Loading varieties...</span>
+                        </div>
+                      ) : (
+                        <SelectValue placeholder="Select a variety" />
+                      )}
+                    </SelectTrigger>
+                    <SelectContent>
+                      {varietiesData?.varieties?.map((variety: string) => (
+                        <SelectItem key={variety} value={variety}>
+                          {variety}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
 
               {/* Quantities Section */}
-              <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+              <div className={cn(
+                "border rounded-lg p-4",
+                formData.variety
+                  ? "border-green-200 bg-green-50/50"
+                  : "border-muted bg-muted/5 opacity-75"
+              )}>
                 <h3 className="text-lg font-medium mb-2">Enter Quantities</h3>
-                <p className="text-sm text-muted-foreground mb-4">Set the quantities for each size</p>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {formData.variety
+                    ? "Set the quantities for each size"
+                    : "Please select a variety first to enter quantities"}
+                </p>
 
                 <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Ration/Table Bags</label>
-                    <input
-                      type="text"
-                      value={formData.quantities.ration}
-                      onChange={(e) => updateQuantity('ration', e.target.value)}
-                      placeholder="-"
-                      className="w-32 p-2 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
-                    />
-                  </div>
+                  {adminInfo?.preferences?.bagSizes?.map((bagSize) => {
+                    const fieldName = getBagSizeFieldName(bagSize);
 
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Seed Bags</label>
-                    <input
-                      type="text"
-                      value={formData.quantities.seed}
-                      onChange={(e) => updateQuantity('seed', e.target.value)}
-                      placeholder="300"
-                      className="w-32 p-2 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">No. 12 Seed Bags</label>
-                    <input
-                      type="text"
-                      value={formData.quantities.number12}
-                      onChange={(e) => updateQuantity('number12', e.target.value)}
-                      placeholder="200"
-                      className="w-32 p-2 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Goli Bags</label>
-                    <input
-                      type="text"
-                      value={formData.quantities.goli}
-                      onChange={(e) => updateQuantity('goli', e.target.value)}
-                      placeholder="700"
-                      className="w-32 p-2 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
-                    />
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Cut & Tok Bags</label>
-                    <input
-                      type="text"
-                      value={formData.quantities.cutTok}
-                      onChange={(e) => updateQuantity('cutTok', e.target.value)}
-                      placeholder="-"
-                      className="w-32 p-2 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
-                    />
-                  </div>
+                    return (
+                      <div key={bagSize} className="flex items-center justify-between">
+                        <label className="text-sm font-medium">{formatBagSizeLabel(bagSize)}</label>
+                        <input
+                          type="text"
+                          value={formData.quantities[fieldName] || ""}
+                          onChange={(e) => updateQuantity(fieldName, e.target.value)}
+                          placeholder="-"
+                          disabled={!formData.variety}
+                          className={cn(
+                            "w-32 p-2 border rounded-md bg-background text-center transition",
+                            formData.variety
+                              ? "focus:ring-2 focus:ring-primary focus:border-primary"
+                              : "cursor-not-allowed"
+                          )}
+                        />
+                      </div>
+                    );
+                  })}
 
                   <hr className="border-gray-300" />
 
                   <div className="flex items-center justify-between font-semibold">
                     <label className="text-sm">Total / Lot No.</label>
-                    <span className="text-lg">{calculateTotal()}</span>
+                    <span className={cn(
+                      "text-lg",
+                      !formData.variety && "text-muted-foreground"
+                    )}>{calculateTotal()}</span>
                   </div>
                 </div>
               </div>

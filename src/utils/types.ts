@@ -27,6 +27,8 @@ export interface StoreAdmin {
   imageUrl: string;
   password: string;
   coldStorageDetails: ColdStorageDetails;
+  coldStorageId: string;
+  token: string;
   registeredFarmers: string[]; // Array of Farmer IDs
   role: string;
   isVerified: boolean;
