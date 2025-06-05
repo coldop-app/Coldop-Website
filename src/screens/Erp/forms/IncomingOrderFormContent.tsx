@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Plus, Loader2 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import debounce from "lodash/debounce";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -130,18 +131,21 @@ const IncomingOrderFormContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const farmer = location.state?.farmer as Farmer | undefined;
-
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
+
   const [currentStep, setCurrentStep] = useState(1);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showDropdown, setShowDropdown] = useState(false);
+
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
     farmerId: farmer?._id || "",
-    quantities: {},  // Initialize as empty object
+    quantities: {},
     mainLocation: "",
     remarks: "",
     voucherNumber: 0,
     dateOfSubmission: new Date().toISOString().split('T')[0],
-    variety: ""  // Changed to empty string initially
+    variety: ""
   });
 
   // Fetch varieties
@@ -149,6 +153,23 @@ const IncomingOrderFormContent = () => {
     queryKey: ['varieties'],
     queryFn: () => storeAdminApi.getVarieties(adminInfo?.token || ''),
     enabled: !!adminInfo?.token,
+  });
+
+  // Create a debounced search function
+  const debouncedSearch = useCallback(
+    debounce((query: string) => {
+      if (query.length >= 2) {
+        refetch();
+      }
+    }, 300),
+    []
+  );
+
+  // Farmer search query
+  const { data: searchResults, isLoading: isSearching, refetch } = useQuery({
+    queryKey: ['searchFarmers', searchQuery],
+    queryFn: () => storeAdminApi.searchFarmers(adminInfo?._id || '', searchQuery, adminInfo?.token || ''),
+    enabled: false, // We'll manually trigger this with the debounced function
   });
 
   // Initialize quantities based on admin preferences
@@ -292,6 +313,38 @@ const IncomingOrderFormContent = () => {
     createOrderMutation.mutate(orderData);
   };
 
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setSearchQuery(value);
+    setFormData(prev => ({ ...prev, farmerName: value, farmerId: '' }));
+    setShowDropdown(true);
+    debouncedSearch(value);
+  };
+
+  const handleSelectFarmer = (selectedFarmer: Farmer) => {
+    setFormData(prev => ({
+      ...prev,
+      farmerName: selectedFarmer.name,
+      farmerId: selectedFarmer._id
+    }));
+    setSearchQuery(selectedFarmer.name);
+    setShowDropdown(false);
+  };
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.getElementById('farmer-search-dropdown');
+      const input = document.getElementById('farmer-search-input');
+      if (dropdown && input && !dropdown.contains(event.target as Node) && !input.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
   return (
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <h1 className="text-2xl font-bold text-center mb-6">Create Incoming Order</h1>
@@ -345,11 +398,13 @@ const IncomingOrderFormContent = () => {
                 <label className="block text-sm font-medium mb-2">
                   Enter Account Name (search and select)
                 </label>
-                <div className="flex gap-2 items-center">
+                <div className="flex gap-2 items-center relative">
                   <input
+                    id="farmer-search-input"
                     type="text"
-                    value={formData.farmerName}
-                    onChange={(e) => updateFormData('farmerName', e.target.value)}
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    onFocus={() => !farmer && setShowDropdown(true)}
                     placeholder="Search or Create Farmer"
                     className={`flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition ${farmer ? 'bg-gray-100' : ''}`}
                     required
@@ -363,6 +418,39 @@ const IncomingOrderFormContent = () => {
                       <Plus size={18} />
                       <span className="text-sm">New Farmer</span>
                     </button>
+                  )}
+
+                  {/* Search Results Dropdown */}
+                  {showDropdown && !farmer && (searchResults?.length > 0 || isSearching) && (
+                    <div
+                      id="farmer-search-dropdown"
+                      className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-50 bg-white rounded-md shadow-lg border border-gray-200"
+                    >
+                      {isSearching ? (
+                        <div className="flex items-center justify-center p-4">
+                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                        </div>
+                      ) : (
+                        <div className="py-1">
+                          {searchResults?.map((result: Farmer) => (
+                            <button
+                              key={result._id}
+                              type="button"
+                              className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                              onClick={() => handleSelectFarmer(result)}
+                            >
+                              <div className="font-medium">{result.name}</div>
+                              {(result.mobileNumber || result.address) && (
+                                <div className="text-sm text-gray-500">
+                                  {result.mobileNumber && <span>📱 {result.mobileNumber}</span>}
+                                  {result.address && <span className="ml-2">📍 {result.address}</span>}
+                                </div>
+                              )}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
                 {farmer && (

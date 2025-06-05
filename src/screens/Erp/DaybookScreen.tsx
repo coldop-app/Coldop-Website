@@ -6,6 +6,7 @@ import { format } from 'date-fns';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface BagSize {
   quantity: {
@@ -74,6 +75,7 @@ const DaybookScreen = () => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchReceiptNumber, setSearchReceiptNumber] = useState<string>('');
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
+  const navigate = useNavigate();
 
   const { data: searchData, isLoading: isSearchLoading, error: searchError } = useQuery({
     queryKey: ['searchReceipt', searchReceiptNumber],
@@ -342,7 +344,7 @@ const DaybookScreen = () => {
             </select>
             <div className="flex gap-2">
               <button
-                onClick={() => alert('incoming')}
+                onClick={() => navigate('/erp/incoming-order')}
                 className="w-full sm:w-auto px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-colors text-sm sm:text-base font-medium"
               >
                Add Incoming
