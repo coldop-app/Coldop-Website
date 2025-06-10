@@ -3,12 +3,14 @@ import { Link, useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { setCredentials } from "@/slices/authSlice";
 import Loader from "@/components/common/Loader/Loader";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import axios from "axios";
 
 const StoreAdminLoginForm = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
@@ -54,12 +56,12 @@ const StoreAdminLoginForm = () => {
 
   return (
     <div className="w-full max-w-md mx-auto p-5 sm:p-8 bg-background rounded-lg shadow-lg border border-border">
-      <h1 className="text-xl sm:text-2xl font-bold text-center mb-6">Store Admin Login</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-center mb-6">{t('storeAdminLogin.title')}</h1>
 
       <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
         <div>
           <label htmlFor="mobileNumber" className="block text-sm font-medium mb-1">
-            Mobile Number <span className="text-red-500">*</span>
+            {t('storeAdminLogin.mobileNumber')} <span className="text-red-500">*</span>
           </label>
           <input
             type="tel"
@@ -69,13 +71,13 @@ const StoreAdminLoginForm = () => {
             onChange={updateFormData}
             className="w-full p-3 border border-border rounded-md bg-background"
             required
-            placeholder="Enter your mobile number"
+            placeholder={t('storeAdminLogin.mobileNumberPlaceholder')}
           />
         </div>
 
         <div>
           <label htmlFor="password" className="block text-sm font-medium mb-1">
-            Password <span className="text-red-500">*</span>
+            {t('storeAdminLogin.password')} <span className="text-red-500">*</span>
           </label>
           <input
             type="password"
@@ -85,7 +87,7 @@ const StoreAdminLoginForm = () => {
             onChange={updateFormData}
             className="w-full p-3 border border-border rounded-md bg-background"
             required
-            placeholder="Enter your password"
+            placeholder={t('storeAdminLogin.passwordPlaceholder')}
           />
         </div>
 
@@ -100,12 +102,12 @@ const StoreAdminLoginForm = () => {
               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
             />
             <label htmlFor="rememberMe" className="ml-2 text-sm font-medium">
-              Remember me
+              {t('storeAdminLogin.rememberMe')}
             </label>
           </div>
 
           <a href="#" className="text-sm text-green-600 hover:underline text-right sm:text-left">
-            Forgot password?
+            {t('storeAdminLogin.forgotPassword')}
           </a>
         </div>
 
@@ -117,19 +119,19 @@ const StoreAdminLoginForm = () => {
           {loginMutation.isPending ? (
             <div className="flex items-center justify-center">
               <Loader size="sm" className="mr-2" />
-              <span>Signing in...</span>
+              <span>{t('storeAdminLogin.signingIn')}</span>
             </div>
           ) : (
-            "Sign in"
+            t('storeAdminLogin.signIn')
           )}
         </button>
       </form>
 
       <div className="mt-6 text-center">
         <p className="text-sm text-muted-foreground">
-          Don't have an account?{" "}
+          {t('storeAdminLogin.noAccount')}{" "}
           <Link to="/signup/store-admin" className="text-green-600 hover:underline font-medium">
-            Sign up
+            {t('storeAdminLogin.signUp')}
           </Link>
         </p>
       </div>

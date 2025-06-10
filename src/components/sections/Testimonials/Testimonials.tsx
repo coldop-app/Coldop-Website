@@ -1,11 +1,16 @@
-import { TestimonialsData } from "@/screens/homeScreenData";
+import { useTranslation } from "react-i18next";
+
+interface TestimonialsProps {
+  testimonials: { image: string; alt: string }[];
+  galleryImages: { src: string; alt: string }[];
+}
 
 const Testimonials = ({
-  title,
-  heading,
   testimonials,
   galleryImages
-}: TestimonialsData) => {
+}: TestimonialsProps) => {
+  const { t } = useTranslation();
+
   return (
     <>
       <section
@@ -14,10 +19,10 @@ const Testimonials = ({
       >
         <div className="testimonials-container  px-8  py-24 lg:px-28 lg:py-44">
           <span className="subheading mb-4 block text-base font-medium uppercase tracking-[0.075rem] text-foreground lg:text-lg">
-            {title}
+            {t('testimonials.title')}
           </span>
           <h2 className="heading-secondary mb-8 text-3xl font-bold tracking-tighter text-[#333] md:text-5xl">
-            {heading}
+            {t('testimonials.heading')}
           </h2>
 
           <div className="testimonials grid grid-cols-1 gap-x-20 gap-y-12 md:grid-cols-2 ">
@@ -29,10 +34,10 @@ const Testimonials = ({
                   src={testimonial.image}
                 />
                 <blockquote className="testimonial-text mb-4 text-base leading-[1.8] ">
-                  {testimonial.quote}
+                  {t(`testimonials.testimonials.${index}.quote`)}
                 </blockquote>
                 <p className="testimonial-name text-base text-[#6f6f6f]">
-                  &mdash; {testimonial.name}
+                  &mdash; {t(`testimonials.testimonials.${index}.name`)}
                 </p>
               </figure>
             ))}

@@ -1,14 +1,16 @@
 import { Link, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { BookOpen, Users, BarChart2, Settings } from 'lucide-react';
 
 const ErpFooter= () => {
+  const { t } = useTranslation();
   const location = useLocation();
 
   const navItems = [
-    { path: '/daybook', label: 'Daybook', icon: BookOpen },
-    { path: '/people', label: 'People', icon: Users },
-    { path: '/analytics', label: 'Analytics', icon: BarChart2 },
-    { path: '/settings', label: 'Settings', icon: Settings },
+    { path: '/daybook', labelKey: 'erpFooter.daybook', icon: BookOpen },
+    { path: '/people', labelKey: 'erpFooter.people', icon: Users },
+    { path: '/analytics', labelKey: 'erpFooter.analytics', icon: BarChart2 },
+    { path: '/settings', labelKey: 'erpFooter.settings', icon: Settings },
   ];
 
   return (
@@ -27,7 +29,7 @@ const ErpFooter= () => {
                   ${isActive ? 'text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
               >
                 <Icon className="w-6 h-6" />
-                <span className="text-xs mt-1">{item.label}</span>
+                <span className="text-xs mt-1">{t(item.labelKey)}</span>
               </Link>
             );
           })}
