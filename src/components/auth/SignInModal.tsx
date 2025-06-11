@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -14,15 +15,16 @@ interface SignInModalProps {
 }
 
 const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
+  const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState<"farmer" | "store-admin" | null>(null);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="mb-6">
-          <DialogTitle className="text-center text-2xl font-bold">Sign in as</DialogTitle>
+          <DialogTitle className="text-center text-2xl font-bold">{t('signInModal.title')}</DialogTitle>
           <DialogDescription className="text-center pt-2">
-            Choose your account type to sign in
+            {t('signInModal.description')}
           </DialogDescription>
         </DialogHeader>
 
@@ -41,7 +43,7 @@ const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
                 <circle cx="12" cy="8" r="4"></circle>
               </svg>
             </div>
-            <span className="font-medium text-lg">Farmer</span>
+            <span className="font-medium text-lg">{t('signInModal.farmer')}</span>
           </button>
 
           <button
@@ -60,7 +62,7 @@ const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
                 <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
               </svg>
             </div>
-            <span className="font-medium text-lg">Store Admin</span>
+            <span className="font-medium text-lg">{t('signInModal.storeAdmin')}</span>
           </button>
         </div>
 
@@ -71,19 +73,19 @@ const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
               className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary w-full text-center"
               onClick={onClose}
             >
-              Continue
+              {t('signInModal.continue')}
             </Link>
           )}
         </div>
 
         <div className="mt-4 text-center text-sm">
-          <span className="text-muted-foreground">Don't have an account?</span>{" "}
+          <span className="text-muted-foreground">{t('signInModal.noAccount')}</span>{" "}
           <Link
             to="/signup"
             className="text-primary hover:underline font-medium"
             onClick={onClose}
           >
-            Sign up
+            {t('signInModal.signUp')}
           </Link>
         </div>
       </DialogContent>

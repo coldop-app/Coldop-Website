@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 import {
   Sheet,
@@ -9,10 +10,12 @@ import {
   SheetClose
 } from "@/components/ui/sheet";
 import SignInModal from "@/components/auth/SignInModal";
+import LanguageSelector from "@/components/common/LanguageSelector/LanguageSelector";
 import { Link } from "react-router-dom";
 import { Menu } from "lucide-react";
 
 const Navbar = () => {
+  const { t } = useTranslation();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isFullySticky, setIsFullySticky] = useState(false);
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
@@ -105,7 +108,7 @@ const Navbar = () => {
                           onClick={() => handleSectionClick('how-it-works')}
                           className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
                         >
-                          How it works
+                          {t('nav.howItWorks')}
                         </button>
                       </li>
                       <li>
@@ -113,7 +116,7 @@ const Navbar = () => {
                           onClick={() => handleSectionClick('testimonials')}
                           className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
                         >
-                          Testimonials
+                          {t('nav.testimonials')}
                         </button>
                       </li>
                       <li>
@@ -121,7 +124,7 @@ const Navbar = () => {
                           onClick={() => handleSectionClick('pricing')}
                           className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
                         >
-                          Pricing
+                          {t('nav.pricing')}
                         </button>
                       </li>
                       <li>
@@ -129,8 +132,11 @@ const Navbar = () => {
                           onClick={() => handleSectionClick('about')}
                           className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
                         >
-                          About
+                          {t('nav.about')}
                         </button>
+                      </li>
+                      <li>
+                        <LanguageSelector isMobile={true} />
                       </li>
                       <li>
                         <SheetClose asChild>
@@ -138,7 +144,7 @@ const Navbar = () => {
                             onClick={openSignInModal}
                             className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
                           >
-                            Sign in
+                            {t('nav.signIn')}
                           </button>
                         </SheetClose>
                       </li>
@@ -166,7 +172,7 @@ const Navbar = () => {
                 onClick={() => handleSectionClick('how-it-works')}
                 className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
               >
-                How it works
+                {t('nav.howItWorks')}
               </button>
             </li>
             <li>
@@ -174,7 +180,7 @@ const Navbar = () => {
                 onClick={() => handleSectionClick('testimonials')}
                 className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
               >
-                Testimonials
+                {t('nav.testimonials')}
               </button>
             </li>
             <li>
@@ -182,7 +188,7 @@ const Navbar = () => {
                 onClick={() => handleSectionClick('pricing')}
                 className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
               >
-                Pricing
+                {t('nav.pricing')}
               </button>
             </li>
             <li>
@@ -190,15 +196,18 @@ const Navbar = () => {
                 onClick={() => handleSectionClick('about')}
                 className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
               >
-                About
+                {t('nav.about')}
               </button>
+            </li>
+            <li>
+              <LanguageSelector />
             </li>
             <li>
               <button
                 onClick={openSignInModal}
                 className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
               >
-                Sign in
+                {t('nav.signIn')}
               </button>
             </li>
           </ul>

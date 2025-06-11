@@ -1,4 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Home, ShoppingBag, Users, Settings } from "lucide-react";
@@ -8,12 +9,13 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ className }: SidebarProps) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const menuItems = [
-    { icon: Home, label: "Daybook", href: "/erp/daybook" },
-    { icon: Users, label: "People", href: "/erp/people" },
-    { icon: ShoppingBag, label: "Analytics", href: "/erp/analytics" },
-    { icon: Settings, label: "Settings", href: "/erp/settings" },
+    { icon: Home, labelKey: "erpFooter.daybook", href: "/erp/daybook" },
+    { icon: Users, labelKey: "erpFooter.people", href: "/erp/people" },
+    { icon: ShoppingBag, labelKey: "erpFooter.analytics", href: "/erp/analytics" },
+    { icon: Settings, labelKey: "erpFooter.settings", href: "/erp/settings" },
   ];
 
   const SidebarContent = () => (
@@ -37,7 +39,7 @@ const Sidebar = ({ className }: SidebarProps) => {
               )}
             >
               <item.icon className="h-5 w-5" />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           ))}
         </div>

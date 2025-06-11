@@ -7,6 +7,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 
 interface BagSize {
   quantity: {
@@ -69,6 +70,7 @@ interface SearchResponse {
 }
 
 const DaybookScreen = () => {
+  const { t } = useTranslation();
   const [sortBy, setSortBy] = useState<SortOrder>('latest');
   const [type, setType] = useState<OrderType>('all');
   const [currentPage, setCurrentPage] = useState(1);
@@ -177,21 +179,21 @@ const DaybookScreen = () => {
           {/* Left side - Entries info and page size selector */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
             <span className="text-xs sm:text-sm text-gray-600">
-              Showing <span className="font-medium">{((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}</span> to{' '}
+              {t('daybook.showing')} <span className="font-medium">{((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}</span> {t('daybook.to')}{' '}
               <span className="font-medium">
                 {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
               </span>{' '}
-              of <span className="font-medium">{pagination.totalItems}</span> entries
+              {t('daybook.of')} <span className="font-medium">{pagination.totalItems}</span> {t('daybook.entries')}
             </span>
             <select
               value={itemsPerPage}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
               className="w-full sm:w-auto px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             >
-              <option value={5}>5 per page</option>
-              <option value={10}>10 per page</option>
-              <option value={20}>20 per page</option>
-              <option value={50}>50 per page</option>
+              <option value={5}>5 {t('daybook.perPage')}</option>
+              <option value={10}>10 {t('daybook.perPage')}</option>
+              <option value={20}>20 {t('daybook.perPage')}</option>
+              <option value={50}>50 {t('daybook.perPage')}</option>
             </select>
           </div>
 
@@ -202,7 +204,7 @@ const DaybookScreen = () => {
               onClick={() => setCurrentPage(1)}
               disabled={!pagination.hasPreviousPage}
               className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label="First page"
+              aria-label={t('daybook.firstPage')}
             >
               <ChevronsLeft size={14} className="text-gray-600" />
             </button>
@@ -212,7 +214,7 @@ const DaybookScreen = () => {
               onClick={() => setCurrentPage(pagination.previousPage!)}
               disabled={!pagination.hasPreviousPage}
               className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label="Previous page"
+              aria-label={t('daybook.previousPage')}
             >
               <ChevronLeft size={14} className="text-gray-600" />
             </button>
@@ -242,7 +244,7 @@ const DaybookScreen = () => {
               onClick={() => setCurrentPage(pagination.nextPage!)}
               disabled={!pagination.hasNextPage}
               className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label="Next page"
+              aria-label={t('daybook.nextPage')}
             >
               <ChevronRight size={14} className="text-gray-600" />
             </button>
@@ -252,7 +254,7 @@ const DaybookScreen = () => {
               onClick={() => setCurrentPage(pagination.totalPages)}
               disabled={!pagination.hasNextPage}
               className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label="Last page"
+              aria-label={t('daybook.lastPage')}
             >
               <ChevronsRight size={14} className="text-gray-600" />
             </button>
@@ -265,7 +267,7 @@ const DaybookScreen = () => {
   if (isLoading && !orders.length) {
     return (
       <>
-        <TopBar title="Daybook" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+        <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
@@ -276,9 +278,9 @@ const DaybookScreen = () => {
   if (error) {
     return (
       <>
-        <TopBar title="Daybook" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+        <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <div className="text-red-500">Error loading daybook data</div>
+          <div className="text-red-500">{t('daybook.errorLoading')}</div>
         </div>
       </>
     );
@@ -286,13 +288,13 @@ const DaybookScreen = () => {
 
   return (
     <>
-      <TopBar title="Daybook" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+      <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
       <div className="p-4 sm:p-6">
         {/* Header with total count */}
         <div className="mb-4 sm:mb-6">
           {pagination && (
             <p className="text-sm sm:text-base font-medium text-gray-600">
-              Total: {pagination.totalItems} orders
+              {t('daybook.totalOrders')}: {pagination.totalItems} {t('daybook.orders')}
             </p>
           )}
         </div>
@@ -306,7 +308,7 @@ const DaybookScreen = () => {
                 type="number"
                 value={searchReceiptNumber}
                 onChange={(e) => setSearchReceiptNumber(e.target.value)}
-                placeholder="Search by receipt number..."
+                placeholder={t('daybook.searchPlaceholder')}
                 className="w-full px-4 py-2 pl-10 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -329,9 +331,9 @@ const DaybookScreen = () => {
               className="w-full sm:w-auto px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
               disabled={searchReceiptNumber !== ''}
             >
-              <option value="all">All Orders</option>
-              <option value="incoming">Incoming</option>
-              <option value="outgoing">Outgoing</option>
+              <option value="all">{t('daybook.allOrders')}</option>
+              <option value="incoming">{t('daybook.incoming')}</option>
+              <option value="outgoing">{t('daybook.outgoing')}</option>
             </select>
             <select
               value={sortBy}
@@ -339,21 +341,21 @@ const DaybookScreen = () => {
               className="w-full sm:w-auto px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
               disabled={searchReceiptNumber !== ''}
             >
-              <option value="latest">Latest First</option>
-              <option value="oldest">Oldest First</option>
+              <option value="latest">{t('daybook.latestFirst')}</option>
+              <option value="oldest">{t('daybook.oldestFirst')}</option>
             </select>
             <div className="flex gap-2">
               <button
                 onClick={() => navigate('/erp/incoming-order')}
                 className="w-full sm:w-auto px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-colors text-sm sm:text-base font-medium"
               >
-               Add Incoming
+               {t('daybook.addIncoming')}
               </button>
               <button
                 onClick={() => alert('outgoing')}
                 className="w-full sm:w-auto px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-colors text-sm sm:text-base font-medium"
               >
-                Add Outgoing
+                {t('daybook.addOutgoing')}
               </button>
             </div>
           </div>
@@ -365,7 +367,7 @@ const DaybookScreen = () => {
             <p className="text-sm sm:text-base text-red-600">
               {searchError instanceof Error
                 ? searchError.message
-                : 'Error searching for receipt. Please try again.'}
+                : t('daybook.searchError')}
             </p>
           </div>
         )}
@@ -374,7 +376,7 @@ const DaybookScreen = () => {
         {isSearchLoading && (
           <div className="flex items-center justify-center py-4">
             <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-blue-500"></div>
-            <span className="ml-2 text-sm sm:text-base text-gray-600">Searching...</span>
+            <span className="ml-2 text-sm sm:text-base text-gray-600">{t('daybook.searching')}</span>
           </div>
         )}
 
@@ -382,7 +384,7 @@ const DaybookScreen = () => {
         <div className="space-y-4">
           {orders.length === 0 && !isLoading && !isSearchLoading ? (
             <div className="text-center py-8 text-sm sm:text-base text-gray-500">
-              {searchReceiptNumber ? 'No receipt found with this number.' : 'No orders found for the selected filters.'}
+              {searchReceiptNumber ? t('daybook.noReceiptFound') : t('daybook.noOrdersFound')}
             </div>
           ) : (
             orders.map((order: Order) => (
@@ -396,7 +398,7 @@ const DaybookScreen = () => {
                     <p className="text-xs sm:text-sm text-gray-600">{formatDate(order.dateOfSubmission)}</p>
                   </div>
                   <div className="text-left sm:text-right">
-                    <p className="text-xs sm:text-sm text-gray-600">Current Stock</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{t('daybook.currentStock')}</p>
                     <p className="text-base sm:text-lg font-semibold">{order.currentStockAtThatTime}</p>
                   </div>
                 </div>
@@ -405,7 +407,7 @@ const DaybookScreen = () => {
                   <div key={index} className="mt-4 border-t pt-4">
                     <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
                       <h4 className="text-sm sm:text-base font-medium">{detail.variety}</h4>
-                      <span className="text-xs sm:text-sm text-gray-600">Location: {detail.location}</span>
+                      <span className="text-xs sm:text-sm text-gray-600">{t('daybook.location')}: {detail.location}</span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
                       {detail.bagSizes.map((bagSize, idx) => (
@@ -422,7 +424,7 @@ const DaybookScreen = () => {
 
                 {order.remarks && (
                   <div className="mt-4 pt-4 border-t">
-                    <p className="text-xs sm:text-sm text-gray-600">Remarks: {order.remarks}</p>
+                    <p className="text-xs sm:text-sm text-gray-600">{t('daybook.remarks')}: {order.remarks}</p>
                   </div>
                 )}
               </div>

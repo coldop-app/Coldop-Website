@@ -31,25 +31,31 @@ const HomeScreen = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
       >
-        <Hero {...heroData} />
+        <Hero 
+          customerImages={heroData.customerImages}
+          heroImage={heroData.heroImage}
+        />
       </motion.div>
       <motion.div
         id="how-it-works"
         {...fadeInUp}
       >
-        <HowItWorks {...howItWorksData}/>
+        <HowItWorks steps={howItWorksData.steps} />
       </motion.div>
       <motion.div
         id="testimonials"
         {...fadeInUp}
       >
-        <Testimonials {...testimonialsData} />
+        <Testimonials 
+          testimonials={testimonialsData.testimonials}
+          galleryImages={testimonialsData.galleryImages}
+        />
       </motion.div>
       <motion.div
         id="pricing"
         {...fadeInUp}
       >
-        <Pricing {...pricingData} />
+        <Pricing plans={pricingData.plans} />
       </motion.div>
       <motion.div
         id="about"
