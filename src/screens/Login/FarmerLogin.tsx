@@ -1,5 +1,5 @@
-import Navbar from "@/components/common/Navbar";
-import Footer from "@/components/common/Footer";
+import Navbar from "@/components/common/Navbar/Navbar";
+import Footer from "@/components/common/Footer/Footer";
 import FarmerLoginForm from "@/components/auth/FarmerLoginForm";
 import { footerData } from "../homeScreenData";
 

@@ -1,11 +1,13 @@
 import { useState, useEffect, ReactNode, useRef, RefObject } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Check, X, Trash2, Plus, Phone } from "lucide-react";
-import { BASE_URL } from "@/utils/const";
 import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
 import toast from "react-hot-toast";
-import Loader from "@/components/common/Loader";
+import Loader from "@/components/common/Loader/Loader";
+import { useDispatch } from "react-redux";
+import { setCredentials } from "@/slices/authSlice";
+import { storeAdminApi } from "@/lib/api/storeAdmin";
+import axios from "axios";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -46,6 +48,7 @@ const AnimatedFormStep = ({ isVisible, children }: AnimatedFormStepProps) => {
 
 const StoreAdminSignupForm = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState({
     // Personal details
@@ -82,8 +85,6 @@ const StoreAdminSignupForm = () => {
   // Ref to store the resend timer interval id
   const resendTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
 
   const otpInputRefs: RefObject<HTMLInputElement | null>[] = [
@@ -96,23 +97,6 @@ const StoreAdminSignupForm = () => {
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleBagSizeToggle = (bagSize: string) => {
-    setFormData(prev => {
-      const currentBagSizes = [...prev.bagSizes];
-      if (currentBagSizes.includes(bagSize)) {
-        return {
-          ...prev,
-          bagSizes: currentBagSizes.filter(size => size !== bagSize)
-        };
-      } else {
-        return {
-          ...prev,
-          bagSizes: [...currentBagSizes, bagSize]
-        };
-      }
-    });
   };
 
   const handleAddBagSize = () => {
@@ -166,6 +150,43 @@ const StoreAdminSignupForm = () => {
     setEditingValue("");
   };
 
+  // Add mutation for account creation
+  const createAccountMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      return storeAdminApi.register({
+        name: data.name,
+        personalAddress: data.personalAddress,
+        mobileNumber: data.mobileNumber,
+        coldStorageName: data.coldStorageName,
+        coldStorageAddress: data.coldStorageAddress,
+        coldStorageContactNumber: data.coldStorageContactNumber,
+        capacity: data.capacity ? parseInt(data.capacity) : undefined,
+        password: data.password,
+        imageUrl: data.imageUrl || "",
+        isVerified: true,
+        isMobile: true,
+        preferences: {
+          bagSizes: data.bagSizes.map(size => size.charAt(0).toUpperCase() + size.slice(1))
+        }
+      });
+    },
+    onSuccess: (data) => {
+      dispatch(setCredentials(data.data));
+      toast.success("Account created successfully!");
+      setTimeout(() => {
+        navigate('/erp/daybook');
+      }, 1000);
+    },
+    onError: (error: unknown) => {
+      console.error("Error creating account:", error);
+      if (axios.isAxiosError(error)) {
+        toast.error(error.response?.data?.message || "Failed to create account");
+      } else {
+        toast.error("Failed to create account");
+      }
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -181,50 +202,7 @@ const StoreAdminSignupForm = () => {
       return;
     }
 
-    setIsSubmitting(true);
-    try {
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/register`,
-        {
-          name: formData.name,
-          personalAddress: formData.personalAddress,
-          mobileNumber: formData.mobileNumber,
-          coldStorageName: formData.coldStorageName,
-          coldStorageAddress: formData.coldStorageAddress,
-          coldStorageContactNumber: formData.coldStorageContactNumber,
-          capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
-          password: formData.password,
-          imageUrl: formData.imageUrl || "",
-          isVerified: true,
-          isMobile: true,
-          preferences: {
-            bagSizes: formData.bagSizes
-          }
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        }
-      );
-
-      if (response.data) {
-        toast.success("Account created successfully!");
-        // Add a small delay before navigation to show the success message
-        setTimeout(() => {
-          navigate('/erp/daybook');
-        }, 1000);
-      }
-    } catch (error: unknown) {
-      console.error("Error creating account:", error);
-      if (axios.isAxiosError(error)) {
-        toast.error(error.response?.data?.message || "Failed to create account");
-      } else {
-        toast.error("Failed to create account");
-      }
-    } finally {
-      setIsSubmitting(false);
-    }
+    createAccountMutation.mutate(formData);
   };
 
   const nextStep = () => {
@@ -238,19 +216,7 @@ const StoreAdminSignupForm = () => {
   // Add mutation for editing mobile number
   const editMobileMutation = useMutation({
     mutationFn: async (mobileNumber: string) => {
-      const formData = new URLSearchParams();
-      formData.append('mobileNumber', mobileNumber);
-
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/edit-mobile`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      return response.data;
+      return storeAdminApi.editMobile(mobileNumber);
     },
     onSuccess: () => {
       setIsMobileVerified(false);
@@ -281,19 +247,7 @@ const StoreAdminSignupForm = () => {
   // Add mutation for sending OTP
   const sendOtpMutation = useMutation({
     mutationFn: async (mobileNumber: string) => {
-      const formData = new URLSearchParams();
-      formData.append('mobileNumber', mobileNumber);
-
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/send-otp`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      return response.data;
+      return storeAdminApi.sendOtp(mobileNumber);
     },
     onSuccess: () => {
       setShowOtpInput(true);
@@ -343,20 +297,7 @@ const StoreAdminSignupForm = () => {
   // Add mutation for verifying OTP
   const verifyOtpMutation = useMutation({
     mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
-      const formData = new URLSearchParams();
-      formData.append('mobileNumber', mobileNumber);
-      formData.append('enteredOtp', otp);
-
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/verify-mobile`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      return response.data;
+      return storeAdminApi.verifyOtp(mobileNumber, otp);
     },
     onSuccess: () => {
       setIsMobileVerified(true);
@@ -383,19 +324,7 @@ const StoreAdminSignupForm = () => {
   // Add mutation for resending OTP
   const resendOtpMutation = useMutation({
     mutationFn: async (mobileNumber: string) => {
-      const formData = new URLSearchParams();
-      formData.append('mobileNumber', mobileNumber);
-
-      const response = await axios.post(
-        `${BASE_URL}/api/store-admin/resend-otp`,
-        formData,
-        {
-          headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
-          },
-        }
-      );
-      return response.data;
+      return storeAdminApi.resendOtp(mobileNumber);
     },
     onSuccess: () => {
       setCanResendOtp(false);
@@ -814,16 +743,8 @@ const StoreAdminSignupForm = () => {
                   {[...new Set([...defaultBagSizes, ...formData.bagSizes])].map((size) => (
                     <div
                       key={size}
-                      className="flex items-center group gap-2 sm:gap-3 py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-2 sm:gap-3 py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
                     >
-                      <input
-                        type="checkbox"
-                        id={size}
-                        checked={formData.bagSizes.includes(size)}
-                        onChange={() => handleBagSizeToggle(size)}
-                        className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
-                        disabled={editingBagSize !== null && editingBagSize !== size}
-                      />
                       {editingBagSize === size ? (
                         <>
                           <input
@@ -856,28 +777,26 @@ const StoreAdminSignupForm = () => {
                         </>
                       ) : (
                         <>
-                          <label htmlFor={size} className="ml-2 text-sm font-medium flex-1 truncate">
+                          <label className="ml-2 text-sm font-medium flex-1 truncate">
                             {size.charAt(0).toUpperCase() + size.slice(1).replace(/-/g, " ")}
                           </label>
                           <button
                             type="button"
                             onClick={() => handleEditBagSize(size)}
-                            className="ml-1 p-1 rounded hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400 opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
+                            className="ml-1 p-1 rounded hover:bg-blue-100 text-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-400"
                             aria-label="Edit"
                           >
                             <Pencil size={18} />
                           </button>
-                          {!defaultBagSizes.includes(size) && (
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveCustomBagSize(size)}
-                              className="ml-1 p-1 rounded hover:bg-red-100 text-red-500 focus:outline-none focus:ring-2 focus:ring-red-400 opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                              aria-label="Remove"
-                              title="Remove custom bag size"
-                            >
-                              <Trash2 size={18} />
-                            </button>
-                          )}
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCustomBagSize(size)}
+                            className="ml-1 p-1 rounded hover:bg-red-100 text-red-500 focus:outline-none focus:ring-2 focus:ring-red-400"
+                            aria-label="Remove"
+                            title="Remove bag size"
+                          >
+                            <Trash2 size={18} />
+                          </button>
                         </>
                       )}
                     </div>
@@ -910,7 +829,6 @@ const StoreAdminSignupForm = () => {
                   onClick={prevStep}
                   className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                   style={{ minWidth: 0 }}
-                  disabled={isSubmitting}
                 >
                   Back
                 </button>
@@ -918,9 +836,9 @@ const StoreAdminSignupForm = () => {
                   type="submit"
                   className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
                   style={{ minWidth: 0 }}
-                  disabled={isSubmitting}
+                  disabled={createAccountMutation.isPending}
                 >
-                  {isSubmitting ? (
+                  {createAccountMutation.isPending ? (
                     <div className="flex items-center justify-center">
                       <Loader size="sm" className="mr-2" />
                       <span>Creating Account...</span>

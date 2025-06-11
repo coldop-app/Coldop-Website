@@ -29,11 +29,11 @@ export interface HeroData {
 // //The complete cold storage management platform.
 // Mobile app, web dashboard, WhatsApp updates, and instant receipt printing — all in one system.
 export const heroData: HeroData = {
-  heading: "The complete cold storage management platform.",
-  description: "Mobile app, Web Dashboard, WhatsApp Updates, and Instant Receipt Printing, all in one system.                                                                                   Stay connected and in control. Anytime, Anywhere.",
+  heading: "The Complete Cold Storage Management Platform.",
+  description: "Mobile app, web dashboard, WhatsApp updates, and instant receipt printing — all in one system. Stay connected and in control. Anytime, anywhere.",
   ctaButtons: [
-    { text: "Start managing", link: "#" },
-    { text: "How it works ↓", link: "#" }
+    { text: "Start Managing", link: "#" },
+    { text: "How It Works ↓", link: "#" }
   ],
   customerImages: [
     { src: "./customers/customer-1.jpg", alt: "Customer photo" },

@@ -1,4 +1,4 @@
-import { StrictMode } from "react";
+import { StrictMode, Suspense, lazy } from "react";
 import { createRoot } from "react-dom/client";
 import {
   createBrowserRouter,
@@ -11,24 +11,98 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import store from "./store.ts";
 import "./index.css";
 import App from "./App.tsx";
-import HomeScreen from "./screens/HomeScreen/HomeScreen.tsx";
-import StoreAdminSignup from "./screens/Signup/StoreAdminSignup.tsx";
-import StoreAdminLogin from "./screens/Login/StoreAdminLogin.tsx";
-import FarmerLogin from "./screens/Login/FarmerLogin.tsx";
-import DaybookScreen from "./screens/Erp/DaybookScreen.tsx";
+import PrivateRoute from "./components/auth/PrivateRoute.tsx";
+import ERPLayout from "./components/layouts/ERPLayout.tsx";
+import NotFound from "./screens/NotFound/NotFound";
+import Error from "./screens/Error/Error";
+import IncomingOrderForm from "./screens/Erp/IncomingOrderForm.tsx";
+import OutgoingOrderForm from "./screens/Erp/OutgoingOrderForm.tsx";
+
+// Lazy load components
+const HomeScreen = lazy(() => import("./screens/HomeScreen/HomeScreen.tsx"));
+const StoreAdminSignup = lazy(() => import("./screens/Signup/StoreAdminSignup.tsx"));
+const StoreAdminLogin = lazy(() => import("./screens/Login/StoreAdminLogin.tsx"));
+const FarmerLogin = lazy(() => import("./screens/Login/FarmerLogin.tsx"));
+const DaybookScreen = lazy(() => import("./screens/Erp/DaybookScreen.tsx"));
+const PeopleScreen = lazy(() => import("./screens/Erp/PeopleScreen.tsx"));
+const FarmerProfileScreen = lazy(() => import("./screens/Erp/FarmerProfileScreen.tsx"));
+const ColdStorageSummaryScreen = lazy(() => import("./screens/Erp/ColdStorageSummaryScreen.tsx"));
+
+// Loading component
+const LoadingFallback = () => (
+  <div className="flex items-center justify-center min-h-screen">
+    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  </div>
+);
 
 // Initialize the Query Client
 const queryClient = new QueryClient();
 
 const router = createBrowserRouter(
   createRoutesFromElements(
-    <Route path="/" element={<App />}>
-      <Route index element={<HomeScreen />} />
-      <Route path="signup" element={<StoreAdminSignup />} />
-      <Route path="signup/store-admin" element={<StoreAdminSignup />} />
-      <Route path="login/store-admin" element={<StoreAdminLogin />} />
-      <Route path="login/farmer" element={<FarmerLogin />} />
-      <Route path="erp/daybook" element={<DaybookScreen />} />
+    <Route path="/" element={<App />} errorElement={<Error />}>
+        <Route index element={
+          <Suspense fallback={<LoadingFallback />}>
+            <HomeScreen />
+          </Suspense>
+        } />
+        <Route path="signup" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <StoreAdminSignup />
+          </Suspense>
+        } />
+        <Route path="signup/store-admin" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <StoreAdminSignup />
+          </Suspense>
+        } />
+        <Route path="login/store-admin" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <StoreAdminLogin />
+          </Suspense>
+        } />
+        <Route path="login/farmer" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <FarmerLogin />
+          </Suspense>
+        } />
+      <Route path="" element={<PrivateRoute />}>
+        <Route path="erp" element={<ERPLayout />}>
+          <Route path="daybook" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <DaybookScreen />
+            </Suspense>
+          } />
+          <Route path="people" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <PeopleScreen />
+            </Suspense>
+          } />
+          <Route path="people/:id" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <FarmerProfileScreen />
+            </Suspense>
+          } />
+          <Route path="analytics" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ColdStorageSummaryScreen />
+            </Suspense>
+          } />
+          <Route path="incoming-order" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <IncomingOrderForm />
+            </Suspense>
+          } />
+          <Route path="outgoing-order" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <OutgoingOrderForm />
+            </Suspense>
+          } />
+          {/* Add more ERP routes here */}
+        </Route>
+
+      </Route>
+      <Route path="*" element={<NotFound />} />
     </Route>
   )
 );

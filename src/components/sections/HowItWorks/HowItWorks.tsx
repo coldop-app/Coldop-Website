@@ -1,20 +1,23 @@
-import { HowItWorksData } from "@/screens/homeScreenData";
 import { motion } from "motion/react";
-const HowItWorks = ({
-  title,
-  subtitle,
-  steps
-}: HowItWorksData) => {
+import { useTranslation } from "react-i18next";
+
+interface HowItWorksProps {
+  steps: { image: string; number: string }[];
+}
+
+const HowItWorks = ({ steps }: HowItWorksProps) => {
+  const { t } = useTranslation();
+
   return (
     <>
       {/* DESKTOP VIEW */}
       <section className="hidden sm:block mt-16 px-24">
         <div className="mx-auto max-w-[75rem] px-8">
           <span className="lg:mb-4 block text-lg font-medium uppercase tracking-[0.075rem] text-foreground">
-            {title}
+            {t('howItWorks.title')}
           </span>
           <h2 className="mb-8 text-4xl font-bold tracking-tighter text-[#333] lg:mb-0 lg:text-5xl">
-            {subtitle}
+            {t('howItWorks.subtitle')}
           </h2>
         </div>
 
@@ -37,10 +40,10 @@ const HowItWorks = ({
                     </span>
                   </p>
                   <h3 className="mb-6 text-2xl font-semibold leading-10 tracking-[-0.5px] lg:text-3xl">
-                    {step.heading}
+                    {t(`howItWorks.steps.${index}.heading`)}
                   </h3>
                   <p className="text-xl leading-loose">
-                    {step.description}
+                    {t(`howItWorks.steps.${index}.description`)}
                   </p>
                 </motion.div>
               )}
@@ -59,7 +62,7 @@ const HowItWorks = ({
                 <img
                   src={step.image}
                   className="trasnlate-y-6 w-[55%] lg:w-[35%] lg:translate-y-0"
-                  alt={`iPhone app showing ${step.heading}`}
+                  alt={`iPhone app showing ${t(`howItWorks.steps.${index}.heading`)}`}
                 />
               </motion.div>
 
@@ -79,10 +82,10 @@ const HowItWorks = ({
                     </span>
                   </p>
                   <h3 className="mb-6 text-2xl font-semibold leading-10 tracking-[-0.5px] lg:text-3xl">
-                    {step.heading}
+                    {t(`howItWorks.steps.${index}.heading`)}
                   </h3>
                   <p className="text-xl leading-loose">
-                    {step.description}
+                    {t(`howItWorks.steps.${index}.description`)}
                   </p>
                 </motion.div>
               )}
@@ -95,10 +98,10 @@ const HowItWorks = ({
       <section className="sm:hidden mt-10 px-2">
         <div className="mx-auto max-w-[75rem] px-8">
           <span className="mb-2 ml-0.5 block text-base font-medium uppercase tracking-[0.075rem] text-foreground">
-            {title}
+            {t('howItWorks.title')}
           </span>
           <h2 className="mb-8 text-4xl font-bold tracking-tighter text-[#333] lg:mb-0 lg:text-5xl">
-            {subtitle}
+            {t('howItWorks.subtitle')}
           </h2>
         </div>
 
@@ -118,7 +121,7 @@ const HowItWorks = ({
                 <img
                   src={step.image}
                   className="w-[40%] translate-y-6 lg:translate-y-0"
-                  alt={`iPhone app showing ${step.heading}`}
+                  alt={`iPhone app showing ${t(`howItWorks.steps.${index}.heading`)}`}
                 />
               </motion.div>
 
@@ -134,10 +137,10 @@ const HowItWorks = ({
                   {step.number}
                 </p>
                 <h3 className="mb-8 text-xl font-semibold leading-10 tracking-[-0.5px]">
-                  {step.heading}
+                  {t(`howItWorks.steps.${index}.heading`)}
                 </h3>
                 <p className="text-base leading-loose">
-                  {step.description}
+                  {t(`howItWorks.steps.${index}.description`)}
                 </p>
               </motion.div>
             </>
