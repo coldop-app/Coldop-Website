@@ -4,6 +4,7 @@ import { Plus, Loader2 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
@@ -128,6 +129,7 @@ interface Farmer {
 }
 
 const IncomingOrderFormContent = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const farmer = location.state?.farmer as Farmer | undefined;
@@ -347,7 +349,7 @@ const IncomingOrderFormContent = () => {
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
-      <h1 className="text-2xl font-bold text-center mb-6">Create Incoming Order</h1>
+      <h1 className="text-2xl font-bold text-center mb-6">{t('incomingOrder.title')}</h1>
 
       {/* Progress indicator */}
       <div className="mb-8">
@@ -371,7 +373,7 @@ const IncomingOrderFormContent = () => {
                 }`}>
                   1
                 </div>
-                <span className="text-xs mt-2 text-center">Quantities</span>
+                <span className="text-xs mt-2 text-center">{t('incomingOrder.steps.quantities')}</span>
               </div>
 
               {/* Step 2 */}
@@ -381,7 +383,7 @@ const IncomingOrderFormContent = () => {
                 }`}>
                   2
                 </div>
-                <span className="text-xs mt-2 text-center">Details</span>
+                <span className="text-xs mt-2 text-center">{t('incomingOrder.steps.details')}</span>
               </div>
             </div>
           </div>
@@ -396,7 +398,7 @@ const IncomingOrderFormContent = () => {
               {/* Farmer Selection */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Enter Account Name (search and select)
+                  {t('incomingOrder.farmer.label')}
                 </label>
                 <div className="flex gap-2 items-center relative">
                   <input
@@ -405,7 +407,7 @@ const IncomingOrderFormContent = () => {
                     value={searchQuery}
                     onChange={handleSearchChange}
                     onFocus={() => !farmer && setShowDropdown(true)}
-                    placeholder="Search or Create Farmer"
+                    placeholder={t('incomingOrder.farmer.searchPlaceholder')}
                     className={`flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition ${farmer ? 'bg-gray-100' : ''}`}
                     required
                     disabled={!!farmer}
@@ -416,7 +418,7 @@ const IncomingOrderFormContent = () => {
                       className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       <Plus size={18} />
-                      <span className="text-sm">New Farmer</span>
+                      <span className="text-sm">{t('incomingOrder.farmer.new')}</span>
                     </button>
                   )}
 
@@ -455,15 +457,15 @@ const IncomingOrderFormContent = () => {
                 </div>
                 {farmer && (
                   <p className="mt-2 text-sm text-muted-foreground">
-                    Creating order for pre-selected farmer
+                    {t('incomingOrder.farmer.preSelected')}
                   </p>
                 )}
               </div>
 
               {/* Variety Selection */}
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-medium mb-2">Select Variety</h3>
-                <p className="text-sm text-muted-foreground mb-4">Choose the potato variety for this order</p>
+                <h3 className="text-lg font-medium mb-2">{t('incomingOrder.variety.title')}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('incomingOrder.variety.description')}</p>
 
                 <div className="relative">
                   <Select
@@ -475,10 +477,10 @@ const IncomingOrderFormContent = () => {
                       {isLoadingVarieties ? (
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>Loading varieties...</span>
+                          <span>{t('incomingOrder.variety.loading')}</span>
                         </div>
                       ) : (
-                        <SelectValue placeholder="Select a variety" />
+                        <SelectValue placeholder={t('incomingOrder.variety.selectPlaceholder')} />
                       )}
                     </SelectTrigger>
                     <SelectContent>
@@ -499,11 +501,11 @@ const IncomingOrderFormContent = () => {
                   ? "border-green-200 bg-green-50/50"
                   : "border-muted bg-muted/5 opacity-75"
               )}>
-                <h3 className="text-lg font-medium mb-2">Enter Quantities</h3>
+                <h3 className="text-lg font-medium mb-2">{t('incomingOrder.quantities.title')}</h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   {formData.variety
-                    ? "Set the quantities for each size"
-                    : "Please select a variety first to enter quantities"}
+                    ? t('incomingOrder.quantities.description')
+                    : t('incomingOrder.quantities.selectVarietyFirst')}
                 </p>
 
                 <div className="space-y-4">
@@ -533,7 +535,7 @@ const IncomingOrderFormContent = () => {
                   <hr className="border-gray-300" />
 
                   <div className="flex items-center justify-between font-semibold">
-                    <label className="text-sm">Total / Lot No.</label>
+                    <label className="text-sm">{t('incomingOrder.quantities.total')}</label>
                     <span className={cn(
                       "text-lg",
                       !formData.variety && "text-muted-foreground"
@@ -548,7 +550,7 @@ const IncomingOrderFormContent = () => {
                   onClick={nextStep}
                   className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  Continue
+                  {t('incomingOrder.buttons.continue')}
                 </button>
               </div>
             </div>
@@ -560,28 +562,28 @@ const IncomingOrderFormContent = () => {
           {currentStep === 2 && (
             <div className="space-y-6">
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-medium mb-2">Enter Address (CH R FL)</h3>
-                <p className="text-sm text-muted-foreground mb-4">This will be used as a reference in outgoing.</p>
+                <h3 className="text-lg font-medium mb-2">{t('incomingOrder.location.title')}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{t('incomingOrder.location.description')}</p>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">Main Location</label>
+                    <label className="block text-sm font-medium mb-2">{t('incomingOrder.location.mainLabel')}</label>
                     <input
                       type="text"
                       value={formData.mainLocation}
                       onChange={(e) => updateFormData('mainLocation', e.target.value)}
-                      placeholder="C3 5 22"
+                      placeholder={t('incomingOrder.location.placeholder')}
                       className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium mb-2">Remarks</label>
+                    <label className="block text-sm font-medium mb-2">{t('incomingOrder.remarks.label')}</label>
                     <textarea
                       value={formData.remarks}
                       onChange={(e) => updateFormData('remarks', e.target.value)}
-                      placeholder="Describe any sort of exception to be handelled in the order , eg : handed over to shamu; payment pending.&#10;Pickup done, pending, scheduled."
+                      placeholder={t('incomingOrder.remarks.placeholder')}
                       className="w-full p-3 border border-border rounded-md bg-background h-32 resize-none focus:ring-2 focus:ring-primary focus:border-primary transition"
                       rows={4}
                     />
@@ -596,7 +598,7 @@ const IncomingOrderFormContent = () => {
                   className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                   style={{ minWidth: 0 }}
                 >
-                  Back
+                  {t('incomingOrder.buttons.back')}
                 </button>
                 <button
                   type="submit"
@@ -607,10 +609,10 @@ const IncomingOrderFormContent = () => {
                   {createOrderMutation.isPending ? (
                     <div className="flex items-center justify-center">
                       <Loader size="sm" className="mr-2" />
-                      <span>Creating Order...</span>
+                      <span>{t('incomingOrder.buttons.creating')}</span>
                     </div>
                   ) : (
-                    "Create Order"
+                    t('incomingOrder.buttons.create')
                   )}
                 </button>
               </div>

@@ -19,7 +19,7 @@ interface LanguageSelectorProps {
 }
 
 const LanguageSelector = ({ isMobile = false }: LanguageSelectorProps) => {
-  const { i18n, t } = useTranslation();
+  const { i18n } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
 
   const currentLanguage = languages.find(lang => lang.code === i18n.language) || languages[0];
@@ -35,8 +35,8 @@ const LanguageSelector = ({ isMobile = false }: LanguageSelectorProps) => {
         onClick={() => setIsOpen(!isOpen)}
         className={`
           flex items-center gap-2 rounded-lg px-3 py-2 font-medium transition-colors duration-200
-          ${isMobile 
-            ? 'text-lg hover:bg-gray-100' 
+          ${isMobile
+            ? 'text-lg hover:bg-gray-100'
             : 'text-base hover:bg-gray-100 hover:text-primary'
           }
           ${isOpen ? 'bg-gray-100' : ''}
@@ -46,20 +46,20 @@ const LanguageSelector = ({ isMobile = false }: LanguageSelectorProps) => {
         <span className="min-w-0">
           {currentLanguage.nativeName}
         </span>
-        <ChevronDown 
-          size={16} 
-          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} 
+        <ChevronDown
+          size={16}
+          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
       {isOpen && (
         <>
           {/* Backdrop */}
-          <div 
-            className="fixed inset-0 z-10" 
+          <div
+            className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          
+
           {/* Dropdown */}
           <div className={`
             absolute z-20 mt-2 min-w-[160px] rounded-lg border bg-white shadow-lg
@@ -72,8 +72,8 @@ const LanguageSelector = ({ isMobile = false }: LanguageSelectorProps) => {
                   onClick={() => handleLanguageChange(language.code)}
                   className={`
                     w-full px-4 py-2 text-left transition-colors duration-200 hover:bg-gray-50
-                    ${i18n.language === language.code 
-                      ? 'bg-primary/5 text-primary font-medium' 
+                    ${i18n.language === language.code
+                      ? 'bg-primary/5 text-primary font-medium'
                       : 'text-gray-700'
                     }
                   `}
@@ -92,4 +92,4 @@ const LanguageSelector = ({ isMobile = false }: LanguageSelectorProps) => {
   );
 };
 
-export default LanguageSelector; 
+export default LanguageSelector;

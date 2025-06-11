@@ -43,35 +43,59 @@ export interface StoreAdmin {
   __v: number;
 }
 
+export interface Farmer {
+  _id: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+}
+
+export interface Voucher {
+  type: 'RECEIPT' | 'DELIVERY';
+  voucherNumber: number;
+}
+
 export interface BagSizeQuantity {
+  initialQuantity: number;
+  currentQuantity: number;
+}
+
+export interface BagSize {
   size: string;
-  quantity: {
-    initialQuantity: number;
-    currentQuantity: number;
-  };
+  quantity?: BagSizeQuantity;
+  quantityRemoved?: number;
+}
+
+export interface IncomingBagSize {
+  size: string;
+  currentQuantity: number;
+  initialQuantity: number;
+  _id: string;
+}
+
+export interface IncomingOrder {
+  _id: string;
+  location: string;
+  voucher: Voucher;
+  incomingBagSizes: IncomingBagSize[];
 }
 
 export interface OrderDetails {
   variety: string;
-  bagSizes: BagSizeQuantity[];
-  location: string;
-}
-
-export type VoucherType = 'RECEIPT' | 'DELIVERY' | 'RESTORE';
-
-export interface Voucher {
-  type: VoucherType;
-  voucherNumber: number;
+  bagSizes: BagSize[];
+  location?: string;
+  incomingOrder?: IncomingOrder;
 }
 
 export interface Order {
   _id: string;
-  coldStorageId: string; // Reference to StoreAdmin
-  farmerId: string; // Reference to Farmer
+  coldStorageId: string;
+  farmerId: Farmer;
   voucher: Voucher;
-  dateOfSubmission: string;
-  fulfilled: boolean;
-  remarks?: string;
+  dateOfSubmission?: string;
+  dateOfExtraction?: string;
+  fulfilled?: boolean;
+  remarks: string;
   currentStockAtThatTime: number;
   orderDetails: OrderDetails[];
   createdAt: string;
@@ -82,12 +106,6 @@ export interface Order {
 export interface OutgoingBagSize {
   size: string;
   quantityRemoved: number;
-}
-
-export interface IncomingBagSize {
-  size: string;
-  currentQuantity: number;
-  initialQuantity: number;
 }
 
 export interface IncomingOrderReference {

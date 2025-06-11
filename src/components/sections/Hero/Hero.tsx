@@ -6,10 +6,7 @@ interface CustomerImage {
   alt: string;
 }
 
-interface CTAButton {
-  text: string;
-  link: string;
-}
+
 
 interface HeroProps {
   customerImages: CustomerImage[];

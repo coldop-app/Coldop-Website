@@ -60,6 +60,22 @@ interface CreateOrderPayload {
   orderDetails: OrderDetail[];
 }
 
+interface BagUpdate {
+  size: string;
+  quantityToRemove: number;
+}
+
+interface OutgoingOrderDetail {
+  orderId: string;
+  variety: string;
+  bagUpdates: BagUpdate[];
+}
+
+interface CreateOutgoingOrderPayload {
+  orders: OutgoingOrderDetail[];
+  remarks: string;
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -245,6 +261,32 @@ export const storeAdminApi = {
   getVarieties: async (token: string) => {
     const response = await axios.get(
       `${BASE_URL}/api/store-admin/varieties`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  createOutgoingOrder: async (farmerId: string, payload: CreateOutgoingOrderPayload, token: string) => {
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/outgoing`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  getFarmerIncomingOrders: async (farmerId: string, token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders/incoming`,
       {
         headers: {
           'Authorization': `Bearer ${token}`

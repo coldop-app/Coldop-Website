@@ -8,7 +8,7 @@ const resources = {
     translation: {
       nav: {
         howItWorks: "How it works",
-        testimonials: "Testimonials", 
+        testimonials: "Testimonials",
         pricing: "Pricing",
         about: "About",
         signIn: "Sign in",
@@ -201,7 +201,89 @@ const resources = {
         firstPage: "First page",
         previousPage: "Previous page",
         nextPage: "Next page",
-        lastPage: "Last page"
+        lastPage: "Last page",
+        incomingOrder: {
+          title: "Create Incoming Order",
+          steps: {
+            quantities: "Quantities",
+            details: "Details"
+          },
+          farmer: {
+            label: "Enter Account Name (search and select)",
+            searchPlaceholder: "Search or Create Farmer",
+            new: "New Farmer",
+            preSelected: "Creating order for pre-selected farmer"
+          },
+          variety: {
+            title: "Select Variety",
+            description: "Choose the potato variety for this order",
+            loading: "Loading varieties...",
+            selectPlaceholder: "Select a variety"
+          },
+          quantities: {
+            title: "Enter Quantities",
+            description: "Set the quantities for each size",
+            selectVarietyFirst: "Please select a variety first to enter quantities",
+            total: "Total / Lot No."
+          },
+          location: {
+            title: "Enter Address (CH R FL)",
+            description: "This will be used as a reference in outgoing.",
+            mainLabel: "Main Location",
+            placeholder: "C3 5 22"
+          },
+          remarks: {
+            label: "Remarks",
+            placeholder: "Describe any sort of exception to be handelled in the order , eg : handed over to shamu; payment pending.\nPickup done, pending, scheduled."
+          },
+          buttons: {
+            continue: "Continue",
+            back: "Back",
+            creating: "Creating Order...",
+            create: "Create Order"
+          }
+        }
+      },
+      incomingOrder: {
+        title: "Create Incoming Order",
+        steps: {
+          quantities: "Quantities",
+          details: "Details"
+        },
+        farmer: {
+          label: "Enter Account Name (search and select)",
+          searchPlaceholder: "Search or Create Farmer",
+          new: "New Farmer",
+          preSelected: "Creating order for pre-selected farmer"
+        },
+        variety: {
+          title: "Select Variety",
+          description: "Choose the potato variety for this order",
+          loading: "Loading varieties...",
+          selectPlaceholder: "Select a variety"
+        },
+        quantities: {
+          title: "Enter Quantities",
+          description: "Set the quantities for each size",
+          selectVarietyFirst: "Please select a variety first to enter quantities",
+          total: "Total / Lot No."
+        },
+        location: {
+          title: "Enter Address (CH R FL)",
+          description: "This will be used as a reference in outgoing.",
+          mainLabel: "Main Location",
+          placeholder: "C3 5 22"
+        },
+        remarks: {
+          label: "Remarks",
+          placeholder: "Describe any sort of exception to be handelled in the order , eg : handed over to shamu; payment pending.\nPickup done, pending, scheduled."
+        },
+        buttons: {
+          continue: "Continue",
+          back: "Back",
+          creating: "Creating Order...",
+          create: "Create Order"
+        }
       }
     }
   },
@@ -210,7 +292,7 @@ const resources = {
       nav: {
         howItWorks: "यह कैसे काम करता है",
         testimonials: "प्रशंसापत्र",
-        pricing: "मूल्य निर्धारण", 
+        pricing: "मूल्य निर्धारण",
         about: "हमारे बारे में",
         signIn: "साइन इन करें",
         selectLanguage: "भाषा"
@@ -260,7 +342,7 @@ const resources = {
             name: "स्टीव मिलर"
           },
           {
-            quote: "चिलहार्बर एक फसल भंडारण रत्न है! तनाव-मुक्त और कुशल, यह आधुनिक किसानों के लिए एकदम सही साथी है, जो खेत के अन्य पहलुओं पर ध्यान केंद्रित करने की अनुमति देता है।",
+            quote: "चिलहार्बर एक फसल भंडारण रत्न है! तनाव-मुक्त और कुशल, इह आधुनिक किसानों के लिए एकदम सही साथी है, जो खेत के अन्य पहलुओं पर ध्यान केंद्रित करने की अनुमति देता है।",
             name: "हन्ना स्मिथ"
           }
         ]
@@ -296,7 +378,7 @@ const resources = {
         features: [
           {
             title: "शुद्धता पैक्ट",
-            description: "फसल कोल्ड-स्टोरेज ऐप, फसल की ताजगी के लिए एक दृढ़ प्रतिबद्धता, बर्बादी को कम करना, और अतुलनीय गुणवत्ता सुनिश्चित करना।"
+            description: "फसल कोल्ड-स्टोरेज ऐप, फसल की ताजगी के लिए एक दृढ़ प्रतिबद्धता, बर्बादी को कम करना, अथवा बेमिसाल गुणवत्ता यकीन बनाना।"
           },
           {
             title: "विस्तारित शेल्फ लाइफ",
@@ -403,6 +485,47 @@ const resources = {
         previousPage: "पिछला पृष्ठ",
         nextPage: "अगला पृष्ठ",
         lastPage: "अंतिम पृष्ठ"
+      },
+      incomingOrder: {
+        title: "Create Incoming Order",
+        steps: {
+          quantities: "Quantities",
+          details: "Details"
+        },
+        farmer: {
+          label: "Enter Account Name (search and select)",
+          searchPlaceholder: "Search or Create Farmer",
+          new: "New Farmer",
+          preSelected: "Creating order for pre-selected farmer"
+        },
+        variety: {
+          title: "Select Variety",
+          description: "Choose the potato variety for this order",
+          loading: "Loading varieties...",
+          selectPlaceholder: "Select a variety"
+        },
+        quantities: {
+          title: "Enter Quantities",
+          description: "Set the quantities for each size",
+          selectVarietyFirst: "Please select a variety first to enter quantities",
+          total: "Total / Lot No."
+        },
+        location: {
+          title: "Enter Address (CH R FL)",
+          description: "This will be used as a reference in outgoing.",
+          mainLabel: "Main Location",
+          placeholder: "C3 5 22"
+        },
+        remarks: {
+          label: "Remarks",
+          placeholder: "Describe any sort of exception to be handelled in the order , eg : handed over to shamu; payment pending.\nPickup done, pending, scheduled."
+        },
+        buttons: {
+          continue: "Continue",
+          back: "Back",
+          creating: "Creating Order...",
+          create: "Create Order"
+        }
       }
     }
   },
@@ -436,7 +559,7 @@ const resources = {
           },
           {
             heading: "ਆਉਣ ਵਾਲੇ ਅਤੇ ਜਾਣ ਵਾਲੇ ਆਰਡਰ ਬਣਾਓ",
-            description: "ਮੋਬਾਈਲ ਜਾਂ ਵੈੱਬ ਰਾਹੀਂ ਸਕਿੰਟਾਂ ਵਿੱਚ ਆਉਣ ਵਾਲਾ ਸਟਾਕ ਅਤੇ ਜਾਣ ਵਾਲਾ ਸਟਾਕ/ਡਿਸਪੈਚ ਰਿਕਾਰਡ ਕਰੋ। Coldop ਆਪਣੇ ਆਪ ਕਿਸਾਨ ਬੈਲੇਂਸ ਅਤੇ ਲਾਟ ਨੰਬਰ ਅਪਡੇਟ ਕਰਦਾ ਹੈ।"
+            description: "ਮੋਬਾਈਲ ਜਾਂ ਵੈੱਬ ਰਾਹੀਂ सਕਿੰਟਾਂ ਵਿੱਚ ਆਉਣ ਵਾਲਾ ਸਟਾਕ ਅਤੇ ਜਾਣ ਵਾਲਾ ਸਟਾਕ/ਡਿਸਪੈਚ ਰਿਕਾਰਡ ਕਰੋ। Coldop ਆਪਣੇ ਆਪ ਕਿਸਾਨ ਬੈਲੇਂਸ ਅਤੇ ਲਾਟ ਨੰਬਰ ਅਪਡੇਟ ਕਰਦਾ ਹੈ।"
           },
           {
             heading: "WhatsApp ਤੇ ਪੁਸ਼ਟੀ ਪ੍ਰਾਪਤ ਕਰੋ",
@@ -475,8 +598,8 @@ const resources = {
             period: "ਪ੍ਰਤੀ ਮਹੀਨਾ।",
             features: [
               "ਪ੍ਰਤੀ ਦਿਨ 1 ਫਸਲ",
-              "ਸਵੇਰੇ 11 ਤੋਂ ਰਾਤ 9 ਬਜੇ ਤੱਕ ਆਰਡਰ",
-              "ਰਿਕਵਰੀ ਮੁਫਤ ਹੈ",
+              "ਸਵੇਰੇ 11 ਤੋਂ ਰਾਤ 9 ਬजੇ ਤੱਕ ਆਰਡਰ",
+              "ਰਿਕਵਰੀ ਮੁਫਤ ਹै",
               ""
             ],
             cta: "ਭੰਡਾਰਨ ਸ਼ੁਰੂ ਕਰੋ"
@@ -487,7 +610,7 @@ const resources = {
             features: [
               "<strong>ਪ੍ਰਤੀ ਦਿਨ 2 ਫਸਲਾਂ</strong>",
               "<strong>24/7</strong> ਆਰਡਰ",
-              "ਰਿਕਵਰੀ ਮੁਫਤ ਹੈ",
+              "ਰਿਕਵਰੀ ਮੁਫਤ ਹै",
               "ਸਾਰੇ ਭੰਡਾਰਨ ਤੱਕ ਪਹੁੰਚ ਪ੍ਰਾਪਤ ਕਰੋ"
             ],
             cta: "ਭੰਡਾਰਨ ਸ਼ੁਰੂ ਕਰੋ"
@@ -515,7 +638,7 @@ const resources = {
       },
       footer: {
         companyName: "ਕੋਲਡਸਟੋਰੇਜ",
-        address: "623 ਹੈਰਿਸਨ ਸਟ., 2ਵੀਂ ਮੰਜ਼ਿਲ, ਸੈਨ ਫ੍ਰਾਂਸਿਸਕੋ, CA 94107",
+        address: "623 ਹੈਰਿਸਨ ਸਟ., 2ਵੀਂ ਮੰਜ਼ਿਲ, ਸੈਨ ਫ੍ਰਾਂਸਿਸੋ, CA 94107",
         phone: "415-201-6370",
         email: "hello@omnifood.com",
         navColumns: [
@@ -566,7 +689,7 @@ const resources = {
         forgotPassword: "ਪਾਸਵਰਡ ਭੁੱਲ ਗਏ?",
         signingIn: "ਸਾਇਨ ਇਨ ਹੋ ਰਿਹਾ ਹੈ...",
         signIn: "ਸਾਇਨ ਇਨ ਕਰੋ",
-        noAccount: "ਕੋਈ ਖਾਤਾ ਨਹੀਂ ਹੈ?",
+        noAccount: "ਕੋਈ ਖਾਤਾ ਨਹੀਂ ਹै?",
         signUp: "ਸਾਇਨ ਅੱਪ ਕਰੋ"
       },
       erpFooter: {
@@ -604,6 +727,47 @@ const resources = {
         previousPage: "ਪਿਛਲਾ ਪੰਨਾ",
         nextPage: "ਅਗਲਾ ਪੰਨਾ",
         lastPage: "ਆਖਰੀ ਪੰਨਾ"
+      },
+      incomingOrder: {
+        title: "ਆਵਕ ਆਰਡਰ ਬਣਾਓ",
+        steps: {
+          quantities: "ਮਾਤਰਾ",
+          details: "ਵੇਰਵੇ"
+        },
+        farmer: {
+          label: "ਖਾਤਾ ਨਾਮ ਦਰਜ ਕਰੋ (ਖੋਜੋ ਅਤੇ ਚੁਣੋ)",
+          searchPlaceholder: "ਕਿਸਾਨ ਖੋਜੋ ਜਾਂ ਬਣਾਓ",
+          new: "ਨਵਾਂ ਕਿਸਾਨ",
+          preSelected: "ਪਹਿਲਾਂ-ਚੁਣੇ ਕਿਸਾਨ ਲਈ ਆਰਡਰ ਬਣਾਇਆ ਜਾ ਰਿਹਾ ਹੈ"
+        },
+        variety: {
+          title: "ਕਿਸਮ ਚੁਣੋ",
+          description: "ਇਸ ਆਰਡਰ ਲਈ ਆਲੂ ਦੀ ਕਿਸਮ ਚੁਣੋ",
+          loading: "ਕਿਸਮਾਂ ਲੋਡ ਹੋ ਰਹੀਆਂ ਹਨ...",
+          selectPlaceholder: "ਇੱਕ ਕਿਸਮ ਚੁਣੋ"
+        },
+        quantities: {
+          title: "ਮਾਤਰਾ ਦਰਜ ਕਰੋ",
+          description: "ਹਰ ਆਕਾਰ ਲਈ ਮਾਤਰਾ ਨਿਰਧਾਰਤ ਕਰੋ",
+          selectVarietyFirst: "ਕਿਰਪਾ ਕਰਕੇ ਪਹਿਲਾਂ ਕਿਸਮ ਚੁਣੋ",
+          total: "ਕੁੱਲ / ਲਾਟ ਨੰਬਰ"
+        },
+        location: {
+          title: "ਪਤਾ ਦਰਜ ਕਰੋ (CH R FL)",
+          description: "ਇਸ ਦੀ ਵਰਤੋਂ ਜਾਵਕ ਵਿੱਚ ਹਵਾਲੇ ਵਜੋਂ ਕੀਤੀ ਜਾਵੇਗੀ।",
+          mainLabel: "ਮੁੱਖ ਸਥਾਨ",
+          placeholder: "C3 5 22"
+        },
+        remarks: {
+          label: "ਟਿੱਪਣੀਆਂ",
+          placeholder: "ਆਰਡਰ ਵਿੱਚ ਕਿਸੇ ਵੀ ਤਰ੍ਹਾਂ ਦੇ ਅਪਵਾਦ ਦਾ ਵਰਣਨ ਕਰੋ, ਜਿਵੇਂ: ਸ਼ਾਮੂ ਨੂੰ ਸੌਂਪ ਦਿੱਤਾ; ਭੁਗਤਾਨ ਬਕਾਇਆ ਹੈ।\nਪਿਕਅੱਪ ਹੋ ਗਿਆ, ਬਕਾਇਆ, ਨਿਰਧਾਰਤ।"
+        },
+        buttons: {
+          continue: "ਜਾਰੀ ਰੱਖੋ",
+          back: "ਵਾਪਸ",
+          creating: "ਆਰਡਰ ਬਣਾਇਆ ਜਾ ਰਿਹਾ ਹੈ...",
+          create: "ਆਰਡਰ ਬਣਾਓ"
+        }
       }
     }
   }
@@ -615,11 +779,10 @@ i18n
   .init({
     resources,
     fallbackLng: 'en',
-    lng: 'en', // Default language
-    
+
     detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      lookupLocalStorage: 'coldop-language',
+      order: ['localStorage', 'navigator'],
+      lookupLocalStorage: 'i18nextLng',
       caches: ['localStorage']
     },
 
@@ -628,4 +791,4 @@ i18n
     }
   });
 
-export default i18n; 
+export default i18n;

@@ -2,47 +2,14 @@ import { useQuery } from '@tanstack/react-query';
 import TopBar from '@/components/common/Topbar/Topbar';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import { useState } from 'react';
-import { format } from 'date-fns';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
+import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
+import { Order } from '@/utils/types';
 import { useTranslation } from 'react-i18next';
-
-interface BagSize {
-  quantity: {
-    initialQuantity: number;
-    currentQuantity: number;
-  };
-  size: string;
-}
-
-interface OrderDetail {
-  variety: string;
-  bagSizes: BagSize[];
-  location: string;
-}
-
-interface Farmer {
-  _id: string;
-  name: string;
-}
-
-interface Voucher {
-  type: 'RECEIPT' | 'DELIVERY';
-  voucherNumber: number;
-}
-
-interface Order {
-  voucher: Voucher;
-  _id: string;
-  coldStorageId: string;
-  farmerId: Farmer;
-  dateOfSubmission: string;
-  remarks: string;
-  currentStockAtThatTime: number;
-  orderDetails: OrderDetail[];
-}
 
 interface PaginationMeta {
   currentPage: number;
@@ -66,7 +33,10 @@ type SortOrder = 'latest' | 'oldest';
 
 interface SearchResponse {
   status: string;
-  data: Order;
+  data: {
+    incoming: Order[];
+    outgoing: Order[];
+  };
 }
 
 const DaybookScreen = () => {
@@ -102,7 +72,7 @@ const DaybookScreen = () => {
   const searchResponse = searchData as SearchResponse;
   const apiResponse = searchReceiptNumber
     ? {
-        data: searchResponse?.data ? [searchResponse.data] : [],
+        data: [...(searchResponse?.data?.incoming || []), ...(searchResponse?.data?.outgoing || [])],
         pagination: null
       }
     : data as ApiResponse;
@@ -124,19 +94,6 @@ const DaybookScreen = () => {
   const handleItemsPerPageChange = (newLimit: number) => {
     setItemsPerPage(newLimit);
     setCurrentPage(1);
-  };
-
-  const getVoucherColor = (type: string) => {
-    return type === 'RECEIPT' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-  };
-
-  const formatDate = (dateStr: string) => {
-    try {
-      const [day, month, year] = dateStr.split('.');
-      return format(new Date(2000 + parseInt(year), parseInt(month) - 1, parseInt(day)), 'dd MMM yyyy');
-    } catch {
-      return dateStr;
-    }
   };
 
   // Pagination component
@@ -349,10 +306,10 @@ const DaybookScreen = () => {
                 onClick={() => navigate('/erp/incoming-order')}
                 className="w-full sm:w-auto px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-colors text-sm sm:text-base font-medium"
               >
-               {t('daybook.addIncoming')}
+                {t('daybook.addIncoming')}
               </button>
               <button
-                onClick={() => alert('outgoing')}
+                onClick={() => navigate('/erp/outgoing-order')}
                 className="w-full sm:w-auto px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-colors text-sm sm:text-base font-medium"
               >
                 {t('daybook.addOutgoing')}
@@ -388,52 +345,19 @@ const DaybookScreen = () => {
             </div>
           ) : (
             orders.map((order: Order) => (
-              <div key={order._id} className="bg-white rounded-lg shadow-md p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4 mb-4">
-                  <div>
-                    <span className={`inline-block px-3 py-1 rounded-full text-xs sm:text-sm font-medium ${getVoucherColor(order.voucher.type)}`}>
-                      {order.voucher.type} #{order.voucher.voucherNumber}
-                    </span>
-                    <h3 className="text-base sm:text-lg font-semibold mt-2">{order.farmerId.name}</h3>
-                    <p className="text-xs sm:text-sm text-gray-600">{formatDate(order.dateOfSubmission)}</p>
-                  </div>
-                  <div className="text-left sm:text-right">
-                    <p className="text-xs sm:text-sm text-gray-600">{t('daybook.currentStock')}</p>
-                    <p className="text-base sm:text-lg font-semibold">{order.currentStockAtThatTime}</p>
-                  </div>
-                </div>
-
-                {order.orderDetails.map((detail, index) => (
-                  <div key={index} className="mt-4 border-t pt-4">
-                    <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
-                      <h4 className="text-sm sm:text-base font-medium">{detail.variety}</h4>
-                      <span className="text-xs sm:text-sm text-gray-600">{t('daybook.location')}: {detail.location}</span>
-                    </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-                      {detail.bagSizes.map((bagSize, idx) => (
-                        <div key={idx} className="bg-gray-50 p-2 sm:p-3 rounded-lg">
-                          <p className="text-xs sm:text-sm text-gray-600">{bagSize.size}</p>
-                          <p className="text-sm sm:text-base font-medium">
-                            {bagSize?.quantity?.currentQuantity}/{bagSize?.quantity?.initialQuantity}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-
-                {order.remarks && (
-                  <div className="mt-4 pt-4 border-t">
-                    <p className="text-xs sm:text-sm text-gray-600">{t('daybook.remarks')}: {order.remarks}</p>
-                  </div>
-                )}
-              </div>
+              order.voucher.type === 'DELIVERY' ? (
+                <DeliveryVoucherCard key={order._id} order={order} />
+              ) : (
+                <ReceiptVoucherCard key={order._id} order={order} />
+              )
             ))
           )}
         </div>
 
         {/* Pagination Controls - Only show when not searching */}
-        {!searchReceiptNumber && <PaginationControls />}
+        {!searchReceiptNumber && pagination && pagination.totalPages > 1 && (
+          <PaginationControls />
+        )}
       </div>
     </>
   );
