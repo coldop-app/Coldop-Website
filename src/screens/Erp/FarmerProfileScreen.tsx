@@ -109,7 +109,7 @@ const FarmerProfileScreen = () => {
                       Incoming Order
                     </Button>
                     <Button
-                      onClick={() => navigate(`/erp/orders/outgoing/create`, { state: { farmer } })}
+                      onClick={() => navigate(`/erp/outgoing-order`, { state: { farmer } })}
                       variant="outline"
                       className="bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
                     >
