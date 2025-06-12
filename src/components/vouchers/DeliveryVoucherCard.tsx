@@ -115,8 +115,8 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                 <p className="font-medium text-gray-900 mt-1">{order.farmerId.name}</p>
               </div>
               <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Account ID</span>
-                <p className="font-mono text-sm text-gray-900 mt-1 break-all">{order.farmerId._id}</p>
+                <span className="text-xs text-gray-500 uppercase tracking-wide">Farmer ID</span>
+                <p className="font-mono text-sm text-gray-900 mt-1 break-all">{order.farmerId.farmerId}</p>
               </div>
             </div>
           </div>

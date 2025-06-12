@@ -44,6 +44,21 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
 
       {/* Main Content */}
       <div className="space-y-6">
+        {/* Farmer Details Card */}
+        <div className="bg-gray-50 rounded-lg p-4">
+          <h3 className="text-sm font-medium text-gray-900 mb-3">Farmer Details</h3>
+          <div className="space-y-3">
+            <div>
+              <span className="text-xs text-gray-500 uppercase tracking-wide">Name</span>
+              <p className="font-medium text-gray-900 mt-1">{order.farmerId.name}</p>
+            </div>
+            <div>
+              <span className="text-xs text-gray-500 uppercase tracking-wide">Farmer ID</span>
+              <p className="font-mono text-sm text-gray-900 mt-1 break-all">{order.farmerId.farmerId}</p>
+            </div>
+          </div>
+        </div>
+
         {order.orderDetails.map((detail, index) => (
           <div key={index} className="space-y-4">
 
