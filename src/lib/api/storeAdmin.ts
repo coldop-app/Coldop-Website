@@ -7,6 +7,15 @@ interface LoginCredentials {
   isMobile: boolean;
 }
 
+interface QuickRegisterCredentials {
+  name: string;
+  address: string;
+  mobileNumber: string;
+  password: string;
+  imageUrl: string;
+  farmerId: string;
+}
+
 interface SignupCredentials {
   name: string;
   personalAddress: string;
@@ -35,29 +44,23 @@ interface SearchReceiptParams {
   receiptNumber: number;
 }
 
-interface BagSizeQuantity {
-  initialQuantity: number;
-  currentQuantity: number;
-}
-
-interface BagSize {
-  size: string;
-  quantity: BagSizeQuantity;
-}
-
-interface OrderDetail {
-  variety: string;
-  bagSizes: BagSize[];
-  location: string;
-}
-
 interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string;
   voucherNumber: number;
   dateOfSubmission: string;
   remarks: string;
-  orderDetails: OrderDetail[];
+  orderDetails: {
+    variety: string;
+    bagSizes: {
+      size: string;
+      quantity: {
+        initialQuantity: number;
+        currentQuantity: number;
+      };
+    }[];
+    location: string;
+  }[];
 }
 
 interface BagUpdate {
@@ -74,6 +77,14 @@ interface OutgoingOrderDetail {
 interface CreateOutgoingOrderPayload {
   orders: OutgoingOrderDetail[];
   remarks: string;
+}
+
+interface CreateFarmerPayload {
+  accNo: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+  coldStorageId: string;
 }
 
 export const storeAdminApi = {
@@ -287,6 +298,57 @@ export const storeAdminApi = {
   getFarmerIncomingOrders: async (farmerId: string, token: string) => {
     const response = await axios.get(
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders/incoming`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  quickRegister: async (credentials: QuickRegisterCredentials, token?: string) => {
+    const formData = new URLSearchParams();
+    formData.append('name', credentials.name);
+    formData.append('address', credentials.address);
+    formData.append('mobileNumber', credentials.mobileNumber);
+    formData.append('password', credentials.password);
+    formData.append('imageUrl', credentials.imageUrl);
+    formData.append('farmerId', credentials.farmerId);
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/quick-register`,
+      formData,
+      { headers }
+    );
+    return response.data;
+  },
+
+  createFarmer: async (payload: CreateFarmerPayload, token: string) => {
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/farmers`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  checkFarmerId: async (token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/farmerid/check`,
       {
         headers: {
           'Authorization': `Bearer ${token}`

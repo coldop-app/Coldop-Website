@@ -284,6 +284,58 @@ const resources = {
           creating: "Creating Order...",
           create: "Create Order"
         }
+      },
+      settings: {
+        title: "Settings",
+        subtitle: "Manage your cold storage facility settings",
+        saving: "Saving...",
+        saveChanges: "Save Changes",
+        saveSuccess: "Settings saved successfully",
+        saveError: "Failed to save settings",
+        tabs: {
+          general: "General",
+          notifications: "Notifications",
+          billing: "Billing & Payments",
+          storage: "Storage Configuration"
+        },
+        general: {
+          title: "General Settings",
+          description: "Configure your basic cold storage facility information",
+          companyName: "Company Name",
+          email: "Email",
+          phone: "Phone",
+          address: "Address",
+          temperatureUnit: "Temperature Unit",
+          selectTemperatureUnit: "Select temperature unit",
+          celsius: "Celsius (°C)",
+          fahrenheit: "Fahrenheit (°F)"
+        },
+        notifications: {
+          title: "Notification Preferences",
+          description: "Configure alerts and notification settings",
+          temperatureAlerts: "Temperature Alerts",
+          temperatureAlertsDesc: "Receive alerts when temperature exceeds set thresholds",
+          capacityAlerts: "Capacity Alerts",
+          capacityAlertsDesc: "Get notified when storage capacity reaches certain levels",
+          maintenanceReminders: "Maintenance Reminders",
+          maintenanceRemindersDesc: "Receive maintenance schedule notifications",
+          paymentReminders: "Payment Reminders",
+          paymentRemindersDesc: "Get notified about upcoming and overdue payments"
+        },
+        billing: {
+          title: "Billing Settings",
+          description: "Configure your billing and payment preferences",
+          currency: "Currency",
+          selectCurrency: "Select currency",
+          taxRate: "Tax Rate (%)",
+          paymentTerms: "Payment Terms (days)"
+        },
+        storage: {
+          title: "Storage Configuration",
+          description: "Configure your cold storage units and zones",
+          adminApprovalRequired: "Storage configuration changes require admin approval. Please contact support for modifications.",
+          requestChanges: "Request Storage Configuration Changes"
+        }
       }
     }
   },
@@ -526,6 +578,58 @@ const resources = {
           creating: "Creating Order...",
           create: "Create Order"
         }
+      },
+      settings: {
+        title: "Settings",
+        subtitle: "Manage your cold storage facility settings",
+        saving: "Saving...",
+        saveChanges: "Save Changes",
+        saveSuccess: "Settings saved successfully",
+        saveError: "Failed to save settings",
+        tabs: {
+          general: "General",
+          notifications: "Notifications",
+          billing: "Billing & Payments",
+          storage: "Storage Configuration"
+        },
+        general: {
+          title: "General Settings",
+          description: "Configure your basic cold storage facility information",
+          companyName: "Company Name",
+          email: "Email",
+          phone: "Phone",
+          address: "Address",
+          temperatureUnit: "Temperature Unit",
+          selectTemperatureUnit: "Select temperature unit",
+          celsius: "Celsius (°C)",
+          fahrenheit: "Fahrenheit (°F)"
+        },
+        notifications: {
+          title: "Notification Preferences",
+          description: "Configure alerts and notification settings",
+          temperatureAlerts: "Temperature Alerts",
+          temperatureAlertsDesc: "Receive alerts when temperature exceeds set thresholds",
+          capacityAlerts: "Capacity Alerts",
+          capacityAlertsDesc: "Get notified when storage capacity reaches certain levels",
+          maintenanceReminders: "Maintenance Reminders",
+          maintenanceRemindersDesc: "Receive maintenance schedule notifications",
+          paymentReminders: "Payment Reminders",
+          paymentRemindersDesc: "Get notified about upcoming and overdue payments"
+        },
+        billing: {
+          title: "Billing Settings",
+          description: "Configure your billing and payment preferences",
+          currency: "Currency",
+          selectCurrency: "Select currency",
+          taxRate: "Tax Rate (%)",
+          paymentTerms: "Payment Terms (days)"
+        },
+        storage: {
+          title: "Storage Configuration",
+          description: "Configure your cold storage units and zones",
+          adminApprovalRequired: "Storage configuration changes require admin approval. Please contact support for modifications.",
+          requestChanges: "Request Storage Configuration Changes"
+        }
       }
     }
   },
@@ -767,6 +871,58 @@ const resources = {
           back: "ਵਾਪਸ",
           creating: "ਆਰਡਰ ਬਣਾਇਆ ਜਾ ਰਿਹਾ ਹੈ...",
           create: "ਆਰਡਰ ਬਣਾਓ"
+        }
+      },
+      settings: {
+        title: "Settings",
+        subtitle: "Manage your cold storage facility settings",
+        saving: "Saving...",
+        saveChanges: "Save Changes",
+        saveSuccess: "Settings saved successfully",
+        saveError: "Failed to save settings",
+        tabs: {
+          general: "General",
+          notifications: "Notifications",
+          billing: "Billing & Payments",
+          storage: "Storage Configuration"
+        },
+        general: {
+          title: "General Settings",
+          description: "Configure your basic cold storage facility information",
+          companyName: "Company Name",
+          email: "Email",
+          phone: "Phone",
+          address: "Address",
+          temperatureUnit: "Temperature Unit",
+          selectTemperatureUnit: "Select temperature unit",
+          celsius: "Celsius (°C)",
+          fahrenheit: "Fahrenheit (°F)"
+        },
+        notifications: {
+          title: "Notification Preferences",
+          description: "Configure alerts and notification settings",
+          temperatureAlerts: "Temperature Alerts",
+          temperatureAlertsDesc: "Receive alerts when temperature exceeds set thresholds",
+          capacityAlerts: "Capacity Alerts",
+          capacityAlertsDesc: "Get notified when storage capacity reaches certain levels",
+          maintenanceReminders: "Maintenance Reminders",
+          maintenanceRemindersDesc: "Receive maintenance schedule notifications",
+          paymentReminders: "Payment Reminders",
+          paymentRemindersDesc: "Get notified about upcoming and overdue payments"
+        },
+        billing: {
+          title: "Billing Settings",
+          description: "Configure your billing and payment preferences",
+          currency: "Currency",
+          selectCurrency: "Select currency",
+          taxRate: "Tax Rate (%)",
+          paymentTerms: "Payment Terms (days)"
+        },
+        storage: {
+          title: "Storage Configuration",
+          description: "Configure your cold storage units and zones",
+          adminApprovalRequired: "Storage configuration changes require admin approval. Please contact support for modifications.",
+          requestChanges: "Request Storage Configuration Changes"
         }
       }
     }
