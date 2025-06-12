@@ -400,19 +400,43 @@ const IncomingOrderFormContent = () => {
                 <label className="block text-sm font-medium mb-2">
                   {t('incomingOrder.farmer.label')}
                 </label>
-                <div className="flex gap-2 items-center relative">
-                  <input
-                    id="farmer-search-input"
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    onFocus={() => !farmer && setShowDropdown(true)}
-                    placeholder={t('incomingOrder.farmer.searchPlaceholder')}
-                    className={`flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition ${farmer ? 'bg-gray-100' : ''}`}
-                    required
-                    disabled={!!farmer}
-                  />
-                  {!farmer && (
+                {farmer ? (
+                  // Show farmer details when pre-selected
+                  <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-medium">{farmer.name}</h3>
+                      <span className="text-sm text-muted-foreground">Pre-selected farmer</span>
+                    </div>
+                    {(farmer.mobileNumber || farmer.address) && (
+                      <div className="text-sm text-gray-600 space-y-1">
+                        {farmer.mobileNumber && (
+                          <div className="flex items-center gap-2">
+                            <span>📱</span>
+                            <span>{farmer.mobileNumber}</span>
+                          </div>
+                        )}
+                        {farmer.address && (
+                          <div className="flex items-center gap-2">
+                            <span>📍</span>
+                            <span>{farmer.address}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Show search input when no farmer is pre-selected
+                  <div className="flex gap-2 items-center relative">
+                    <input
+                      id="farmer-search-input"
+                      type="text"
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      onFocus={() => setShowDropdown(true)}
+                      placeholder={t('incomingOrder.farmer.searchPlaceholder')}
+                      className="flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                      required
+                    />
                     <button
                       type="button"
                       className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -420,45 +444,40 @@ const IncomingOrderFormContent = () => {
                       <Plus size={18} />
                       <span className="text-sm">{t('incomingOrder.farmer.new')}</span>
                     </button>
-                  )}
 
-                  {/* Search Results Dropdown */}
-                  {showDropdown && !farmer && (searchResults?.length > 0 || isSearching) && (
-                    <div
-                      id="farmer-search-dropdown"
-                      className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-50 bg-white rounded-md shadow-lg border border-gray-200"
-                    >
-                      {isSearching ? (
-                        <div className="flex items-center justify-center p-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                      ) : (
-                        <div className="py-1">
-                          {searchResults?.map((result: Farmer) => (
-                            <button
-                              key={result._id}
-                              type="button"
-                              className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                              onClick={() => handleSelectFarmer(result)}
-                            >
-                              <div className="font-medium">{result.name}</div>
-                              {(result.mobileNumber || result.address) && (
-                                <div className="text-sm text-gray-500">
-                                  {result.mobileNumber && <span>📱 {result.mobileNumber}</span>}
-                                  {result.address && <span className="ml-2">📍 {result.address}</span>}
-                                </div>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {farmer && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {t('incomingOrder.farmer.preSelected')}
-                  </p>
+                    {/* Search Results Dropdown */}
+                    {showDropdown && (searchResults?.length > 0 || isSearching) && (
+                      <div
+                        id="farmer-search-dropdown"
+                        className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-50 bg-white rounded-md shadow-lg border border-gray-200"
+                      >
+                        {isSearching ? (
+                          <div className="flex items-center justify-center p-4">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          </div>
+                        ) : (
+                          <div className="py-1">
+                            {searchResults?.map((result: Farmer) => (
+                              <button
+                                key={result._id}
+                                type="button"
+                                className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                onClick={() => handleSelectFarmer(result)}
+                              >
+                                <div className="font-medium">{result.name}</div>
+                                {(result.mobileNumber || result.address) && (
+                                  <div className="text-sm text-gray-500">
+                                    {result.mobileNumber && <span>📱 {result.mobileNumber}</span>}
+                                    {result.address && <span className="ml-2">📍 {result.address}</span>}
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 
