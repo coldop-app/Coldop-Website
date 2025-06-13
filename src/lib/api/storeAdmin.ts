@@ -294,5 +294,17 @@ export const storeAdminApi = {
       }
     );
     return response.data;
+  },
+
+  getFarmerOrders: async (farmerId: string, token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
   }
 };

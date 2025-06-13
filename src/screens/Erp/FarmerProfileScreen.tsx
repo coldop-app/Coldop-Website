@@ -9,6 +9,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { useState } from 'react';
+import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
+import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
+import { Order } from '@/utils/types';
 
 interface Farmer {
   _id: string;
@@ -58,11 +62,18 @@ const FarmerProfileScreen = () => {
   const navigate = useNavigate();
   const farmer = location.state?.farmer as Farmer;
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
+  const [showOrders, setShowOrders] = useState(false);
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
     queryKey: ['farmerStock', id, adminInfo?.token],
     queryFn: () => storeAdminApi.getFarmerStockSummary(id || '', adminInfo?.token || ''),
     enabled: !!id && !!adminInfo?.token,
+  });
+
+  const { data: ordersData, isLoading: isOrdersLoading } = useQuery({
+    queryKey: ['farmerOrders', id, adminInfo?.token],
+    queryFn: () => storeAdminApi.getFarmerOrders(id || '', adminInfo?.token || ''),
+    enabled: !!id && !!adminInfo?.token && showOrders,
   });
 
   const stockSummary = (stockData as StockSummaryResponse)?.stockSummary || [];
@@ -153,6 +164,57 @@ const FarmerProfileScreen = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Show/Hide Orders Button */}
+        <div className="flex justify-center">
+          <Button
+            onClick={() => setShowOrders(!showOrders)}
+            className={`px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all ${
+              showOrders
+                ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                : 'bg-primary hover:bg-primary/90 text-white'
+            }`}
+          >
+            {showOrders ? 'Hide Orders History' : 'Show Orders History'}
+          </Button>
+        </div>
+
+        {/* Orders Section */}
+        {showOrders && (
+          <div className="mt-6 space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-xl flex items-center gap-2">
+                  <Package className="h-6 w-6 text-primary" />
+                  Orders History
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {isOrdersLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <Skeleton key={i} className="h-32 w-full" />
+                    ))}
+                  </div>
+                ) : ordersData?.data?.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No orders found for this farmer
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {ordersData?.data?.map((order: Order) => (
+                      order.voucher.type === 'DELIVERY' ? (
+                        <DeliveryVoucherCard key={order._id} order={order} />
+                      ) : (
+                        <ReceiptVoucherCard key={order._id} order={order} />
+                      )
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* Stock Summary Section */}
         <Card>

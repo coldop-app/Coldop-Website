@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
-import './i18n'; 
+import './i18n';
 
 const App = () => {
   return (
