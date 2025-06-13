@@ -4,7 +4,7 @@ import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Phone, MapPin, Calendar, Package, Boxes, TrendingUp, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { Phone, MapPin, Calendar, Package, Boxes, TrendingUp, ArrowDownCircle, ArrowUpCircle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +12,9 @@ import { Button } from '@/components/ui/button';
 import { useState } from 'react';
 import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
 import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
-import { Order } from '@/utils/types';
+import { Order, StoreAdmin } from '@/utils/types';
+import { pdf, PDFDownloadLink } from '@react-pdf/renderer';
+import FarmerReportPDF from '@/components/pdf/FarmerReportPDF';
 
 interface Farmer {
   _id: string;
@@ -61,8 +63,10 @@ const FarmerProfileScreen = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const farmer = location.state?.farmer as Farmer;
-  const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
+  console.log(farmer)
+  const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
   const [showOrders, setShowOrders] = useState(false);
+  const [showPDFDownload, setShowPDFDownload] = useState(false);
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
     queryKey: ['farmerStock', id, adminInfo?.token],
@@ -79,6 +83,90 @@ const FarmerProfileScreen = () => {
   const stockSummary = (stockData as StockSummaryResponse)?.stockSummary || [];
 
   const totalBags = calculateFarmerTotalBags(stockSummary);
+
+          const handleGenerateReport = async () => {
+    if (!adminInfo || !farmer) {
+      alert('Please ensure farmer and admin data is available');
+      return;
+    }
+
+    // If orders are not loaded yet, show orders first
+    if (!showOrders) {
+      setShowOrders(true);
+      alert('Loading orders data. Please click View Report again once orders are loaded.');
+      return;
+    }
+
+    if (!ordersData?.data) {
+      alert('Orders data is still loading. Please try again in a moment.');
+      return;
+    }
+
+    try {
+      console.log('Starting PDF generation...');
+
+      const pdfDoc = <FarmerReportPDF
+        farmer={farmer}
+        adminInfo={adminInfo}
+        orders={ordersData.data}
+      />;
+
+      console.log('PDF component created, generating blob...');
+
+      // Generate PDF as blob
+      const pdfBlob = await pdf(pdfDoc).toBlob();
+      console.log('PDF blob generated, size:', pdfBlob.size, 'bytes');
+
+      // Create a more reliable blob URL by ensuring proper MIME type
+      const enhancedBlob = new Blob([pdfBlob], {
+        type: 'application/pdf'
+      });
+
+      const pdfUrl = URL.createObjectURL(enhancedBlob);
+      console.log('PDF URL created:', pdfUrl);
+
+      // Create filename with farmer name and date for fallback download
+      const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+
+      // Try to open in new tab with proper error handling
+      const newWindow = window.open('', '_blank');
+
+      if (newWindow) {
+        // Set up the new window to display the PDF
+        newWindow.location.href = pdfUrl;
+        console.log('PDF opened in new tab successfully');
+
+        // Clean up the URL object after the window has loaded
+        setTimeout(() => {
+          URL.revokeObjectURL(pdfUrl);
+          console.log('PDF URL cleaned up');
+        }, 5000);
+      } else {
+        // Popup blocked - fallback to download
+        console.log('Popup blocked, creating download link...');
+        const downloadLink = document.createElement('a');
+        downloadLink.href = pdfUrl;
+        downloadLink.download = fileName;
+        downloadLink.style.display = 'none';
+
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        alert('Popup was blocked. PDF has been downloaded instead.');
+
+        setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+      }
+
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+
+      // Fallback to PDFDownloadLink on error
+      console.log('Falling back to PDFDownloadLink method...');
+      setShowPDFDownload(true);
+      alert('PDF generation failed with the primary method. Please use the "Download Report" button that will appear.');
+    }
+  };
 
   if (!farmer) {
     return (
@@ -127,6 +215,44 @@ const FarmerProfileScreen = () => {
                       <ArrowUpCircle className="mr-2 h-4 w-4 text-primary" />
                       Outgoing Order
                     </Button>
+                                        <div className="flex gap-2">
+                      <Button
+                        onClick={handleGenerateReport}
+                        variant="outline"
+                        className="bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
+                        disabled={!ordersData?.data || isOrdersLoading}
+                      >
+                        <FileText className="mr-2 h-4 w-4 text-primary" />
+                        View Report
+                      </Button>
+                      {showPDFDownload && ordersData?.data && (
+                        <PDFDownloadLink
+                          document={
+                            <FarmerReportPDF
+                              farmer={farmer}
+                              adminInfo={adminInfo!}
+                              orders={ordersData.data}
+                            />
+                          }
+                          fileName={`${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`}
+                          className="inline-flex items-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+                        >
+                          {({ loading }) => (
+                            loading ? (
+                              <span className="flex items-center">
+                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500 mr-2"></div>
+                                Generating...
+                              </span>
+                            ) : (
+                              <span className="flex items-center">
+                                <FileText className="mr-2 h-4 w-4 text-red-500" />
+                                Fallback Download
+                              </span>
+                            )
+                          )}
+                        </PDFDownloadLink>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
