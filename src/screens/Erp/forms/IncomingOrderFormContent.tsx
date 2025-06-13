@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, X } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import debounce from "lodash/debounce";
+import NewFarmerModal, { NewFarmerFormData } from "@/components/modals/NewFarmerModal";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -138,6 +139,8 @@ const IncomingOrderFormContent = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isNewFarmerModalOpen, setIsNewFarmerModalOpen] = useState(false);
+  const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
@@ -278,6 +281,53 @@ const IncomingOrderFormContent = () => {
     }
   });
 
+  // Create farmer mutation
+  const createFarmerMutation = useMutation({
+    mutationFn: async (farmerData: NewFarmerFormData) => {
+      if (!adminInfo?.token) {
+        throw new Error("No authentication token found");
+      }
+      return storeAdminApi.quickRegister({
+        name: farmerData.name,
+        address: farmerData.address,
+        mobileNumber: farmerData.contact,
+        password: "123456", // Hardcoded default password
+        imageUrl: "",
+        farmerId: farmerData.accNo
+      }, adminInfo.token);
+    },
+    onSuccess: (data) => {
+      toast.success("Farmer created successfully!");
+      // Create a farmer object with the new data
+      const newFarmer: Farmer = {
+        _id: data.data._id,
+        name: data.data.name,
+        address: data.data.address || "",
+        mobileNumber: data.data.mobileNumber
+      };
+      // Update form with new farmer
+      setFormData(prev => ({
+        ...prev,
+        farmerName: newFarmer.name,
+        farmerId: newFarmer._id
+      }));
+      setSearchQuery(newFarmer.name);
+      // Show the farmer details by simulating a selection
+      handleSelectFarmer(newFarmer);
+      setSelectedFarmer(newFarmer);
+      setIsNewFarmerModalOpen(false);
+    },
+    onError: (error: unknown) => {
+      console.error("Error creating farmer:", error);
+      if (error instanceof Error) {
+        const apiError = error as ApiError;
+        toast.error(apiError.response?.data?.message || "Failed to create farmer");
+      } else {
+        toast.error("Failed to create farmer");
+      }
+    }
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -347,6 +397,40 @@ const IncomingOrderFormContent = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleNewFarmerSubmit = async (farmerData: NewFarmerFormData) => {
+    const response = await createFarmerMutation.mutateAsync(farmerData);
+    if (response.status === "Success") {
+      // Create a farmer object with the new data
+      const newFarmer: Farmer = {
+        _id: response.data._id,
+        name: response.data.name,
+        address: farmerData.address,
+        mobileNumber: response.data.mobileNumber
+      };
+      // Update form with new farmer
+      setFormData(prev => ({
+        ...prev,
+        farmerName: newFarmer.name,
+        farmerId: newFarmer._id
+      }));
+      setSearchQuery(newFarmer.name);
+      // Show the farmer details by simulating a selection
+      handleSelectFarmer(newFarmer);
+      setSelectedFarmer(newFarmer);
+      setIsNewFarmerModalOpen(false);
+    }
+  };
+
+  const clearSelectedFarmer = () => {
+    setSelectedFarmer(null);
+    setSearchQuery("");
+    setFormData(prev => ({
+      ...prev,
+      farmerName: "",
+      farmerId: ""
+    }));
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <h1 className="text-2xl font-bold text-center mb-6">{t('incomingOrder.title')}</h1>
@@ -390,6 +474,15 @@ const IncomingOrderFormContent = () => {
         </div>
       </div>
 
+      {/* Add the modal component */}
+      <NewFarmerModal
+        isOpen={isNewFarmerModalOpen}
+        onClose={() => setIsNewFarmerModalOpen(false)}
+        onSubmit={handleNewFarmerSubmit}
+        isLoading={createFarmerMutation.isPending}
+        token={adminInfo?.token || ''}
+      />
+
       <form onSubmit={handleSubmit}>
         {/* Step 1: Farmer, Variety and Quantities */}
         <AnimatedFormStep isVisible={currentStep === 1}>
@@ -427,18 +520,31 @@ const IncomingOrderFormContent = () => {
                 ) : (
                   // Show search input when no farmer is pre-selected
                   <div className="flex gap-2 items-center relative">
-                    <input
-                      id="farmer-search-input"
-                      type="text"
-                      value={searchQuery}
-                      onChange={handleSearchChange}
-                      onFocus={() => setShowDropdown(true)}
-                      placeholder={t('incomingOrder.farmer.searchPlaceholder')}
-                      className="flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
-                      required
-                    />
+                    <div className="flex-1 relative">
+                      <input
+                        id="farmer-search-input"
+                        type="text"
+                        value={selectedFarmer ? selectedFarmer.name : searchQuery}
+                        onChange={handleSearchChange}
+                        onFocus={() => setShowDropdown(true)}
+                        placeholder={t('incomingOrder.farmer.searchPlaceholder')}
+                        className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                        required
+                      />
+                      {selectedFarmer && (
+                        <button
+                          type="button"
+                          onClick={clearSelectedFarmer}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                          title="Clear selection"
+                        >
+                          <X size={16} className="text-gray-500" />
+                        </button>
+                      )}
+                    </div>
                     <button
                       type="button"
+                      onClick={() => setIsNewFarmerModalOpen(true)}
                       className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       <Plus size={18} />
