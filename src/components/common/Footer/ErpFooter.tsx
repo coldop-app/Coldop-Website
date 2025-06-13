@@ -7,10 +7,10 @@ const ErpFooter= () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/daybook', labelKey: 'erpFooter.daybook', icon: BookOpen },
-    { path: '/people', labelKey: 'erpFooter.people', icon: Users },
-    { path: '/analytics', labelKey: 'erpFooter.analytics', icon: BarChart2 },
-    { path: '/settings', labelKey: 'erpFooter.settings', icon: Settings },
+    { path: '/erp/daybook', labelKey: 'erpFooter.daybook', icon: BookOpen },
+    { path: '/erp/people', labelKey: 'erpFooter.people', icon: Users },
+    { path: '/erp/analytics', labelKey: 'erpFooter.analytics', icon: BarChart2 },
+    { path: '/erp/settings', labelKey: 'erpFooter.settings', icon: Settings },
   ];
 
   return (

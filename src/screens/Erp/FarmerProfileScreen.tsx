@@ -179,8 +179,8 @@ const FarmerProfileScreen = () => {
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
               {/* Avatar */}
-              <Avatar className="h-20 w-20 md:h-24 md:w-24">
-                <AvatarFallback className="text-xl md:text-2xl bg-primary/10 text-primary">
+              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24">
+                <AvatarFallback className="text-lg sm:text-xl md:text-2xl bg-primary/10 text-primary">
                   {getInitials(farmer.name)}
                 </AvatarFallback>
               </Avatar>
@@ -188,29 +188,33 @@ const FarmerProfileScreen = () => {
               {/* Info */}
               <div className="flex-1 w-full text-center md:text-left">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
-                  <h1 className="text-xl md:text-2xl font-bold text-gray-900">{farmer.name}</h1>
-                  <div className="flex items-center justify-center md:justify-end gap-3">
-                    <Button
-                      onClick={() => navigate(`/erp/incoming-order`, { state: { farmer } })}
-                      variant="outline"
-                      className="bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
-                    >
-                      <ArrowDownCircle className="mr-2 h-4 w-4 text-primary" />
-                      Incoming Order
-                    </Button>
-                    <Button
-                      onClick={() => navigate(`/erp/outgoing-order`, { state: { farmer } })}
-                      variant="outline"
-                      className="bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
-                    >
-                      <ArrowUpCircle className="mr-2 h-4 w-4 text-primary" />
-                      Outgoing Order
-                    </Button>
-                                        <div className="flex gap-2">
+                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{farmer.name}</h1>
+                  <div className="flex flex-col sm:flex-row items-center gap-3">
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button
+                        onClick={() => navigate(`/erp/incoming-order`, { state: { farmer } })}
+                        variant="outline"
+                        className="flex-1 sm:flex-initial bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
+                      >
+                        <ArrowDownCircle className="mr-2 h-4 w-4 text-primary" />
+                        <span className="hidden sm:inline">Incoming Order</span>
+                        <span className="sm:hidden">Incoming</span>
+                      </Button>
+                      <Button
+                        onClick={() => navigate(`/erp/outgoing-order`, { state: { farmer } })}
+                        variant="outline"
+                        className="flex-1 sm:flex-initial bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
+                      >
+                        <ArrowUpCircle className="mr-2 h-4 w-4 text-primary" />
+                        <span className="hidden sm:inline">Outgoing Order</span>
+                        <span className="sm:hidden">Outgoing</span>
+                      </Button>
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
                       <Button
                         onClick={handleGenerateReport}
                         variant="outline"
-                        className="bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
+                        className="flex-1 sm:flex-initial bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
                         disabled={isOrdersLoading}
                       >
                         {isOrdersLoading ? (
@@ -221,7 +225,8 @@ const FarmerProfileScreen = () => {
                         ) : (
                           <>
                             <FileText className="mr-2 h-4 w-4 text-primary" />
-                            View Report
+                            <span className="hidden sm:inline">View Report</span>
+                            <span className="sm:hidden">Report</span>
                           </>
                         )}
                       </Button>
@@ -235,18 +240,20 @@ const FarmerProfileScreen = () => {
                             />
                           }
                           fileName={`${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`}
-                          className="inline-flex items-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
                         >
                           {({ loading }) => (
                             loading ? (
                               <span className="flex items-center">
                                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500 mr-2"></div>
-                                Generating...
+                                <span className="hidden sm:inline">Generating...</span>
+                                <span className="sm:hidden">Gen...</span>
                               </span>
                             ) : (
                               <span className="flex items-center">
                                 <FileText className="mr-2 h-4 w-4 text-red-500" />
-                                Fallback Download
+                                <span className="hidden sm:inline">Fallback Download</span>
+                                <span className="sm:hidden">Download</span>
                               </span>
                             )
                           )}
@@ -255,7 +262,7 @@ const FarmerProfileScreen = () => {
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
                   <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-lg">
                     <Phone size={18} className="text-primary flex-shrink-0" />
                     <div className="min-w-0">
@@ -295,7 +302,7 @@ const FarmerProfileScreen = () => {
         <div className="flex justify-center">
           <Button
             onClick={() => setShowOrders(!showOrders)}
-            className={`px-8 py-6 text-lg font-semibold shadow-lg hover:shadow-xl transition-all ${
+            className={`w-full sm:w-auto px-4 sm:px-8 py-4 sm:py-6 text-base sm:text-lg font-semibold shadow-lg hover:shadow-xl transition-all ${
               showOrders
                 ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
                 : 'bg-primary hover:bg-primary/90 text-white'
@@ -307,27 +314,27 @@ const FarmerProfileScreen = () => {
 
         {/* Orders Section */}
         {showOrders && (
-          <div className="mt-6 space-y-6">
+          <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
             <Card>
-              <CardHeader>
-                <CardTitle className="text-xl flex items-center gap-2">
-                  <Package className="h-6 w-6 text-primary" />
+              <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+                <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary" />
                   Orders History
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-2 sm:p-4 md:p-6">
                 {isOrdersLoading ? (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {[1, 2, 3].map((i) => (
-                      <Skeleton key={i} className="h-32 w-full" />
+                      <Skeleton key={i} className="h-24 sm:h-28 md:h-32 w-full" />
                     ))}
                   </div>
                 ) : ordersData?.data?.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
+                  <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-gray-500">
                     No orders found for this farmer
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3 sm:space-y-4">
                     {ordersData?.data?.map((order: Order) => (
                       order.voucher.type === 'DELIVERY' ? (
                         <DeliveryVoucherCard key={order._id} order={order} />
@@ -344,26 +351,26 @@ const FarmerProfileScreen = () => {
 
         {/* Stock Summary Section */}
         <Card>
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 px-4 sm:px-6 py-4">
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-4 sm:px-6 py-4">
             <div className="flex items-center gap-2">
               <Package size={20} className="text-primary" />
-              <CardTitle className="text-lg md:text-xl">Stock Summary</CardTitle>
+              <CardTitle className="text-base sm:text-lg md:text-xl">Stock Summary</CardTitle>
             </div>
-            <div className="flex items-center gap-2 text-sm text-gray-500">
-              <Boxes size={16} />
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+              <Boxes size={14} className="hidden sm:block" />
               <span>Total Varieties: {stockSummary.length}</span>
             </div>
           </CardHeader>
-          <CardContent className="p-4 sm:p-6">
+          <CardContent className="p-2 sm:p-4 md:p-6">
             {isStockLoading ? (
               <div className="space-y-4">
-                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-20 sm:h-24 w-full" />
                 {[1, 2, 3].map((i) => (
                   <div key={i} className="space-y-2">
-                    <Skeleton className="h-8 w-1/3" />
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                    <Skeleton className="h-6 sm:h-8 w-1/3" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
                       {[1, 2, 3, 4, 5].map((j) => (
-                        <Skeleton key={j} className="h-24" />
+                        <Skeleton key={j} className="h-20 sm:h-24" />
                       ))}
                     </div>
                   </div>
@@ -372,59 +379,59 @@ const FarmerProfileScreen = () => {
             ) : (
               <div className="space-y-4 sm:space-y-6">
                 {/* Summary Cards */}
-                <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
                   {stockSummary.map((variety) => {
                     const totalBags = calculateVarietyTotal(variety.sizes);
                     return (
                       <div
                         key={variety.variety}
-                        className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors cursor-pointer"
+                        className="bg-gray-50 rounded-lg p-2 sm:p-3 md:p-4 hover:bg-gray-100 transition-colors cursor-pointer"
                         onClick={() => {
                           const element = document.getElementById(`variety-${variety.variety}`);
                           element?.scrollIntoView({ behavior: 'smooth' });
                         }}
                       >
                         <div className="flex items-center justify-between mb-1 sm:mb-2">
-                          <span className="font-medium text-gray-900 text-sm sm:text-base truncate">{variety.variety}</span>
-                          <span className="text-primary font-semibold text-sm sm:text-base">{totalBags}</span>
+                          <span className="font-medium text-gray-900 text-xs sm:text-sm md:text-base truncate">{variety.variety}</span>
+                          <span className="text-primary font-semibold text-xs sm:text-sm md:text-base">{totalBags}</span>
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-500">Total Bags</div>
+                        <div className="text-[10px] sm:text-xs md:text-sm text-gray-500">Total Bags</div>
                       </div>
                     );
                   })}
                 </div>
 
                 {/* Detailed Cards */}
-                <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-3 sm:space-y-4 md:space-y-6">
                   {stockSummary.map((variety) => {
                     const totalBags = calculateVarietyTotal(variety.sizes);
                     return (
                       <Card key={variety.variety} id={`variety-${variety.variety}`} className="overflow-hidden">
-                        <CardHeader className="bg-gray-50 px-4 sm:px-6 py-3 sm:py-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0">
-                            <CardTitle className="text-base sm:text-lg">{variety.variety}</CardTitle>
-                            <div className="flex items-center gap-2 text-primary font-medium text-sm sm:text-base">
-                              <TrendingUp size={16} />
+                        <CardHeader className="bg-gray-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
+                            <CardTitle className="text-sm sm:text-base md:text-lg">{variety.variety}</CardTitle>
+                            <div className="flex items-center gap-1 sm:gap-2 text-primary font-medium text-xs sm:text-sm md:text-base">
+                              <TrendingUp size={14} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
                               <span>Total: {totalBags} bags</span>
                             </div>
                           </div>
                         </CardHeader>
-                        <CardContent className="p-4 sm:p-6">
-                          <div className="grid grid-cols-1 xs:grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                        <CardContent className="p-2 sm:p-4 md:p-6">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
                             {variety.sizes.map((size) => (
                               <div
                                 key={size.size}
-                                className="bg-gray-50 rounded-lg p-3 sm:p-4 hover:bg-gray-100 transition-colors"
+                                className="bg-gray-50 rounded-lg p-2 sm:p-3 md:p-4 hover:bg-gray-100 transition-colors"
                               >
-                                <div className="text-sm font-medium text-gray-500 mb-2">{size.size}</div>
+                                <div className="text-xs sm:text-sm font-medium text-gray-500 mb-1 sm:mb-2">{size.size}</div>
                                 <div className="space-y-1">
                                   <div className="flex justify-between items-center">
-                                    <span className="text-xs sm:text-sm text-gray-600">Current Stock</span>
-                                    <span className="font-semibold text-gray-900 text-sm sm:text-base">{size.currentQuantity}</span>
+                                    <span className="text-[10px] sm:text-xs text-gray-600">Current Stock</span>
+                                    <span className="font-semibold text-gray-900 text-xs sm:text-sm">{size.currentQuantity}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-xs sm:text-sm text-gray-600">Initial Stock</span>
-                                    <span className="font-semibold text-gray-900 text-sm sm:text-base">{size.initialQuantity}</span>
+                                    <span className="text-[10px] sm:text-xs text-gray-600">Initial Stock</span>
+                                    <span className="font-semibold text-gray-900 text-xs sm:text-sm">{size.initialQuantity}</span>
                                   </div>
                                 </div>
                               </div>
