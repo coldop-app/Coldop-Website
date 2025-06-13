@@ -77,7 +77,7 @@ const FarmerProfileScreen = () => {
   const { data: ordersData, isLoading: isOrdersLoading } = useQuery({
     queryKey: ['farmerOrders', id, adminInfo?.token],
     queryFn: () => storeAdminApi.getFarmerOrders(id || '', adminInfo?.token || ''),
-    enabled: !!id && !!adminInfo?.token && showOrders,
+    enabled: !!id && !!adminInfo?.token,
   });
 
   const stockSummary = (stockData as StockSummaryResponse)?.stockSummary || [];
@@ -87,13 +87,6 @@ const FarmerProfileScreen = () => {
           const handleGenerateReport = async () => {
     if (!adminInfo || !farmer) {
       alert('Please ensure farmer and admin data is available');
-      return;
-    }
-
-    // If orders are not loaded yet, show orders first
-    if (!showOrders) {
-      setShowOrders(true);
-      alert('Loading orders data. Please click View Report again once orders are loaded.');
       return;
     }
 
@@ -128,15 +121,13 @@ const FarmerProfileScreen = () => {
       // Create filename with farmer name and date for fallback download
       const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
 
-      // Try to open in new tab with proper error handling
-      const newWindow = window.open('', '_blank');
+      // Open PDF in new tab for viewing (not downloading)
+      const newWindow = window.open(pdfUrl, '_blank');
 
       if (newWindow) {
-        // Set up the new window to display the PDF
-        newWindow.location.href = pdfUrl;
         console.log('PDF opened in new tab successfully');
 
-        // Clean up the URL object after the window has loaded
+        // Clean up the URL object after a delay to ensure PDF loads
         setTimeout(() => {
           URL.revokeObjectURL(pdfUrl);
           console.log('PDF URL cleaned up');
@@ -220,10 +211,19 @@ const FarmerProfileScreen = () => {
                         onClick={handleGenerateReport}
                         variant="outline"
                         className="bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
-                        disabled={!ordersData?.data || isOrdersLoading}
+                        disabled={isOrdersLoading}
                       >
-                        <FileText className="mr-2 h-4 w-4 text-primary" />
-                        View Report
+                        {isOrdersLoading ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                            Loading...
+                          </>
+                        ) : (
+                          <>
+                            <FileText className="mr-2 h-4 w-4 text-primary" />
+                            View Report
+                          </>
+                        )}
                       </Button>
                       {showPDFDownload && ordersData?.data && (
                         <PDFDownloadLink
