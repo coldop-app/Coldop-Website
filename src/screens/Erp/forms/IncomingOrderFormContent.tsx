@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, X } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -421,6 +421,16 @@ const IncomingOrderFormContent = () => {
     }
   };
 
+  const clearSelectedFarmer = () => {
+    setSelectedFarmer(null);
+    setSearchQuery("");
+    setFormData(prev => ({
+      ...prev,
+      farmerName: "",
+      farmerId: ""
+    }));
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <h1 className="text-2xl font-bold text-center mb-6">{t('incomingOrder.title')}</h1>
@@ -510,16 +520,28 @@ const IncomingOrderFormContent = () => {
                 ) : (
                   // Show search input when no farmer is pre-selected
                   <div className="flex gap-2 items-center relative">
-                    <input
-                      id="farmer-search-input"
-                      type="text"
-                      value={selectedFarmer ? selectedFarmer.name : searchQuery}
-                      onChange={handleSearchChange}
-                      onFocus={() => setShowDropdown(true)}
-                      placeholder={t('incomingOrder.farmer.searchPlaceholder')}
-                      className="flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
-                      required
-                    />
+                    <div className="flex-1 relative">
+                      <input
+                        id="farmer-search-input"
+                        type="text"
+                        value={selectedFarmer ? selectedFarmer.name : searchQuery}
+                        onChange={handleSearchChange}
+                        onFocus={() => setShowDropdown(true)}
+                        placeholder={t('incomingOrder.farmer.searchPlaceholder')}
+                        className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                        required
+                      />
+                      {selectedFarmer && (
+                        <button
+                          type="button"
+                          onClick={clearSelectedFarmer}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                          title="Clear selection"
+                        >
+                          <X size={16} className="text-gray-500" />
+                        </button>
+                      )}
+                    </div>
                     <button
                       type="button"
                       onClick={() => setIsNewFarmerModalOpen(true)}
