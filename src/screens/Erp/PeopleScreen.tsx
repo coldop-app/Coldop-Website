@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
@@ -31,11 +32,16 @@ const getInitials = (name: string) => {
 };
 
 const PeopleScreen = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('name');
   const [sortOpen, setSortOpen] = useState(false);
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
+
+  useEffect(() => {
+    console.log("translation",t('people.title'));
+  }, [t]);
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['farmers', adminInfo?.token],
@@ -66,7 +72,7 @@ const PeopleScreen = () => {
   if (isLoading && !farmers.length) {
     return (
       <>
-        <TopBar title="People" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+        <TopBar title={t('people.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
         </div>
@@ -77,9 +83,9 @@ const PeopleScreen = () => {
   if (error) {
     return (
       <>
-        <TopBar title="People" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+        <TopBar title={t('people.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <div className="text-red-500">Error loading people data</div>
+          <div className="text-red-500">{t('people.errorLoading')}</div>
         </div>
       </>
     );
@@ -87,12 +93,12 @@ const PeopleScreen = () => {
 
   return (
     <>
-      <TopBar title="People" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+      <TopBar title={t('people.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
       <div className="p-4 sm:p-6">
         {/* Header with total count */}
         <div className="mb-4 sm:mb-6">
           <p className="text-sm sm:text-base font-medium text-gray-600">
-            Total: {farmers.length} people
+            {t('people.total')}: {farmers.length} {t('people.people')}
           </p>
         </div>
 
@@ -105,7 +111,7 @@ const PeopleScreen = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by name, mobile or address..."
+                placeholder={t('people.searchPlaceholder')}
                 className="w-full px-4 py-2 pl-10 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
               />
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -127,7 +133,7 @@ const PeopleScreen = () => {
                 onClick={() => setSortOpen((v) => !v)}
                 className="flex items-center w-full px-4 py-2 border rounded-lg bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base justify-between"
               >
-                Sort By
+                {t('people.sortBy')}
                 <ChevronDown size={18} className="ml-2 text-gray-400" />
               </button>
               {sortOpen && (
@@ -136,23 +142,23 @@ const PeopleScreen = () => {
                     className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${sortBy === 'name' ? 'font-semibold' : ''}`}
                     onClick={() => { setSortBy('name'); setSortOpen(false); }}
                   >
-                    Name
+                    {t('people.name')}
                   </button>
                   <button
                     className={`block w-full text-left px-4 py-2 text-sm hover:bg-gray-100 ${sortBy === 'createdAt' ? 'font-semibold' : ''}`}
                     onClick={() => { setSortBy('createdAt'); setSortOpen(false); }}
                   >
-                    Recently Added
+                    {t('people.recentlyAdded')}
                   </button>
                 </div>
               )}
             </div>
             <button
-              onClick={() => alert('Add new person')}
+              onClick={() => alert(t('people.addNewPerson'))}
               className="w-full sm:w-auto px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm sm:text-base font-medium flex items-center justify-center gap-2"
             >
               <Plus size={18} />
-              Add Farmer
+              {t('people.addFarmer')}
             </button>
           </div>
         </div>
@@ -161,7 +167,7 @@ const PeopleScreen = () => {
         <div className="space-y-4">
           {farmers.length === 0 ? (
             <div className="text-center py-8 text-sm sm:text-base text-gray-500">
-              No people found for the selected filters.
+              {t('people.noPeopleFound')}
             </div>
           ) : (
             farmers.map((farmer) => (
@@ -192,10 +198,10 @@ const PeopleScreen = () => {
                     <h3 className="text-base sm:text-lg font-semibold text-gray-900">{farmer.name}</h3>
                     <div className="mt-1 space-y-1">
                       <p className="text-sm text-gray-600 flex items-center gap-2">
-                        <span className="font-medium">Mobile:</span> {farmer.mobileNumber}
+                        <span className="font-medium">{t('people.mobile')}:</span> {farmer.mobileNumber}
                       </p>
                       <p className="text-sm text-gray-600 flex items-center gap-2">
-                        <span className="font-medium">Address:</span> {farmer.address}
+                        <span className="font-medium">{t('people.address')}:</span> {farmer.address}
                       </p>
                     </div>
                   </div>

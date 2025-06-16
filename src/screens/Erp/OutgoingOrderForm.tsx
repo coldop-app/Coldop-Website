@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useTranslation } from 'react-i18next';
 import TopBar from "@/components/common/Topbar/Topbar";
 import OutgoingOrderFormContent from "./forms/OutgoingOrderFormContent";
 
 const OutgoingOrderForm = () => {
+  const { t } = useTranslation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const toggleSidebar = () => {
@@ -14,7 +16,7 @@ const OutgoingOrderForm = () => {
       <TopBar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={toggleSidebar}
-        title="Create Outgoing Order"
+        title={t('outgoingOrder.title')}
       />
 
       <div className="w-full px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">

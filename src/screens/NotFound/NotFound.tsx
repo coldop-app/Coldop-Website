@@ -2,9 +2,11 @@ import Footer from "@/components/common/Footer/Footer";
 import { footerData } from "../homeScreenData";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { Home, ArrowLeft,  HelpCircle } from "lucide-react";
 import { motion } from "motion/react";
 const NotFound = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -126,7 +128,7 @@ const NotFound = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 1 }}
               >
-                Oops! Page Not Found
+{t('notFound.title')}
               </motion.h2>
               <motion.p
                 className="text-lg text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed"
@@ -134,8 +136,7 @@ const NotFound = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 1.2 }}
               >
-                The page you're looking for seems to have wandered off into the digital void.
-                Don't worry, it happens to the best of us!
+{t('notFound.description')}
               </motion.p>
             </motion.div>
 
@@ -163,7 +164,7 @@ const NotFound = () => {
                   >
                     <Home className="w-5 h-5 mr-2" />
                   </motion.div>
-                  Return Home
+{t('notFound.returnHome')}
                 </Button>
               </motion.div>
 
@@ -185,7 +186,7 @@ const NotFound = () => {
                   >
                     <ArrowLeft className="w-5 h-5 mr-2" />
                   </motion.div>
-                  Go Back
+{t('notFound.goBack')}
                 </Button>
               </motion.div>
             </motion.div>
@@ -207,7 +208,7 @@ const NotFound = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 2.2 }}
               >
-                Need help finding what you're looking for?
+{t('notFound.needHelp')}
               </motion.h3>
               <motion.div
                 className="flex flex-col sm:flex-row gap-3 justify-center items-center text-sm text-slate-600 dark:text-slate-300"
@@ -230,7 +231,7 @@ const NotFound = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <HelpCircle className="w-4 h-4 mr-1" />
-                  Contact support
+{t('notFound.contactSupport')}
                 </motion.button>
               </motion.div>
             </motion.div>

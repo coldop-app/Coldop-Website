@@ -5,6 +5,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import type { UseMutationResult } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
+import { useTranslation } from "react-i18next";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
@@ -159,6 +160,7 @@ interface ApiError {
 }
 
 const OutgoingOrderFormContent = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
   const farmer = location.state?.farmer as Farmer | undefined;
@@ -382,18 +384,18 @@ const OutgoingOrderFormContent = () => {
         adminInfo?.token || ''
       ),
     onSuccess: () => {
-      toast.success('Outgoing order created successfully');
+      toast.success(t('outgoingOrder.success.orderCreated'));
       navigate('/erp/daybook'); // Navigate to daybook after success
     },
     onError: (error) => {
-      toast.error(error.response?.data?.message || 'Failed to create outgoing order');
+      toast.error(error.response?.data?.message || t('outgoingOrder.errors.failedToCreate'));
     }
   });
 
   return (
     <div className="w-full bg-background rounded-lg shadow-lg border border-border overflow-hidden">
       <div className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5">
-        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-3 sm:mb-4 md:mb-5">Create Outgoing Order</h1>
+        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-3 sm:mb-4 md:mb-5">{t('outgoingOrder.title')}</h1>
 
         {/* Progress indicator */}
         <div className="mb-4 sm:mb-5 md:mb-6">
@@ -417,7 +419,7 @@ const OutgoingOrderFormContent = () => {
                   }`}>
                     1
                   </div>
-                  <span className="text-[10px] sm:text-xs mt-1 text-center whitespace-nowrap">Farmer & Variety</span>
+                  <span className="text-[10px] sm:text-xs mt-1 text-center whitespace-nowrap">{t('outgoingOrder.steps.farmerVariety')}</span>
                 </div>
 
                 {/* Step 2 */}
@@ -427,7 +429,7 @@ const OutgoingOrderFormContent = () => {
                   }`}>
                     2
                   </div>
-                  <span className="text-[10px] sm:text-xs mt-1 text-center">Quantities</span>
+                  <span className="text-[10px] sm:text-xs mt-1 text-center">{t('outgoingOrder.steps.quantities')}</span>
                 </div>
               </div>
             </div>
@@ -442,14 +444,14 @@ const OutgoingOrderFormContent = () => {
                 {/* Farmer Selection */}
                 <div>
                   <label className="block text-sm font-medium mb-1 sm:mb-1.5">
-                    Enter Account Name (search and select)
+                    {t('outgoingOrder.farmer.label')}
                   </label>
                   {farmer ? (
                     // Show farmer details when pre-selected
                     <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
                       <div className="flex items-center justify-between mb-2">
                         <h3 className="text-lg font-medium">{farmer.name}</h3>
-                        <span className="text-sm text-muted-foreground">Pre-selected farmer</span>
+                        <span className="text-sm text-muted-foreground">{t('outgoingOrder.farmer.preSelected')}</span>
                       </div>
                       {(farmer.mobileNumber || farmer.address) && (
                         <div className="text-sm text-gray-600 space-y-1">
@@ -477,7 +479,7 @@ const OutgoingOrderFormContent = () => {
                         value={searchQuery}
                         onChange={handleSearchChange}
                         onFocus={() => setShowDropdown(true)}
-                        placeholder="Search Farmer"
+                        placeholder={t('outgoingOrder.farmer.searchPlaceholder')}
                         className="flex-1 p-2 sm:p-2.5 text-sm border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
                         required
                       />
@@ -519,11 +521,11 @@ const OutgoingOrderFormContent = () => {
 
                 {/* Variety Selection */}
                 <div className="border border-green-200 rounded-lg p-2 sm:p-3 bg-green-50/50">
-                  <h3 className="text-sm sm:text-base font-medium mb-1 sm:mb-1.5">Select Variety</h3>
+                  <h3 className="text-sm sm:text-base font-medium mb-1 sm:mb-1.5">{t('outgoingOrder.variety.title')}</h3>
                   <p className="text-xs text-muted-foreground mb-2 sm:mb-3">
-                    {availableVarieties.length > 0
-                      ? "Choose from varieties in farmer's incoming orders"
-                      : "No varieties found in farmer's incoming orders"}
+                                          {availableVarieties.length > 0
+                        ? t('outgoingOrder.variety.description')
+                        : t('outgoingOrder.variety.noVarieties')}
                   </p>
 
                   <div className="relative">
@@ -536,10 +538,10 @@ const OutgoingOrderFormContent = () => {
                         {isLoadingIncomingOrders ? (
                           <div className="flex items-center gap-2">
                             <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                            <span>Loading varieties...</span>
+                            <span>{t('outgoingOrder.variety.loading')}</span>
                           </div>
                         ) : (
-                          <SelectValue placeholder="Select a variety" />
+                                                      <SelectValue placeholder={t('outgoingOrder.variety.selectPlaceholder')} />
                         )}
                       </SelectTrigger>
                       <SelectContent>
@@ -559,7 +561,7 @@ const OutgoingOrderFormContent = () => {
                     {isLoadingIncomingOrders ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                        <span className="text-sm">Loading incoming orders...</span>
+                        <span className="text-sm">{t('outgoingOrder.orders.loading')}</span>
                       </div>
                     ) : filteredOrders.length > 0 ? (
                       <div className="relative -mx-2 sm:-mx-3 md:-mx-4">
@@ -568,7 +570,7 @@ const OutgoingOrderFormContent = () => {
                             <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
                               <thead>
                                 <tr className="bg-gray-100">
-                                  <th className="p-2 sm:p-2.5 text-left border-b font-medium text-xs sm:text-sm text-gray-600 w-24 sm:w-28">R. Voucher</th>
+                                  <th className="p-2 sm:p-2.5 text-left border-b font-medium text-xs sm:text-sm text-gray-600 w-24 sm:w-28">{t('outgoingOrder.orders.receiptVoucher')}</th>
                                   {availableBagSizes.map(size => (
                                     <th key={size} className="p-2 sm:p-2.5 text-center border-b font-medium text-xs sm:text-sm text-gray-600 w-[calc((100%-96px)/5)]">
                                       {size.toLowerCase()}
@@ -586,7 +588,7 @@ const OutgoingOrderFormContent = () => {
                                       <div className="font-medium text-sm sm:text-base">#{order.voucher.voucherNumber}</div>
                                       {order.orderDetails[0]?.location && (
                                         <div className="text-[10px] sm:text-xs text-gray-500">
-                                          Location: {order.orderDetails[0].location}
+                                          {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
                                         </div>
                                       )}
                                     </td>
@@ -659,26 +661,26 @@ const OutgoingOrderFormContent = () => {
 
                         {/* Mobile Scroll Hint */}
                         <div className="text-[10px] sm:text-xs text-gray-500 mt-2 text-center md:hidden">
-                          Swipe horizontally to see more sizes
+                          {t('outgoingOrder.orders.scrollHint')}
                         </div>
                       </div>
-                    ) : (
-                      <p className="text-sm text-gray-500">
-                        {formData.variety
-                          ? `No orders found for variety ${formData.variety}`
-                          : 'Please select a variety to view orders'}
-                      </p>
+                                          ) : (
+                        <p className="text-sm text-gray-500">
+                          {formData.variety
+                            ? `${t('outgoingOrder.orders.noOrders')} ${formData.variety}`
+                            : t('outgoingOrder.orders.selectVariety')}
+                        </p>
                     )}
 
                     {/* Selected Quantities Summary */}
                     {selectedQuantities.length > 0 && (
                       <div className="mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
-                        <h4 className="font-medium mb-2 text-sm sm:text-base">Selected Quantities:</h4>
+                        <h4 className="font-medium mb-2 text-sm sm:text-base">{t('outgoingOrder.selectedQuantities.title')}</h4>
                         <div className="space-y-2">
                           {selectedQuantities.map((sq, index) => (
                             <div key={index} className="flex items-center gap-2">
                               <span className="text-xs sm:text-sm">
-                                Receipt #{sq.receiptNumber} - {sq.bagSize}: {sq.selectedQuantity} bags
+                                {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}: {sq.selectedQuantity} {t('outgoingOrder.selectedQuantities.bags')}
                               </span>
                               <button
                                 type="button"
@@ -699,19 +701,19 @@ const OutgoingOrderFormContent = () => {
                   <button
                     type="button"
                     onClick={() => {
-                      if (!formData.farmerName.trim()) {
-                        toast.error("Please enter farmer name");
-                        return;
-                      }
-                      if (!formData.variety) {
-                        toast.error("Please select a variety");
-                        return;
-                      }
+                          if (!formData.farmerName.trim()) {
+      toast.error(t('outgoingOrder.errors.enterFarmerName'));
+      return;
+    }
+    if (!formData.variety) {
+      toast.error(t('outgoingOrder.errors.selectVariety'));
+      return;
+    }
                       setCurrentStep(2);
                     }}
                     className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
-                    Continue
+                    {t('outgoingOrder.buttons.continue')}
                   </button>
                 </div>
               </div>
@@ -723,18 +725,18 @@ const OutgoingOrderFormContent = () => {
             {currentStep === 2 && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-lg font-medium mb-4">Review Order Details</h3>
+                  <h3 className="text-lg font-medium mb-4">{t('outgoingOrder.review.title')}</h3>
 
                   {/* Selected Quantities Summary */}
                   <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                    <h4 className="font-medium mb-3">Selected Quantities:</h4>
+                    <h4 className="font-medium mb-3">{t('outgoingOrder.selectedQuantities.title')}</h4>
                     <div className="space-y-2">
                       {selectedQuantities.map((sq, index) => (
                         <div key={index} className="flex items-center justify-between text-sm">
                           <span>
-                            Receipt #{sq.receiptNumber} - {sq.bagSize}
+                            {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}
                           </span>
-                          <span className="font-medium">{sq.selectedQuantity} bags</span>
+                                                      <span className="font-medium">{sq.selectedQuantity} {t('outgoingOrder.selectedQuantities.bags')}</span>
                         </div>
                       ))}
                     </div>
@@ -743,12 +745,12 @@ const OutgoingOrderFormContent = () => {
                   {/* Remarks Input */}
                   <div className="mb-6">
                     <label className="block text-sm font-medium mb-2">
-                      Order Remarks
+                      {t('outgoingOrder.review.orderRemarks')}
                     </label>
                     <textarea
                       value={formData.remarks}
                       onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
-                      placeholder="Enter any remarks for this order"
+                                              placeholder={t('outgoingOrder.review.remarksPlaceholder')}
                       className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                       rows={3}
                     />
@@ -762,7 +764,7 @@ const OutgoingOrderFormContent = () => {
                       disabled={createOrderMutation.isPending}
                       className="flex-1 py-2.5 px-4 border border-primary text-primary rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      Back
+                      {t('outgoingOrder.buttons.back')}
                     </button>
                     <button
                       type="button"
@@ -777,10 +779,10 @@ const OutgoingOrderFormContent = () => {
                       {createOrderMutation.isPending ? (
                         <>
                           <Loader2 className="h-4 w-4 animate-spin" />
-                          Creating...
+                          {t('outgoingOrder.buttons.creating')}
                         </>
                       ) : (
-                        'Create Order'
+                        t('outgoingOrder.buttons.create')
                       )}
                     </button>
                   </div>
@@ -796,7 +798,7 @@ const OutgoingOrderFormContent = () => {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 sm:p-6 max-w-sm w-full mx-4">
             <div className="flex justify-between items-center mb-3 sm:mb-4">
-              <h3 className="text-base sm:text-lg font-medium">Quantity to be removed</h3>
+              <h3 className="text-base sm:text-lg font-medium">{t('outgoingOrder.quantityModal.title')}</h3>
               <button
                 type="button"
                 onClick={() => setActiveBox(null)}
@@ -808,12 +810,12 @@ const OutgoingOrderFormContent = () => {
             <div className="space-y-4">
               <div>
                 <div className="text-sm text-gray-500 mb-2">
-                  Current Available Quantity : {activeBox.maxQuantity}
+                  {t('outgoingOrder.quantityModal.currentAvailable')} : {activeBox.maxQuantity}
                 </div>
                 <div className="flex items-center gap-3 sm:gap-4">
-                  <label className="text-sm sm:text-base text-gray-700 font-medium whitespace-nowrap">
-                    Enter Qty :
-                  </label>
+                                      <label className="text-sm sm:text-base text-gray-700 font-medium whitespace-nowrap">
+                      {t('outgoingOrder.quantityModal.enterQty')} :
+                    </label>
                   <input
                     type="number"
                     value={inputQuantity}
@@ -824,7 +826,7 @@ const OutgoingOrderFormContent = () => {
                       }
                     }}
                     className="flex-1 p-2 sm:p-2.5 text-sm sm:text-base rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                    placeholder="Enter quantity"
+                                          placeholder={t('outgoingOrder.quantityModal.placeholder')}
                     min="1"
                     max={activeBox.maxQuantity}
                   />
@@ -835,7 +837,7 @@ const OutgoingOrderFormContent = () => {
                 onClick={handleQuantitySubmit}
                 className="w-full bg-green-500 text-white rounded-md py-2 sm:py-2.5 text-sm sm:text-base font-medium hover:bg-green-600 transition-colors"
               >
-                Save
+                {t('outgoingOrder.quantityModal.save')}
               </button>
             </div>
           </div>

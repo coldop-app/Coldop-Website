@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import TopBar from "@/components/common/Topbar/Topbar";
 import EditIncomingOrderFormContent from "./forms/EditIncomingOrderFormContent";
 
 const EditIncomingOrderForm = () => {
+  const { t } = useTranslation();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const location = useLocation();
     const order = location.state?.order;
@@ -26,7 +28,7 @@ const EditIncomingOrderForm = () => {
       <TopBar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={toggleSidebar}
-        title="Edit Incoming Order"
+        title={t('editIncomingOrder.title')}
       />
 
       <div className="container mx-auto px-4 py-8">
