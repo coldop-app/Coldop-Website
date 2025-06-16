@@ -1,6 +1,8 @@
 import { useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { Order, StoreAdmin } from '@/utils/types';
+import { Pencil } from 'lucide-react';
 
 interface ReceiptVoucherCardProps {
   order: Order;
@@ -22,7 +24,12 @@ const formatDate = (dateStr: string | undefined) => {
 
 const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
+  const navigate = useNavigate();
   const bagSizes = adminInfo?.preferences?.bagSizes || [];
+
+  const handleEdit = () => {
+    navigate('/erp/incoming-order/edit', { state: { order } });
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
@@ -35,6 +42,13 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
           <div className="text-sm text-gray-600">
             <span className="font-medium">{order.farmerId.name}</span>
           </div>
+          <button
+            onClick={handleEdit}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+          >
+            <Pencil size={14} />
+            Edit
+          </button>
         </div>
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span>Stock: <span className="font-medium">{order.currentStockAtThatTime}</span></span>

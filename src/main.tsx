@@ -17,6 +17,7 @@ import NotFound from "./screens/NotFound/NotFound";
 import Error from "./screens/Error/Error";
 import IncomingOrderForm from "./screens/Erp/IncomingOrderForm.tsx";
 import OutgoingOrderForm from "./screens/Erp/OutgoingOrderForm.tsx";
+import EditIncomingOrderForm from "./screens/Erp/EditIncomingOrderForm.tsx";
 
 // Lazy load components
 const HomeScreen = lazy(() => import("./screens/HomeScreen/HomeScreen.tsx"));
@@ -92,6 +93,11 @@ const router = createBrowserRouter(
           <Route path="incoming-order" element={
             <Suspense fallback={<LoadingFallback />}>
               <IncomingOrderForm />
+            </Suspense>
+          } />
+          <Route path="incoming-order/edit" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <EditIncomingOrderForm />
             </Suspense>
           } />
           <Route path="outgoing-order" element={

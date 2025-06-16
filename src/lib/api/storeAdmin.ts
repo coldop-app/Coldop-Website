@@ -87,6 +87,23 @@ interface CreateFarmerPayload {
   coldStorageId: string;
 }
 
+interface UpdateIncomingOrderPayload {
+  remarks: string;
+  dateOfSubmission: string;
+  fulfilled: boolean;
+  orderDetails: {
+    variety: string;
+    location: string;
+    bagSizes: {
+      size: string;
+      quantity: {
+        initialQuantity: number;
+        currentQuantity: number;
+      };
+    }[];
+  }[];
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -363,6 +380,20 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders`,
       {
         headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  updateIncomingOrder: async (orderId: string, payload: UpdateIncomingOrderPayload, token: string) => {
+    const response = await axios.put(
+      `${BASE_URL}/api/store-admin/incoming-orders/${orderId}`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
       }
