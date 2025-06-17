@@ -227,15 +227,15 @@ const IncomingOrderFormContent = () => {
   const nextStep = () => {
     // Validate step 1
     if (!formData.farmerName.trim()) {
-      toast.error("Please enter farmer name");
+      toast.error(t('incomingOrder.errors.enterFarmerName'));
       return;
     }
     if (!formData.variety) {
-      toast.error("Please select a variety");
+      toast.error(t('incomingOrder.errors.selectVariety'));
       return;
     }
     if (calculateTotal() === 0) {
-      toast.error("Please enter at least one quantity");
+      toast.error(t('incomingOrder.errors.enterQuantity'));
       return;
     }
     setCurrentStep(2);
@@ -254,7 +254,7 @@ const IncomingOrderFormContent = () => {
       return storeAdminApi.createIncomingOrder(orderData, adminInfo.token);
     },
     onSuccess: () => {
-      toast.success("Incoming order created successfully!");
+      toast.success(t('incomingOrder.success.orderCreated'));
       // Reset form
       setFormData({
         farmerName: "",
@@ -274,9 +274,9 @@ const IncomingOrderFormContent = () => {
       console.error("Error creating order:", error);
       if (error instanceof Error) {
         const apiError = error as ApiError;
-        toast.error(apiError.response?.data?.message || "Failed to create order");
+        toast.error(apiError.response?.data?.message || t('incomingOrder.errors.failedToCreate'));
       } else {
-        toast.error("Failed to create order");
+        toast.error(t('incomingOrder.errors.failedToCreate'));
       }
     }
   });
@@ -297,7 +297,7 @@ const IncomingOrderFormContent = () => {
       }, adminInfo.token);
     },
     onSuccess: (data) => {
-      toast.success("Farmer created successfully!");
+      toast.success(t('incomingOrder.success.farmerCreated'));
       // Create a farmer object with the new data
       const newFarmer: Farmer = {
         _id: data.data._id,
@@ -321,9 +321,9 @@ const IncomingOrderFormContent = () => {
       console.error("Error creating farmer:", error);
       if (error instanceof Error) {
         const apiError = error as ApiError;
-        toast.error(apiError.response?.data?.message || "Failed to create farmer");
+        toast.error(apiError.response?.data?.message || t('incomingOrder.errors.failedToCreateFarmer'));
       } else {
-        toast.error("Failed to create farmer");
+        toast.error(t('incomingOrder.errors.failedToCreateFarmer'));
       }
     }
   });
@@ -333,7 +333,7 @@ const IncomingOrderFormContent = () => {
 
     // Validate step 2
     if (!formData.mainLocation.trim()) {
-      toast.error("Please enter main location");
+      toast.error(t('incomingOrder.errors.enterLocation'));
       return;
     }
 
@@ -498,7 +498,7 @@ const IncomingOrderFormContent = () => {
                   <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-lg font-medium">{farmer.name}</h3>
-                      <span className="text-sm text-muted-foreground">Pre-selected farmer</span>
+                      <span className="text-sm text-muted-foreground">{t('incomingOrder.farmer.preSelected')}</span>
                     </div>
                     {(farmer.mobileNumber || farmer.address) && (
                       <div className="text-sm text-gray-600 space-y-1">

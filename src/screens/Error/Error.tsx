@@ -2,10 +2,12 @@ import Footer from "@/components/common/Footer/Footer";
 import { footerData } from "../homeScreenData";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { useTranslation } from 'react-i18next';
 import { Home, ArrowLeft, AlertTriangle } from "lucide-react";
 import { motion } from "motion/react";
 
 const Error = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   return (
@@ -127,7 +129,7 @@ const Error = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 1 }}
               >
-                Something Went Wrong
+{t('error.title')}
               </motion.h2>
               <motion.p
                 className="text-lg text-slate-600 dark:text-slate-300 max-w-md mx-auto leading-relaxed"
@@ -135,7 +137,7 @@ const Error = () => {
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.6, delay: 1.2 }}
               >
-                We apologize for the inconvenience. Please try again later or contact support if the problem persists.
+{t('error.description')}
               </motion.p>
             </motion.div>
 
@@ -163,7 +165,7 @@ const Error = () => {
                   >
                     <Home className="w-5 h-5 mr-2" />
                   </motion.div>
-                  Return Home
+{t('error.returnHome')}
                 </Button>
               </motion.div>
 
@@ -185,7 +187,7 @@ const Error = () => {
                   >
                     <ArrowLeft className="w-5 h-5 mr-2" />
                   </motion.div>
-                  Go Back
+{t('error.goBack')}
                 </Button>
               </motion.div>
             </motion.div>
@@ -207,7 +209,7 @@ const Error = () => {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 2.2 }}
               >
-                Need help resolving this issue?
+{t('error.needHelp')}
               </motion.h3>
               <motion.div
                 className="flex flex-col sm:flex-row gap-3 justify-center items-center text-sm text-slate-600 dark:text-slate-300"
@@ -222,7 +224,7 @@ const Error = () => {
                   whileTap={{ scale: 0.95 }}
                 >
                   <AlertTriangle className="w-4 h-4 mr-1" />
-                  Contact support
+{t('error.contactSupport')}
                 </motion.button>
               </motion.div>
             </motion.div>

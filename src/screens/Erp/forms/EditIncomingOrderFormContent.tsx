@@ -173,11 +173,11 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
 
   const nextStep = () => {
     if (!formData.variety) {
-      toast.error("Please select a variety");
+      toast.error(t('editIncomingOrder.errors.selectVariety'));
       return;
     }
     if (calculateTotal() === 0) {
-      toast.error("Please enter at least one quantity");
+      toast.error(t('editIncomingOrder.errors.enterQuantity'));
       return;
     }
     setCurrentStep(2);
@@ -221,15 +221,15 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
       return storeAdminApi.updateIncomingOrder(order._id, payload, adminInfo.token);
     },
     onSuccess: () => {
-      toast.success("Order updated successfully!");
+      toast.success(t('editIncomingOrder.success.orderUpdated'));
       navigate('/erp/daybook');
     },
     onError: (error: unknown) => {
       console.error("Error updating order:", error);
       if (error instanceof Error) {
-        toast.error(error.message || "Failed to update order");
+        toast.error(error.message || t('editIncomingOrder.errors.failedToUpdate'));
       } else {
-        toast.error("Failed to update order");
+        toast.error(t('editIncomingOrder.errors.failedToUpdate'));
       }
     }
   });
@@ -238,7 +238,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
     e.preventDefault();
 
     if (!formData.mainLocation.trim()) {
-      toast.error("Please enter main location");
+      toast.error(t('editIncomingOrder.errors.enterLocation'));
       return;
     }
 
@@ -247,7 +247,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
-      <h1 className="text-2xl font-bold text-center mb-6">{t('Edit Incoming Order')}</h1>
+      <h1 className="text-2xl font-bold text-center mb-6">{t('editIncomingOrder.title')}</h1>
 
       {/* Progress indicator */}
       <div className="mb-8">
@@ -290,7 +290,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
             <div className="space-y-6">
               {/* Farmer Details (Read-only) */}
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-medium mb-2">Farmer Details</h3>
+                <h3 className="text-lg font-medium mb-2">{t('editIncomingOrder.farmerDetails')}</h3>
                 <div className="text-sm text-gray-600">
                   <p className="font-medium text-gray-900">{formData.farmerName}</p>
                 </div>
@@ -361,7 +361,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                   onClick={nextStep}
                   className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  {t('Continue')}
+                  {t('editIncomingOrder.continue')}
                 </button>
               </div>
             </div>
@@ -407,7 +407,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                   onClick={prevStep}
                   className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                 >
-                  {t('Back')}
+                  {t('editIncomingOrder.back')}
                 </button>
                 <button
                   type="submit"
@@ -417,10 +417,10 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                   {updateOrderMutation.isPending ? (
                     <div className="flex items-center justify-center">
                       <Loader size="sm" className="mr-2" />
-                      <span>{t('Updating')}</span>
+                      <span>{t('editIncomingOrder.updating')}</span>
                     </div>
                   ) : (
-                    t('Update')
+                    t('editIncomingOrder.update')
                   )}
                 </button>
               </div>

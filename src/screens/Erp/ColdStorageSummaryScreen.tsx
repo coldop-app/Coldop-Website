@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
+import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
@@ -32,6 +33,7 @@ const calculateTotalBags = (stockSummary: StockSummary[]) => {
 };
 
 const ColdStorageSummaryScreen = () => {
+  const { t } = useTranslation();
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
@@ -45,26 +47,26 @@ const ColdStorageSummaryScreen = () => {
 
   return (
     <>
-      <TopBar title="Cold Storage Summary" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+      <TopBar title={t('coldStorageSummary.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
       <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-20">
         {/* Overview Card */}
         <Card>
           <CardContent className="p-4 sm:p-6">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
               <div className="flex-1 w-full text-center md:text-left">
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">Cold Storage Overview</h1>
+                <h1 className="text-xl md:text-2xl font-bold text-gray-900 mb-4 md:mb-6">{t('coldStorageSummary.overview')}</h1>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
                   <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-lg">
                     <Warehouse size={18} className="text-primary flex-shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-sm text-gray-500">Total Varieties</div>
+                      <div className="text-sm text-gray-500">{t('coldStorageSummary.totalVarieties')}</div>
                       <div className="font-bold text-lg text-primary">{stockSummary.length}</div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-lg">
                     <Package size={18} className="text-primary flex-shrink-0" />
                     <div className="min-w-0">
-                      <div className="text-sm text-gray-500">Total Bags</div>
+                      <div className="text-sm text-gray-500">{t('coldStorageSummary.totalBags')}</div>
                       <div className="font-bold text-lg text-primary">{totalBags}</div>
                     </div>
                   </div>
@@ -79,11 +81,11 @@ const ColdStorageSummaryScreen = () => {
           <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0 px-4 sm:px-6 py-4">
             <div className="flex items-center gap-2">
               <Package size={20} className="text-primary" />
-              <CardTitle className="text-lg md:text-xl">Stock Summary</CardTitle>
+              <CardTitle className="text-lg md:text-xl">{t('coldStorageSummary.stockSummary')}</CardTitle>
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <Boxes size={16} />
-              <span>Total Varieties: {stockSummary.length}</span>
+              <span>{t('coldStorageSummary.totalVarieties')}: {stockSummary.length}</span>
             </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
@@ -120,7 +122,7 @@ const ColdStorageSummaryScreen = () => {
                           <span className="font-medium text-gray-900 text-sm sm:text-base truncate">{variety.variety}</span>
                           <span className="text-primary font-semibold text-sm sm:text-base">{totalBags}</span>
                         </div>
-                        <div className="text-xs sm:text-sm text-gray-500">Total Bags</div>
+                        <div className="text-xs sm:text-sm text-gray-500">{t('coldStorageSummary.totalBags')}</div>
                       </div>
                     );
                   })}
@@ -137,7 +139,7 @@ const ColdStorageSummaryScreen = () => {
                             <CardTitle className="text-base sm:text-lg">{variety.variety}</CardTitle>
                             <div className="flex items-center gap-2 text-primary font-medium text-sm sm:text-base">
                               <TrendingUp size={16} />
-                              <span>Total: {totalBags} bags</span>
+                              <span>{t('coldStorageSummary.total')}: {totalBags} {t('coldStorageSummary.bags')}</span>
                             </div>
                           </div>
                         </CardHeader>
@@ -151,11 +153,11 @@ const ColdStorageSummaryScreen = () => {
                                 <div className="text-sm font-medium text-gray-500 mb-2">{size.size}</div>
                                 <div className="space-y-1">
                                   <div className="flex justify-between items-center">
-                                    <span className="text-xs sm:text-sm text-gray-600">Current Stock</span>
+                                    <span className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.currentStock')}</span>
                                     <span className="font-semibold text-gray-900 text-sm sm:text-base">{size.currentQuantity}</span>
                                   </div>
                                   <div className="flex justify-between items-center">
-                                    <span className="text-xs sm:text-sm text-gray-600">Initial Stock</span>
+                                    <span className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.initialStock')}</span>
                                     <span className="font-semibold text-gray-900 text-sm sm:text-base">{size.initialQuantity}</span>
                                   </div>
                                 </div>
