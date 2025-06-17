@@ -29,6 +29,9 @@ const PeopleScreen = lazy(() => import("./screens/Erp/PeopleScreen.tsx"));
 const FarmerProfileScreen = lazy(() => import("./screens/Erp/FarmerProfileScreen.tsx"));
 const ColdStorageSummaryScreen = lazy(() => import("./screens/Erp/ColdStorageSummaryScreen.tsx"));
 const SettingsScreen = lazy(() => import("./screens/Erp/SettingsScreen.tsx"));
+const ProfileSettingsScreen = lazy(() => import("./screens/Erp/ProfileSettingsScreen.tsx"));
+const BillingSettingsScreen = lazy(() => import("./screens/Erp/BillingSettingsScreen.tsx"));
+const ContactSupportScreen = lazy(() => import("./screens/Erp/ContactSupportScreen.tsx"));
 
 // Loading component
 const LoadingFallback = () => (
@@ -108,6 +111,21 @@ const router = createBrowserRouter(
           <Route path="settings" element={
             <Suspense fallback={<LoadingFallback />}>
               <SettingsScreen />
+            </Suspense>
+          } />
+          <Route path="settings/profile" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ProfileSettingsScreen />
+            </Suspense>
+          } />
+          <Route path="settings/billing" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <BillingSettingsScreen />
+            </Suspense>
+          } />
+          <Route path="settings/support" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ContactSupportScreen />
             </Suspense>
           } />
           {/* Add more ERP routes here */}
