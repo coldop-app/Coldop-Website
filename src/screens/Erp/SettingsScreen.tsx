@@ -1,4 +1,3 @@
-import React from "react";
 import { useNavigate } from "react-router-dom";
 import { UserCircle, CreditCard, HelpCircle, ChevronRight } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
