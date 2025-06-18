@@ -201,19 +201,16 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
         orderDetails: [{
           variety: formData.variety,
           bagSizes: adminInfo.preferences?.bagSizes?.map(bagSize => {
-            // Find the original bag size entry to get the initialQuantity
-            const originalBagSize = order.orderDetails[0].bagSizes.find(
-              b => b.size.toLowerCase() === bagSize.toLowerCase()
-            );
             const fieldName = getBagSizeFieldName(bagSize);
+            const currentQuantity = parseInt(formData.quantities[fieldName] || "0");
             return {
               size: bagSize,
               quantity: {
-                initialQuantity: originalBagSize?.quantity?.initialQuantity || 0,
-                currentQuantity: parseInt(formData.quantities[fieldName] || "0")
+                initialQuantity: currentQuantity, // Set initial quantity to the same as current
+                currentQuantity: currentQuantity
               }
             };
-          }).filter(bagSize => bagSize.quantity.currentQuantity > 0 || bagSize.quantity.initialQuantity > 0) || [],
+          }).filter(bagSize => bagSize.quantity.currentQuantity > 0) || [],
           location: formData.mainLocation
         }]
       };

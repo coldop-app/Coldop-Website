@@ -6,6 +6,7 @@ import { Pencil, Printer } from 'lucide-react';
 import { PDFViewer } from '@react-pdf/renderer';
 import OrderVoucherPDF from '../pdf/OrderVoucherPDF';
 import * as ReactDOM from 'react-dom/client';
+import { toast } from 'react-hot-toast';
 
 interface ReceiptVoucherCardProps {
   order: Order;
@@ -31,6 +32,18 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   const bagSizes = adminInfo?.preferences?.bagSizes || [];
 
   const handleEdit = () => {
+    // Check if any bag size has different initial and current quantities
+    const hasOutgoingOrders = order.orderDetails.some(detail =>
+      detail.bagSizes.some(bagSize =>
+        (bagSize.quantity?.initialQuantity || 0) !== (bagSize.quantity?.currentQuantity || 0)
+      )
+    );
+
+    if (hasOutgoingOrders) {
+      toast.error('Edit is not allowed for this receipt as outgoing has been done from it');
+      return;
+    }
+
     navigate('/erp/incoming-order/edit', { state: { order } });
   };
 
