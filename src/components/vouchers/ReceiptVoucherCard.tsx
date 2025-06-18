@@ -2,7 +2,10 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { Order, StoreAdmin } from '@/utils/types';
-import { Pencil } from 'lucide-react';
+import { Pencil, Printer } from 'lucide-react';
+import { PDFViewer } from '@react-pdf/renderer';
+import OrderVoucherPDF from '../pdf/OrderVoucherPDF';
+import * as ReactDOM from 'react-dom/client';
 
 interface ReceiptVoucherCardProps {
   order: Order;
@@ -31,6 +34,34 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
     navigate('/erp/incoming-order/edit', { state: { order } });
   };
 
+  const handlePrint = () => {
+    // Open in new window
+    const printWindow = window.open('', '_blank');
+    if (printWindow && adminInfo) {
+      printWindow.document.write(`
+        <html>
+          <body>
+            <div id="root" style="height: 100vh;"></div>
+            <script>
+              // Prevent the window from closing when React mounts
+              window.onbeforeunload = null;
+            </script>
+          </body>
+        </html>
+      `);
+
+      // Render PDF viewer in the new window
+      const root = printWindow.document.getElementById('root');
+      if (root) {
+        ReactDOM.createRoot(root).render(
+          <PDFViewer width="100%" height="100%">
+            <OrderVoucherPDF order={order} adminInfo={adminInfo} />
+          </PDFViewer>
+        );
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
       {/* Header Section */}
@@ -42,13 +73,22 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
           <div className="text-sm text-gray-600">
             <span className="font-medium">{order.farmerId.name}</span>
           </div>
-          <button
-            onClick={handleEdit}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
-          >
-            <Pencil size={14} />
-            Edit
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleEdit}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors"
+            >
+              <Printer size={14} />
+              Print
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span>Stock: <span className="font-medium">{order.currentStockAtThatTime}</span></span>

@@ -213,12 +213,16 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                 currentQuantity: parseInt(formData.quantities[fieldName] || "0")
               }
             };
-          }).filter(bagSize => bagSize.quantity.currentQuantity > 0) || [],
+          }).filter(bagSize => bagSize.quantity.currentQuantity > 0 || bagSize.quantity.initialQuantity > 0) || [],
           location: formData.mainLocation
         }]
       };
 
-      return storeAdminApi.updateIncomingOrder(order._id, payload, adminInfo.token);
+      // Keep the original voucher and other fields from the order
+      const updatedOrder = await storeAdminApi.updateIncomingOrder(order._id, payload, adminInfo.token);
+
+      // Return the response which should maintain the same structure
+      return updatedOrder;
     },
     onSuccess: () => {
       toast.success(t('editIncomingOrder.success.orderUpdated'));

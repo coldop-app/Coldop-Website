@@ -276,6 +276,12 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
             src="/coldop-logo.png"
           />
           <Text style={styles.brandTitle}>COLDOP</Text>
+          {adminInfo.imageUrl && (
+            <Image
+              style={[styles.logo, { marginLeft: 'auto' }]}
+              src={adminInfo.imageUrl}
+            />
+          )}
         </View>
 
         {/* Header */}
@@ -409,6 +415,12 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
               src="/coldop-logo.png"
             />
             <Text style={styles.brandTitle}>COLDOP</Text>
+            {adminInfo.imageUrl && (
+              <Image
+                style={[styles.logo, { marginLeft: 'auto' }]}
+                src={adminInfo.imageUrl}
+              />
+            )}
           </View>
 
           <View style={styles.header}>
