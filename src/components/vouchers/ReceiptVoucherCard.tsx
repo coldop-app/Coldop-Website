@@ -4,6 +4,11 @@ import { RootState } from '@/store';
 import { Order, StoreAdmin } from '@/utils/types';
 import { ChevronDown, ChevronUp, Pencil, Share2 } from 'lucide-react';
 import { useState } from 'react';
+import { Printer } from 'lucide-react';
+import { PDFViewer } from '@react-pdf/renderer';
+import OrderVoucherPDF from '../pdf/OrderVoucherPDF';
+import * as ReactDOM from 'react-dom/client';
+import { toast } from 'react-hot-toast';
 
 interface ReceiptVoucherCardProps {
   order: Order;
@@ -54,7 +59,47 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   };
 
   const handleEdit = () => {
+    // Check if any bag size has different initial and current quantities
+    const hasOutgoingOrders = order.orderDetails.some(detail =>
+      detail.bagSizes.some(bagSize =>
+        (bagSize.quantity?.initialQuantity || 0) !== (bagSize.quantity?.currentQuantity || 0)
+      )
+    );
+
+    if (hasOutgoingOrders) {
+      toast.error('Edit is not allowed for this receipt as outgoing has been done from it');
+      return;
+    }
+
     navigate('/erp/incoming-order/edit', { state: { order } });
+  };
+
+  const handlePrint = () => {
+    // Open in new window
+    const printWindow = window.open('', '_blank');
+    if (printWindow && adminInfo) {
+      printWindow.document.write(`
+        <html>
+          <body>
+            <div id="root" style="height: 100vh;"></div>
+            <script>
+              // Prevent the window from closing when React mounts
+              window.onbeforeunload = null;
+            </script>
+          </body>
+        </html>
+      `);
+
+      // Render PDF viewer in the new window
+      const root = printWindow.document.getElementById('root');
+      if (root) {
+        ReactDOM.createRoot(root).render(
+          <PDFViewer width="100%" height="100%">
+            <OrderVoucherPDF order={order} adminInfo={adminInfo} />
+          </PDFViewer>
+        );
+      }
+    }
   };
 
   return (
@@ -97,6 +142,22 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
               </div>
             </>
           )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleEdit}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+            >
+              <Pencil size={14} />
+              Edit
+            </button>
+            <button
+              onClick={handlePrint}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors"
+            >
+              <Printer size={14} />
+              Print
+            </button>
+          </div>
         </div>
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span>Stock: <span className="font-medium">{order.currentStockAtThatTime}</span></span>

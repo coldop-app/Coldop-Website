@@ -1,4 +1,3 @@
-import { Order } from '@/utils/types';
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Share2 } from 'lucide-react';
 
@@ -7,6 +6,13 @@ declare global {
     ReactNativeWebView?: any;
   }
 }
+import { Order, StoreAdmin } from '@/utils/types';
+import { Printer } from 'lucide-react';
+import { PDFViewer } from '@react-pdf/renderer';
+import OrderVoucherPDF from '../pdf/OrderVoucherPDF';
+import * as ReactDOM from 'react-dom/client';
+import { useSelector } from 'react-redux';
+import { RootState } from '@/store';
 
 interface DeliveryVoucherCardProps {
   order: Order;
@@ -15,6 +21,8 @@ interface DeliveryVoucherCardProps {
 const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
   
+  const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
+
   const formatDate = (dateStr: string | undefined) => {
     if (!dateStr) return '';
     try {
@@ -47,6 +55,35 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
     setIsCollapsed(!isCollapsed);
   };
   
+
+  const handlePrint = () => {
+    // Open in new window
+    const printWindow = window.open('', '_blank');
+    if (printWindow && adminInfo) {
+      printWindow.document.write(`
+        <html>
+          <body>
+            <div id="root" style="height: 100vh;"></div>
+            <script>
+              // Prevent the window from closing when React mounts
+              window.onbeforeunload = null;
+            </script>
+          </body>
+        </html>
+      `);
+
+      // Render PDF viewer in the new window
+      const root = printWindow.document.getElementById('root');
+      if (root) {
+        ReactDOM.createRoot(root).render(
+          <PDFViewer width="100%" height="100%">
+            <OrderVoucherPDF order={order} adminInfo={adminInfo} />
+          </PDFViewer>
+        );
+      }
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
       {/* Header Section */}
@@ -75,6 +112,13 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
               </div>
             </>
           )}
+          <button
+            onClick={handlePrint}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors"
+          >
+            <Printer size={14} />
+            Print
+          </button>
         </div>
         <div className="flex items-center gap-4 text-sm text-gray-600">
           <span>Stock: <span className="font-medium">{order.currentStockAtThatTime}</span></span>

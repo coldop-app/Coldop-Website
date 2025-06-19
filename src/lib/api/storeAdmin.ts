@@ -87,6 +87,22 @@ interface CreateFarmerPayload {
   coldStorageId: string;
 }
 
+interface UpdateProfilePayload {
+  name: string;
+  personalAddress: string;
+  mobileNumber: string;
+  coldStorageName: string;
+  coldStorageAddress: string;
+  coldStorageContactNumber: string;
+  capacity?: number;
+  imageUrl: string;
+  preferences: {
+    bagSizes: string[];
+  };
+  isMobile: boolean;
+  password?: string | undefined;
+}
+
 interface UpdateIncomingOrderPayload {
   remarks: string;
   dateOfSubmission: string;
@@ -102,6 +118,23 @@ interface UpdateIncomingOrderPayload {
       };
     }[];
   }[];
+}
+
+interface UploadProfilePhotoResponse {
+  status: string;
+  data: {
+    url: string;
+  };
+  message?: string;
+}
+
+interface DeleteProfilePhotoPayload {
+  publicId: string;
+}
+
+interface DeleteProfilePhotoResponse {
+  status: string;
+  message?: string;
 }
 
 export const storeAdminApi = {
@@ -387,6 +420,20 @@ export const storeAdminApi = {
     return response.data;
   },
 
+  updateProfile: async (payload: UpdateProfilePayload, token: string) => {
+    const response = await axios.put(
+      `${BASE_URL}/api/store-admin/profile`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
   updateIncomingOrder: async (orderId: string, payload: UpdateIncomingOrderPayload, token: string) => {
     const response = await axios.put(
       `${BASE_URL}/api/store-admin/incoming-orders/${orderId}`,
@@ -396,6 +443,35 @@ export const storeAdminApi = {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         }
+      }
+    );
+    return response.data;
+  },
+
+  uploadProfilePhoto: async (image: File) => {
+    const formData = new FormData();
+    formData.append('image', image);
+
+    const response = await axios.post<UploadProfilePhotoResponse>(
+      `${BASE_URL}/api/store-admin/upload-profile-photo`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      }
+    );
+    return response.data;
+  },
+
+  deleteProfilePhoto: async (payload: DeleteProfilePhotoPayload) => {
+    const response = await axios.delete<DeleteProfilePhotoResponse>(
+      `${BASE_URL}/api/store-admin/delete-profile-photo`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: payload
       }
     );
     return response.data;

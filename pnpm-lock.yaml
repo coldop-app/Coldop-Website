@@ -105,7 +105,7 @@ importers:
         specifier: ^12.11.3
         version: 12.11.3(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       react:
-        specifier: ^19.0.0
+        specifier: ^19.1.0
         version: 19.1.0
       react-dom:
         specifier: ^19.0.0

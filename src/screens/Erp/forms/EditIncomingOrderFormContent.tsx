@@ -201,16 +201,13 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
         orderDetails: [{
           variety: formData.variety,
           bagSizes: adminInfo.preferences?.bagSizes?.map(bagSize => {
-            // Find the original bag size entry to get the initialQuantity
-            const originalBagSize = order.orderDetails[0].bagSizes.find(
-              b => b.size.toLowerCase() === bagSize.toLowerCase()
-            );
             const fieldName = getBagSizeFieldName(bagSize);
+            const currentQuantity = parseInt(formData.quantities[fieldName] || "0");
             return {
               size: bagSize,
               quantity: {
-                initialQuantity: originalBagSize?.quantity?.initialQuantity || 0,
-                currentQuantity: parseInt(formData.quantities[fieldName] || "0")
+                initialQuantity: currentQuantity, // Set initial quantity to the same as current
+                currentQuantity: currentQuantity
               }
             };
           }).filter(bagSize => bagSize.quantity.currentQuantity > 0) || [],
@@ -218,7 +215,11 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
         }]
       };
 
-      return storeAdminApi.updateIncomingOrder(order._id, payload, adminInfo.token);
+      // Keep the original voucher and other fields from the order
+      const updatedOrder = await storeAdminApi.updateIncomingOrder(order._id, payload, adminInfo.token);
+
+      // Return the response which should maintain the same structure
+      return updatedOrder;
     },
     onSuccess: () => {
       toast.success(t('editIncomingOrder.success.orderUpdated'));
