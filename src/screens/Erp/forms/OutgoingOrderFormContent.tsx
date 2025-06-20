@@ -564,112 +564,189 @@ const OutgoingOrderFormContent = () => {
                         <span className="text-sm">{t('outgoingOrder.orders.loading')}</span>
                       </div>
                     ) : filteredOrders.length > 0 ? (
-                      <div className="relative -mx-2 sm:-mx-3 md:-mx-4">
-                        <div className="overflow-x-auto">
-                          <div className="min-w-[600px] px-2 sm:px-3 md:px-4">
-                            <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
-                              <thead>
-                                <tr className="bg-gray-100">
-                                  <th className="p-2 sm:p-2.5 text-left border-b font-medium text-xs sm:text-sm text-gray-600 w-24 sm:w-28">{t('outgoingOrder.orders.receiptVoucher')}</th>
-                                  {availableBagSizes.map(size => (
-                                    <th key={size} className="p-2 sm:p-2.5 text-center border-b font-medium text-xs sm:text-sm text-gray-600 w-[calc((100%-96px)/5)]">
-                                      {size.toLowerCase()}
-                                    </th>
-                                  ))}
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {filteredOrders.map(order => (
-                                  <tr
-                                    key={order._id}
-                                    className="hover:bg-gray-50/50 transition-colors"
-                                  >
-                                    <td className="p-2 sm:p-2.5 border-b">
-                                      <div className="font-medium text-sm sm:text-base">#{order.voucher.voucherNumber}</div>
-                                      {order.orderDetails[0]?.location && (
-                                        <div className="text-[10px] sm:text-xs text-gray-500">
-                                          {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
-                                        </div>
-                                      )}
-                                    </td>
-                                    {availableBagSizes.map(size => {
-                                      const totalQuantities = order.orderDetails.reduce((acc, detail) => {
-                                        const bagSize = detail.bagSizes.find(b => b.size.toLowerCase() === size.toLowerCase());
-                                        if (bagSize) {
-                                          acc.current += bagSize.quantity.currentQuantity;
-                                          acc.initial += bagSize.quantity.initialQuantity;
-                                        }
-                                        return acc;
-                                      }, { current: 0, initial: 0 });
-
-                                      const isSelected = selectedQuantities.some(
-                                        sq => sq.receiptNumber === order.voucher.voucherNumber &&
-                                             sq.bagSize === size
-                                      );
-
-                                      return (
-                                        <td key={size} className="p-1 sm:p-1.5 md:p-2 border-b text-center">
-                                          <div className="flex items-center justify-center">
-                                            <button
-                                              type="button"
-                                              onClick={(e) => handleBoxClick(
-                                                order.voucher.voucherNumber,
-                                                size,
-                                                totalQuantities.current,
-                                                e
-                                              )}
-                                              className={`
-                                                relative w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-lg border-2
-                                                ${getBoxColor(
-                                                  totalQuantities.current,
-                                                  totalQuantities.initial,
-                                                  isSelected
-                                                )}
-                                                transition-all duration-200 transform hover:scale-105
-                                                disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                                              `}
-                                              disabled={totalQuantities.current === 0}
-                                            >
-                                              <div className="text-[11px] sm:text-xs font-medium">
-                                                {totalQuantities.current}
-                                              </div>
-                                              <div className="text-[9px] sm:text-xs text-gray-500">
-                                                /{totalQuantities.initial}
-                                              </div>
-                                              {selectedQuantities.some(sq =>
-                                                sq.receiptNumber === order.voucher.voucherNumber &&
-                                                sq.bagSize === size
-                                              ) && (
-                                                <div className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] sm:min-w-[20px] sm:h-[20px] bg-primary rounded-full flex items-center justify-center text-white text-[9px] sm:text-[10px] font-medium shadow-sm px-1 border border-white">
-                                                  {selectedQuantities.find(sq =>
-                                                    sq.receiptNumber === order.voucher.voucherNumber &&
-                                                    sq.bagSize === size
-                                                  )?.selectedQuantity}
-                                                </div>
-                                              )}
-                                            </button>
-                                          </div>
-                                        </td>
-                                      );
-                                    })}
+                      <>
+                        {/* Desktop View - Hidden on mobile */}
+                        <div className="hidden md:block relative -mx-4">
+                          <div className="overflow-x-auto">
+                            <div className="min-w-[600px] px-4">
+                              <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
+                                <thead>
+                                  <tr className="bg-gray-100">
+                                    <th className="p-2.5 text-left border-b font-medium text-sm text-gray-600 w-28">{t('outgoingOrder.orders.receiptVoucher')}</th>
+                                    {availableBagSizes.map(size => (
+                                      <th key={size} className="p-2.5 text-center border-b font-medium text-sm text-gray-600 w-[calc((100%-112px)/5)]">
+                                        {size.toLowerCase()}
+                                      </th>
+                                    ))}
                                   </tr>
-                                ))}
-                              </tbody>
-                            </table>
+                                </thead>
+                                <tbody>
+                                  {filteredOrders.map(order => (
+                                    <tr
+                                      key={order._id}
+                                      className="hover:bg-gray-50/50 transition-colors"
+                                    >
+                                      <td className="p-2.5 border-b">
+                                        <div className="font-medium text-base">#{order.voucher.voucherNumber}</div>
+                                        {order.orderDetails[0]?.location && (
+                                          <div className="text-xs text-gray-500">
+                                            {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
+                                          </div>
+                                        )}
+                                      </td>
+                                      {availableBagSizes.map(size => {
+                                        const totalQuantities = order.orderDetails.reduce((acc, detail) => {
+                                          const bagSize = detail.bagSizes.find(b => b.size.toLowerCase() === size.toLowerCase());
+                                          if (bagSize) {
+                                            acc.current += bagSize.quantity.currentQuantity;
+                                            acc.initial += bagSize.quantity.initialQuantity;
+                                          }
+                                          return acc;
+                                        }, { current: 0, initial: 0 });
+
+                                        const isSelected = selectedQuantities.some(
+                                          sq => sq.receiptNumber === order.voucher.voucherNumber &&
+                                               sq.bagSize === size
+                                        );
+
+                                        return (
+                                          <td key={size} className="p-2 border-b text-center">
+                                            <div className="flex items-center justify-center">
+                                              <button
+                                                type="button"
+                                                onClick={(e) => handleBoxClick(
+                                                  order.voucher.voucherNumber,
+                                                  size,
+                                                  totalQuantities.current,
+                                                  e
+                                                )}
+                                                className={`
+                                                  relative w-14 h-14 rounded-lg border-2
+                                                  ${getBoxColor(
+                                                    totalQuantities.current,
+                                                    totalQuantities.initial,
+                                                    isSelected
+                                                  )}
+                                                  transition-all duration-200 transform hover:scale-105
+                                                  disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+                                                `}
+                                                disabled={totalQuantities.current === 0}
+                                              >
+                                                <div className="text-xs font-medium">
+                                                  {totalQuantities.current}
+                                                </div>
+                                                <div className="text-xs text-gray-500">
+                                                  /{totalQuantities.initial}
+                                                </div>
+                                                {selectedQuantities.some(sq =>
+                                                  sq.receiptNumber === order.voucher.voucherNumber &&
+                                                  sq.bagSize === size
+                                                ) && (
+                                                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center text-white text-[10px] font-medium shadow-sm px-1 border border-white">
+                                                    {selectedQuantities.find(sq =>
+                                                      sq.receiptNumber === order.voucher.voucherNumber &&
+                                                      sq.bagSize === size
+                                                    )?.selectedQuantity}
+                                                  </div>
+                                                )}
+                                              </button>
+                                            </div>
+                                          </td>
+                                        );
+                                      })}
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
                           </div>
                         </div>
 
-                        {/* Mobile Scroll Hint */}
-                        <div className="text-[10px] sm:text-xs text-gray-500 mt-2 text-center md:hidden">
-                          {t('outgoingOrder.orders.scrollHint')}
+                        {/* Mobile View - Shown only on mobile */}
+                        <div className="md:hidden space-y-4">
+                          {filteredOrders.map(order => (
+                            <div key={order._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                              <div className="p-3 bg-gray-50 border-b border-gray-200">
+                                <div className="font-medium">#{order.voucher.voucherNumber}</div>
+                                {order.orderDetails[0]?.location && (
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="p-3">
+                                <div className="grid grid-cols-3 gap-2">
+                                  {availableBagSizes.map(size => {
+                                    const totalQuantities = order.orderDetails.reduce((acc, detail) => {
+                                      const bagSize = detail.bagSizes.find(b => b.size.toLowerCase() === size.toLowerCase());
+                                      if (bagSize) {
+                                        acc.current += bagSize.quantity.currentQuantity;
+                                        acc.initial += bagSize.quantity.initialQuantity;
+                                      }
+                                      return acc;
+                                    }, { current: 0, initial: 0 });
+
+                                    const isSelected = selectedQuantities.some(
+                                      sq => sq.receiptNumber === order.voucher.voucherNumber &&
+                                           sq.bagSize === size
+                                    );
+
+                                    return (
+                                      <div key={size} className="flex flex-col items-center">
+                                        <div className="text-xs font-medium mb-1">{size}</div>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => handleBoxClick(
+                                            order.voucher.voucherNumber,
+                                            size,
+                                            totalQuantities.current,
+                                            e
+                                          )}
+                                          className={`
+                                            relative w-16 h-16 rounded-lg border-2
+                                            ${getBoxColor(
+                                              totalQuantities.current,
+                                              totalQuantities.initial,
+                                              isSelected
+                                            )}
+                                            transition-all duration-200 active:scale-95
+                                            disabled:opacity-50 disabled:cursor-not-allowed
+                                          `}
+                                          disabled={totalQuantities.current === 0}
+                                        >
+                                          <div className="text-sm font-medium">
+                                            {totalQuantities.current}
+                                          </div>
+                                          <div className="text-xs text-gray-500">
+                                            /{totalQuantities.initial}
+                                          </div>
+                                          {selectedQuantities.some(sq =>
+                                            sq.receiptNumber === order.voucher.voucherNumber &&
+                                            sq.bagSize === size
+                                          ) && (
+                                            <div className="absolute -top-2 -right-2 min-w-[22px] h-[22px] bg-primary rounded-full flex items-center justify-center text-white text-xs font-medium shadow-sm px-1 border-2 border-white">
+                                              {selectedQuantities.find(sq =>
+                                                sq.receiptNumber === order.voucher.voucherNumber &&
+                                                sq.bagSize === size
+                                              )?.selectedQuantity}
+                                            </div>
+                                          )}
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                                          ) : (
-                        <p className="text-sm text-gray-500">
-                          {formData.variety
-                            ? `${t('outgoingOrder.orders.noOrders')} ${formData.variety}`
-                            : t('outgoingOrder.orders.selectVariety')}
-                        </p>
+                      </>
+                    ) : (
+                      <p className="text-sm text-gray-500">
+                        {formData.variety
+                          ? `${t('outgoingOrder.orders.noOrders')} ${formData.variety}`
+                          : t('outgoingOrder.orders.selectVariety')}
+                      </p>
                     )}
 
                     {/* Selected Quantities Summary */}

@@ -35,7 +35,7 @@ const Sidebar = ({ className }: SidebarProps) => {
                 "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                 "hover:bg-primary hover:text-secondary",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                location.pathname === item.href && "bg-primary text-secondary"
+                location.pathname.startsWith(item.href) && "bg-primary text-secondary"
               )}
             >
               <item.icon className="h-5 w-5" />
