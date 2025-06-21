@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -7,6 +7,8 @@ import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
 import { Search, ChevronDown, Plus } from 'lucide-react';
+import NewFarmerModal, { NewFarmerFormData } from '@/components/modals/NewFarmerModal';
+import toast from 'react-hot-toast';
 
 interface Farmer {
   _id: string;
@@ -20,6 +22,14 @@ interface Farmer {
 interface ApiResponse {
   status: string;
   populatedFarmers: Farmer[];
+}
+
+interface ApiError extends Error {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
 }
 
 const getInitials = (name: string) => {
@@ -37,16 +47,52 @@ const PeopleScreen = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('name');
   const [sortOpen, setSortOpen] = useState(false);
+  const [isNewFarmerModalOpen, setIsNewFarmerModalOpen] = useState(false);
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
 
   useEffect(() => {
     console.log("translation",t('people.title'));
   }, [t]);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['farmers', adminInfo?.token],
     queryFn: () => storeAdminApi.getFarmers(adminInfo?.token || ''),
   });
+
+  // Create farmer mutation
+  const createFarmerMutation = useMutation({
+    mutationFn: async (farmerData: NewFarmerFormData) => {
+      if (!adminInfo?.token) {
+        throw new Error("No authentication token found");
+      }
+      return storeAdminApi.quickRegister({
+        name: farmerData.name,
+        address: farmerData.address,
+        mobileNumber: farmerData.contact,
+        password: "123456", // Hardcoded default password
+        imageUrl: "",
+        farmerId: farmerData.accNo
+      }, adminInfo.token);
+    },
+    onSuccess: () => {
+      toast.success(t('people.success.farmerCreated'));
+      setIsNewFarmerModalOpen(false);
+      refetch(); // Refresh the farmers list
+    },
+    onError: (error: unknown) => {
+      console.error("Error creating farmer:", error);
+      if (error instanceof Error) {
+        const apiError = error as ApiError;
+        toast.error(apiError.response?.data?.message || t('people.errors.failedToCreateFarmer'));
+      } else {
+        toast.error(t('people.errors.failedToCreateFarmer'));
+      }
+    }
+  });
+
+  const handleNewFarmerSubmit = async (farmerData: NewFarmerFormData) => {
+    createFarmerMutation.mutate(farmerData);
+  };
 
   const apiResponse = data as ApiResponse;
   let farmers = apiResponse?.populatedFarmers || [];
@@ -102,6 +148,15 @@ const PeopleScreen = () => {
           </p>
         </div>
 
+        {/* Add NewFarmerModal */}
+        <NewFarmerModal
+          isOpen={isNewFarmerModalOpen}
+          onClose={() => setIsNewFarmerModalOpen(false)}
+          onSubmit={handleNewFarmerSubmit}
+          isLoading={createFarmerMutation.isPending}
+          token={adminInfo?.token || ''}
+        />
+
         {/* Search and Filters */}
         <div className="flex flex-col gap-4 mb-6">
           {/* Search Bar */}
@@ -154,7 +209,7 @@ const PeopleScreen = () => {
               )}
             </div>
             <button
-              onClick={() => alert(t('people.addNewPerson'))}
+              onClick={() => setIsNewFarmerModalOpen(true)}
               className="w-full sm:w-auto px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-colors text-sm sm:text-base font-medium flex items-center justify-center gap-2"
             >
               <Plus size={18} />
