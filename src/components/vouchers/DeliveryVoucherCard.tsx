@@ -1,9 +1,19 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronUp, Share2 } from 'lucide-react';
 
+interface WebViewMessage {
+  type: 'SHARE_CARD';
+  title: string;
+  message: string;
+}
+
+interface ReactNativeWebViewType {
+  postMessage(message: string): void;
+}
+
 declare global {
   interface Window {
-    ReactNativeWebView?: any;
+    ReactNativeWebView?: ReactNativeWebViewType;
   }
 }
 import { Order, StoreAdmin } from '@/utils/types';
@@ -20,7 +30,7 @@ interface DeliveryVoucherCardProps {
 
 const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
   const [isCollapsed, setIsCollapsed] = useState(true);
-  
+
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
 
   const formatDate = (dateStr: string | undefined) => {
@@ -36,25 +46,25 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
       return dateStr;
     }
   };
-  
+
   const isWebView = () => {
     return window.ReactNativeWebView !== undefined;
   };
-  
-  const shareCard = (cardData: any) => {
-    const message = {
+
+  const shareCard = (cardData: Order) => {
+    const message: WebViewMessage = {
       type: 'SHARE_CARD',
       title: "Delivery Voucher " + cardData.voucher.voucherNumber,
-      message: cardData.orderDetails[0]?.variety,
+      message: cardData.orderDetails[0]?.variety || '',
     };
-    
-    window.ReactNativeWebView.postMessage(JSON.stringify(message));
+
+    window.ReactNativeWebView?.postMessage(JSON.stringify(message));
   };
-  
+
   const toggleCollapse = () => {
     setIsCollapsed(!isCollapsed);
   };
-  
+
 
   const handlePrint = () => {
     // Open in new window
@@ -97,7 +107,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
           </div>
           {isWebView() && (
             <>
- <div 
+ <div
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors cursor-pointer"
                 onClick={() => shareCard(order)}
               >

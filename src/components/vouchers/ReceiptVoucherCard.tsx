@@ -10,14 +10,24 @@ import OrderVoucherPDF from '../pdf/OrderVoucherPDF';
 import * as ReactDOM from 'react-dom/client';
 import { toast } from 'react-hot-toast';
 
-interface ReceiptVoucherCardProps {
-  order: Order;
+interface WebViewMessage {
+  type: 'SHARE_CARD';
+  title: string;
+  message: string;
+}
+
+interface ReactNativeWebViewType {
+  postMessage(message: string): void;
 }
 
 declare global {
   interface Window {
-    ReactNativeWebView?: any;
+    ReactNativeWebView?: ReactNativeWebViewType;
   }
+}
+
+interface ReceiptVoucherCardProps {
+  order: Order;
 }
 
 const formatDate = (dateStr: string | undefined) => {
@@ -48,14 +58,14 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
     setIsCollapsed(!isCollapsed);
   };
 
-  const shareCard = (cardData: any) => {
-    const message = {
+  const shareCard = (order: Order) => {
+    const message: WebViewMessage = {
       type: 'SHARE_CARD',
-      title: "Receipt Voucher " + cardData.voucher.voucherNumber,
-      message: cardData.farmerId.name,
+      title: "Receipt Voucher " + order.voucher.voucherNumber,
+      message: order.farmerId.name,
     };
-    
-    window.ReactNativeWebView.postMessage(JSON.stringify(message));
+
+    window.ReactNativeWebView?.postMessage(JSON.stringify(message));
   };
 
   const handleEdit = () => {
@@ -122,14 +132,14 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
           </button>
           {isWebView() && (
             <>
-              <div 
+              <div
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors cursor-pointer"
                 onClick={() => shareCard(order)}
               >
                 <Share2 size={14} />
                 Share
               </div>
-              <div 
+              <div
                 className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors cursor-pointer"
                 onClick={toggleCollapse}
               >
@@ -143,13 +153,6 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
             </>
           )}
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleEdit}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
-            >
-              <Pencil size={14} />
-              Edit
-            </button>
             <button
               onClick={handlePrint}
               className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors"
