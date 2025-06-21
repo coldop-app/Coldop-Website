@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Plus, Loader2 } from "lucide-react";
+import { Plus, Loader2, X } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import debounce from "lodash/debounce";
+import NewFarmerModal, { NewFarmerFormData } from "@/components/modals/NewFarmerModal";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -138,6 +139,8 @@ const IncomingOrderFormContent = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [isNewFarmerModalOpen, setIsNewFarmerModalOpen] = useState(false);
+  const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
@@ -224,15 +227,15 @@ const IncomingOrderFormContent = () => {
   const nextStep = () => {
     // Validate step 1
     if (!formData.farmerName.trim()) {
-      toast.error("Please enter farmer name");
+      toast.error(t('incomingOrder.errors.enterFarmerName'));
       return;
     }
     if (!formData.variety) {
-      toast.error("Please select a variety");
+      toast.error(t('incomingOrder.errors.selectVariety'));
       return;
     }
     if (calculateTotal() === 0) {
-      toast.error("Please enter at least one quantity");
+      toast.error(t('incomingOrder.errors.enterQuantity'));
       return;
     }
     setCurrentStep(2);
@@ -251,7 +254,7 @@ const IncomingOrderFormContent = () => {
       return storeAdminApi.createIncomingOrder(orderData, adminInfo.token);
     },
     onSuccess: () => {
-      toast.success("Incoming order created successfully!");
+      toast.success(t('incomingOrder.success.orderCreated'));
       // Reset form
       setFormData({
         farmerName: "",
@@ -271,9 +274,56 @@ const IncomingOrderFormContent = () => {
       console.error("Error creating order:", error);
       if (error instanceof Error) {
         const apiError = error as ApiError;
-        toast.error(apiError.response?.data?.message || "Failed to create order");
+        toast.error(apiError.response?.data?.message || t('incomingOrder.errors.failedToCreate'));
       } else {
-        toast.error("Failed to create order");
+        toast.error(t('incomingOrder.errors.failedToCreate'));
+      }
+    }
+  });
+
+  // Create farmer mutation
+  const createFarmerMutation = useMutation({
+    mutationFn: async (farmerData: NewFarmerFormData) => {
+      if (!adminInfo?.token) {
+        throw new Error("No authentication token found");
+      }
+      return storeAdminApi.quickRegister({
+        name: farmerData.name,
+        address: farmerData.address,
+        mobileNumber: farmerData.contact,
+        password: "123456", // Hardcoded default password
+        imageUrl: "",
+        farmerId: farmerData.accNo
+      }, adminInfo.token);
+    },
+    onSuccess: (data) => {
+      toast.success(t('incomingOrder.success.farmerCreated'));
+      // Create a farmer object with the new data
+      const newFarmer: Farmer = {
+        _id: data.data._id,
+        name: data.data.name,
+        address: data.data.address || "",
+        mobileNumber: data.data.mobileNumber
+      };
+      // Update form with new farmer
+      setFormData(prev => ({
+        ...prev,
+        farmerName: newFarmer.name,
+        farmerId: newFarmer._id
+      }));
+      setSearchQuery(newFarmer.name);
+      // Show the farmer details by simulating a selection
+      handleSelectFarmer(newFarmer);
+      setSelectedFarmer(newFarmer);
+      setIsNewFarmerModalOpen(false);
+    },
+    onError: (error: unknown) => {
+      console.error("Error creating farmer:", error);
+      if (error instanceof Error) {
+        const apiError = error as ApiError;
+        toast.error(apiError.response?.data?.message || t('incomingOrder.errors.failedToCreateFarmer'));
+      } else {
+        toast.error(t('incomingOrder.errors.failedToCreateFarmer'));
       }
     }
   });
@@ -283,7 +333,7 @@ const IncomingOrderFormContent = () => {
 
     // Validate step 2
     if (!formData.mainLocation.trim()) {
-      toast.error("Please enter main location");
+      toast.error(t('incomingOrder.errors.enterLocation'));
       return;
     }
 
@@ -347,6 +397,40 @@ const IncomingOrderFormContent = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const handleNewFarmerSubmit = async (farmerData: NewFarmerFormData) => {
+    const response = await createFarmerMutation.mutateAsync(farmerData);
+    if (response.status === "Success") {
+      // Create a farmer object with the new data
+      const newFarmer: Farmer = {
+        _id: response.data._id,
+        name: response.data.name,
+        address: farmerData.address,
+        mobileNumber: response.data.mobileNumber
+      };
+      // Update form with new farmer
+      setFormData(prev => ({
+        ...prev,
+        farmerName: newFarmer.name,
+        farmerId: newFarmer._id
+      }));
+      setSearchQuery(newFarmer.name);
+      // Show the farmer details by simulating a selection
+      handleSelectFarmer(newFarmer);
+      setSelectedFarmer(newFarmer);
+      setIsNewFarmerModalOpen(false);
+    }
+  };
+
+  const clearSelectedFarmer = () => {
+    setSelectedFarmer(null);
+    setSearchQuery("");
+    setFormData(prev => ({
+      ...prev,
+      farmerName: "",
+      farmerId: ""
+    }));
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <h1 className="text-2xl font-bold text-center mb-6">{t('incomingOrder.title')}</h1>
@@ -390,6 +474,15 @@ const IncomingOrderFormContent = () => {
         </div>
       </div>
 
+      {/* Add the modal component */}
+      <NewFarmerModal
+        isOpen={isNewFarmerModalOpen}
+        onClose={() => setIsNewFarmerModalOpen(false)}
+        onSubmit={handleNewFarmerSubmit}
+        isLoading={createFarmerMutation.isPending}
+        token={adminInfo?.token || ''}
+      />
+
       <form onSubmit={handleSubmit}>
         {/* Step 1: Farmer, Variety and Quantities */}
         <AnimatedFormStep isVisible={currentStep === 1}>
@@ -400,65 +493,97 @@ const IncomingOrderFormContent = () => {
                 <label className="block text-sm font-medium mb-2">
                   {t('incomingOrder.farmer.label')}
                 </label>
-                <div className="flex gap-2 items-center relative">
-                  <input
-                    id="farmer-search-input"
-                    type="text"
-                    value={searchQuery}
-                    onChange={handleSearchChange}
-                    onFocus={() => !farmer && setShowDropdown(true)}
-                    placeholder={t('incomingOrder.farmer.searchPlaceholder')}
-                    className={`flex-1 p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition ${farmer ? 'bg-gray-100' : ''}`}
-                    required
-                    disabled={!!farmer}
-                  />
-                  {!farmer && (
+                {farmer ? (
+                  // Show farmer details when pre-selected
+                  <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-medium">{farmer.name}</h3>
+                      <span className="text-sm text-muted-foreground">{t('incomingOrder.farmer.preSelected')}</span>
+                    </div>
+                    {(farmer.mobileNumber || farmer.address) && (
+                      <div className="text-sm text-gray-600 space-y-1">
+                        {farmer.mobileNumber && (
+                          <div className="flex items-center gap-2">
+                            <span>📱</span>
+                            <span>{farmer.mobileNumber}</span>
+                          </div>
+                        )}
+                        {farmer.address && (
+                          <div className="flex items-center gap-2">
+                            <span>📍</span>
+                            <span>{farmer.address}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  // Show search input when no farmer is pre-selected
+                  <div className="flex gap-2 items-center relative">
+                    <div className="flex-1 relative">
+                      <input
+                        id="farmer-search-input"
+                        type="text"
+                        value={selectedFarmer ? selectedFarmer.name : searchQuery}
+                        onChange={handleSearchChange}
+                        onFocus={() => setShowDropdown(true)}
+                        placeholder={t('incomingOrder.farmer.searchPlaceholder')}
+                        className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                        required
+                      />
+                      {selectedFarmer && (
+                        <button
+                          type="button"
+                          onClick={clearSelectedFarmer}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                          title="Clear selection"
+                        >
+                          <X size={16} className="text-gray-500" />
+                        </button>
+                      )}
+                    </div>
                     <button
                       type="button"
+                      onClick={() => setIsNewFarmerModalOpen(true)}
                       className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       <Plus size={18} />
                       <span className="text-sm">{t('incomingOrder.farmer.new')}</span>
                     </button>
-                  )}
 
-                  {/* Search Results Dropdown */}
-                  {showDropdown && !farmer && (searchResults?.length > 0 || isSearching) && (
-                    <div
-                      id="farmer-search-dropdown"
-                      className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-50 bg-white rounded-md shadow-lg border border-gray-200"
-                    >
-                      {isSearching ? (
-                        <div className="flex items-center justify-center p-4">
-                          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                        </div>
-                      ) : (
-                        <div className="py-1">
-                          {searchResults?.map((result: Farmer) => (
-                            <button
-                              key={result._id}
-                              type="button"
-                              className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                              onClick={() => handleSelectFarmer(result)}
-                            >
-                              <div className="font-medium">{result.name}</div>
-                              {(result.mobileNumber || result.address) && (
-                                <div className="text-sm text-gray-500">
-                                  {result.mobileNumber && <span>📱 {result.mobileNumber}</span>}
-                                  {result.address && <span className="ml-2">📍 {result.address}</span>}
-                                </div>
-                              )}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-                {farmer && (
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {t('incomingOrder.farmer.preSelected')}
-                  </p>
+                    {/* Search Results Dropdown */}
+                    {showDropdown && (searchResults?.length > 0 || isSearching) && (
+                      <div
+                        id="farmer-search-dropdown"
+                        className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-50 bg-white rounded-md shadow-lg border border-gray-200"
+                      >
+                        {isSearching ? (
+                          <div className="flex items-center justify-center p-4">
+                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                          </div>
+                        ) : (
+                          <div className="py-1">
+                            {searchResults?.map((result: Farmer) => (
+                              <button
+                                key={result._id}
+                                type="button"
+                                className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                onClick={() => handleSelectFarmer(result)}
+                              >
+                                <div className="font-medium">{result.name}</div>
+                                {(result.mobileNumber || result.address) && (
+                                  <div className="text-sm text-gray-500">
+                                    {result.mobileNumber && <span>📱 {result.mobileNumber}</span>}
+                                    {result.address && <span className="ml-2">📍 {result.address}</span>}
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
 

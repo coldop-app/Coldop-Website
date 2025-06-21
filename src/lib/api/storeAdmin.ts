@@ -7,6 +7,15 @@ interface LoginCredentials {
   isMobile: boolean;
 }
 
+interface QuickRegisterCredentials {
+  name: string;
+  address: string;
+  mobileNumber: string;
+  password: string;
+  imageUrl: string;
+  farmerId: string;
+}
+
 interface SignupCredentials {
   name: string;
   personalAddress: string;
@@ -35,29 +44,23 @@ interface SearchReceiptParams {
   receiptNumber: number;
 }
 
-interface BagSizeQuantity {
-  initialQuantity: number;
-  currentQuantity: number;
-}
-
-interface BagSize {
-  size: string;
-  quantity: BagSizeQuantity;
-}
-
-interface OrderDetail {
-  variety: string;
-  bagSizes: BagSize[];
-  location: string;
-}
-
 interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string;
   voucherNumber: number;
   dateOfSubmission: string;
   remarks: string;
-  orderDetails: OrderDetail[];
+  orderDetails: {
+    variety: string;
+    bagSizes: {
+      size: string;
+      quantity: {
+        initialQuantity: number;
+        currentQuantity: number;
+      };
+    }[];
+    location: string;
+  }[];
 }
 
 interface BagUpdate {
@@ -74,6 +77,64 @@ interface OutgoingOrderDetail {
 interface CreateOutgoingOrderPayload {
   orders: OutgoingOrderDetail[];
   remarks: string;
+}
+
+interface CreateFarmerPayload {
+  accNo: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+  coldStorageId: string;
+}
+
+interface UpdateProfilePayload {
+  name: string;
+  personalAddress: string;
+  mobileNumber: string;
+  coldStorageName: string;
+  coldStorageAddress: string;
+  coldStorageContactNumber: string;
+  capacity?: number;
+  imageUrl: string;
+  preferences: {
+    bagSizes: string[];
+  };
+  isMobile: boolean;
+  password?: string | undefined;
+}
+
+interface UpdateIncomingOrderPayload {
+  remarks: string;
+  dateOfSubmission: string;
+  fulfilled: boolean;
+  orderDetails: {
+    variety: string;
+    location: string;
+    bagSizes: {
+      size: string;
+      quantity: {
+        initialQuantity: number;
+        currentQuantity: number;
+      };
+    }[];
+  }[];
+}
+
+interface UploadProfilePhotoResponse {
+  status: string;
+  data: {
+    url: string;
+  };
+  message?: string;
+}
+
+interface DeleteProfilePhotoPayload {
+  publicId: string;
+}
+
+interface DeleteProfilePhotoResponse {
+  status: string;
+  message?: string;
 }
 
 export const storeAdminApi = {
@@ -291,6 +352,126 @@ export const storeAdminApi = {
         headers: {
           'Authorization': `Bearer ${token}`
         }
+      }
+    );
+    return response.data;
+  },
+
+  quickRegister: async (credentials: QuickRegisterCredentials, token?: string) => {
+    const formData = new URLSearchParams();
+    formData.append('name', credentials.name);
+    formData.append('address', credentials.address);
+    formData.append('mobileNumber', credentials.mobileNumber);
+    formData.append('password', credentials.password);
+    formData.append('imageUrl', credentials.imageUrl);
+    formData.append('farmerId', credentials.farmerId);
+
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    };
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/quick-register`,
+      formData,
+      { headers }
+    );
+    return response.data;
+  },
+
+  createFarmer: async (payload: CreateFarmerPayload, token: string) => {
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/farmers`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  checkFarmerId: async (token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/farmerid/check`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  getFarmerOrders: async (farmerId: string, token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  updateProfile: async (payload: UpdateProfilePayload, token: string) => {
+    const response = await axios.put(
+      `${BASE_URL}/api/store-admin/profile`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  updateIncomingOrder: async (orderId: string, payload: UpdateIncomingOrderPayload, token: string) => {
+    const response = await axios.put(
+      `${BASE_URL}/api/store-admin/incoming-orders/${orderId}`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  uploadProfilePhoto: async (image: File) => {
+    const formData = new FormData();
+    formData.append('image', image);
+
+    const response = await axios.post<UploadProfilePhotoResponse>(
+      `${BASE_URL}/api/store-admin/upload-profile-photo`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        }
+      }
+    );
+    return response.data;
+  },
+
+  deleteProfilePhoto: async (payload: DeleteProfilePhotoPayload) => {
+    const response = await axios.delete<DeleteProfilePhotoResponse>(
+      `${BASE_URL}/api/store-admin/delete-profile-photo`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: payload
       }
     );
     return response.data;

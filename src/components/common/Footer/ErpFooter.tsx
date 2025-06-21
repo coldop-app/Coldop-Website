@@ -7,10 +7,10 @@ const ErpFooter= () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/daybook', labelKey: 'erpFooter.daybook', icon: BookOpen },
-    { path: '/people', labelKey: 'erpFooter.people', icon: Users },
-    { path: '/analytics', labelKey: 'erpFooter.analytics', icon: BarChart2 },
-    { path: '/settings', labelKey: 'erpFooter.settings', icon: Settings },
+    { path: '/erp/daybook', labelKey: 'erpFooter.daybook', icon: BookOpen },
+    { path: '/erp/people', labelKey: 'erpFooter.people', icon: Users },
+    { path: '/erp/analytics', labelKey: 'erpFooter.analytics', icon: BarChart2 },
+    { path: '/erp/settings', labelKey: 'erpFooter.settings', icon: Settings },
   ];
 
   return (
@@ -19,17 +19,21 @@ const ErpFooter= () => {
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path;
+            const isActive = location.pathname.startsWith(item.path);
 
             return (
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex flex-col items-center justify-center w-full h-full
-                  ${isActive ? 'text-blue-600' : 'text-gray-600 hover:text-blue-500'}`}
+                className={`flex flex-col items-center justify-center w-full h-full rounded-lg transition-all duration-200
+                  ${isActive
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-gray-600 hover:bg-primary/5 hover:text-primary/80'}`}
               >
-                <Icon className="w-6 h-6" />
-                <span className="text-xs mt-1">{t(item.labelKey)}</span>
+                <Icon className={`w-6 h-6 transition-transform duration-200 ${isActive ? 'scale-105' : ''}`} />
+                <span className={`text-xs mt-1 transition-opacity duration-200 ${isActive ? 'opacity-100' : 'opacity-70'}`}>
+                  {t(item.labelKey)}
+                </span>
               </Link>
             );
           })}

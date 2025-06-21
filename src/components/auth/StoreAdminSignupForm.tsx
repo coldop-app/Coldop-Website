@@ -1,6 +1,6 @@
-import { useState, useEffect, ReactNode, useRef, RefObject } from "react";
+import { useState, useEffect, ReactNode, useRef, RefObject, ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Pencil, Check, X, Trash2, Plus, Phone } from "lucide-react";
+import { Pencil, Check, X, Trash2, Plus, Phone, Upload, Image as ImageIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import Loader from "@/components/common/Loader/Loader";
@@ -84,6 +84,10 @@ const StoreAdminSignupForm = () => {
 
   // Ref to store the resend timer interval id
   const resendTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
 
@@ -202,6 +206,7 @@ const StoreAdminSignupForm = () => {
       return;
     }
 
+    console.log('Submitting form with data:', { ...formData, password: '[REDACTED]' }); // Debug log
     createAccountMutation.mutate(formData);
   };
 
@@ -357,6 +362,52 @@ const StoreAdminSignupForm = () => {
   const handleResendOtp = () => {
     if (canResendOtp) {
       resendOtpMutation.mutate(formData.mobileNumber);
+    }
+  };
+
+  // Add upload profile photo mutation
+  const uploadPhotoMutation = useMutation({
+    mutationFn: (file: File) => storeAdminApi.uploadProfilePhoto(file),
+    onSuccess: (data) => {
+      if (data.status === "Success" && data.data?.url) {
+        setFormData(prev => ({ ...prev, imageUrl: data.data.url }));
+        toast.success('Logo uploaded successfully!');
+        // Clear selected file after successful upload
+        setSelectedFile(null);
+      } else {
+        throw new Error(data.message || 'Failed to upload image');
+      }
+    },
+    onError: (error) => {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload logo');
+    }
+  });
+
+  const handleImageSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Show preview immediately
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result as string);
+    };
+    reader.readAsDataURL(file);
+    setSelectedFile(file);
+  };
+
+  const handleImageUpload = async () => {
+    if (!selectedFile) return;
+    uploadPhotoMutation.mutate(selectedFile);
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setSelectedFile(null);
+    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
     }
   };
 
@@ -687,6 +738,84 @@ const StoreAdminSignupForm = () => {
                   className="w-full p-3 border border-border rounded-md bg-background"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium mb-1">
+                  Cold Storage Logo
+                </label>
+                <div className="mt-1 flex items-center gap-4">
+                  <div className="relative">
+                    {imagePreview || formData.imageUrl ? (
+                      <div className="relative w-24 h-24 rounded-lg overflow-hidden border border-border">
+                        <img
+                          src={imagePreview || formData.imageUrl}
+                          alt="Cold Storage Logo"
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                          title="Remove logo"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-24 h-24 rounded-lg border-2 border-dashed border-border flex items-center justify-center bg-muted/30">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex gap-2">
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleImageSelect}
+                        accept="image/*"
+                        className="hidden"
+                        id="logo-upload"
+                      />
+                      <label
+                        htmlFor="logo-upload"
+                        className="inline-flex items-center px-4 py-2 rounded-md border border-border font-medium text-sm focus-within:ring-2 focus-within:ring-primary focus-within:border-primary cursor-pointer bg-background hover:bg-muted/50"
+                      >
+                        <Upload className="w-4 h-4 mr-2" />
+                        <span>Select Logo</span>
+                      </label>
+                      {selectedFile && !formData.imageUrl && (
+                        <button
+                          type="button"
+                          onClick={handleImageUpload}
+                          disabled={uploadPhotoMutation.isPending}
+                          className={`inline-flex items-center px-4 py-2 rounded-md font-medium text-sm ${
+                            uploadPhotoMutation.isPending
+                              ? 'bg-muted cursor-not-allowed text-muted-foreground'
+                              : 'bg-primary text-secondary hover:bg-primary/85'
+                          }`}
+                        >
+                          {uploadPhotoMutation.isPending ? (
+                            <>
+                              <Loader size="sm" className="mr-2" />
+                              <span>Uploading...</span>
+                            </>
+                          ) : (
+                            <>
+                              <Check className="w-4 h-4 mr-2" />
+                              <span>Upload</span>
+                            </>
+                          )}
+                        </button>
+                      )}
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Upload a square image for best results. Supported formats: PNG, JPG, JPEG.
+                    </p>
+                  </div>
+                </div>
               </div>
 
               <div>

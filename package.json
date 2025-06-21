@@ -22,7 +22,10 @@
     "@radix-ui/react-select": "^2.2.4",
     "@radix-ui/react-separator": "^1.1.6",
     "@radix-ui/react-slot": "^1.2.2",
+    "@radix-ui/react-switch": "^1.2.5",
+    "@radix-ui/react-tabs": "^1.1.12",
     "@radix-ui/react-tooltip": "^1.2.6",
+    "@react-pdf/renderer": "^4.3.0",
     "@reduxjs/toolkit": "^2.7.0",
     "@tailwindcss/vite": "^4.1.4",
     "@tanstack/react-form": "^1.11.1",
@@ -39,7 +42,7 @@
     "lodash": "^4.17.21",
     "lucide-react": "^0.503.0",
     "motion": "^12.11.3",
-    "react": "^19.0.0",
+    "react": "^19.1.0",
     "react-dom": "^19.0.0",
     "react-hook-form": "^7.56.3",
     "react-hot-toast": "^2.5.2",
@@ -65,5 +68,5 @@
     "typescript-eslint": "^8.24.1",
     "vite": "^6.2.0"
   },
-  "packageManager": "pnpm@10.11.0+sha512.6540583f41cc5f628eb3d9773ecee802f4f9ef9923cc45b69890fb47991d4b092964694ec3a4f738a420c918a333062c8b925d312f42e4f0c263eb603551f977"
+  "packageManager": "pnpm@10.12.1+sha512.f0dda8580f0ee9481c5c79a1d927b9164f2c478e90992ad268bbb2465a736984391d6333d2c327913578b2804af33474ca554ba29c04a8b13060a717675ae3ac"
 }

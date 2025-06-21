@@ -48,6 +48,7 @@ export interface Farmer {
   name: string;
   address: string;
   mobileNumber: string;
+  farmerId: string;
 }
 
 export interface Voucher {

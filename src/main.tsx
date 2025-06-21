@@ -17,6 +17,7 @@ import NotFound from "./screens/NotFound/NotFound";
 import Error from "./screens/Error/Error";
 import IncomingOrderForm from "./screens/Erp/IncomingOrderForm.tsx";
 import OutgoingOrderForm from "./screens/Erp/OutgoingOrderForm.tsx";
+import EditIncomingOrderForm from "./screens/Erp/EditIncomingOrderForm.tsx";
 
 // Lazy load components
 const HomeScreen = lazy(() => import("./screens/HomeScreen/HomeScreen.tsx"));
@@ -27,6 +28,10 @@ const DaybookScreen = lazy(() => import("./screens/Erp/DaybookScreen.tsx"));
 const PeopleScreen = lazy(() => import("./screens/Erp/PeopleScreen.tsx"));
 const FarmerProfileScreen = lazy(() => import("./screens/Erp/FarmerProfileScreen.tsx"));
 const ColdStorageSummaryScreen = lazy(() => import("./screens/Erp/ColdStorageSummaryScreen.tsx"));
+const SettingsScreen = lazy(() => import("./screens/Erp/SettingsScreen.tsx"));
+const ProfileSettingsScreen = lazy(() => import("./screens/Erp/ProfileSettingsScreen.tsx"));
+const BillingSettingsScreen = lazy(() => import("./screens/Erp/BillingSettingsScreen.tsx"));
+const ContactSupportScreen = lazy(() => import("./screens/Erp/ContactSupportScreen.tsx"));
 
 // Loading component
 const LoadingFallback = () => (
@@ -93,9 +98,34 @@ const router = createBrowserRouter(
               <IncomingOrderForm />
             </Suspense>
           } />
+          <Route path="incoming-order/edit" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <EditIncomingOrderForm />
+            </Suspense>
+          } />
           <Route path="outgoing-order" element={
             <Suspense fallback={<LoadingFallback />}>
               <OutgoingOrderForm />
+            </Suspense>
+          } />
+          <Route path="settings" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <SettingsScreen />
+            </Suspense>
+          } />
+          <Route path="settings/profile" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ProfileSettingsScreen />
+            </Suspense>
+          } />
+          <Route path="settings/billing" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <BillingSettingsScreen />
+            </Suspense>
+          } />
+          <Route path="settings/support" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <ContactSupportScreen />
             </Suspense>
           } />
           {/* Add more ERP routes here */}
