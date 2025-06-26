@@ -19,31 +19,53 @@ const Sidebar = ({ className }: SidebarProps) => {
   ];
 
   const SidebarContent = () => (
-    <div className="flex h-full flex-col gap-4 bg-secondary p-4">
-      <div className="flex items-center gap-2 px-2 py-4">
-        <img src="/coldop-logo.png" alt="Coldop Logo" className="h-8 w-8" />
-        <span className="font-custom text-xl font-semibold text-foreground">Coldop</span>
+    <div className="flex h-full flex-col bg-secondary">
+      {/* Logo Section with subtle gradient border */}
+      <div className="relative border-b border-gray-200/30 px-6 py-5">
+        <div className="flex items-center gap-3">
+          <div className="overflow-hidden rounded-xl bg-primary/10 p-1.5">
+            <img src="/coldop-logo.png" alt="Coldop Logo" className="h-8 w-8" />
+          </div>
+          <span className="font-custom text-xl font-semibold tracking-tight text-gray-900">
+            Coldop
+          </span>
+        </div>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="space-y-1">
-          {menuItems.map((item) => (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                "hover:bg-primary hover:text-secondary",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                location.pathname.startsWith(item.href) && "bg-primary text-secondary"
-              )}
-            >
-              <item.icon className="h-5 w-5" />
-              {t(item.labelKey)}
-            </Link>
-          ))}
-        </div>
+      {/* Navigation Section */}
+      <ScrollArea className="flex-1 px-4 py-6">
+        <nav className="space-y-1.5">
+          {menuItems.map((item) => {
+            const isActive = location.pathname.startsWith(item.href);
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-gray-600 hover:bg-primary/10 hover:text-primary",
+                  "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                )}
+              >
+                <item.icon className={cn(
+                  "h-5 w-5 transition-transform duration-200",
+                  isActive
+                    ? ""
+                    : "group-hover:scale-110 group-hover:text-primary"
+                )} />
+                <span className="font-medium">{t(item.labelKey)}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </ScrollArea>
+
+      {/* Subtle Branding Footer */}
+      <div className="border-t border-gray-200/30 bg-gray-50/30 px-6 py-3">
+        <p className="text-center text-xs text-gray-400">powered by coldop</p>
+      </div>
     </div>
   );
 
@@ -69,7 +91,7 @@ const Sidebar = ({ className }: SidebarProps) => {
       {/* Desktop Sidebar */}
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 hidden w-64 border-r bg-secondary md:block",
+          "fixed inset-y-0 left-0 z-50 hidden w-64 border-r border-gray-200/30 bg-secondary shadow-sm md:block",
           className
         )}
       >
