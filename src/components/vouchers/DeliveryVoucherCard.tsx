@@ -162,9 +162,9 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                       const incomingBagSize = detail.incomingOrder?.incomingBagSizes.find(
                         b => b.size === bagSize.size
                       );
-                      const availableQuantity = incomingBagSize
-                        ? incomingBagSize.currentQuantity
-                        : 0;
+                      const initialQuantity = incomingBagSize?.initialQuantity || 0;
+                      const removedQuantity = bagSize.quantityRemoved || 0;
+                      const availableQuantity = initialQuantity - removedQuantity;
 
                       return (
                         <tr key={`${detailIndex}-${bagIndex}`} className="hover:bg-gray-50">
@@ -187,9 +187,9 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                             )}
                           </td>
                           <td className="py-3 px-4 font-medium text-gray-900">{bagSize.size}</td>
-                          <td className="py-3 px-4 text-right">{incomingBagSize?.initialQuantity || 0}</td>
+                          <td className="py-3 px-4 text-right">{initialQuantity}</td>
                           <td className="py-3 px-4 text-right text-red-600 font-medium">
-                            {bagSize.quantityRemoved || 0}
+                            {removedQuantity}
                           </td>
                           <td className="py-3 px-4 text-right text-green-600 font-medium">
                             {availableQuantity}
