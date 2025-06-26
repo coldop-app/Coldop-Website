@@ -132,10 +132,10 @@ const DaybookScreen = () => {
 
     return (
       <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Left side - Entries info and page size selector */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <span className="text-xs sm:text-sm text-gray-600">
+        <div className="px-3 sm:px-6 py-4 flex flex-col gap-4">
+          {/* Top row - Entries info and page size selector */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+            <span className="text-xs text-gray-600 whitespace-nowrap">
               {t('daybook.showing')} <span className="font-medium">{((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}</span> {t('daybook.to')}{' '}
               <span className="font-medium">
                 {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
@@ -145,7 +145,7 @@ const DaybookScreen = () => {
             <select
               value={itemsPerPage}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-              className="w-full sm:w-auto px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-auto px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
             >
               <option value={5}>5 {t('daybook.perPage')}</option>
               <option value={10}>10 {t('daybook.perPage')}</option>
@@ -154,40 +154,40 @@ const DaybookScreen = () => {
             </select>
           </div>
 
-          {/* Right side - Pagination controls */}
-          <div className="flex items-center gap-1 w-full sm:w-auto justify-center sm:justify-end">
-            {/* First page button */}
-            <button
-              onClick={() => setCurrentPage(1)}
-              disabled={!pagination.hasPreviousPage}
-              className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label={t('daybook.firstPage')}
-            >
-              <ChevronsLeft size={14} className="text-gray-600" />
-            </button>
+          {/* Bottom row - Pagination controls */}
+          <div className="flex items-center justify-between gap-2">
+            {/* Navigation buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={!pagination.hasPreviousPage}
+                className="p-1.5 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                aria-label={t('daybook.firstPage')}
+              >
+                <ChevronsLeft size={12} className="text-gray-600" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(pagination.previousPage!)}
+                disabled={!pagination.hasPreviousPage}
+                className="p-1.5 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                aria-label={t('daybook.previousPage')}
+              >
+                <ChevronLeft size={12} className="text-gray-600" />
+              </button>
+            </div>
 
-            {/* Previous page button */}
-            <button
-              onClick={() => setCurrentPage(pagination.previousPage!)}
-              disabled={!pagination.hasPreviousPage}
-              className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label={t('daybook.previousPage')}
-            >
-              <ChevronLeft size={14} className="text-gray-600" />
-            </button>
-
-            {/* Page numbers */}
-            <div className="flex items-center gap-1 mx-2">
-              {getPageNumbers().map((pageNum, index) => (
+            {/* Page numbers - mobile optimized */}
+            <div className="flex items-center gap-1 overflow-x-auto max-w-[200px] sm:max-w-none">
+              {getPageNumbers().slice(0, 5).map((pageNum, index) => (
                 <button
                   key={index}
                   onClick={() => typeof pageNum === 'number' && setCurrentPage(pageNum)}
                   disabled={pageNum === '...'}
-                  className={`min-w-[28px] sm:min-w-[32px] h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                  className={`min-w-[24px] h-6 px-1 rounded text-xs font-medium transition-colors flex-shrink-0 ${
                     pageNum === pagination.currentPage
                       ? 'bg-primary text-white hover:bg-primary/90'
                       : pageNum === '...'
-                      ? 'cursor-default'
+                      ? 'cursor-default text-gray-400'
                       : 'border border-gray-300 text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20'
                   }`}
                 >
@@ -196,25 +196,25 @@ const DaybookScreen = () => {
               ))}
             </div>
 
-            {/* Next page button */}
-            <button
-              onClick={() => setCurrentPage(pagination.nextPage!)}
-              disabled={!pagination.hasNextPage}
-              className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label={t('daybook.nextPage')}
-            >
-              <ChevronRight size={14} className="text-gray-600" />
-            </button>
-
-            {/* Last page button */}
-            <button
-              onClick={() => setCurrentPage(pagination.totalPages)}
-              disabled={!pagination.hasNextPage}
-              className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
-              aria-label={t('daybook.lastPage')}
-            >
-              <ChevronsRight size={14} className="text-gray-600" />
-            </button>
+            {/* Navigation buttons */}
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setCurrentPage(pagination.nextPage!)}
+                disabled={!pagination.hasNextPage}
+                className="p-1.5 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                aria-label={t('daybook.nextPage')}
+              >
+                <ChevronRight size={12} className="text-gray-600" />
+              </button>
+              <button
+                onClick={() => setCurrentPage(pagination.totalPages)}
+                disabled={!pagination.hasNextPage}
+                className="p-1.5 rounded border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+                aria-label={t('daybook.lastPage')}
+              >
+                <ChevronsRight size={12} className="text-gray-600" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -246,18 +246,18 @@ const DaybookScreen = () => {
   return (
     <>
       <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
-      <div className="p-4 sm:p-6">
+      <div className="p-2 sm:p-4 lg:p-6 w-full max-w-full overflow-x-hidden min-h-0">
         {/* Header with total count */}
-        <div className="mb-4 sm:mb-6">
+        <div className="mb-3 sm:mb-4">
           {pagination && (
-            <p className="text-sm sm:text-base font-medium text-gray-600">
-              {t('daybook.totalOrders')}: {pagination.totalItems} {t('daybook.orders')}
+            <p className="text-sm font-medium text-gray-600">
+              Total: {pagination.totalItems} orders
             </p>
           )}
         </div>
 
         {/* Search and Filters */}
-        <div className="flex flex-col gap-4 mb-6">
+        <div className="flex flex-col gap-3 mb-4">
           {/* Search Receipt */}
           <div className="relative w-full">
             <div className="relative">
@@ -265,15 +265,15 @@ const DaybookScreen = () => {
                 type="number"
                 value={searchReceiptNumber}
                 onChange={(e) => setSearchReceiptNumber(e.target.value)}
-                placeholder={t('daybook.searchPlaceholder')}
-                className="w-full px-4 py-2 pl-10 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
+                placeholder="Search by receipt number..."
+                className="w-full px-3 py-2 pl-8 pr-8 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm"
               />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={14} />
             </div>
             {searchReceiptNumber && (
               <button
                 onClick={() => setSearchReceiptNumber('')}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 text-lg w-6 h-6 flex items-center justify-center"
               >
                 ×
               </button>
@@ -281,38 +281,43 @@ const DaybookScreen = () => {
           </div>
 
           {/* Existing Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <select
-              value={type}
-              onChange={(e) => handleTypeChange(e.target.value as OrderType)}
-              className="w-full sm:w-auto px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
-              disabled={searchReceiptNumber !== ''}
-            >
-              <option value="all">{t('daybook.allOrders')}</option>
-              <option value="incoming">{t('daybook.incoming')}</option>
-              <option value="outgoing">{t('daybook.outgoing')}</option>
-            </select>
-            <select
-              value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value as SortOrder)}
-              className="w-full sm:w-auto px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
-              disabled={searchReceiptNumber !== ''}
-            >
-              <option value="latest">{t('daybook.latestFirst')}</option>
-              <option value="oldest">{t('daybook.oldestFirst')}</option>
-            </select>
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-3">
+            {/* Filter Selects */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row sm:gap-3">
+              <select
+                value={type}
+                onChange={(e) => handleTypeChange(e.target.value as OrderType)}
+                className="px-2 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs sm:text-sm truncate"
+                disabled={searchReceiptNumber !== ''}
+              >
+                <option value="all">All Orders</option>
+                <option value="incoming">Incoming</option>
+                <option value="outgoing">Outgoing</option>
+              </select>
+              <select
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value as SortOrder)}
+                className="px-2 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-xs sm:text-sm truncate"
+                disabled={searchReceiptNumber !== ''}
+              >
+                <option value="latest">Latest First</option>
+                <option value="oldest">Oldest First</option>
+              </select>
+            </div>
+            
+            {/* Action Buttons */}
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-row">
               <button
                 onClick={() => navigate('/erp/incoming-order')}
-                className="w-full sm:w-auto px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-colors text-sm sm:text-base font-medium"
+                className="px-2 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-colors text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis"
               >
-                {t('daybook.addIncoming')}
+                + Incoming
               </button>
               <button
                 onClick={() => navigate('/erp/outgoing-order')}
-                className="w-full sm:w-auto px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-colors text-sm sm:text-base font-medium"
+                className="px-2 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-colors text-xs font-medium whitespace-nowrap overflow-hidden text-ellipsis"
               >
-                {t('daybook.addOutgoing')}
+                + Outgoing
               </button>
             </div>
           </div>
@@ -338,19 +343,23 @@ const DaybookScreen = () => {
         )}
 
         {/* Orders List */}
-        <div className="space-y-4">
+        <div className="space-y-4 w-full">
           {orders.length === 0 && !isLoading && !isSearchLoading ? (
-            <div className="text-center py-8 text-sm sm:text-base text-gray-500">
+            <div className="text-center py-8 text-sm text-gray-500">
               {searchReceiptNumber ? t('daybook.noReceiptFound') : t('daybook.noOrdersFound')}
             </div>
           ) : (
-            orders.map((order: Order) => (
-              order.voucher.type === 'DELIVERY' ? (
-                <DeliveryVoucherCard key={order._id} order={order} />
-              ) : (
-                <ReceiptVoucherCard key={order._id} order={order} />
-              )
-            ))
+            <div className="space-y-4">
+              {orders.map((order: Order) => (
+                <div key={order._id} className="w-full">
+                  {order.voucher.type === 'DELIVERY' ? (
+                    <DeliveryVoucherCard order={order} />
+                  ) : (
+                    <ReceiptVoucherCard order={order} />
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 

@@ -75,93 +75,135 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   };
 
   const handlePrint = () => {
-    // Open in new window
-    const printWindow = window.open('', '_blank');
-    if (printWindow && adminInfo) {
-      printWindow.document.write(`
-        <html>
-          <body>
-            <div id="root" style="height: 100vh;"></div>
-            <script>
-              // Prevent the window from closing when React mounts
-              window.onbeforeunload = null;
-            </script>
-          </body>
-        </html>
-      `);
+    if (isWebView()) {
+      // Handle printing in React Native WebView
+      const printData = {
+        type: 'PRINT_RECEIPT',
+        voucherType: 'RECEIPT',
+        voucherNumber: order.voucher.voucherNumber,
+        date: order.dateOfSubmission,
+        variety: order.orderDetails[0]?.variety || '',
+        farmerName: order.farmerId.name,
+        farmerId: order.farmerId.farmerId,
+        currentStock: order.currentStockAtThatTime,
+        remarks: order.remarks || '',
+        orderDetails: order.orderDetails.map(detail => ({
+          variety: detail.variety,
+          location: detail.location,
+          bagSizes: detail.bagSizes.map(bag => ({
+            size: bag.size,
+            initialQuantity: bag.quantity?.initialQuantity || 0,
+            currentQuantity: bag.quantity?.currentQuantity || 0,
+            utilization: bag.quantity?.initialQuantity ? 
+              Math.round(((bag.quantity.initialQuantity - (bag.quantity.currentQuantity || 0)) / bag.quantity.initialQuantity) * 100) : 0
+          }))
+        })),
+        summary: {
+          totalBagTypes: order.orderDetails.reduce((total, detail) => total + detail.bagSizes.length, 0),
+          totalCurrentQuantity: order.orderDetails.reduce((total, detail) =>
+            total + detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0), 0
+          ),
+          totalInitialQuantity: order.orderDetails.reduce((total, detail) =>
+            total + detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0), 0
+          ),
+          averageUtilization: order.orderDetails.length > 0 ? Math.round(
+            order.orderDetails.reduce((total, detail) =>
+              total + detail.bagSizes.reduce((sum, bag) => {
+                const initial = bag.quantity?.initialQuantity || 0;
+                const current = bag.quantity?.currentQuantity || 0;
+                return sum + (initial > 0 ? ((initial - current) / initial * 100) : 0);
+              }, 0) / detail.bagSizes.length, 0
+            ) / order.orderDetails.length
+          ) : 0
+        }
+      };
+      
+      window.ReactNativeWebView.postMessage(JSON.stringify(printData));
+    } else {
+      // Handle printing in web browser (existing PDF functionality)
+      const printWindow = window.open('', '_blank');
+      if (printWindow && adminInfo) {
+        printWindow.document.write(`
+          <html>
+            <body>
+              <div id="root" style="height: 100vh;"></div>
+              <script>
+                // Prevent the window from closing when React mounts
+                window.onbeforeunload = null;
+              </script>
+            </body>
+          </html>
+        `);
 
-      // Render PDF viewer in the new window
-      const root = printWindow.document.getElementById('root');
-      if (root) {
-        ReactDOM.createRoot(root).render(
-          <PDFViewer width="100%" height="100%">
-            <OrderVoucherPDF order={order} adminInfo={adminInfo} />
-          </PDFViewer>
-        );
+        // Render PDF viewer in the new window
+        const root = printWindow.document.getElementById('root');
+        if (root) {
+          ReactDOM.createRoot(root).render(
+            <PDFViewer width="100%" height="100%">
+              <OrderVoucherPDF order={order} adminInfo={adminInfo} />
+            </PDFViewer>
+          );
+        }
       }
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+    <div className="bg-white rounded-lg shadow-md p-3 sm:p-4 w-full max-w-full overflow-hidden">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            RECEIPT #{order.voucher.voucherNumber}
-          </span>
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">{order.farmerId.name}</span>
+      <div className="flex flex-col gap-3 mb-4 pb-3 border-b border-gray-200">
+        {/* Top row: Badge and farmer name */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <span className="inline-block px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">
+              RECEIPT #{order.voucher.voucherNumber}
+            </span>
+            <div className="text-xs text-gray-600 truncate">
+              <span className="font-medium">{order.farmerId.name}</span>
+            </div>
           </div>
-          <button
-            onClick={handleEdit}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
-          >
-            <Pencil size={14} />
-            Edit
-          </button>
           {isWebView() && (
-            <>
+            <div className="flex items-center gap-1">
               <div 
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors cursor-pointer"
+                className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 cursor-pointer"
                 onClick={() => shareCard(order)}
               >
-                <Share2 size={14} />
-                Share
+                <Share2 size={12} />
+                <span className="hidden sm:inline">Share</span>
               </div>
-              <div 
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors cursor-pointer"
-                onClick={toggleCollapse}
-              >
+              <div className="text-sm text-gray-600 cursor-pointer p-1" onClick={toggleCollapse}>
                 {isCollapsed ? (
-                  <ChevronDown size={14} />
+                  <ChevronDown size={16} />
                 ) : (
-                  <ChevronUp size={14} />
+                  <ChevronUp size={16} />
                 )}
-                {isCollapsed ? 'Expand' : 'Collapse'}
               </div>
-            </>
+            </div>
           )}
-          <div className="flex items-center gap-2">
+        </div>
+        
+        {/* Bottom row: Stock, date, and action buttons */}
+        <div className="flex items-center justify-between text-xs text-gray-600">
+          <div className="flex items-center gap-3">
+            <span>Stock: <span className="font-medium">{order.currentStockAtThatTime}</span></span>
+            <span className="font-medium">{formatDate(order.dateOfSubmission)}</span>
+          </div>
+          <div className="flex items-center gap-1">
             <button
               onClick={handleEdit}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
             >
-              <Pencil size={14} />
-              Edit
+              <Pencil size={12} />
+              <span className="hidden sm:inline">Edit</span>
             </button>
             <button
               onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors"
+              className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors"
             >
-              <Printer size={14} />
-              Print
+              <Printer size={12} />
+              <span className="hidden sm:inline">Print</span>
             </button>
           </div>
-        </div>
-        <div className="flex items-center gap-4 text-sm text-gray-600">
-          <span>Stock: <span className="font-medium">{order.currentStockAtThatTime}</span></span>
-          <span className="font-medium">{formatDate(order.dateOfSubmission)}</span>
         </div>
       </div>
 
