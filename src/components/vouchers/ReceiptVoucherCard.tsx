@@ -113,84 +113,81 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 sm:p-6">
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:border-primary/10 hover:shadow-md">
       {/* Header Section */}
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 pb-4 border-b border-gray-200">
-        <div className="flex items-center gap-4">
-          <span className="inline-block px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">
-            RECEIPT #{order.voucher.voucherNumber}
-          </span>
-          <div className="text-sm text-gray-600">
-            <span className="font-medium">{order.farmerId.name}</span>
-          </div>
-          <button
-            onClick={handleEdit}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 rounded-md hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-colors"
-          >
-            <Pencil size={14} />
-            Edit
-          </button>
-          {isWebView() && (
-            <>
-              <div
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors cursor-pointer"
-                onClick={() => shareCard(order)}
+      <div className="bg-gray-50/50 border-b border-gray-100 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+          <div className="flex items-center gap-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary rounded-full"></div>
+              <span className="text-sm font-medium text-gray-900">
+                Receipt #{order.voucher.voucherNumber}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleEdit}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               >
-                <Share2 size={14} />
-                Share
-              </div>
-              <div
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors cursor-pointer"
-                onClick={toggleCollapse}
+                <Pencil size={14} />
+                Edit
+              </button>
+              {isWebView() && (
+                <>
+                  <button
+                    onClick={() => shareCard(order)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200"
+                  >
+                    <Share2 size={14} />
+                    Share
+                  </button>
+                  <button
+                    onClick={toggleCollapse}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200"
+                  >
+                    {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                    {isCollapsed ? 'Expand' : 'Collapse'}
+                  </button>
+                </>
+              )}
+              <button
+                onClick={handlePrint}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200"
               >
-                {isCollapsed ? (
-                  <ChevronDown size={14} />
-                ) : (
-                  <ChevronUp size={14} />
-                )}
-                {isCollapsed ? 'Expand' : 'Collapse'}
-              </div>
-            </>
-          )}
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handlePrint}
-              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium text-gray-700 bg-gray-50 rounded-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-colors"
-            >
-              <Printer size={14} />
-              Print
-            </button>
+                <Printer size={14} />
+                Print
+              </button>
+            </div>
           </div>
-        </div>
-        <div className="flex items-center gap-4 text-sm text-gray-600">
-          <span>Stock: <span className="font-medium">{order.currentStockAtThatTime}</span></span>
-          <span className="font-medium">{formatDate(order.dateOfSubmission)}</span>
+          <div className="flex items-center gap-4 text-sm text-gray-600">
+            <span>Stock: <span className="font-medium text-gray-900">{order.currentStockAtThatTime}</span></span>
+            <span className="font-medium text-gray-900">{formatDate(order.dateOfSubmission)}</span>
+          </div>
         </div>
       </div>
 
       {/* Main Content - Collapsible */}
       {(!isWebView() || !isCollapsed) && (
-        <div className="space-y-6">
+        <div className="p-4 sm:p-6 space-y-6">
           {/* Farmer Details Card */}
-          <div className="bg-gray-50 rounded-lg p-4">
+          <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
             <h3 className="text-sm font-medium text-gray-900 mb-3">Farmer Details</h3>
-            <div className="space-y-3">
-              <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Name</span>
-                <p className="font-medium text-gray-900 mt-1">{order.farmerId.name}</p>
-              </div>
-              <div>
-                <span className="text-xs text-gray-500 uppercase tracking-wide">Farmer ID</span>
-                <p className="font-mono text-sm text-gray-900 mt-1 break-all">{order.farmerId.farmerId}</p>
-              </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Name</span>
+                  <p className="font-medium text-gray-900 mt-1">{order.farmerId.name}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 uppercase tracking-wide">Farmer ID</span>
+                  <p className="font-mono text-sm text-gray-900 mt-1 break-all">{order.farmerId.farmerId}</p>
+                </div>
             </div>
           </div>
 
           {order.orderDetails.map((detail, index) => (
             <div key={index} className="space-y-4">
-
               {/* Variety and Location Header */}
-              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-gray-50 rounded-lg px-4 py-3">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 bg-gray-50/50 rounded-xl px-4 py-3 border border-gray-100">
                 <h4 className="text-base font-medium text-gray-900">{detail.variety}</h4>
                 <span className="text-sm text-gray-600">
                   <span className="text-gray-500">Location:</span> <span className="font-medium">{detail.location}</span>
@@ -198,16 +195,16 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
               </div>
 
               {/* Bag Sizes Table */}
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto rounded-xl border border-gray-100">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
+                    <tr className="bg-gray-50/50">
                       <th className="text-left py-3 px-4 font-medium text-gray-900">Bag Size</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-900">Quantity</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-900">Utilization</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-900">Usage Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200">
+                  <tbody className="divide-y divide-gray-100">
                     {detail.bagSizes
                       .sort((a, b) => {
                         const aIndex = bagSizes.indexOf(a.size);
@@ -217,25 +214,25 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                       .map((bagSize, idx) => {
                         const current = bagSize.quantity?.currentQuantity || 0;
                         const initial = bagSize.quantity?.initialQuantity || 0;
-                        const utilizationPercentage = initial > 0 ? ((initial - current) / initial * 100) : 0;
+                        const usagePercentage = initial > 0 ? ((initial - current) / initial * 100) : 0;
 
                         return (
-                          <tr key={idx} className="hover:bg-gray-50">
+                          <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
                             <td className="py-3 px-4 font-medium text-gray-900">{bagSize.size}</td>
                             <td className="py-3 px-4 text-center">
                               <span className="font-medium">
-                                <span className="text-green-600">{current}</span>
+                                <span className="text-primary">{current}</span>
                                 <span className="text-gray-400 mx-1">/</span>
-                                <span className="text-gray-600">{initial}</span>
+                                <span className="text-gray-700">{initial}</span>
                               </span>
                             </td>
                             <td className="py-3 px-4 text-right">
                               <div className="flex items-center justify-end gap-2">
-                                <span className="text-gray-600">{utilizationPercentage.toFixed(0)}%</span>
-                                <div className="w-12 bg-gray-200 rounded-full h-2">
+                                <span className="text-gray-700">{usagePercentage.toFixed(0)}% Used</span>
+                                <div className="w-16 bg-gray-100 rounded-full h-1.5">
                                   <div
-                                    className="bg-blue-500 h-2 rounded-full transition-all duration-300"
-                                    style={{ width: `${Math.min(utilizationPercentage, 100)}%` }}
+                                    className="bg-primary h-1.5 rounded-full transition-all duration-300"
+                                    style={{ width: `${Math.min(usagePercentage, 100)}%` }}
                                   ></div>
                                 </div>
                               </div>
@@ -248,26 +245,26 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
               </div>
 
               {/* Quick Stats Row */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 bg-gradient-to-r from-gray-50/50 to-primary/5 rounded-xl p-4 border border-gray-100">
                 <div className="text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Total Types</p>
                   <p className="text-lg font-bold text-gray-900">{detail.bagSizes.length}</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Total Current</p>
-                  <p className="text-lg font-bold text-green-600">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Available</p>
+                  <p className="text-lg font-bold text-primary">
                     {detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}
                   </p>
                 </div>
                 <div className="text-center">
                   <p className="text-xs text-gray-500 uppercase tracking-wide">Total Initial</p>
-                  <p className="text-lg font-bold text-blue-600">
+                  <p className="text-lg font-bold text-gray-900">
                     {detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}
                   </p>
                 </div>
                 <div className="text-center">
-                  <p className="text-xs text-gray-500 uppercase tracking-wide">Avg Utilization</p>
-                  <p className="text-lg font-bold text-purple-600">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Avg Usage</p>
+                  <p className="text-lg font-bold text-gray-700">
                     {Math.round(
                       detail.bagSizes.reduce((sum, bag) => {
                         const initial = bag.quantity?.initialQuantity || 0;
@@ -283,8 +280,8 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
 
           {/* Remarks Section */}
           {order.remarks && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="bg-yellow-50 rounded-lg p-4">
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <div className="bg-yellow-50/50 rounded-xl p-4 border border-yellow-100">
                 <h3 className="text-sm font-medium text-gray-900 mb-2">Remarks</h3>
                 <p className="text-sm text-gray-700 leading-relaxed">{order.remarks}</p>
               </div>

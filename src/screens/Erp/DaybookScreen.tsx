@@ -131,21 +131,24 @@ const DaybookScreen = () => {
     };
 
     return (
-      <div className="mt-8 bg-white rounded-lg shadow-sm border border-gray-200">
-        <div className="px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100">
+        <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Left side - Entries info and page size selector */}
           <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <span className="text-xs sm:text-sm text-gray-600">
-              {t('daybook.showing')} <span className="font-medium">{((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}</span> {t('daybook.to')}{' '}
-              <span className="font-medium">
-                {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
-              </span>{' '}
-              {t('daybook.of')} <span className="font-medium">{pagination.totalItems}</span> {t('daybook.entries')}
-            </span>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary/20 rounded-full"></div>
+              <span className="text-sm text-gray-600">
+                {t('daybook.showing')} <span className="font-medium text-gray-900">{((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}</span> {t('daybook.to')}{' '}
+                <span className="font-medium text-gray-900">
+                  {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
+                </span>{' '}
+                {t('daybook.of')} <span className="font-medium text-gray-900">{pagination.totalItems}</span> {t('daybook.entries')}
+              </span>
+            </div>
             <select
               value={itemsPerPage}
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
-              className="w-full sm:w-auto px-3 py-1.5 border border-gray-300 rounded-lg text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-full sm:w-auto px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
             >
               <option value={5}>5 {t('daybook.perPage')}</option>
               <option value={10}>10 {t('daybook.perPage')}</option>
@@ -155,40 +158,40 @@ const DaybookScreen = () => {
           </div>
 
           {/* Right side - Pagination controls */}
-          <div className="flex items-center gap-1 w-full sm:w-auto justify-center sm:justify-end">
+          <div className="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
             {/* First page button */}
             <button
               onClick={() => setCurrentPage(1)}
               disabled={!pagination.hasPreviousPage}
-              className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               aria-label={t('daybook.firstPage')}
             >
-              <ChevronsLeft size={14} className="text-gray-600" />
+              <ChevronsLeft size={16} className="text-gray-600" />
             </button>
 
             {/* Previous page button */}
             <button
               onClick={() => setCurrentPage(pagination.previousPage!)}
               disabled={!pagination.hasPreviousPage}
-              className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               aria-label={t('daybook.previousPage')}
             >
-              <ChevronLeft size={14} className="text-gray-600" />
+              <ChevronLeft size={16} className="text-gray-600" />
             </button>
 
             {/* Page numbers */}
-            <div className="flex items-center gap-1 mx-2">
+            <div className="flex items-center gap-1.5">
               {getPageNumbers().map((pageNum, index) => (
                 <button
                   key={index}
                   onClick={() => typeof pageNum === 'number' && setCurrentPage(pageNum)}
                   disabled={pageNum === '...'}
-                  className={`min-w-[28px] sm:min-w-[32px] h-7 sm:h-8 px-1.5 sm:px-2 rounded-lg text-xs sm:text-sm font-medium transition-colors ${
+                  className={`min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     pageNum === pagination.currentPage
                       ? 'bg-primary text-white hover:bg-primary/90'
                       : pageNum === '...'
-                      ? 'cursor-default'
-                      : 'border border-gray-300 text-gray-600 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20'
+                      ? 'cursor-default px-1'
+                      : 'border border-gray-200 text-gray-700 hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20'
                   }`}
                 >
                   {pageNum}
@@ -200,20 +203,20 @@ const DaybookScreen = () => {
             <button
               onClick={() => setCurrentPage(pagination.nextPage!)}
               disabled={!pagination.hasNextPage}
-              className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               aria-label={t('daybook.nextPage')}
             >
-              <ChevronRight size={14} className="text-gray-600" />
+              <ChevronRight size={16} className="text-gray-600" />
             </button>
 
             {/* Last page button */}
             <button
               onClick={() => setCurrentPage(pagination.totalPages)}
               disabled={!pagination.hasNextPage}
-              className="p-1.5 sm:p-2 rounded-lg border border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20"
+              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
               aria-label={t('daybook.lastPage')}
             >
-              <ChevronsRight size={14} className="text-gray-600" />
+              <ChevronsRight size={16} className="text-gray-600" />
             </button>
           </div>
         </div>
@@ -246,111 +249,173 @@ const DaybookScreen = () => {
   return (
     <>
       <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
-      <div className="p-4 sm:p-6">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         {/* Header with total count */}
-        <div className="mb-4 sm:mb-6">
-          {pagination && (
-            <p className="text-sm sm:text-base font-medium text-gray-600">
-              {t('daybook.totalOrders')}: {pagination.totalItems} {t('daybook.orders')}
-            </p>
-          )}
-        </div>
-
-        {/* Search and Filters */}
-        <div className="flex flex-col gap-4 mb-6">
-          {/* Search Receipt */}
-          <div className="relative w-full">
-            <div className="relative">
-              <input
-                type="number"
-                value={searchReceiptNumber}
-                onChange={(e) => setSearchReceiptNumber(e.target.value)}
-                placeholder={t('daybook.searchPlaceholder')}
-                className="w-full px-4 py-2 pl-10 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
-              />
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+        <div className="flex items-center justify-between mb-6 bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clipRule="evenodd"/>
+              </svg>
             </div>
-            {searchReceiptNumber && (
-              <button
-                onClick={() => setSearchReceiptNumber('')}
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                ×
-              </button>
+            {pagination && (
+              <p className="text-base font-semibold text-gray-900">
+                {pagination.totalItems} <span className="text-gray-500 font-normal">{t('daybook.orders')}</span>
+              </p>
             )}
           </div>
+        </div>
 
-          {/* Existing Filters */}
-          <div className="flex flex-col sm:flex-row gap-4">
-            <select
-              value={type}
-              onChange={(e) => handleTypeChange(e.target.value as OrderType)}
-              className="w-full sm:w-auto px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
-              disabled={searchReceiptNumber !== ''}
-            >
-              <option value="all">{t('daybook.allOrders')}</option>
-              <option value="incoming">{t('daybook.incoming')}</option>
-              <option value="outgoing">{t('daybook.outgoing')}</option>
-            </select>
-            <select
-              value={sortBy}
-              onChange={(e) => handleSortChange(e.target.value as SortOrder)}
-              className="w-full sm:w-auto px-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base"
-              disabled={searchReceiptNumber !== ''}
-            >
-              <option value="latest">{t('daybook.latestFirst')}</option>
-              <option value="oldest">{t('daybook.oldestFirst')}</option>
-            </select>
-            <div className="flex gap-2">
-              <button
-                onClick={() => navigate('/erp/incoming-order')}
-                className="w-full sm:w-auto px-4 py-2 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-green-500/20 transition-colors text-sm sm:text-base font-medium"
-              >
-                {t('daybook.addIncoming')}
-              </button>
-              <button
-                onClick={() => navigate('/erp/outgoing-order')}
-                className="w-full sm:w-auto px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500/20 transition-colors text-sm sm:text-base font-medium"
-              >
-                {t('daybook.addOutgoing')}
-              </button>
+                    {/* Search and Filters */}
+        <div className="bg-white rounded-xl p-4 sm:p-6 shadow-sm border border-gray-100 mb-6">
+          <div className="space-y-4 sm:space-y-5">
+            {/* Search Receipt */}
+            <div className="relative">
+              <div className="relative">
+                <input
+                  type="number"
+                  value={searchReceiptNumber}
+                  onChange={(e) => setSearchReceiptNumber(e.target.value)}
+                  placeholder={t('daybook.searchPlaceholder')}
+                  className="w-full px-4 py-2.5 sm:py-3 pl-11 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base placeholder:text-gray-400 transition-all duration-200"
+                />
+                <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              </div>
+              {searchReceiptNumber && (
+                <button
+                  onClick={() => setSearchReceiptNumber('')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-all duration-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Filters Row */}
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+              <div className="w-full sm:w-[200px]">
+                <select
+                  value={type}
+                  onChange={(e) => handleTypeChange(e.target.value as OrderType)}
+                  className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
+                  disabled={searchReceiptNumber !== ''}
+                >
+                  <option value="all">{t('daybook.allOrders')}</option>
+                  <option value="incoming">{t('daybook.incoming')}</option>
+                  <option value="outgoing">{t('daybook.outgoing')}</option>
+                </select>
+              </div>
+              <div className="w-full sm:w-[200px]">
+                <select
+                  value={sortBy}
+                  onChange={(e) => handleSortChange(e.target.value as SortOrder)}
+                  className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
+                  disabled={searchReceiptNumber !== ''}
+                >
+                  <option value="latest">{t('daybook.latestFirst')}</option>
+                  <option value="oldest">{t('daybook.oldestFirst')}</option>
+                </select>
+              </div>
+              <div className="grid grid-cols-2 sm:flex gap-3 sm:ml-auto mt-1 sm:mt-0">
+                <button
+                  onClick={() => navigate('/erp/incoming-order')}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base font-medium inline-flex items-center justify-center gap-2 shadow-sm hover:shadow"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 sm:h-5 sm:w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {t('daybook.addIncoming')}
+                </button>
+                <button
+                  onClick={() => navigate('/erp/outgoing-order')}
+                  className="w-full sm:w-auto px-4 sm:px-6 py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-sm sm:text-base font-medium inline-flex items-center justify-center gap-2 shadow-sm hover:shadow"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 sm:h-5 sm:w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {t('daybook.addOutgoing')}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Error Messages */}
         {searchError && (
-          <div className="mb-4 p-3 sm:p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm sm:text-base text-red-600">
-              {searchError instanceof Error
-                ? searchError.message
-                : t('daybook.searchError')}
-            </p>
+          <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
+                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <p className="text-base text-red-700">
+                {searchError instanceof Error ? searchError.message : t('daybook.searchError')}
+              </p>
+            </div>
           </div>
         )}
 
         {/* Loading indicator for search */}
         {isSearchLoading && (
-          <div className="flex items-center justify-center py-4">
-            <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-blue-500"></div>
-            <span className="ml-2 text-sm sm:text-base text-gray-600">{t('daybook.searching')}</span>
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+            <div className="flex items-center gap-3">
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
+              <span className="text-base text-blue-700">{t('daybook.searching')}</span>
+            </div>
           </div>
         )}
 
         {/* Orders List */}
         <div className="space-y-4">
           {orders.length === 0 && !isLoading && !isSearchLoading ? (
-            <div className="text-center py-8 text-sm sm:text-base text-gray-500">
-              {searchReceiptNumber ? t('daybook.noReceiptFound') : t('daybook.noOrdersFound')}
+            <div className="bg-white rounded-xl p-8 border border-gray-100 shadow-sm">
+              <div className="text-center">
+                <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                  <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-medium text-gray-900 mb-1">
+                  {searchReceiptNumber ? t('daybook.noReceiptFound') : t('daybook.noOrdersFound')}
+                </h3>
+                <p className="text-gray-500">
+                  {searchReceiptNumber ? t('daybook.tryDifferentNumber') : t('daybook.createNewOrder')}
+                </p>
+              </div>
             </div>
           ) : (
-            orders.map((order: Order) => (
-              order.voucher.type === 'DELIVERY' ? (
-                <DeliveryVoucherCard key={order._id} order={order} />
-              ) : (
-                <ReceiptVoucherCard key={order._id} order={order} />
-              )
-            ))
+            <div>
+              {orders.map((order: Order) => (
+                <div key={order._id} className="py-2 sm:py-3">
+                  {order.voucher.type === 'DELIVERY' ? (
+                    <DeliveryVoucherCard order={order} />
+                  ) : (
+                    <ReceiptVoucherCard order={order} />
+                  )}
+                </div>
+              ))}
+            </div>
           )}
         </div>
 
