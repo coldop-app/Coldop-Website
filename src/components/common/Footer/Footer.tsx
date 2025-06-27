@@ -94,7 +94,7 @@ const Footer: React.FC<FooterProps> = ({
 
             <p className="copyright mt-14 text-xs leading-[1.6] text-[#767676]">
               Copyright &copy; <span className="year">{year}</span> by{" "}
-              {companyName}, Inc. All rights reserved.
+              {companyName},  All rights reserved.
             </p>
           </div>
 
