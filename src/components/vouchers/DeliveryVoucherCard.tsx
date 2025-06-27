@@ -67,29 +67,70 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
 
 
   const handlePrint = () => {
-    // Open in new window
-    const printWindow = window.open('', '_blank');
-    if (printWindow && adminInfo) {
-      printWindow.document.write(`
-        <html>
-          <body>
-            <div id="root" style="height: 100vh;"></div>
-            <script>
-              // Prevent the window from closing when React mounts
-              window.onbeforeunload = null;
-            </script>
-          </body>
-        </html>
-      `);
+    if (isWebView()) {
+      const printData = {
+        type: 'PRINT_RECEIPT',
+        voucherType: 'DELIVERY',
+        voucherNumber: order.voucher.voucherNumber,
+        date: order.dateOfExtraction,
+        variety: order.orderDetails[0]?.variety || '',
+        farmerName: order.farmerId.name,
+        farmerId: order.farmerId.farmerId,
+        currentStock: order.currentStockAtThatTime,
+        remarks: order.remarks || '',
+        orderDetails: order.orderDetails.map(detail => ({
+          variety: detail.variety,
+          location: detail.incomingOrder?.location || '',
+          receiptNumber: detail.incomingOrder?.voucher.voucherNumber || '',
+          bagSizes: detail.bagSizes.map(bag => {
+            const incomingBagSize = detail.incomingOrder?.incomingBagSizes.find(
+              b => b.size === bag.size
+            );
+            return {
+              size: bag.size,
+              initialQuantity: incomingBagSize?.initialQuantity || 0,
+              quantityRemoved: bag.quantityRemoved || 0,
+              availableQuantity: incomingBagSize?.currentQuantity || 0
+            };
+          })
+        })),
+        summary: {
+          totalLocations: new Set(order.orderDetails.map(d => d.incomingOrder?.location).filter(Boolean)).size,
+          totalBagTypes: new Set(order.orderDetails.flatMap(d => d.bagSizes.map(b => b.size))).size,
+          totalRemoved: order.orderDetails.reduce((total, detail) =>
+            total + detail.bagSizes.reduce((sum, bag) =>
+              sum + (bag.quantityRemoved || 0), 0
+            ), 0
+          )
+        }
+      };
+      
+      window.ReactNativeWebView?.postMessage(JSON.stringify(printData));
+    } else {
+      // Handle printing in web browser (existing PDF functionality)
+      const printWindow = window.open('', '_blank');
+      if (printWindow && adminInfo) {
+        printWindow.document.write(`
+          <html>
+            <body>
+              <div id="root" style="height: 100vh;"></div>
+              <script>
+                // Prevent the window from closing when React mounts
+                window.onbeforeunload = null;
+              </script>
+            </body>
+          </html>
+        `);
 
-      // Render PDF viewer in the new window
-      const root = printWindow.document.getElementById('root');
-      if (root) {
-        ReactDOM.createRoot(root).render(
-          <PDFViewer width="100%" height="100%">
-            <OrderVoucherPDF order={order} adminInfo={adminInfo} />
-          </PDFViewer>
-        );
+        // Render PDF viewer in the new window
+        const root = printWindow.document.getElementById('root');
+        if (root) {
+          ReactDOM.createRoot(root).render(
+            <PDFViewer width="100%" height="100%">
+              <OrderVoucherPDF order={order} adminInfo={adminInfo} />
+            </PDFViewer>
+          );
+        }
       }
     }
   };
@@ -97,19 +138,19 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:border-primary/10 hover:shadow-md">
       {/* Header Section */}
-      <div className="bg-gray-50/50 border-b border-gray-100 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <div className="flex items-center gap-4 flex-wrap">
-            <div className="flex items-center gap-2">
+      <div className="bg-gray-50/50 border-b border-gray-100 p-3 sm:p-4 lg:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
-              <span className="text-sm font-medium text-gray-900">
+              <span className="text-xs sm:text-sm font-medium text-gray-900">
                 Delivery #{order.voucher.voucherNumber}
               </span>
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-xs sm:text-sm text-gray-600">
               <span className="font-medium">{order.orderDetails[0]?.variety}</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2">
               {isWebView() && (
                 <>
                   <button
@@ -119,13 +160,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                     <Share2 size={14} />
                     Share
                   </button>
-                  <button
-                    onClick={toggleCollapse}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200"
-                  >
-                    {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                    {isCollapsed ? 'Expand' : 'Collapse'}
-                  </button>
+                 
                 </>
               )}
               <button
@@ -135,9 +170,17 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                 <Printer size={14} />
                 Print
               </button>
+              {isWebView() && (
+                <button
+                  onClick={toggleCollapse}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200"
+                >
+                  {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
             <span>Stock: <span className="font-medium text-gray-900">{order.currentStockAtThatTime}</span></span>
             <span className="font-medium text-gray-900">{formatDate(order.dateOfExtraction)}</span>
           </div>
@@ -146,7 +189,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
 
       {/* Main Content Grid - Collapsible */}
       {(!isWebView() || !isCollapsed) && (
-        <div className="p-4 sm:p-6">
+        <div className="p-3 sm:p-4 lg:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Left Column - Inventory Table */}
             <div className="lg:col-span-2">

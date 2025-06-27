@@ -85,29 +85,75 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   };
 
   const handlePrint = () => {
-    // Open in new window
-    const printWindow = window.open('', '_blank');
-    if (printWindow && adminInfo) {
-      printWindow.document.write(`
-        <html>
-          <body>
-            <div id="root" style="height: 100vh;"></div>
-            <script>
-              // Prevent the window from closing when React mounts
-              window.onbeforeunload = null;
-            </script>
-          </body>
-        </html>
-      `);
+    if (isWebView()) {
+      // Handle printing in React Native WebView
+      const printData = {
+        type: 'PRINT_RECEIPT',
+        voucherType: 'RECEIPT',
+        voucherNumber: order.voucher.voucherNumber,
+        date: order.dateOfSubmission,
+        variety: order.orderDetails[0]?.variety || '',
+        farmerName: order.farmerId.name,
+        farmerId: order.farmerId.farmerId,
+        currentStock: order.currentStockAtThatTime,
+        remarks: order.remarks || '',
+        orderDetails: order.orderDetails.map(detail => ({
+          variety: detail.variety,
+          location: detail.location,
+          bagSizes: detail.bagSizes.map(bag => ({
+            size: bag.size,
+            initialQuantity: bag.quantity?.initialQuantity || 0,
+            currentQuantity: bag.quantity?.currentQuantity || 0,
+            utilization: bag.quantity?.initialQuantity ? 
+              Math.round(((bag.quantity.initialQuantity - (bag.quantity.currentQuantity || 0)) / bag.quantity.initialQuantity) * 100) : 0
+          }))
+        })),
+        summary: {
+          totalBagTypes: order.orderDetails.reduce((total, detail) => total + detail.bagSizes.length, 0),
+          totalCurrentQuantity: order.orderDetails.reduce((total, detail) =>
+            total + detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0), 0
+          ),
+          totalInitialQuantity: order.orderDetails.reduce((total, detail) =>
+            total + detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0), 0
+          ),
+          averageUtilization: order.orderDetails.length > 0 ? Math.round(
+            order.orderDetails.reduce((total, detail) =>
+              total + detail.bagSizes.reduce((sum, bag) => {
+                const initial = bag.quantity?.initialQuantity || 0;
+                const current = bag.quantity?.currentQuantity || 0;
+                return sum + (initial > 0 ? ((initial - current) / initial * 100) : 0);
+              }, 0) / detail.bagSizes.length, 0
+            ) / order.orderDetails.length
+          ) : 0
+        }
+      };
+      
+      window.ReactNativeWebView?.postMessage(JSON.stringify(printData));
+    } else {
+      // Handle printing in web browser (existing PDF functionality)
+      const printWindow = window.open('', '_blank');
+      if (printWindow && adminInfo) {
+        printWindow.document.write(`
+          <html>
+            <body>
+              <div id="root" style="height: 100vh;"></div>
+              <script>
+                // Prevent the window from closing when React mounts
+                window.onbeforeunload = null;
+              </script>
+            </body>
+          </html>
+        `);
 
-      // Render PDF viewer in the new window
-      const root = printWindow.document.getElementById('root');
-      if (root) {
-        ReactDOM.createRoot(root).render(
-          <PDFViewer width="100%" height="100%">
-            <OrderVoucherPDF order={order} adminInfo={adminInfo} />
-          </PDFViewer>
-        );
+        // Render PDF viewer in the new window
+        const root = printWindow.document.getElementById('root');
+        if (root) {
+          ReactDOM.createRoot(root).render(
+            <PDFViewer width="100%" height="100%">
+              <OrderVoucherPDF order={order} adminInfo={adminInfo} />
+            </PDFViewer>
+          );
+        }
       }
     }
   };
@@ -115,16 +161,19 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   return (
     <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:border-primary/10 hover:shadow-md">
       {/* Header Section */}
-      <div className="bg-gray-50/50 border-b border-gray-100 p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
-          <div className="flex items-center gap-4 flex-wrap">
+      <div className="bg-gray-50/50 border-b border-gray-100 p-3 sm:p-4 lg:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-primary rounded-full"></div>
               <span className="text-sm font-medium text-gray-900">
                 Receipt #{order.voucher.voucherNumber}
               </span>
+              <div className="text-xs sm:text-sm text-gray-600">
+              <span className="font-medium">{order.orderDetails[0]?.variety}</span>
             </div>
-            <div className="flex items-center gap-2">
+            </div>
+            <div className="flex items-center gap-1 sm:gap-2">
               <button
                 onClick={handleEdit}
                 className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 rounded-lg hover:bg-primary/20 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
@@ -141,13 +190,7 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                     <Share2 size={14} />
                     Share
                   </button>
-                  <button
-                    onClick={toggleCollapse}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200"
-                  >
-                    {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-                    {isCollapsed ? 'Expand' : 'Collapse'}
-                  </button>
+                  
                 </>
               )}
               <button
@@ -157,9 +200,17 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                 <Printer size={14} />
                 Print
               </button>
+              {isWebView() && (
+                <button
+                  onClick={toggleCollapse}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200"
+                >
+                  {isCollapsed ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+                </button>
+              )}
             </div>
           </div>
-          <div className="flex items-center gap-4 text-sm text-gray-600">
+          <div className="flex items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
             <span>Stock: <span className="font-medium text-gray-900">{order.currentStockAtThatTime}</span></span>
             <span className="font-medium text-gray-900">{formatDate(order.dateOfSubmission)}</span>
           </div>
@@ -168,7 +219,7 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
 
       {/* Main Content - Collapsible */}
       {(!isWebView() || !isCollapsed) && (
-        <div className="p-4 sm:p-6 space-y-6">
+        <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
           {/* Farmer Details Card */}
           <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
             <h3 className="text-sm font-medium text-gray-900 mb-3">Farmer Details</h3>
