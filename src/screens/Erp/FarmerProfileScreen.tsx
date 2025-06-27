@@ -177,122 +177,166 @@ const FarmerProfileScreen = () => {
       <TopBar title={t('farmerProfile.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
       <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-20">
         {/* Personal Information Card */}
-        <Card>
-          <CardContent className="p-4 sm:p-6">
-            <div className="flex flex-col md:flex-row items-center md:items-start gap-4 md:gap-6">
+        <Card className="overflow-hidden border border-gray-100 shadow-sm">
+          {/* Header Background */}
+          <div className="bg-gray-50/50 border-b border-gray-100 px-6 sm:px-8 pt-6 sm:pt-8 pb-0">
+            <div className="flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-8">
               {/* Avatar */}
-              <Avatar className="h-16 w-16 sm:h-20 sm:w-20 md:h-24 md:w-24">
-                <AvatarFallback className="text-lg sm:text-xl md:text-2xl bg-primary/10 text-primary">
-                  {getInitials(farmer.name)}
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative">
+                <Avatar className="h-20 w-20 sm:h-24 sm:w-24 lg:h-28 lg:w-28 border-4 border-white shadow-md">
+                  <AvatarFallback className="text-xl sm:text-2xl lg:text-3xl bg-primary text-white font-bold">
+                    {getInitials(farmer.name)}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
 
-              {/* Info */}
-              <div className="flex-1 w-full text-center md:text-left">
-                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4 md:mb-6">
-                  <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-gray-900">{farmer.name}</h1>
-                  <div className="flex flex-col sm:flex-row items-center gap-3">
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      <Button
-                        onClick={() => navigate(`/erp/incoming-order`, { state: { farmer } })}
-                        variant="outline"
-                        className="flex-1 sm:flex-initial bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
-                      >
-                        <ArrowDownCircle className="mr-2 h-4 w-4 text-primary" />
-                        <span className="hidden sm:inline">{t('farmerProfile.incomingOrder')}</span>
-                        <span className="sm:hidden">{t('daybook.incoming')}</span>
-                      </Button>
-                      <Button
-                        onClick={() => navigate(`/erp/outgoing-order`, { state: { farmer } })}
-                        variant="outline"
-                        className="flex-1 sm:flex-initial bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
-                      >
-                        <ArrowUpCircle className="mr-2 h-4 w-4 text-primary" />
-                        <span className="hidden sm:inline">{t('farmerProfile.outgoingOrder')}</span>
-                        <span className="sm:hidden">{t('daybook.outgoing')}</span>
-                      </Button>
-                    </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      <Button
-                        onClick={handleGenerateReport}
-                        variant="outline"
-                        className="flex-1 sm:flex-initial bg-gray-50 hover:bg-gray-100 border-gray-200 text-gray-700 hover:text-gray-900"
-                        disabled={isOrdersLoading}
-                      >
-                        {isOrdersLoading ? (
-                          <>
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                            {t('farmerProfile.loading')}
-                          </>
+              {/* Name and Basic Info */}
+              <div className="flex-1 w-full text-center lg:text-left">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 tracking-tight">
+                  {farmer.name}
+                </h1>
+                <p className="text-base sm:text-lg text-gray-600 mb-6 font-medium">
+                  {t('farmerProfile.memberSince')} {new Date(farmer.createdAt).toLocaleDateString()}
+                </p>
+
+                {/* Action Buttons Row */}
+                <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-6">
+                  <div className="flex gap-2 w-full sm:w-auto">
+                    <Button
+                      onClick={() => navigate(`/erp/incoming-order`, { state: { farmer } })}
+                      className="flex-1 sm:flex-initial bg-primary hover:bg-primary/90 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
+                    >
+                      <ArrowDownCircle className="mr-2 h-4 w-4" />
+                      <span className="hidden sm:inline">{t('farmerProfile.incomingOrder')}</span>
+                      <span className="sm:hidden">{t('daybook.incoming')}</span>
+                    </Button>
+                    <Button
+                      onClick={() => navigate(`/erp/outgoing-order`, { state: { farmer } })}
+                      variant="outline"
+                      className="flex-1 sm:flex-initial bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
+                    >
+                      <ArrowUpCircle className="mr-2 h-4 w-4 text-primary" />
+                      <span className="hidden sm:inline">{t('farmerProfile.outgoingOrder')}</span>
+                      <span className="sm:hidden">{t('daybook.outgoing')}</span>
+                    </Button>
+                  </div>
+                  <Button
+                    onClick={handleGenerateReport}
+                    variant="outline"
+                    className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
+                    disabled={isOrdersLoading}
+                  >
+                    {isOrdersLoading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                        <span className="hidden sm:inline">{t('farmerProfile.loading')}</span>
+                        <span className="sm:hidden">Loading</span>
+                      </>
+                    ) : (
+                      <>
+                        <FileText className="mr-2 h-4 w-4 text-primary" />
+                        <span className="hidden sm:inline">{t('farmerProfile.viewReport')}</span>
+                        <span className="sm:hidden">{t('farmerProfile.report')}</span>
+                      </>
+                    )}
+                  </Button>
+                  {showPDFDownload && ordersData?.data && (
+                    <PDFDownloadLink
+                      document={
+                        <FarmerReportPDF
+                          farmer={farmer}
+                          adminInfo={adminInfo!}
+                          orders={ordersData.data}
+                        />
+                      }
+                      fileName={`${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`}
+                      className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200"
+                    >
+                      {({ loading }) => (
+                        loading ? (
+                          <span className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
+                            <span className="hidden sm:inline">{t('farmerProfile.generating')}</span>
+                            <span className="sm:hidden">{t('farmerProfile.gen')}</span>
+                          </span>
                         ) : (
-                          <>
-                            <FileText className="mr-2 h-4 w-4 text-primary" />
-                            <span className="hidden sm:inline">{t('farmerProfile.viewReport')}</span>
-                            <span className="sm:hidden">{t('farmerProfile.report')}</span>
-                          </>
-                        )}
-                      </Button>
-                      {showPDFDownload && ordersData?.data && (
-                        <PDFDownloadLink
-                          document={
-                            <FarmerReportPDF
-                              farmer={farmer}
-                              adminInfo={adminInfo!}
-                              orders={ordersData.data}
-                            />
-                          }
-                          fileName={`${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`}
-                          className="flex-1 sm:flex-initial inline-flex items-center justify-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 transition-colors"
-                        >
-                          {({ loading }) => (
-                            loading ? (
-                              <span className="flex items-center">
-                                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500 mr-2"></div>
-                                <span className="hidden sm:inline">{t('farmerProfile.generating')}</span>
-                                <span className="sm:hidden">{t('farmerProfile.gen')}</span>
-                              </span>
-                            ) : (
-                              <span className="flex items-center">
-                                <FileText className="mr-2 h-4 w-4 text-red-500" />
-                                <span className="hidden sm:inline">{t('farmerProfile.fallbackDownload')}</span>
-                                <span className="sm:hidden">{t('farmerProfile.download')}</span>
-                              </span>
-                            )
-                          )}
-                        </PDFDownloadLink>
+                          <span className="flex items-center">
+                            <FileText className="mr-2 h-4 w-4 text-gray-500" />
+                            <span className="hidden sm:inline">{t('farmerProfile.fallbackDownload')}</span>
+                            <span className="sm:hidden">{t('farmerProfile.download')}</span>
+                          </span>
+                        )
                       )}
+                    </PDFDownloadLink>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Information Cards Section */}
+          <CardContent className="p-6 sm:p-8 bg-white">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {/* Phone Number Card */}
+              <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Phone size={18} className="text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                      {t('farmerProfile.phoneNumber')}
+                    </div>
+                    <div className="font-medium text-gray-900 truncate">{farmer.mobileNumber}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Address Card */}
+              <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <MapPin size={18} className="text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                      {t('farmerProfile.address')}
+                    </div>
+                    <div className="font-medium text-gray-900 line-clamp-2 text-sm leading-relaxed">
+                      {farmer.address}
                     </div>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-                  <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    <Phone size={18} className="text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm text-gray-500">{t('farmerProfile.phoneNumber')}</div>
-                      <div className="font-medium truncate">{farmer.mobileNumber}</div>
+              </div>
+
+              {/* Member Since Card */}
+              <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Calendar size={18} className="text-primary" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                      {t('farmerProfile.memberSince')}
+                    </div>
+                    <div className="font-medium text-gray-900">
+                      {new Date(farmer.createdAt).toLocaleDateString()}
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    <MapPin size={18} className="text-primary mt-1 flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm text-gray-500">{t('farmerProfile.address')}</div>
-                      <div className="font-medium line-clamp-2">{farmer.address}</div>
-                    </div>
+                </div>
+              </div>
+
+              {/* Total Bags Card */}
+              <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Package size={18} className="text-primary" />
                   </div>
-                  <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    <Calendar size={18} className="text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm text-gray-500">{t('farmerProfile.memberSince')}</div>
-                      <div className="font-medium">{new Date(farmer.createdAt).toLocaleDateString()}</div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                      {t('farmerProfile.totalBags')}
                     </div>
-                  </div>
-                  {/* Total Bags Row */}
-                  <div className="flex items-center gap-3 text-gray-600 bg-gray-50 p-3 rounded-lg">
-                    <Package size={18} className="text-primary flex-shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-sm text-gray-500">{t('farmerProfile.totalBags')}</div>
-                      <div className="font-bold text-lg text-primary">{totalBags}</div>
-                    </div>
+                    <div className="font-bold text-2xl text-primary">{totalBags}</div>
                   </div>
                 </div>
               </div>
