@@ -47,14 +47,14 @@ const HomeScreen = () => {
   }, []);
 
   return (
-    <div className="overflow-x-hidden w-full">
+    <div>
       <Navbar />
       <motion.div
         id="hero"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
-        className="w-full"
+        //className="w-full"
       >
         <Hero 
           customerImages={heroData.customerImages}
@@ -64,14 +64,14 @@ const HomeScreen = () => {
       <motion.div
         id="how-it-works"
         {...fadeInUp}
-        className="w-full"
+        //className="w-full"
       >
         <HowItWorks steps={howItWorksData.steps} />
       </motion.div>
       <motion.div
         id="testimonials"
         {...fadeInUp}
-        className="w-full"
+        //className="w-full"
       >
         <Testimonials 
           testimonials={testimonialsData.testimonials}
@@ -81,14 +81,14 @@ const HomeScreen = () => {
       <motion.div
         id="pricing"
         {...fadeInUp}
-        className="w-full"
+        //className="w-full"
       >
         <Pricing plans={pricingData.plans} />
       </motion.div>
       <motion.div
         id="about"
         {...fadeInUp}
-        className="w-full"
+        //className="w-full"
       >
         <About/>
       </motion.div>
@@ -97,7 +97,7 @@ const HomeScreen = () => {
         whileInView={{ opacity: 1 }}
         viewport={{ once: true }}
         transition={{ duration: 0.6 }}
-        className="w-full"
+        //className="w-full"
       >
         <Footer {...footerData}/>
       </motion.div>
