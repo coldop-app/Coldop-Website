@@ -132,10 +132,10 @@ const DaybookScreen = () => {
 
     return (
       <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-100">
-        <div className="p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Left side - Entries info and page size selector */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <div className="flex items-center gap-2">
+        <div className="p-4 space-y-4">
+          {/* Entries info and page size selector */}
+          <div className="flex flex-col sm:flex-row items-center justify-center sm:justify-between gap-4">
+            <div className="flex items-center gap-2 text-center sm:text-left">
               <div className="w-2 h-2 bg-primary/20 rounded-full"></div>
               <span className="text-sm text-gray-600">
                 {t('daybook.showing')} <span className="font-medium text-gray-900">{((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}</span> {t('daybook.to')}{' '}
@@ -157,67 +157,75 @@ const DaybookScreen = () => {
             </select>
           </div>
 
-          {/* Right side - Pagination controls */}
-          <div className="flex items-center gap-1.5 w-full sm:w-auto justify-center sm:justify-end">
-            {/* First page button */}
-            <button
-              onClick={() => setCurrentPage(1)}
-              disabled={!pagination.hasPreviousPage}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-              aria-label={t('daybook.firstPage')}
-            >
-              <ChevronsLeft size={16} className="text-gray-600" />
-            </button>
+          {/* Pagination controls - Mobile optimized */}
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            {/* Navigation buttons container */}
+            <div className="flex items-center justify-center gap-1">
+              {/* First page button */}
+              <button
+                onClick={() => setCurrentPage(1)}
+                disabled={!pagination.hasPreviousPage}
+                className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                aria-label={t('daybook.firstPage')}
+              >
+                <ChevronsLeft size={16} className="text-gray-600" />
+              </button>
 
-            {/* Previous page button */}
-            <button
-              onClick={() => setCurrentPage(pagination.previousPage!)}
-              disabled={!pagination.hasPreviousPage}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-              aria-label={t('daybook.previousPage')}
-            >
-              <ChevronLeft size={16} className="text-gray-600" />
-            </button>
-
-            {/* Page numbers */}
-            <div className="flex items-center gap-1.5">
-              {getPageNumbers().map((pageNum, index) => (
-                <button
-                  key={index}
-                  onClick={() => typeof pageNum === 'number' && setCurrentPage(pageNum)}
-                  disabled={pageNum === '...'}
-                  className={`min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    pageNum === pagination.currentPage
-                      ? 'bg-primary text-white hover:bg-primary/90'
-                      : pageNum === '...'
-                      ? 'cursor-default px-1'
-                      : 'border border-gray-200 text-gray-700 hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20'
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              ))}
+              {/* Previous page button */}
+              <button
+                onClick={() => setCurrentPage(pagination.previousPage!)}
+                disabled={!pagination.hasPreviousPage}
+                className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                aria-label={t('daybook.previousPage')}
+              >
+                <ChevronLeft size={16} className="text-gray-600" />
+              </button>
             </div>
 
-            {/* Next page button */}
-            <button
-              onClick={() => setCurrentPage(pagination.nextPage!)}
-              disabled={!pagination.hasNextPage}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-              aria-label={t('daybook.nextPage')}
-            >
-              <ChevronRight size={16} className="text-gray-600" />
-            </button>
+            {/* Page numbers - Centered and scrollable on mobile */}
+            <div className="flex items-center justify-center">
+              <div className="flex items-center gap-1 max-w-[200px] sm:max-w-none overflow-x-auto scrollbar-hide px-2">
+                {getPageNumbers().map((pageNum, index) => (
+                  <button
+                    key={index}
+                    onClick={() => typeof pageNum === 'number' && setCurrentPage(pageNum)}
+                    disabled={pageNum === '...'}
+                    className={`flex-shrink-0 min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                      pageNum === pagination.currentPage
+                        ? 'bg-primary text-white hover:bg-primary/90'
+                        : pageNum === '...'
+                        ? 'cursor-default px-1'
+                        : 'border border-gray-200 text-gray-700 hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                ))}
+              </div>
+            </div>
 
-            {/* Last page button */}
-            <button
-              onClick={() => setCurrentPage(pagination.totalPages)}
-              disabled={!pagination.hasNextPage}
-              className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-              aria-label={t('daybook.lastPage')}
-            >
-              <ChevronsRight size={16} className="text-gray-600" />
-            </button>
+            {/* Navigation buttons container */}
+            <div className="flex items-center justify-center gap-1">
+              {/* Next page button */}
+              <button
+                onClick={() => setCurrentPage(pagination.nextPage!)}
+                disabled={!pagination.hasNextPage}
+                className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                aria-label={t('daybook.nextPage')}
+              >
+                <ChevronRight size={16} className="text-gray-600" />
+              </button>
+
+              {/* Last page button */}
+              <button
+                onClick={() => setCurrentPage(pagination.totalPages)}
+                disabled={!pagination.hasNextPage}
+                className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                aria-label={t('daybook.lastPage')}
+              >
+                <ChevronsRight size={16} className="text-gray-600" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
