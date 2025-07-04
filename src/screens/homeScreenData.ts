@@ -32,7 +32,7 @@ export const heroData: HeroData = {
   heading: "The Complete Cold Storage Management Platform.",
   description: "Mobile app, web dashboard, WhatsApp updates, and instant receipt printing — all in one system. Stay connected and in control. Anytime, anywhere.",
   ctaButtons: [
-    { text: "Start Managing", link: "#" },
+    { text: "Start Today", link: "#" },
     { text: "How It Works ↓", link: "#" }
   ],
   customerImages: [
@@ -48,8 +48,8 @@ export const heroData: HeroData = {
     text: "using Coldop to manage their harvests."
   },
   heroImage: {
-    webp: "./hero.webp",
-    png: "./hero-min.png",
+    webp: "",
+    png: "/hero-min.png",
     alt: "Woman enjoying food, meals in storage container, and food bowls on a table"
   }
 };
