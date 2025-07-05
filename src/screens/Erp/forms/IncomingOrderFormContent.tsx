@@ -9,13 +9,7 @@ import { storeAdminApi } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
 import Loader from "@/components/common/Loader/Loader";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import VarietySelector from "@/components/common/VarietySelector/VarietySelector";
 import { cn } from "@/lib/utils";
 import debounce from "lodash/debounce";
 import NewFarmerModal, { NewFarmerFormData } from "@/components/modals/NewFarmerModal";
@@ -151,13 +145,6 @@ const IncomingOrderFormContent = () => {
     voucherNumber: 0,
     dateOfSubmission: new Date().toISOString().split('T')[0],
     variety: ""
-  });
-
-  // Fetch varieties
-  const { data: varietiesData, isLoading: isLoadingVarieties } = useQuery({
-    queryKey: ['varieties'],
-    queryFn: () => storeAdminApi.getVarieties(adminInfo?.token || ''),
-    enabled: !!adminInfo?.token,
   });
 
   // Create a debounced search function
@@ -588,36 +575,11 @@ const IncomingOrderFormContent = () => {
               </div>
 
               {/* Variety Selection */}
-              <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-medium mb-2">{t('incomingOrder.variety.title')}</h3>
-                <p className="text-sm text-muted-foreground mb-4">{t('incomingOrder.variety.description')}</p>
-
-                <div className="relative">
-                  <Select
-                    value={formData.variety}
-                    onValueChange={(value) => updateFormData('variety', value)}
-                    disabled={isLoadingVarieties}
-                  >
-                    <SelectTrigger className="w-full bg-background">
-                      {isLoadingVarieties ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>{t('incomingOrder.variety.loading')}</span>
-                        </div>
-                      ) : (
-                        <SelectValue placeholder={t('incomingOrder.variety.selectPlaceholder')} />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {varietiesData?.varieties?.map((variety: string) => (
-                        <SelectItem key={variety} value={variety}>
-                          {variety}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+              <VarietySelector
+                value={formData.variety}
+                onValueChange={(value) => updateFormData('variety', value)}
+                token={adminInfo?.token || ''}
+              />
 
               {/* Quantities Section */}
               <div className={cn(
