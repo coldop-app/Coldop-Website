@@ -310,7 +310,7 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                       <div key={idx} className="bg-gray-50 rounded-lg p-3">
                         <div className="flex justify-between items-center">
                           <span className="text-sm font-medium text-gray-900">{bagName}</span>
-                          <span className="text-sm font-medium text-gray-900">{initial}/{current}</span>
+                          <span className="text-sm font-medium text-gray-900">{current}/{initial}</span>
                         </div>
                       </div>
                     );
@@ -321,8 +321,8 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-semibold text-gray-900">Total</span>
                       <span className="text-sm font-semibold text-primary">
-                        {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}/
-                        {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}
+                        {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}/
+                        {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}
                       </span>
                     </div>
                   </div>
@@ -353,7 +353,7 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                                   const qty = bagSize.quantity;
                                   return qty && qty.initialQuantity ? (
                                     <span className="font-medium text-gray-900">
-                                      {qty.initialQuantity}/{qty.currentQuantity || 0}
+                                      {qty.currentQuantity || 0}/{qty.initialQuantity}
                                     </span>
                                   ) : '-';
                                 })()}
@@ -362,8 +362,8 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                             {/* Total */}
                             <td className="py-3 px-3 text-center">
                               <span className="font-semibold text-primary">
-                                {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}/
-                                {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}
+                                {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}/
+                                {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}
                               </span>
                             </td>
                           </tr>

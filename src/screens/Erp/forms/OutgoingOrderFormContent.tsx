@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -159,6 +159,46 @@ interface ApiError {
   };
 }
 
+const sortBagSizes = (adminPreferences: string[] | undefined) => {
+  if (!adminPreferences) {
+    return (bagSizes: string[]) => bagSizes;
+  }
+
+  // Create a map of normalized bag size names to their index in admin preferences
+  const preferenceOrder = new Map(
+    adminPreferences.map((size, index) => [
+      size.toLowerCase().replace(/[-\s]/g, ''), // Normalize by removing hyphens and spaces
+      index
+    ])
+  );
+
+  // Return a sorting function
+  return (bagSizes: string[]) => {
+    if (!bagSizes.length) return bagSizes;
+
+    return [...bagSizes].sort((a, b) => {
+      // Normalize the bag size names for comparison
+      const aNormalized = a.toLowerCase().replace(/[-\s]/g, '');
+      const bNormalized = b.toLowerCase().replace(/[-\s]/g, '');
+
+      const aIndex = preferenceOrder.get(aNormalized);
+      const bIndex = preferenceOrder.get(bNormalized);
+
+      // If both sizes are in preferences, sort by their order
+      if (aIndex !== undefined && bIndex !== undefined) {
+        return aIndex - bIndex;
+      }
+
+      // If only one size is in preferences, put it first
+      if (aIndex !== undefined) return -1;
+      if (bIndex !== undefined) return 1;
+
+      // If neither size is in preferences, maintain original order
+      return 0;
+    });
+  };
+};
+
 const OutgoingOrderFormContent = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
@@ -205,7 +245,7 @@ const OutgoingOrderFormContent = () => {
     }
   }, [farmerIncomingOrders?.data]);
 
-  // Filter orders by selected variety
+  // Update the filteredOrders useMemo
   const filteredOrders = React.useMemo(() => {
     if (!farmerIncomingOrders?.data || !formData.variety) return [];
 
@@ -213,6 +253,26 @@ const OutgoingOrderFormContent = () => {
       order.orderDetails.some(detail => detail.variety === formData.variety)
     );
   }, [farmerIncomingOrders?.data, formData.variety]);
+
+  // Get available bag sizes from the first order's details
+  const availableBagSizes = React.useMemo(() => {
+    if (!filteredOrders.length) return adminInfo?.preferences?.bagSizes || [];
+
+    // Get unique bag sizes from the first order
+    const bagSizes = new Set<string>();
+    filteredOrders[0].orderDetails.forEach(detail => {
+      detail.bagSizes.forEach(bagSize => {
+        bagSizes.add(bagSize.size);
+      });
+    });
+
+    return Array.from(bagSizes);
+  }, [filteredOrders, adminInfo?.preferences?.bagSizes]);
+
+  // Add a new useMemo for sorted bag sizes
+  const sortedBagSizes = useMemo(() => {
+    return sortBagSizes(adminInfo?.preferences?.bagSizes);
+  }, [adminInfo?.preferences?.bagSizes]);
 
   // Create a debounced search function
   const debouncedSearch = useCallback(
@@ -278,11 +338,6 @@ const OutgoingOrderFormContent = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Get bag sizes from admin preferences
-  const availableBagSizes = React.useMemo(() => {
-    return adminInfo?.preferences?.bagSizes || [];
-  }, [adminInfo?.preferences?.bagSizes]);
-
   // Handle box click
   const handleBoxClick = (receiptNumber: number, bagSize: string, maxQuantity: number, e: React.MouseEvent) => {
     e.preventDefault(); // Prevent form submission
@@ -336,13 +391,8 @@ const OutgoingOrderFormContent = () => {
     return 'border-gray-200 hover:border-primary';
   };
 
-  // Function to generate request body for creating outgoing order
+  // Update the generateOutgoingOrderRequestBody function
   const generateOutgoingOrderRequestBody = () => {
-    // Helper function to capitalize first letter
-    const capitalizeFirstLetter = (str: string) => {
-      return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
-    };
-
     // Group selected quantities by receipt number
     const groupedByReceipt = selectedQuantities.reduce((acc, sq) => {
       if (!acc[sq.receiptNumber]) {
@@ -351,7 +401,7 @@ const OutgoingOrderFormContent = () => {
         };
       }
       acc[sq.receiptNumber].bagUpdates.push({
-        size: capitalizeFirstLetter(sq.bagSize),
+        size: sq.bagSize,  // Use the size exactly as is
         quantityToRemove: sq.selectedQuantity
       });
       return acc;
@@ -573,9 +623,9 @@ const OutgoingOrderFormContent = () => {
                                 <thead>
                                   <tr className="bg-gray-100">
                                     <th className="p-2.5 text-left border-b font-medium text-sm text-gray-600 w-28">{t('outgoingOrder.orders.receiptVoucher')}</th>
-                                    {availableBagSizes.map(size => (
+                                    {sortedBagSizes(availableBagSizes).map(size => (
                                       <th key={size} className="p-2.5 text-center border-b font-medium text-sm text-gray-600 w-[calc((100%-112px)/5)]">
-                                        {size.toLowerCase()}
+                                        {size}
                                       </th>
                                     ))}
                                   </tr>
@@ -596,7 +646,7 @@ const OutgoingOrderFormContent = () => {
                                       </td>
                                       {availableBagSizes.map(size => {
                                         const totalQuantities = order.orderDetails.reduce((acc, detail) => {
-                                          const bagSize = detail.bagSizes.find(b => b.size.toLowerCase() === size.toLowerCase());
+                                          const bagSize = detail.bagSizes.find(b => b.size === size);
                                           if (bagSize) {
                                             acc.current += bagSize.quantity.currentQuantity;
                                             acc.initial += bagSize.quantity.initialQuantity;
@@ -678,7 +728,7 @@ const OutgoingOrderFormContent = () => {
                                 <div className="grid grid-cols-3 gap-2">
                                   {availableBagSizes.map(size => {
                                     const totalQuantities = order.orderDetails.reduce((acc, detail) => {
-                                      const bagSize = detail.bagSizes.find(b => b.size.toLowerCase() === size.toLowerCase());
+                                      const bagSize = detail.bagSizes.find(b => b.size === size);
                                       if (bagSize) {
                                         acc.current += bagSize.quantity.currentQuantity;
                                         acc.initial += bagSize.quantity.initialQuantity;
