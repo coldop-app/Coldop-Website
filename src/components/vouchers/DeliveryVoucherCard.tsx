@@ -343,59 +343,109 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
              <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
                <h3 className="text-sm font-medium text-gray-900 mb-4">Detailed Breakdown</h3>
 
-               <div className="overflow-x-auto rounded-xl border border-gray-100">
-                 <table className="w-full text-sm">
-                   <thead>
-                     <tr className="bg-gray-50/50">
-                       <th className="text-left py-3 px-4 font-medium text-gray-900">Bag Type</th>
-                       <th className="text-left py-3 px-4 font-medium text-gray-900">Address</th>
-                       <th className="text-left py-3 px-4 font-medium text-gray-900">R. Voucher</th>
-                       <th className="text-right py-3 px-4 font-medium text-gray-900">Current Qty.</th>
-                       <th className="text-right py-3 px-4 font-medium text-gray-900">Qty. Issued</th>
-                       <th className="text-right py-3 px-4 font-medium text-gray-900">Available</th>
-                     </tr>
-                   </thead>
-                   <tbody className="divide-y divide-gray-100">
-                     {sortedOrderDetails.map((detail, detailIndex) => (
-                       detail.bagSizes.map((bagSize, bagIndex) => {
-                         const incomingBagSize = detail.incomingOrder?.incomingBagSizes.find(
-                           b => b.size === bagSize.size
-                         );
-                         const currentQuantity = incomingBagSize?.currentQuantity || 0;
-                         const removedQuantity = bagSize.quantityRemoved || 0;
-                         const availableQuantity = currentQuantity - removedQuantity;
+               {/* Mobile View - Stacked Cards */}
+               <div className="block sm:hidden space-y-3">
+                 {sortedOrderDetails.map((detail, detailIndex) => (
+                   detail.bagSizes.map((bagSize, bagIndex) => {
+                     const incomingBagSize = detail.incomingOrder?.incomingBagSizes.find(
+                       b => b.size === bagSize.size
+                     );
+                     const currentQuantity = incomingBagSize?.currentQuantity || 0;
+                     const removedQuantity = bagSize.quantityRemoved || 0;
+                     const availableQuantity = currentQuantity - removedQuantity;
 
-                         return (
-                           <tr key={`${detailIndex}-${bagIndex}`} className="hover:bg-gray-50/50 transition-colors">
-                             <td className="py-3 px-4 font-medium text-gray-900">{bagSize.size}</td>
-                             <td className="py-3 px-4 text-gray-700">
-                               {detail.incomingOrder?.location || 'N/A'}
-                             </td>
-                             <td className="py-3 px-4">
-                               {detail.incomingOrder ? (
-                                 <div className="flex items-center gap-2">
-                                   <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
-                                   <span className="text-sm font-medium text-gray-900">
-                                     {detail.incomingOrder.voucher.voucherNumber}
-                                   </span>
-                                 </div>
-                               ) : (
-                                 <span className="text-gray-400">—</span>
-                               )}
-                             </td>
-                             <td className="py-3 px-4 text-right text-gray-700">{currentQuantity}</td>
-                             <td className="py-3 px-4 text-right text-rose-600 font-medium">
-                               {removedQuantity}
-                             </td>
-                             <td className="py-3 px-4 text-right text-primary font-medium">
-                               {availableQuantity}
-                             </td>
-                           </tr>
-                         );
-                       })
-                     ))}
-                   </tbody>
-                 </table>
+                     return (
+                       <div key={`${detailIndex}-${bagIndex}`} className="bg-white rounded-lg p-3 border border-gray-100">
+                         <div className="space-y-2">
+                           <div className="flex justify-between items-center">
+                             <span className="text-sm font-medium text-gray-900">{bagSize.size}</span>
+                             <div className="flex items-center gap-2">
+                               <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                               <span className="text-xs font-medium text-gray-900">
+                                 {detail.incomingOrder?.voucher.voucherNumber || '—'}
+                               </span>
+                             </div>
+                           </div>
+                           <div className="text-xs text-gray-600">
+                             <span className="font-medium">Address:</span> {detail.incomingOrder?.location || 'N/A'}
+                           </div>
+                           <div className="grid grid-cols-3 gap-2 text-xs">
+                             <div className="text-center">
+                               <span className="block text-gray-500">Current</span>
+                               <span className="font-medium text-gray-900">{currentQuantity}</span>
+                             </div>
+                             <div className="text-center">
+                               <span className="block text-gray-500">Issued</span>
+                               <span className="font-medium text-rose-600">{removedQuantity}</span>
+                             </div>
+                             <div className="text-center">
+                               <span className="block text-gray-500">Available</span>
+                               <span className="font-medium text-primary">{availableQuantity}</span>
+                             </div>
+                           </div>
+                         </div>
+                       </div>
+                     );
+                   })
+                 ))}
+               </div>
+
+               {/* Desktop View - Table Layout */}
+               <div className="hidden sm:block">
+                 <div className="overflow-x-auto rounded-xl border border-gray-100">
+                   <table className="w-full text-sm">
+                     <thead>
+                       <tr className="bg-gray-50/50">
+                         <th className="text-left py-3 px-4 font-medium text-gray-900">Bag Type</th>
+                         <th className="text-left py-3 px-4 font-medium text-gray-900">Address</th>
+                         <th className="text-left py-3 px-4 font-medium text-gray-900">R. Voucher</th>
+                         <th className="text-right py-3 px-4 font-medium text-gray-900">Current Qty.</th>
+                         <th className="text-right py-3 px-4 font-medium text-gray-900">Qty. Issued</th>
+                         <th className="text-right py-3 px-4 font-medium text-gray-900">Available</th>
+                       </tr>
+                     </thead>
+                     <tbody className="divide-y divide-gray-100">
+                       {sortedOrderDetails.map((detail, detailIndex) => (
+                         detail.bagSizes.map((bagSize, bagIndex) => {
+                           const incomingBagSize = detail.incomingOrder?.incomingBagSizes.find(
+                             b => b.size === bagSize.size
+                           );
+                           const currentQuantity = incomingBagSize?.currentQuantity || 0;
+                           const removedQuantity = bagSize.quantityRemoved || 0;
+                           const availableQuantity = currentQuantity - removedQuantity;
+
+                           return (
+                             <tr key={`${detailIndex}-${bagIndex}`} className="hover:bg-gray-50/50 transition-colors">
+                               <td className="py-3 px-4 font-medium text-gray-900">{bagSize.size}</td>
+                               <td className="py-3 px-4 text-gray-700">
+                                 {detail.incomingOrder?.location || 'N/A'}
+                               </td>
+                               <td className="py-3 px-4">
+                                 {detail.incomingOrder ? (
+                                   <div className="flex items-center gap-2">
+                                     <div className="w-1.5 h-1.5 bg-primary rounded-full"></div>
+                                     <span className="text-sm font-medium text-gray-900">
+                                       {detail.incomingOrder.voucher.voucherNumber}
+                                     </span>
+                                   </div>
+                                 ) : (
+                                   <span className="text-gray-400">—</span>
+                                 )}
+                               </td>
+                               <td className="py-3 px-4 text-right text-gray-700">{currentQuantity}</td>
+                               <td className="py-3 px-4 text-right text-rose-600 font-medium">
+                                 {removedQuantity}
+                               </td>
+                               <td className="py-3 px-4 text-right text-primary font-medium">
+                                 {availableQuantity}
+                               </td>
+                             </tr>
+                           );
+                         })
+                       ))}
+                     </tbody>
+                   </table>
+                 </div>
                </div>
              </div>
 
