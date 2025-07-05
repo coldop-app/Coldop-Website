@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { Order, StoreAdmin, OrderDetails, BagSize } from '@/utils/types';
 import { ChevronDown, ChevronUp, Pencil, Share2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Printer } from 'lucide-react';
 import { PDFViewer } from '@react-pdf/renderer';
 import OrderVoucherPDF from '../pdf/OrderVoucherPDF';
@@ -34,6 +34,55 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
   const navigate = useNavigate();
+
+  // Sort bag sizes according to admin preferences using useMemo
+  const sortBagSizes = useMemo(() => {
+    if (!adminInfo?.preferences?.bagSizes) {
+      return (bagSizes: BagSize[]) => bagSizes;
+    }
+
+    // Create a map of normalized bag size names to their index in admin preferences
+    const preferenceOrder = new Map(
+      adminInfo.preferences.bagSizes.map((size, index) => [
+        size.toLowerCase().replace(/[-\s]/g, ''), // Normalize by removing hyphens and spaces
+        index
+      ])
+    );
+
+    // Return a sorting function
+    return (bagSizes: BagSize[]) => {
+      if (!bagSizes.length) return bagSizes;
+
+      return [...bagSizes].sort((a, b) => {
+        // Normalize the bag size names for comparison
+        const aNormalized = a.size.toLowerCase().replace(/[-\s]/g, '');
+        const bNormalized = b.size.toLowerCase().replace(/[-\s]/g, '');
+
+        const aIndex = preferenceOrder.get(aNormalized);
+        const bIndex = preferenceOrder.get(bNormalized);
+
+        // If both sizes are in preferences, sort by their order
+        if (aIndex !== undefined && bIndex !== undefined) {
+          return aIndex - bIndex;
+        }
+
+        // If only one size is in preferences, put it first
+        if (aIndex !== undefined) return -1;
+        if (bIndex !== undefined) return 1;
+
+        // If neither size is in preferences, maintain original order
+        return 0;
+      });
+    };
+  }, [adminInfo?.preferences?.bagSizes]); // Only recompute when preferences change
+
+  // Pre-sort all bag sizes for each order detail
+  const sortedOrderDetails = useMemo(() => {
+    return order.orderDetails.map(detail => ({
+      ...detail,
+      sortedBagSizes: sortBagSizes(detail.bagSizes)
+    }));
+  }, [order.orderDetails, sortBagSizes]);
 
   // Calculate total initial quantity for Lot No
   const calculateLotNo = (orderDetails: OrderDetails[]) => {
@@ -248,11 +297,11 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
         <div className="border-t border-gray-100">
           <div className="p-3 sm:p-4 lg:p-5 space-y-6">
             {/* Stock Details */}
-            {order.orderDetails.map((detail, index) => (
+            {sortedOrderDetails.map((detail, index) => (
               <div key={index} className="space-y-4">
                 {/* Mobile View - Stacked Layout */}
                 <div className="block sm:hidden space-y-3">
-                  {detail.bagSizes.map((bagSize, idx) => {
+                  {detail.sortedBagSizes.map((bagSize, idx) => {
                     const current = bagSize.quantity?.currentQuantity || 0;
                     const initial = bagSize.quantity?.initialQuantity || 0;
                     const bagName = bagSize.size;
@@ -272,8 +321,8 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                     <div className="flex justify-between items-center">
                       <span className="text-sm font-semibold text-gray-900">Total</span>
                       <span className="text-sm font-semibold text-primary">
-                        {detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}/
-                        {detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}
+                        {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}/
+                        {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}
                       </span>
                     </div>
                   </div>
@@ -286,19 +335,19 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                       <table className="w-full text-sm border-collapse">
                         <thead>
                           <tr className="bg-gray-50">
-                            {detail.bagSizes.map((bagSize, idx) => (
-                              <th key={idx} className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200" style={{ width: `${100 / (detail.bagSizes.length + 1)}%` }}>
+                            {detail.sortedBagSizes.map((bagSize, idx) => (
+                              <th key={idx} className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200" style={{ width: `${100 / (detail.sortedBagSizes.length + 1)}%` }}>
                                 {formatBagSizeName(bagSize.size)}
                               </th>
                             ))}
-                            <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200" style={{ width: `${100 / (detail.bagSizes.length + 1)}%` }}>
+                            <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200" style={{ width: `${100 / (detail.sortedBagSizes.length + 1)}%` }}>
                               Total
                             </th>
                           </tr>
                         </thead>
                         <tbody>
                           <tr className="border-b border-gray-100">
-                            {detail.bagSizes.map((bagSize, idx) => (
+                            {detail.sortedBagSizes.map((bagSize, idx) => (
                               <td key={idx} className="py-3 px-3 text-center">
                                 {(() => {
                                   const qty = bagSize.quantity;
@@ -313,8 +362,8 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
                             {/* Total */}
                             <td className="py-3 px-3 text-center">
                               <span className="font-semibold text-primary">
-                                {detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}/
-                                {detail.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}
+                                {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}/
+                                {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}
                               </span>
                             </td>
                           </tr>

@@ -104,7 +104,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
           )
         }
       };
-      
+
       window.ReactNativeWebView?.postMessage(JSON.stringify(printData));
     } else {
       // Handle printing in web browser (existing PDF functionality)
@@ -160,7 +160,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                     <Share2 size={14} />
                     Share
                   </button>
-                 
+
                 </>
               )}
               <button
