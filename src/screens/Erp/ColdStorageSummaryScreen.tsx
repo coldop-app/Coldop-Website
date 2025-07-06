@@ -415,7 +415,7 @@ const ColdStorageSummaryScreen = () => {
                       nameKey="size"
                       label={({ name, percent }) => name && percent ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
                     >
-                      {sizeDistributionData.map((entry, index) => (
+                      {sizeDistributionData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
