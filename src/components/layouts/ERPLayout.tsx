@@ -9,12 +9,12 @@ interface ERPLayoutProps {
 
 const ERPLayout: React.FC<ERPLayoutProps> = ({ children }) => {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen max-h-screen">
       {/* Show Sidebar only on md and larger screens */}
       <div className="hidden md:block">
         <Sidebar />
       </div>
-      <main className="flex-1 md:ml-64 pb-16 md:pb-0">
+      <main className="flex-1 md:ml-64 pb-16 md:pb-0 overflow-y-auto h-screen">
         {children || <Outlet />}
       </main>
       {/* Show ErpFooter only on mobile screens */}
