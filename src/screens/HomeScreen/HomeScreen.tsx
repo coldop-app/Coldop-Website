@@ -27,17 +27,17 @@ const HomeScreen = () => {
   useEffect(() => {
     // Check if viewport meta tag exists
     let viewportMeta = document.querySelector('meta[name="viewport"]');
-    
+
     // If it doesn't exist, create it
     if (!viewportMeta) {
       viewportMeta = document.createElement('meta');
       viewportMeta.setAttribute('name', 'viewport');
       document.head.appendChild(viewportMeta);
     }
-    
+
     // Set the content attribute to ensure proper mobile scaling
     viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
-    
+
     return () => {
       // Reset to default when component unmounts
       if (viewportMeta) {
@@ -56,7 +56,7 @@ const HomeScreen = () => {
         transition={{ duration: 0.8 }}
         //className="w-full"
       >
-        <Hero 
+        <Hero
           customerImages={heroData.customerImages}
           heroImage={heroData.heroImage}
         />
@@ -73,7 +73,7 @@ const HomeScreen = () => {
         {...fadeInUp}
         //className="w-full"
       >
-        <Testimonials 
+        <Testimonials
           testimonials={testimonialsData.testimonials}
           galleryImages={testimonialsData.galleryImages}
         />

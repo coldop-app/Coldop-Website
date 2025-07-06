@@ -1,9 +1,17 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { Admin } from "../utils/types";
 
+interface ReactNativeWebView {
+  postMessage: (message: string) => void;
+}
+
+interface ExtendedWindow extends Window {
+  ReactNativeWebView?: ReactNativeWebView;
+}
+
 const isWebView = () => {
-  return navigator.userAgent.includes('ReactNative') || 
-         (window as any).ReactNativeWebView !== undefined;
+  return navigator.userAgent.includes('ReactNative') ||
+         (window as ExtendedWindow).ReactNativeWebView !== undefined;
 };
 
 const getStoredAdminInfo = () => {
@@ -19,9 +27,10 @@ const getStoredAdminInfo = () => {
 const setStoredAdminInfo = (adminInfo: Admin) => {
   try {
     localStorage.setItem("adminInfo", JSON.stringify(adminInfo));
-    
-    if (isWebView() && (window as any).ReactNativeWebView) {
-      (window as any).ReactNativeWebView.postMessage(JSON.stringify({
+
+    const webView = (window as ExtendedWindow).ReactNativeWebView;
+    if (isWebView() && webView?.postMessage) {
+      webView.postMessage(JSON.stringify({
         type: 'SAVE_AUTH',
         data: adminInfo
       }));
@@ -34,9 +43,10 @@ const setStoredAdminInfo = (adminInfo: Admin) => {
 const removeStoredAdminInfo = () => {
   try {
     localStorage.removeItem("adminInfo");
-    
-    if (isWebView() && (window as any).ReactNativeWebView) {
-      (window as any).ReactNativeWebView.postMessage(JSON.stringify({
+
+    const webView = (window as ExtendedWindow).ReactNativeWebView;
+    if (isWebView() && webView?.postMessage) {
+      webView.postMessage(JSON.stringify({
         type: 'REMOVE_AUTH'
       }));
     }

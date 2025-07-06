@@ -41,16 +41,12 @@ const ErpNavbar: React.FC<ErpNavbarProps> = ({ title }) => {
     <header className="bg-background border-b border-border shadow-sm z-10 w-full">
       <div className="flex items-center justify-between px-4 md:px-8 h-16">
         <div className="flex items-center gap-4">
-          <h1 className="text-xl md:text-2xl font-bold text-foreground font-custom">{title}</h1>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground font-custom">
+            {title}
+          </h1>
         </div>
 
         <div className="flex items-center gap-2">
-
-
-
-
-
-
           <Button
             variant="ghost"
             className="flex items-center text-muted-foreground hover:text-primary font-custom"
@@ -58,7 +54,9 @@ const ErpNavbar: React.FC<ErpNavbarProps> = ({ title }) => {
             disabled={mutation.isPending}
           >
             <LogOut className="h-5 w-5 mr-2" />
-            <span className="hidden md:inline">{mutation.isPending ? "Logging out..." : "Logout"}</span>
+            <span className="hidden md:inline">
+              {mutation.isPending ? "Logging out..." : "Logout"}
+            </span>
           </Button>
         </div>
       </div>
