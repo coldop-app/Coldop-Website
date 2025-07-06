@@ -43,11 +43,34 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
   });
 
   const handleChange = (field: keyof NewFarmerFormData, value: string) => {
+    // Handle numeric-only validation for accNo field
+    if (field === 'accNo') {
+      const numericValue = value.replace(/[^0-9]/g, '');
+      setFormData(prev => ({ ...prev, [field]: numericValue }));
+      return;
+    }
+
+    // Handle numeric-only validation and 10-digit limit for contact field
+    if (field === 'contact') {
+      const numericValue = value.replace(/[^0-9]/g, '');
+      if (numericValue.length <= 10) {
+        setFormData(prev => ({ ...prev, [field]: numericValue }));
+      }
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate contact number length
+    if (formData.contact.length !== 10) {
+      alert('Contact number must be exactly 10 digits');
+      return;
+    }
+
     onSubmit(formData);
     // Reset form data after submission
     setFormData({
@@ -132,10 +155,15 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
               value={formData.contact}
               onChange={(e) => handleChange("contact", e.target.value)}
               className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
-              placeholder="Enter mobile no."
+              placeholder="Enter 10-digit mobile no."
+              pattern="[0-9]{10}"
+              maxLength={10}
               required
               disabled={isLoading}
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {formData.contact.length}/10 digits
+            </p>
           </div>
 
           <div className="pt-4 flex gap-4">

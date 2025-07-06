@@ -9,7 +9,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StoreAdmin } from '@/utils/types';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import StockTrendChart from '@/components/charts/StockTrendChart';
+import VarietyDistributionChart from '@/components/charts/VarietyDistributionChart';
+import TopFarmersChart from '@/components/charts/TopFarmersChart';
 
 interface StockSummary {
   variety: string;
@@ -20,18 +22,21 @@ interface StockSummary {
   }[];
 }
 
+interface StockTrendItem {
+  month: string;
+  totalStock: number;
+}
+
 interface StockSummaryResponse {
   status: string;
   stockSummary: StockSummary[];
+  stockTrend: StockTrendItem[];
 }
 
-interface SizeDistributionItem {
-  size: string;
-  quantity: number;
-  percentage: number;
-}
 
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
+
+
+
 
 const calculateVarietyTotal = (sizes: StockSummary['sizes']) => {
   return sizes.reduce((acc, size) => acc + size.currentQuantity, 0);
@@ -68,34 +73,40 @@ const ColdStorageSummaryScreen = () => {
     enabled: !!adminInfo?.token,
   });
 
-  const stockSummary = (stockData as StockSummaryResponse)?.stockSummary || [];
+  const stockResponse = stockData as StockSummaryResponse;
+  const stockSummary = stockResponse?.stockSummary || [];
+  const stockTrend = stockResponse?.stockTrend || [];
   const totalBags = calculateTotalBags(stockSummary);
   const capacity = adminInfo?.coldStorageDetails?.capacity || 0;
   const utilizationPercentage = capacity > 0 ? (totalBags / capacity) * 100 : 0;
 
-  // Prepare data for size distribution chart
-  const sizeDistributionData = stockSummary.reduce((acc: SizeDistributionItem[], variety) => {
-    variety.sizes.forEach(size => {
-      const existingSize = acc.find(item => item.size === size.size);
-      if (existingSize) {
-        existingSize.quantity += size.currentQuantity;
-        existingSize.percentage = (existingSize.quantity / totalBags) * 100;
-      } else {
-        acc.push({
-          size: size.size,
-          quantity: size.currentQuantity,
-          percentage: (size.currentQuantity / totalBags) * 100
-        });
-      }
-    });
-    return acc;
-  }, []).sort((a, b) => b.quantity - a.quantity);
+  // Prepare data for variety distribution chart (top 5 varieties + others)
+  const varietyDistributionData = stockSummary
+    .map(variety => ({
+      variety: variety.variety,
+      quantity: calculateVarietyTotal(variety.sizes),
+      percentage: (calculateVarietyTotal(variety.sizes) / totalBags) * 100
+    }))
+    .sort((a, b) => b.quantity - a.quantity);
 
-  // Prepare data for top farmers chart
+  // Get top 5 varieties and group rest as "Others"
+  const top5Varieties = varietyDistributionData.slice(0, 5);
+  const othersQuantity = varietyDistributionData.slice(5).reduce((sum, variety) => sum + variety.quantity, 0);
+  const othersPercentage = (othersQuantity / totalBags) * 100;
+
+  const finalVarietyDistribution = [
+    ...top5Varieties,
+    ...(othersQuantity > 0 ? [{
+      variety: 'Others',
+      quantity: othersQuantity,
+      percentage: othersPercentage
+    }] : [])
+  ];
+
+  // Prepare data for top farmers chart (only total bags)
   const topFarmersChartData = topFarmersData?.data?.map(farmer => ({
     name: farmer.farmerName,
-    totalBags: farmer.totalBags,
-    ...farmer.bagSummary
+    totalBags: farmer.totalBags
   })) || [];
 
   // Get unique bag sizes for table headers
@@ -189,33 +200,43 @@ const ColdStorageSummaryScreen = () => {
             </CardContent>
           </Card>
 
-          {stockSummary[0] && (
-            <Card className="bg-gray-50/50 border border-gray-100 rounded-xl hover:shadow-sm transition-all duration-200">
-              <CardContent className="p-4 sm:p-5 lg:p-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
-                      <div className="p-1.5 sm:p-2 bg-purple-50 rounded-lg flex-shrink-0">
-                        <Boxes className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
+          {stockSummary.length > 0 && (() => {
+            // Find the variety with the highest total bags
+            const topVariety = [...stockSummary].sort((a, b) =>
+              calculateVarietyTotal(b.sizes) - calculateVarietyTotal(a.sizes)
+            )[0];
+
+            const topVarietyTotal = calculateVarietyTotal(topVariety.sizes);
+            const topVarietyPercentage = (topVarietyTotal / totalBags) * 100;
+
+            return (
+              <Card className="bg-gray-50/50 border border-gray-100 rounded-xl hover:shadow-sm transition-all duration-200">
+                <CardContent className="p-4 sm:p-5 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                        <div className="p-1.5 sm:p-2 bg-purple-50 rounded-lg flex-shrink-0">
+                          <Boxes className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
+                        </div>
+                        <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
+                          Top Variety
+                        </p>
                       </div>
-                      <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                        Top Variety
+                      <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 truncate">{topVariety.variety}</h3>
+                      <p className="text-xs sm:text-sm text-gray-500 mb-1">
+                        {topVarietyTotal} bags stored
+                      </p>
+                      <p className="text-xs text-purple-600 font-medium">
+                        {topVarietyPercentage.toFixed(1)}% of total inventory
                       </p>
                     </div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 truncate">{stockSummary[0].variety}</h3>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                      {calculateVarietyTotal(stockSummary[0].sizes)} bags stored
-                    </p>
-                    <p className="text-xs text-purple-600 font-medium">
-                      {((calculateVarietyTotal(stockSummary[0].sizes) / totalBags) * 100).toFixed(1)}% of total inventory
-                    </p>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
+                </CardContent>
+              </Card>
+            );
+          })()}
 
-          {sizeDistributionData[0] && (
+          {finalVarietyDistribution[1] && (
             <Card className="bg-gray-50/50 border border-gray-100 rounded-xl hover:shadow-sm transition-all duration-200">
               <CardContent className="p-4 sm:p-5 lg:p-6">
                 <div className="flex items-center justify-between">
@@ -225,15 +246,15 @@ const ColdStorageSummaryScreen = () => {
                         <Package className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500" />
                       </div>
                       <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                        Dominant Size
+                        Second Variety
                       </p>
                     </div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{sizeDistributionData[0].size}</h3>
+                    <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{finalVarietyDistribution[1].variety}</h3>
                     <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                      {sizeDistributionData[0].quantity} bags
+                      {finalVarietyDistribution[1].quantity} bags
                     </p>
                     <p className="text-xs text-pink-600 font-medium">
-                      {sizeDistributionData[0].percentage.toFixed(1)}% of all bag sizes
+                      {finalVarietyDistribution[1].percentage.toFixed(1)}% of all varieties
                     </p>
                   </div>
                 </div>
@@ -393,145 +414,17 @@ const ColdStorageSummaryScreen = () => {
           </CardContent>
         </Card>
 
-        {/* Size Distribution Chart */}
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-          <Card className="bg-white shadow-sm">
-            <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-              <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Size Distribution</CardTitle>
-              <p className="text-xs sm:text-sm text-gray-600">Percentage breakdown by potato size</p>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="h-[250px] sm:h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={sizeDistributionData}
-                      cx="50%"
-                      cy="50%"
-                      labelLine={false}
-                      outerRadius={80}
-                      fill="#8884d8"
-                      dataKey="quantity"
-                      nameKey="size"
-                      label={({ name, percent }) => name && percent ? `${name}: ${(percent * 100).toFixed(1)}%` : ''}
-                    >
-                      {sizeDistributionData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} bags`, 'Quantity']} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="mt-4 space-y-2">
-                <h4 className="font-medium text-gray-900 text-sm sm:text-base">Size Distribution & Insights</h4>
-                <div className="space-y-2">
-                  {sizeDistributionData.slice(0, 3).map((item, index) => (
-                    <div key={item.size} className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0 flex-1">
-                        <div
-                          className="w-3 h-3 rounded-full flex-shrink-0"
-                          style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                        <span className="text-xs sm:text-sm font-medium truncate">{item.size}</span>
-                      </div>
-                      <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap ml-2">
-                        {item.quantity} bags ({item.percentage.toFixed(1)}%)
-                      </span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <h5 className="font-medium text-blue-900 mb-2 text-sm">Distribution Insights</h5>
-                  <ul className="space-y-1 text-xs sm:text-sm text-blue-800">
-                    <li>• {sizeDistributionData[0]?.size} is the most common size at {sizeDistributionData[0]?.percentage.toFixed(1)}% of all inventory</li>
-                    <li>• Top 2 sizes account for {(sizeDistributionData[0]?.percentage + (sizeDistributionData[1]?.percentage || 0)).toFixed(1)}% of inventory</li>
-                    {sizeDistributionData[sizeDistributionData.length - 1] && (
-                      <li>• {sizeDistributionData[sizeDistributionData.length - 1].size} has the lowest inventory at {sizeDistributionData[sizeDistributionData.length - 1].percentage.toFixed(1)}%</li>
-                    )}
-                  </ul>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Stock Trend Chart */}
+        <StockTrendChart data={stockTrend} currentStock={totalBags} />
 
-          {/* Top Farmers Chart */}
-          <Card className="bg-white shadow-sm">
-            <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-              <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Top Farmers</CardTitle>
-              <p className="text-xs sm:text-sm text-gray-600">Farmers with the highest storage inventory by bag type</p>
-            </CardHeader>
-            <CardContent className="p-4 sm:p-6">
-              <div className="h-[250px] sm:h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={topFarmersChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fontSize: 12 }}
-                      interval={0}
-                      angle={-45}
-                      textAnchor="end"
-                      height={80}
-                    />
-                    <YAxis tick={{ fontSize: 12 }} />
-                    <Tooltip />
-                    <Bar dataKey="totalBags" fill="#f59e0b" name="Total Bags" />
-                    {allBagSizes.map((size, index) => (
-                      <Bar key={size} dataKey={size} fill={COLORS[index % COLORS.length]} name={size} />
-                    ))}
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              {topFarmersData?.data?.[0] && (
-                <div className="mt-4">
-                  <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Top Farmer Insights</h4>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-xs sm:text-sm font-medium text-gray-900">Top Contributor</p>
-                        <p className="text-xs sm:text-sm text-gray-600 truncate" title={topFarmersData.data[0].farmerName}>
-                          {topFarmersData.data[0].farmerName}
-                        </p>
-                      </div>
-                      <p className="text-sm sm:text-lg font-bold text-yellow-600 ml-2 whitespace-nowrap">
-                        {topFarmersData.data[0].totalBags} bags
-                      </p>
-                    </div>
-                    {Object.entries(topFarmersData.data[0].bagSummary)[0] && (
-                      <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">Specialty Breakdown</p>
-                          <p className="text-xs sm:text-sm text-gray-600">
-                            {Object.entries(topFarmersData.data[0].bagSummary)[0][0]}: {Object.entries(topFarmersData.data[0].bagSummary)[0][1]} bags ({((Object.entries(topFarmersData.data[0].bagSummary)[0][1] / topFarmersData.data[0].totalBags) * 100).toFixed(1)}%)
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                    {topFarmersData.data[1] && (
-                      <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs sm:text-sm font-medium text-gray-900">Comparison</p>
-                          <p className="text-xs sm:text-sm text-gray-600">
-                            Stores {(topFarmersData.data[0].totalBags / topFarmersData.data[1].totalBags).toFixed(1)}x more than second-ranked farmer
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-                    <h5 className="font-medium text-gray-900 mb-2 text-sm">Storage Share</h5>
-                    <div className="text-center">
-                      <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                        {((topFarmersData.data[0].totalBags / totalBags) * 100).toFixed(1)}%
-                      </div>
-                      <div className="text-xs sm:text-sm text-gray-600">of total inventory</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          <VarietyDistributionChart data={finalVarietyDistribution} />
+          <TopFarmersChart
+            data={topFarmersChartData}
+            topFarmersData={topFarmersData}
+            totalBags={totalBags}
+          />
         </div>
       </div>
     </>
