@@ -1,0 +1,63 @@
+# Coldop Website - Robots.txt
+# This file tells search engine crawlers which pages or files the crawler can or can't request from your site.
+
+# Allow all crawlers to access the site
+User-agent: *
+Allow: /
+
+# Explicitly allow public information pages
+Allow: /faq
+Allow: /privacy
+Allow: /support
+Allow: /case-studies
+
+# Block access to authentication pages and admin areas
+Disallow: /login/
+Disallow: /signup/
+Disallow: /erp/
+
+# Block access to internal files and directories
+Disallow: /src/
+Disallow: /node_modules/
+Disallow: /*.json
+Disallow: /*.ts
+Disallow: /*.tsx
+Disallow: /*.js.map
+Disallow: /*.css.map
+
+# Allow specific public assets
+Allow: /coldop-logo.png
+Allow: /favicon.ico
+Allow: /app-screen-*.png
+Allow: /hero-min.png
+Allow: /*.css
+Allow: /*.js
+
+# Sitemap location
+Sitemap: https://coldop.com/sitemap.xml
+
+# Crawl delay (optional - helps prevent overwhelming the server)
+Crawl-delay: 1
+
+# Specific rules for major search engines
+User-agent: Googlebot
+Allow: /
+Disallow: /login/
+Disallow: /signup/
+Disallow: /erp/
+
+User-agent: Bingbot
+Allow: /
+Disallow: /login/
+Disallow: /signup/
+Disallow: /erp/
+
+# Block common bad bots
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /

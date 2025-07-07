@@ -1,9 +1,20 @@
 import StoreAdminLoginForm from "@/components/auth/StoreAdminLoginForm";
 import { Link } from "react-router-dom";
+import SEO from "@/components/common/SEO/SEO";
+import { SEO_PAGES, getPageUrl } from "@/utils/seo";
 
 const StoreAdminLogin = () => {
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-secondary/30 relative overflow-hidden px-4 sm:px-0">
+    <>
+      <SEO
+        title={SEO_PAGES.STORE_ADMIN_LOGIN.title}
+        description={SEO_PAGES.STORE_ADMIN_LOGIN.description}
+        keywords={SEO_PAGES.STORE_ADMIN_LOGIN.keywords}
+        url={getPageUrl('/login/store-admin')}
+        noindex={SEO_PAGES.STORE_ADMIN_LOGIN.noindex}
+        nofollow={SEO_PAGES.STORE_ADMIN_LOGIN.nofollow}
+      />
+      <div className="min-h-screen w-full flex items-center justify-center bg-secondary/30 relative overflow-hidden px-4 sm:px-0">
       {/* Background pattern elements */}
       <div className="absolute inset-0 w-full h-full">
         <div className="absolute -top-32 -right-32 w-[500px] h-[500px] rounded-full bg-primary/5"></div>
@@ -33,6 +44,7 @@ const StoreAdminLogin = () => {
         <StoreAdminLoginForm />
       </div>
     </div>
+    </>
   );
 };
 

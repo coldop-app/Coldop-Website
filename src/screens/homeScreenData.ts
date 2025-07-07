@@ -276,48 +276,41 @@ export interface FooterData {
   address: string;
   phone: string;
   email: string;
-  socialLinks: SocialLink[];
   navColumns: FooterNavColumn[];
 }
 
 // Footer data
 export const footerData: FooterData = {
-  companyName: "Coldstorage",
-  year: "2027",
-  logo: "omnifood-logo.png",
-  address: "623 Harrison St., 2nd Floor, San Francisco, CA 94107",
-  phone: "415-201-6370",
-  email: "hello@omnifood.com",
-  socialLinks: [
-    { icon: "I1", href: "#" },
-    { icon: "I1", href: "#" },
-    { icon: "I1", href: "#" }
-  ],
+  companyName: "Coldop",
+  year: new Date().getFullYear().toString(),
+  logo: "/coldop-logo.png",
+  address: "123 Cold Storage Lane, Tech Park, Bangalore 560001",
+  phone: "+91 9877741375 / +91 9646996729",
+  email: "coldop.app@gmail.com",
   navColumns: [
-    {
-      title: "Account",
-      links: [
-        { text: "Create account", href: "#" },
-        { text: "Sign In", href: "#" },
-        { text: "iOS app", href: "#" },
-        { text: "Android app", href: "#" }
-      ]
-    },
     {
       title: "Company",
       links: [
-        { text: "About Cold Storage", href: "#" },
-        { text: "For Business", href: "#" },
-        { text: "Our partners", href: "#" },
-        { text: "Careers", href: "#" }
+        { text: "About", href: "#about" },
+        { text: "How it works", href: "#how-it-works" },
+        { text: "Pricing", href: "#pricing" },
+        { text: "Case Studies", href: "/case-studies" }
       ]
     },
     {
       title: "Resources",
       links: [
-        { text: "Recipe directory", href: "#" },
-        { text: "Help center", href: "#" },
-        { text: "Privacy & terms", href: "#" }
+        { text: "Help center", href: "/support" },
+        { text: "Privacy & terms", href: "/privacy" },
+        { text: "FAQs", href: "/faq" }
+      ]
+    },
+    {
+      title: "Get in touch",
+      links: [
+        { text: "Support", href: "mailto:coldop.app@gmail.com?subject=Support Request&body=Hi Coldop team,%0D%0A%0D%0AI need help with:" },
+        { text: "Partner with us", href: "mailto:coldop.app@gmail.com?subject=Partnership Inquiry&body=Hi Coldop team,%0D%0A%0D%0AI'm interested in partnering with Coldop:" },
+        { text: "Careers", href: "mailto:coldop.app@gmail.com?subject=Career Inquiry&body=Hi Coldop team,%0D%0A%0D%0AI'm interested in career opportunities at Coldop:" }
       ]
     }
   ]

@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 import { Provider } from "react-redux";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import store from "./store.ts";
 import "./index.css";
 import App from "./App.tsx";
@@ -32,6 +33,12 @@ const SettingsScreen = lazy(() => import("./screens/Erp/SettingsScreen.tsx"));
 const ProfileSettingsScreen = lazy(() => import("./screens/Erp/ProfileSettingsScreen.tsx"));
 const BillingSettingsScreen = lazy(() => import("./screens/Erp/BillingSettingsScreen.tsx"));
 const ContactSupportScreen = lazy(() => import("./screens/Erp/ContactSupportScreen.tsx"));
+
+// New pages
+const FAQ = lazy(() => import("./screens/FAQ/FAQ.tsx"));
+const Support = lazy(() => import("./screens/Support/Support.tsx"));
+const Privacy = lazy(() => import("./screens/Privacy/Privacy.tsx"));
+const CaseStudies = lazy(() => import("./screens/CaseStudies/CaseStudies.tsx"));
 
 // Loading component
 const LoadingFallback = () => (
@@ -71,6 +78,29 @@ const router = createBrowserRouter(
             <FarmerLogin />
           </Suspense>
         } />
+
+        {/* Public pages */}
+        <Route path="faq" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <FAQ />
+          </Suspense>
+        } />
+        <Route path="support" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Support />
+          </Suspense>
+        } />
+        <Route path="privacy" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <Privacy />
+          </Suspense>
+        } />
+        <Route path="case-studies" element={
+          <Suspense fallback={<LoadingFallback />}>
+            <CaseStudies />
+          </Suspense>
+        } />
+
       <Route path="" element={<PrivateRoute />}>
         <Route path="erp" element={<ERPLayout />}>
           <Route path="daybook" element={
@@ -139,10 +169,12 @@ const router = createBrowserRouter(
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </Provider>
+    <HelmetProvider>
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </Provider>
+    </HelmetProvider>
   </StrictMode>
 );

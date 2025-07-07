@@ -1,5 +1,6 @@
-import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
+import SignInModal from "@/components/auth/SignInModal";
 
 interface CustomerImage {
   src: string;
@@ -20,6 +21,15 @@ const Hero = ({
   heroImage
 }: HeroProps) => {
   const { t } = useTranslation();
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+
+  const handleHowItWorksClick = () => {
+    const element = document.getElementById('how-it-works');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
     <>
       <section className="bg-secondary px-8 pb-16 pt-6 sm:py-24">
@@ -33,20 +43,19 @@ const Hero = ({
             </p>
 
             <div className="align-center flex justify-center gap-4 md:gap-2 lg:justify-start whitespace-nowrap ">
-              <Link
-                to="#"
+              <button
+                onClick={() => setIsSignInModalOpen(true)}
                 className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-4 py-2 text-lg font-bold text-secondary hover:bg-primary/85 sm:text-xl sm:px-8 sm:py-4 sm:mr-4"
               >
                 {t('hero.startManaging')}
-              </Link>
-              <Link
-                to="#"
+              </button>
+              <button
+                onClick={handleHowItWorksClick}
                 className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-4 py-2 text-lg font-bold text-secondary hover:bg-primary/85 sm:text-xl sm:px-8 sm:py-4 sm:ml-2.5"
               >
                 {t('hero.howItWorks')}
-              </Link>
+              </button>
             </div>
-
 
             <div className="mt-10 flex items-center justify-center lg:mt-20">
               <div className="flex">
@@ -79,6 +88,8 @@ const Hero = ({
           </div>
         </div>
       </section>
+
+      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} />
     </>
   );
 };

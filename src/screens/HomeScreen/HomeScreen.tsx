@@ -3,17 +3,20 @@ import Navbar from "@/components/common/Navbar/Navbar";
 import Footer from "../../components/common/Footer/Footer";
 import Hero from "@/components/sections/Hero/Hero";
 import HowItWorks from "@/components/sections/HowItWorks/HowItWorks";
-import Testimonials from "@/components/sections/Testimonials/Testimonials";
+// import Testimonials from "@/components/sections/Testimonials/Testimonials";
 import Pricing from "@/components/sections/Pricing/Pricing";
+import DemoVideo from "@/components/sections/DemoVideo/DemoVideo";
 import About from "@/components/sections/About/About";
+import SEO from "@/components/common/SEO/SEO";
 import { useEffect } from "react";
 import {
   heroData,
   howItWorksData,
-  testimonialsData,
+  // testimonialsData,
   pricingData,
   footerData
 } from "../homeScreenData";
+import { SEO_PAGES, getOrganizationStructuredData, getSoftwareApplicationStructuredData } from "@/utils/seo";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -46,8 +49,23 @@ const HomeScreen = () => {
     };
   }, []);
 
+  // Combine structured data for homepage
+  const combinedStructuredData = [
+    SEO_PAGES.HOME.structuredData,
+    getOrganizationStructuredData(),
+    getSoftwareApplicationStructuredData(),
+  ];
+
   return (
     <div>
+      <SEO
+        title={SEO_PAGES.HOME.title}
+        description={SEO_PAGES.HOME.description}
+        keywords={SEO_PAGES.HOME.keywords}
+        url="https://coldop.com"
+        type="website"
+        structuredData={combinedStructuredData}
+      />
       <Navbar />
       <motion.div
         id="hero"
@@ -68,7 +86,7 @@ const HomeScreen = () => {
       >
         <HowItWorks steps={howItWorksData.steps} />
       </motion.div>
-      <motion.div
+      {/* <motion.div
         id="testimonials"
         {...fadeInUp}
         //className="w-full"
@@ -77,7 +95,15 @@ const HomeScreen = () => {
           testimonials={testimonialsData.testimonials}
           galleryImages={testimonialsData.galleryImages}
         />
+      </motion.div> */}
+      <motion.div
+        id="demo"
+        {...fadeInUp}
+        //className="w-full"
+      >
+        <DemoVideo />
       </motion.div>
+
       <motion.div
         id="pricing"
         {...fadeInUp}
@@ -85,12 +111,13 @@ const HomeScreen = () => {
       >
         <Pricing plans={pricingData.plans} />
       </motion.div>
+
       <motion.div
         id="about"
         {...fadeInUp}
         //className="w-full"
       >
-        <About/>
+        <About />
       </motion.div>
       <motion.div
         initial={{ opacity: 0 }}
@@ -99,7 +126,7 @@ const HomeScreen = () => {
         transition={{ duration: 0.6 }}
         //className="w-full"
       >
-        <Footer {...footerData}/>
+        <Footer {...footerData} />
       </motion.div>
     </div>
   );

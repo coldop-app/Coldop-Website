@@ -5,6 +5,8 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { Home, ArrowLeft, AlertTriangle } from "lucide-react";
 import { motion } from "motion/react";
+import SEO from "@/components/common/SEO/SEO";
+import { SEO_PAGES, getPageUrl } from "@/utils/seo";
 
 const Error = () => {
   const { t } = useTranslation();
@@ -12,6 +14,14 @@ const Error = () => {
 
   return (
     <>
+      <SEO
+        title={SEO_PAGES.ERROR.title}
+        description={SEO_PAGES.ERROR.description}
+        keywords={SEO_PAGES.ERROR.keywords}
+        url={getPageUrl('/error')}
+        noindex={SEO_PAGES.ERROR.noindex}
+        nofollow={SEO_PAGES.ERROR.nofollow}
+      />
       <motion.div
         className="relative min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 overflow-hidden"
         initial={{ opacity: 0 }}
