@@ -1,6 +1,9 @@
 import React from 'react';
 import { TrendingUp, Users, Clock, CheckCircle } from 'lucide-react';
 import SEO from '@/components/common/SEO/SEO';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 const CaseStudies: React.FC = () => {
   const caseStudies = [
@@ -133,38 +136,33 @@ const CaseStudies: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
           {benefits.map((benefit, index) => (
-            <div key={index} className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-lg mb-4">
-                {benefit.icon}
-              </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                {benefit.title}
-              </h3>
-              <p className="text-gray-600">
-                {benefit.description}
-              </p>
-            </div>
+            <Card key={index} className="border-none shadow-md">
+              <CardHeader>
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 text-primary rounded-lg mb-4">
+                  {benefit.icon}
+                </div>
+                <CardTitle className="text-lg">{benefit.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">{benefit.description}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
         {/* Case Studies */}
-        <div className="space-y-16">
+        <div className="space-y-8">
           {caseStudies.map((study, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
-              <div className="p-8">
+            <Card key={index} className="border-none shadow-lg">
+              <CardContent className="p-8">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
                   {/* Main Content */}
                   <div className="lg:col-span-2">
-                    <div className="mb-6">
-                      <h3 className="text-2xl font-bold text-gray-900 mb-2">
-                        {study.title}
-                      </h3>
-                      <div className="flex flex-wrap gap-4 text-sm text-gray-600">
-                        <span><strong>Company:</strong> {study.company}</span>
-                        <span><strong>Location:</strong> {study.location}</span>
-                        <span><strong>Industry:</strong> {study.industry}</span>
-                      </div>
+                    <CardTitle className="text-2xl mb-4">{study.title}</CardTitle>
+                    <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-6">
+                      <span><strong>Company:</strong> {study.company}</span>
+                      <span><strong>Location:</strong> {study.location}</span>
+                      <span><strong>Industry:</strong> {study.industry}</span>
                     </div>
 
                     <div className="space-y-6">
@@ -173,17 +171,21 @@ const CaseStudies: React.FC = () => {
                         <p className="text-gray-700">{study.challenge}</p>
                       </div>
 
+                      <Separator className="my-4" />
+
                       <div>
                         <h4 className="text-lg font-semibold text-gray-900 mb-2">Solution</h4>
                         <p className="text-gray-700">{study.solution}</p>
                       </div>
+
+                      <Separator className="my-4" />
 
                       <div>
                         <h4 className="text-lg font-semibold text-gray-900 mb-2">Results</h4>
                         <ul className="space-y-2">
                           {study.results.map((result, resultIndex) => (
                             <li key={resultIndex} className="flex items-start">
-                              <CheckCircle className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                              <CheckCircle className="h-5 w-5 text-primary mr-2 mt-0.5 flex-shrink-0" />
                               <span className="text-gray-700">{result}</span>
                             </li>
                           ))}
@@ -194,64 +196,75 @@ const CaseStudies: React.FC = () => {
 
                   {/* Metrics & Testimonial */}
                   <div className="space-y-6">
-                    <div className="bg-blue-50 rounded-lg p-6">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-4">Key Metrics</h4>
-                      <div className="space-y-3">
-                        {Object.entries(study.metrics).map(([key, value]) => (
-                          <div key={key} className="flex justify-between">
-                            <span className="text-gray-600 capitalize">
-                              {key.replace(/([A-Z])/g, ' $1').trim()}:
-                            </span>
-                            <span className="font-semibold text-blue-600">{value}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
+                    <Card className="border-none bg-primary/5">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Key Metrics</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-3">
+                          {Object.entries(study.metrics).map(([key, value]) => (
+                            <div key={key} className="flex justify-between">
+                              <span className="text-gray-600 capitalize">
+                                {key.replace(/([A-Z])/g, ' $1').trim()}:
+                              </span>
+                              <span className="font-semibold text-primary">{value}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
 
-                    <div className="bg-gray-50 rounded-lg p-6">
-                      <h4 className="text-lg font-semibold text-gray-900 mb-3">Testimonial</h4>
-                      <blockquote className="text-gray-700 italic mb-4">
-                        "{study.testimonial}"
-                      </blockquote>
-                      <div className="text-sm">
-                        <p className="font-semibold text-gray-900">{study.author}</p>
-                        <p className="text-gray-600">{study.role}</p>
-                        <p className="text-gray-600">{study.company}</p>
-                      </div>
-                    </div>
+                    <Card className="border-none bg-gray-50">
+                      <CardHeader>
+                        <CardTitle className="text-lg">Testimonial</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <blockquote className="text-gray-700 italic mb-4">
+                          "{study.testimonial}"
+                        </blockquote>
+                        <div className="text-sm">
+                          <p className="font-semibold text-gray-900">{study.author}</p>
+                          <p className="text-gray-600">{study.role}</p>
+                          <p className="text-gray-600">{study.company}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
-
                 </div>
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
 
         {/* CTA Section */}
-        <div className="mt-16 text-center">
-          <div className="bg-blue-600 rounded-lg p-8 text-white">
-            <h3 className="text-2xl font-bold mb-4">
+        <Card className="mt-16 border-none bg-primary text-white">
+          <CardContent className="p-8 text-center">
+            <CardTitle className="text-2xl mb-4 text-white">
               Ready to Transform Your Cold Storage Operations?
-            </h3>
-            <p className="text-lg mb-6 text-blue-100">
+            </CardTitle>
+            <CardDescription className="text-lg mb-6 text-primary-foreground/90">
               Join hundreds of satisfied customers who have revolutionized their cold storage management with Coldop.
-            </p>
+            </CardDescription>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <a
-                href="mailto:coldop.app@gmail.com?subject=Case Study Inquiry&body=Hi Coldop team,%0D%0A%0D%0AI'm interested in learning more about how Coldop can help transform our operations like the case studies I've seen:"
-                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 transition-colors"
+              <Button
+                variant="outline"
+                className="bg-white text-primary hover:bg-white/90 border-2 border-white font-bold text-base px-8"
+                asChild
               >
-                Contact Sales
-              </a>
-              <a
-                href="/faq"
-                className="inline-flex items-center px-6 py-3 border border-white text-base font-medium rounded-md text-white hover:bg-blue-700 transition-colors"
+                <a href="mailto:coldop.app@gmail.com?subject=Case Study Inquiry&body=Hi Coldop team,%0D%0A%0D%0AI'm interested in learning more about how Coldop can help transform our operations like the case studies I've seen:">
+                  Contact Sales
+                </a>
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-transparent text-white border-2 border-white hover:bg-white/10 font-bold text-base px-8"
+                asChild
               >
-                Learn More
-              </a>
+                <a href="/faq">Learn More</a>
+              </Button>
             </div>
-          </div>
-        </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

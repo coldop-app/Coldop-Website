@@ -1,6 +1,8 @@
 import React from 'react';
 import { Mail, Phone, Clock, MessageCircle, FileText, Users } from 'lucide-react';
 import SEO from '@/components/common/SEO/SEO';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 const Support: React.FC = () => {
   const supportChannels = [
@@ -91,36 +93,37 @@ const Support: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {supportChannels.map((channel, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-              <div className="flex items-center mb-4">
-                <div className="p-2 bg-blue-100 rounded-lg text-blue-600 mr-3">
-                  {channel.icon}
+            <Card key={index} className="border-none shadow-md">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                    {channel.icon}
+                  </div>
+                  <CardTitle>{channel.title}</CardTitle>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {channel.title}
-                </h3>
-              </div>
-
-              <p className="text-gray-600 mb-4">
-                {channel.description}
-              </p>
-
-              <div className="space-y-2 mb-4">
-                <p className="text-sm text-gray-500">
-                  <strong>Contact:</strong> {channel.contact}
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 mb-4">
+                  {channel.description}
                 </p>
-                <p className="text-sm text-gray-500">
-                  <strong>Response time:</strong> {channel.responseTime}
-                </p>
-              </div>
-
-              <a
-                href={channel.link}
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors w-full justify-center"
-              >
-                Contact Us
-              </a>
-            </div>
+                <div className="space-y-2 mb-4">
+                  <p className="text-sm text-gray-500">
+                    <strong>Contact:</strong> {channel.contact}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    <strong>Response time:</strong> {channel.responseTime}
+                  </p>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button
+                  className="w-full"
+                  asChild
+                >
+                  <a href={channel.link}>Contact Us</a>
+                </Button>
+              </CardFooter>
+            </Card>
           ))}
         </div>
 
@@ -137,94 +140,96 @@ const Support: React.FC = () => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {supportTopics.map((topic, index) => (
-              <div key={index} className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center mb-4">
-                  <div className="p-2 bg-gray-100 rounded-lg text-gray-600 mr-3">
-                    {topic.icon}
+              <Card key={index} className="border-none shadow-sm">
+                <CardHeader>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                      {topic.icon}
+                    </div>
+                    <CardTitle className="text-base">{topic.title}</CardTitle>
                   </div>
-                  <h3 className="font-semibold text-gray-900">
-                    {topic.title}
-                  </h3>
-                </div>
-
-                <p className="text-sm text-gray-600 mb-4">
-                  {topic.description}
-                </p>
-
-                <ul className="space-y-1">
-                  {topic.topics.map((item, itemIndex) => (
-                    <li key={itemIndex} className="text-xs text-gray-500">
-                      • {item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-gray-600 mb-4">
+                    {topic.description}
+                  </p>
+                  <ul className="space-y-1">
+                    {topic.topics.map((item, itemIndex) => (
+                      <li key={itemIndex} className="text-xs text-gray-500">
+                        • {item}
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </div>
 
         {/* Support Policy */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-6">
-            Support Policy
-          </h2>
+        <Card className="border-none shadow-md mb-12">
+          <CardHeader>
+            <CardTitle className="text-2xl">Support Policy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  Support Hours
+                </h3>
+                <ul className="space-y-2 text-gray-600">
+                  <li><strong>Email Support:</strong> 24/7 (response within 24 hours)</li>
+                  <li><strong>Phone Support:</strong> Mon-Fri, 9 AM - 6 PM IST</li>
+                  <li><strong>WhatsApp Support:</strong> Mon-Sat, 9 AM - 8 PM IST</li>
+                  <li><strong>Emergency Support:</strong> Available for critical issues</li>
+                </ul>
+              </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                Support Hours
-              </h3>
-              <ul className="space-y-2 text-gray-600">
-                <li><strong>Email Support:</strong> 24/7 (response within 24 hours)</li>
-                <li><strong>Phone Support:</strong> Mon-Fri, 9 AM - 6 PM IST</li>
-                <li><strong>WhatsApp Support:</strong> Mon-Sat, 9 AM - 8 PM IST</li>
-                <li><strong>Emergency Support:</strong> Available for critical issues</li>
-              </ul>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                  What We Cover
+                </h3>
+                <ul className="space-y-2 text-gray-600">
+                  <li>• Technical troubleshooting and bug fixes</li>
+                  <li>• Feature guidance and best practices</li>
+                  <li>• Account setup and configuration</li>
+                  <li>• Data migration and backup support</li>
+                  <li>• Integration assistance</li>
+                  <li>• Training and onboarding</li>
+                </ul>
+              </div>
             </div>
 
-            <div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">
-                What We Cover
-              </h3>
-              <ul className="space-y-2 text-gray-600">
-                <li>• Technical troubleshooting and bug fixes</li>
-                <li>• Feature guidance and best practices</li>
-                <li>• Account setup and configuration</li>
-                <li>• Data migration and backup support</li>
-                <li>• Integration assistance</li>
-                <li>• Training and onboarding</li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-blue-900 mb-2">
-              Priority Support
-            </h4>
-            <p className="text-blue-800 text-sm">
-              Complete plan subscribers receive priority support with faster response times and dedicated assistance.
-              Emergency support is available 24/7 for critical system issues.
-            </p>
-          </div>
-        </div>
+            <Card className="mt-8 bg-primary/5 border-none">
+              <CardHeader>
+                <CardTitle className="text-base text-primary">Priority Support</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-gray-700">
+                  Complete plan subscribers receive priority support with faster response times and dedicated assistance.
+                  Emergency support is available 24/7 for critical system issues.
+                </p>
+              </CardContent>
+            </Card>
+          </CardContent>
+        </Card>
 
         {/* FAQ Link */}
-        <div className="mt-12 text-center">
-          <div className="bg-gray-100 rounded-lg p-8">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Check Our FAQ First
-            </h3>
-            <p className="text-gray-600 mb-4">
+        <Card className="border-none bg-gray-50 shadow-sm">
+          <CardContent className="text-center p-8">
+            <CardTitle className="text-lg mb-2">Check Our FAQ First</CardTitle>
+            <CardDescription className="mb-4">
               Many common questions are answered in our comprehensive FAQ section.
-            </p>
-            <a
-              href="/faq"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 transition-colors border-blue-200"
+            </CardDescription>
+            <Button
+              variant="outline"
+              className="bg-white text-primary hover:bg-white/90 border-2 border-primary font-bold"
+              asChild
             >
-              View FAQ
-            </a>
-          </div>
-        </div>
+              <a href="/faq">View FAQ</a>
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

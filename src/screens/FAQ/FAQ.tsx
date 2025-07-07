@@ -1,6 +1,11 @@
-import React, { useState } from 'react';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import React from 'react';
 import SEO from '@/components/common/SEO/SEO';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 interface FAQItem {
   question: string;
@@ -8,12 +13,6 @@ interface FAQItem {
 }
 
 const FAQ: React.FC = () => {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
-
-  const toggleFAQ = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
   const faqData: FAQItem[] = [
     {
       question: "What is Coldop and how does it work?",
@@ -88,42 +87,26 @@ const FAQ: React.FC = () => {
 
       {/* FAQ Content */}
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="space-y-4">
+        <Accordion type="single" collapsible className="space-y-4">
           {faqData.map((faq, index) => (
-            <div
+            <AccordionItem
               key={index}
-              className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+              value={`item-${index}`}
+              className="bg-white rounded-lg shadow-sm border border-gray-200 px-6"
             >
-              <button
-                className="w-full px-6 py-4 text-left flex justify-between items-center hover:bg-gray-50 focus:outline-none focus:bg-gray-50"
-                onClick={() => toggleFAQ(index)}
-              >
-                <span className="font-medium text-gray-900 pr-4">
-                  {faq.question}
-                </span>
-                {openIndex === index ? (
-                  <ChevronUp className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                ) : (
-                  <ChevronDown className="h-5 w-5 text-gray-500 flex-shrink-0" />
-                )}
-              </button>
-
-              {openIndex === index && (
-                <div className="px-6 pb-4">
-                  <div className="border-t border-gray-100 pt-4">
-                    <p className="text-gray-700 leading-relaxed">
-                      {faq.answer}
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
+              <AccordionTrigger className="text-left font-medium text-gray-900 hover:no-underline">
+                {faq.question}
+              </AccordionTrigger>
+              <AccordionContent className="text-gray-700 leading-relaxed">
+                {faq.answer}
+              </AccordionContent>
+            </AccordionItem>
           ))}
-        </div>
+        </Accordion>
 
         {/* Contact Section */}
         <div className="mt-16 text-center">
-          <div className="bg-blue-50 rounded-lg p-8">
+          <div className="bg-primary/10 rounded-lg p-8">
             <h3 className="text-lg font-semibold text-gray-900 mb-2">
               Still have questions?
             </h3>
@@ -132,7 +115,7 @@ const FAQ: React.FC = () => {
             </p>
             <a
               href="mailto:coldop.app@gmail.com?subject=FAQ Support Request&body=Hi Coldop team,%0D%0A%0D%0AI have a question that's not covered in the FAQ:"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/85 transition-colors"
             >
               Contact Support
             </a>

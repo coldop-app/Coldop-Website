@@ -50,7 +50,7 @@ const Footer: React.FC<FooterProps> = ({
   ];
 
   return (
-    <footer className="bg-gray-50 border-t border-gray-200">
+    <footer className="bg-secondary border-t border-gray-200">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
@@ -78,7 +78,7 @@ const Footer: React.FC<FooterProps> = ({
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 text-gray-500 hover:text-blue-600 hover:bg-white rounded-lg transition-all duration-200 border border-transparent hover:border-gray-200 hover:shadow-sm"
+                    className="p-2 text-gray-500 hover:text-primary hover:bg-white rounded-lg transition-all duration-200 border border-transparent hover:border-gray-200 hover:shadow-sm"
                     aria-label={social.label}
                   >
                     {social.icon}
@@ -101,7 +101,7 @@ const Footer: React.FC<FooterProps> = ({
                 <p>
                   <a
                     href={`tel:${phone.split(' / ')[0]}`}
-                    className="text-gray-600 hover:text-blue-600 transition-colors"
+                    className="text-gray-600 hover:text-primary transition-colors"
                   >
                     {phone.split(' / ')[0]}
                   </a>
@@ -109,7 +109,7 @@ const Footer: React.FC<FooterProps> = ({
                 <p>
                   <a
                     href={`tel:${phone.split(' / ')[1]}`}
-                    className="text-gray-600 hover:text-blue-600 transition-colors"
+                    className="text-gray-600 hover:text-primary transition-colors"
                   >
                     {phone.split(' / ')[1]}
                   </a>
@@ -117,7 +117,7 @@ const Footer: React.FC<FooterProps> = ({
                 <p>
                   <a
                     href={`mailto:${email}`}
-                    className="text-gray-600 hover:text-blue-600 transition-colors"
+                    className="text-gray-600 hover:text-primary transition-colors"
                   >
                     {email}
                   </a>
@@ -137,7 +137,7 @@ const Footer: React.FC<FooterProps> = ({
                   <li key={linkIndex}>
                     <a
                       href={link.href}
-                      className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
+                      className="text-sm text-gray-600 hover:text-primary transition-colors"
                     >
                       {link.text}
                     </a>
@@ -150,20 +150,20 @@ const Footer: React.FC<FooterProps> = ({
       </div>
 
       {/* Bottom Bar */}
-      <div className="border-t border-gray-200 bg-white">
+      <div className="border-t border-gray-200 bg-white/50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
             <p className="text-sm text-gray-500">
               Copyright © {year} {companyName}, Inc. All rights reserved.
             </p>
             <div className="flex space-x-6 text-sm">
-              <a href="/privacy" className="text-gray-500 hover:text-blue-600 transition-colors">
+              <a href="/privacy" className="text-gray-500 hover:text-primary transition-colors">
                 Privacy Policy
               </a>
-              <a href="/support" className="text-gray-500 hover:text-blue-600 transition-colors">
+              <a href="/support" className="text-gray-500 hover:text-primary transition-colors">
                 Terms of Service
               </a>
-              <a href="/cookies" className="text-gray-500 hover:text-blue-600 transition-colors">
+              <a href="/cookies" className="text-gray-500 hover:text-primary transition-colors">
                 Cookie Policy
               </a>
             </div>
