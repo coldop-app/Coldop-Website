@@ -146,6 +146,13 @@ interface TopFarmer {
   };
 }
 
+interface CountResponse {
+  success: boolean;
+  currentCount: number;
+  message?: string;
+  error?: string;
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -496,6 +503,31 @@ export const storeAdminApi = {
       {
         headers: {
           'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  incrementCount: async () => {
+    const response = await axios.post<CountResponse>(
+      `${BASE_URL}/api/count/increment`,
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  },
+
+  getCount: async () => {
+    const response = await axios.get<CountResponse>(
+      `${BASE_URL}/api/count`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
         }
       }
     );

@@ -1,6 +1,8 @@
 import { useTranslation } from "react-i18next";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import SignInModal from "@/components/auth/SignInModal";
+import { storeAdminApi } from "@/lib/api/storeAdmin";
 
 interface CustomerImage {
   src: string;
@@ -17,11 +19,39 @@ interface HeroProps {
 }
 
 const Hero = ({
-  customerImages,
+  // customerImages,
   heroImage
 }: HeroProps) => {
   const { t } = useTranslation();
   const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Mutation to increment count
+  const { mutate: incrementCount } = useMutation({
+    mutationFn: () => storeAdminApi.incrementCount(),
+    onSuccess: () => {
+      // Invalidate and refetch the count query after successful increment
+      queryClient.invalidateQueries({ queryKey: ['visitorCount'] });
+    },
+    onError: (error) => {
+      console.error("Error incrementing count:", error);
+    }
+  });
+
+  // Query to get the current count
+  const { data: countData, isLoading, isError } = useQuery({
+    queryKey: ['visitorCount'],
+    queryFn: () => storeAdminApi.getCount(),
+    initialData: {
+      success: true,
+      currentCount: 0,
+    }
+  });
+
+  // Increment count on component mount
+  useEffect(() => {
+    incrementCount();
+  }, []); // Empty dependency array means this runs once on mount
 
   const handleHowItWorksClick = () => {
     const element = document.getElementById('how-it-works');
@@ -57,20 +87,38 @@ const Hero = ({
               </button>
             </div>
 
-            <div className="mt-10 flex items-center justify-center lg:mt-20">
+            <div className="mt-8 flex items-center justify-center lg:justify-start lg:mt-16">
               <div className="flex">
-                {customerImages.map((image, index) => (
+                {/* {customerImages.map((image, index) => (
                   <img
                     key={index}
                     className={`h-10 w-10 rounded-full border-[3px] border-solid border-[#fdf2e9] sm:h-12 sm:w-12 ${index < customerImages.length - 1 ? 'mr-[-14px]' : ''}`}
                     src={image.src}
                     alt={image.alt}
                   />
-                ))}
+                ))} */}
               </div>
-              <p className="delivered-text ml-20 text-base font-semibold leading-[1.05] tracking-[-0.5px] sm:ml-4 sm:text-xl sm:leading-normal sm:tracking-normal md:ml-10 lg:ml-20 xl:ml-4">
-                <span className="font-bold text-primary">{t('hero.customerStats.count')}</span> {t('hero.customerStats.text')}
-              </p>
+              <div className="flex items-center justify-center lg:justify-start">
+                <div className="flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full bg-primary/10 mr-3 sm:mr-4">
+                  <svg className="h-5 w-5 sm:h-6 sm:w-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+                  </svg>
+                </div>
+                <div className="text-center lg:text-left">
+                  <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-0 sm:mb-1 leading-none">
+                    {isLoading ? (
+                      "..."
+                    ) : isError ? (
+                      "300+"
+                    ) : (
+                      `${countData.currentCount.toLocaleString()}+`
+                    )}
+                  </p>
+                  <p className="text-xs sm:text-sm lg:text-base font-medium text-gray-600 leading-tight">
+                    customers visited our website.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 

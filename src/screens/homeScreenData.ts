@@ -89,14 +89,15 @@ export const pricingData: PricingData = {
   plans: [
     {
       name: "Starter",
-      price: "399",
-      currency: "$",
+      price: "36,500",
+      currency: "₹",
       period: "per month.",
       features: [
-        "1 crop per day",
-        "Order from 11am to 9pm",
-        "Recovery is free",
-        ""
+        "Order Management<br/><span class='text-muted text-sm'>Handle incoming & outgoing orders seamlessly</span>",
+        "Smart Analytics<br/><span class='text-muted text-sm'>Get detailed insights into your storage operations</span>",
+        "Stock Tracking<br/><span class='text-muted text-sm'>Monitor inventory levels and movements</span>",
+        "PDF Reports<br/><span class='text-muted text-sm'>Generate professional reports instantly</span>",
+        "WhatsApp Updates<br/><span class='text-muted text-sm'>Stay updated with instant notifications</span>"
       ],
       cta: {
         text: "Start storing",
@@ -105,14 +106,15 @@ export const pricingData: PricingData = {
     },
     {
       name: "Complete",
-      price: "649",
-      currency: "$",
+      price: "50,000",
+      currency: "₹",
       period: "per month.",
       features: [
-        "<strong>2 crops</strong> per day",
-        "Order <strong>24/7</strong>",
-        "Recovery is free",
-        "Get access to all storages"
+        "Everything in Starter<br/><span class='text-muted text-sm'>All features from the Starter plan</span>",
+        "Advanced Printing System<br/><span class='text-muted text-sm'>Print receipts and reports on demand</span>",
+        "Financial Management Suite<br/><span class='text-muted text-sm'>Handle payments and transactions efficiently</span>",
+        "Smart Rent Calculator<br/><span class='text-muted text-sm'>Automated rent calculations and billing</span>",
+        "HR Management Tools<br/><span class='text-muted text-sm'>Manage employee salaries and records</span>"
       ],
       cta: {
         text: "Start storing",

@@ -47,12 +47,18 @@ const Pricing = ({ plans }: PricingProps) => {
         </div>
         <div className="container mx-auto mb-12 grid max-w-[75rem] items-center gap-y-24 px-8">
           {plans.map((plan, index) => (
-            <div 
-              key={`mobile-plan-${index}`} 
-              className="w-[100%] justify-center rounded-[11px] border-4 border-solid border-secondary p-12"
+            <div
+              key={`mobile-plan-${index}`}
+              className={`w-[100%] justify-center rounded-[11px] ${
+                index === 1
+                  ? 'border border-solid border-primary bg-white p-14 shadow-lg'
+                  : 'border border-solid border-gray-200 p-12'
+              }`}
             >
               <header className="plan-header mb-12 text-center">
-                <p className="plan-name mb-8 text-base font-semibold uppercase tracking-[0.75] text-primary">
+                <p className={`plan-name mb-8 text-base font-semibold uppercase tracking-[0.75] ${
+                  index === 1 ? 'text-primary' : 'text-gray-600'
+                }`}>
                   {t(`pricing.plans.${index}.name`)}
                 </p>
                 <p className="plan-price mb-4 text-6xl font-semibold text-foreground">
@@ -63,10 +69,14 @@ const Pricing = ({ plans }: PricingProps) => {
                   {t(`pricing.plans.${index}.period`)}
                 </p>
               </header>
-              <ul className="list flex list-none flex-col gap-4">
-                {Array.from({ length: 4 }, (_, featureIndex) => (
-                  <li key={`mobile-feature-${index}-${featureIndex}`} className="flex items-center gap-4 text-base leading-[1.2]">
-                    <span dangerouslySetInnerHTML={{ __html: t(`pricing.plans.${index}.features.${featureIndex}`) }}></span>
+              <ul className="list flex list-none flex-col gap-6">
+                {Array.from({ length: 5 }, (_, featureIndex) => (
+                  <li key={`mobile-feature-${index}-${featureIndex}`} className="flex items-start gap-4">
+                    <span className="text-primary">✓</span>
+                    <span
+                      dangerouslySetInnerHTML={{ __html: t(`pricing.plans.${index}.features.${featureIndex}`) }}
+                      className="flex-1 [&_.text-muted]:text-gray-500 [&_.text-sm]:text-sm [&_.text-sm]:mt-1"
+                    />
                   </li>
                 ))}
               </ul>
@@ -112,9 +122,9 @@ const Pricing = ({ plans }: PricingProps) => {
             {t('pricing.heading')}
           </h2>
         </div>
-    
+
         <div className="mx-auto mb-12 grid max-w-[75rem] grid-cols-2 items-center justify-center gap-x-16 gap-y-24 px-8">
-          <div className="w-[75%] justify-self-end rounded-[11px] border-4 border-solid border-[#fdf2e9] p-11">
+          <div className="w-[75%] justify-self-end rounded-[11px] border border-solid border-gray-200 p-11">
             <header className="plan-header mb-12 text-center">
               <p className="plan-name mb-8 text-2xl font-semibold uppercase tracking-[0.75] text-primary">
                 {t('pricing.plans.0.name')}
@@ -127,10 +137,14 @@ const Pricing = ({ plans }: PricingProps) => {
                 {t('pricing.plans.0.period')}
               </p>
             </header>
-            <ul className="list flex list-none flex-col gap-4">
-              {Array.from({ length: 4 }, (_, featureIndex) => (
-                <li key={`desktop-feature-0-${featureIndex}`} className="flex items-center gap-4 text-lg leading-[1.2]">
-                  <span dangerouslySetInnerHTML={{ __html: t(`pricing.plans.0.features.${featureIndex}`) }}></span>
+            <ul className="list flex list-none flex-col gap-6">
+              {Array.from({ length: 5 }, (_, featureIndex) => (
+                <li key={`desktop-feature-0-${featureIndex}`} className="flex items-start gap-4">
+                  <span className="text-primary">✓</span>
+                  <span
+                    dangerouslySetInnerHTML={{ __html: t(`pricing.plans.0.features.${featureIndex}`) }}
+                    className="flex-1 [&_.text-muted]:text-gray-500 [&_.text-sm]:text-sm [&_.text-sm]:mt-1"
+                  />
                 </li>
               ))}
             </ul>
@@ -144,9 +158,9 @@ const Pricing = ({ plans }: PricingProps) => {
             </div>
           </div>
 
-          <div className="relative w-[75%] rounded-[11px] border-2 border-solid border-[#fdf2e9] p-12">
+          <div className="relative w-[85%] scale-105 rounded-[11px] border border-solid border-primary bg-white p-14 shadow-lg">
             <header className="plan-header mb-12 text-center">
-              <p className="plan-name mb-8 bg-secondary text-2xl font-semibold uppercase tracking-[0.75] text-primary">
+              <p className="plan-name mb-8 text-2xl font-semibold uppercase tracking-[0.75] text-primary">
                 {t('pricing.plans.1.name')}
               </p>
               <p className="plan-price mb-4 text-6xl font-semibold text-foreground">
@@ -157,10 +171,14 @@ const Pricing = ({ plans }: PricingProps) => {
                 {t('pricing.plans.1.period')}
               </p>
             </header>
-            <ul className="list flex list-none flex-col gap-4">
-              {Array.from({ length: 4 }, (_, featureIndex) => (
-                <li key={`desktop-feature-1-${featureIndex}`} className="leading-1.2 flex items-center gap-4 text-lg">
-                  <span dangerouslySetInnerHTML={{ __html: t(`pricing.plans.1.features.${featureIndex}`) }}></span>
+            <ul className="list flex list-none flex-col gap-6">
+              {Array.from({ length: 5 }, (_, featureIndex) => (
+                <li key={`desktop-feature-1-${featureIndex}`} className="flex items-start gap-4">
+                  <span className="text-primary">✓</span>
+                  <span
+                    dangerouslySetInnerHTML={{ __html: t(`pricing.plans.1.features.${featureIndex}`) }}
+                    className="flex-1 [&_.text-muted]:text-gray-500 [&_.text-sm]:text-sm [&_.text-sm]:mt-1"
+                  />
                 </li>
               ))}
             </ul>
