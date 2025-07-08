@@ -66,49 +66,8 @@ const Footer: React.FC<FooterProps> = ({
                 />
               </a>
 
-<<<<<<< HEAD
-              <ul className="social-links mt-4 flex list-none gap-6">
-                {socialLinks.map((link, index) => (
-                  <li key={`mobile-social-${index}`}>
-                    <a
-                      className="footer-link text-sm text-foreground no-underline transition-all hover:text-[primary] active:text-[primary]"
-                      href={link.href}
-                    >
-                      {link.icon}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <p className="copyright mt-14 text-xs leading-[1.6] text-[#767676]">
-              Copyright &copy; <span className="year">{year}</span> by{" "}
-              {companyName},  All rights reserved.
-            </p>
-          </div>
-
-          <div>
-            <p className="mx-auto mb-10 text-base font-medium">Contact us</p>
-            <address className="font-serif text-sm leading-[1.6]">
-              <p className="mb-6">{address}</p>
-              <p>
-                <a
-                  className="footer-link text-sm text-[#767676] no-underline transition-all hover:text-[#555] active:text-[#555]"
-                  href={`tel:${phone}`}
-                >
-                  {phone}
-                </a>
-                <br />
-                <a
-                  className="footer-link text-sm text-[#767676] no-underline transition-all hover:text-[#555] active:text-[#555]"
-                  href={`mailto:${email}`}
-                >
-                  {email}
-                </a>
-=======
               <p className="text-gray-600 text-sm max-w-md leading-relaxed">
                 The complete cold storage management platform. Mobile app, web dashboard, WhatsApp updates, and instant receipt printing — all in one system.
->>>>>>> dev
               </p>
 
               {/* Social Links */}
