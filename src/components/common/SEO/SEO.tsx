@@ -38,9 +38,9 @@ const SEO: React.FC<SEOProps> = ({
   canonicalUrl,
   lang = 'en',
   structuredData,
-  imageWidth = '512',
-  imageHeight = '512',
-  imageAlt = 'Coldop Logo',
+  imageWidth = '1200',
+  imageHeight = '630',
+  imageAlt = 'Coldop Logo - Complete Cold Storage Management Platform',
 }) => {
   const fullTitle = title.includes('Coldop') ? title : `${title} | Coldop`;
   const fullImageUrl = image.startsWith('http') ? image : `${url}${image}`;
@@ -68,6 +68,8 @@ const SEO: React.FC<SEOProps> = ({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={fullImageUrl} />
+      <meta property="og:image:secure_url" content={fullImageUrl} />
+      <meta property="og:image:type" content="image/png" />
       <meta property="og:image:width" content={imageWidth} />
       <meta property="og:image:height" content={imageHeight} />
       <meta property="og:image:alt" content={imageAlt} />
@@ -85,6 +87,13 @@ const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:site" content="@ColdopApp" />
       <meta name="twitter:creator" content="@ColdopApp" />
 
+      {/* LinkedIn specific meta tags */}
+      <meta property="og:image:user_generated" content="false" />
+
+      {/* Additional image meta tags for better compatibility */}
+      <meta name="image" content={fullImageUrl} />
+      <meta itemProp="image" content={fullImageUrl} />
+
       {/* Article Meta Tags */}
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
       {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
@@ -98,10 +107,10 @@ const SEO: React.FC<SEOProps> = ({
       <meta name="apple-mobile-web-app-title" content={siteName} />
 
       {/* Favicon and Apple Touch Icon Links */}
-      <link rel="icon" type="image/png" sizes="32x32" href={fullImageUrl} />
-      <link rel="icon" type="image/png" sizes="16x16" href={fullImageUrl} />
-      <link rel="apple-touch-icon" href={fullImageUrl} />
-      <link rel="mask-icon" href={fullImageUrl} color="oklch(0.63 0.17 149.2)" />
+      <link rel="icon" type="image/png" sizes="32x32" href="/coldop-logo.png" />
+      <link rel="icon" type="image/png" sizes="16x16" href="/coldop-logo.png" />
+      <link rel="apple-touch-icon" href="/coldop-logo.png" />
+      <link rel="mask-icon" href="/coldop-logo.png" color="oklch(0.63 0.17 149.2)" />
 
       {/* Structured Data */}
       {structuredData && (
