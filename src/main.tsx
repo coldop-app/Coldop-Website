@@ -13,6 +13,7 @@ import store from "./store.ts";
 import "./index.css";
 import App from "./App.tsx";
 import PrivateRoute from "./components/auth/PrivateRoute.tsx";
+import PublicRoute from "./components/auth/PublicRoute.tsx";
 import ERPLayout from "./components/layouts/ERPLayout.tsx";
 import NotFound from "./screens/NotFound/NotFound";
 import Error from "./screens/Error/Error";
@@ -53,31 +54,33 @@ const queryClient = new QueryClient();
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />} errorElement={<Error />}>
-        <Route index element={
-          <Suspense fallback={<LoadingFallback />}>
-            <HomeScreen />
-          </Suspense>
-        } />
-        <Route path="signup" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <StoreAdminSignup />
-          </Suspense>
-        } />
-        <Route path="signup/store-admin" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <StoreAdminSignup />
-          </Suspense>
-        } />
-        <Route path="login/store-admin" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <StoreAdminLogin />
-          </Suspense>
-        } />
-        <Route path="login/farmer" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <FarmerLogin />
-          </Suspense>
-        } />
+        <Route element={<PublicRoute />}>
+          <Route index element={
+            <Suspense fallback={<LoadingFallback />}>
+              <HomeScreen />
+            </Suspense>
+          } />
+          <Route path="signup" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <StoreAdminSignup />
+            </Suspense>
+          } />
+          <Route path="signup/store-admin" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <StoreAdminSignup />
+            </Suspense>
+          } />
+          <Route path="login/store-admin" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <StoreAdminLogin />
+            </Suspense>
+          } />
+          <Route path="login/farmer" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <FarmerLogin />
+            </Suspense>
+          } />
+        </Route>
 
         {/* Public pages */}
         <Route path="faq" element={
