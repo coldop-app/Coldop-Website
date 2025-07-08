@@ -17,6 +17,9 @@ interface SEOProps {
   canonicalUrl?: string;
   lang?: string;
   structuredData?: object;
+  imageWidth?: string;
+  imageHeight?: string;
+  imageAlt?: string;
 }
 
 const SEO: React.FC<SEOProps> = ({
@@ -35,6 +38,9 @@ const SEO: React.FC<SEOProps> = ({
   canonicalUrl,
   lang = 'en',
   structuredData,
+  imageWidth = '512',
+  imageHeight = '512',
+  imageAlt = 'Coldop Logo',
 }) => {
   const fullTitle = title.includes('Coldop') ? title : `${title} | Coldop`;
   const fullImageUrl = image.startsWith('http') ? image : `${url}${image}`;
@@ -62,6 +68,9 @@ const SEO: React.FC<SEOProps> = ({
       <meta property="og:title" content={fullTitle} />
       <meta property="og:description" content={description} />
       <meta property="og:image" content={fullImageUrl} />
+      <meta property="og:image:width" content={imageWidth} />
+      <meta property="og:image:height" content={imageHeight} />
+      <meta property="og:image:alt" content={imageAlt} />
       <meta property="og:url" content={fullUrl} />
       <meta property="og:type" content={type} />
       <meta property="og:site_name" content={siteName} />
@@ -72,6 +81,9 @@ const SEO: React.FC<SEOProps> = ({
       <meta name="twitter:title" content={fullTitle} />
       <meta name="twitter:description" content={description} />
       <meta name="twitter:image" content={fullImageUrl} />
+      <meta name="twitter:image:alt" content={imageAlt} />
+      <meta name="twitter:site" content="@ColdopApp" />
+      <meta name="twitter:creator" content="@ColdopApp" />
 
       {/* Article Meta Tags */}
       {publishedTime && <meta property="article:published_time" content={publishedTime} />}
@@ -79,8 +91,17 @@ const SEO: React.FC<SEOProps> = ({
 
       {/* Additional Meta Tags */}
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta name="theme-color" content="#3B82F6" />
-      <meta name="msapplication-TileColor" content="#3B82F6" />
+      <meta name="theme-color" content="oklch(0.63 0.17 149.2)" />
+      <meta name="msapplication-TileColor" content="oklch(0.63 0.17 149.2)" />
+      <meta name="msapplication-TileImage" content={fullImageUrl} />
+      <meta name="application-name" content={siteName} />
+      <meta name="apple-mobile-web-app-title" content={siteName} />
+
+      {/* Favicon and Apple Touch Icon Links */}
+      <link rel="icon" type="image/png" sizes="32x32" href={fullImageUrl} />
+      <link rel="icon" type="image/png" sizes="16x16" href={fullImageUrl} />
+      <link rel="apple-touch-icon" href={fullImageUrl} />
+      <link rel="mask-icon" href={fullImageUrl} color="oklch(0.63 0.17 149.2)" />
 
       {/* Structured Data */}
       {structuredData && (

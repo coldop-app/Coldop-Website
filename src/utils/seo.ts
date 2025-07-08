@@ -5,10 +5,13 @@ export const SEO_CONSTANTS = {
   SITE_DESCRIPTION: 'Mobile app, web dashboard, WhatsApp updates, and instant receipt printing — all in one system. Stay connected and in control. Anytime, anywhere.',
   SITE_KEYWORDS: 'cold storage, agriculture, farming, inventory management, mobile app, web dashboard, WhatsApp updates, receipt printing, harvest management',
   SITE_IMAGE: '/coldop-logo.png',
+  SITE_IMAGE_WIDTH: '512',
+  SITE_IMAGE_HEIGHT: '512',
+  SITE_IMAGE_ALT: 'Coldop Logo - Complete Cold Storage Management Platform',
   AUTHOR: 'Coldop Team',
   TWITTER_HANDLE: '@ColdopApp',
   FACEBOOK_APP_ID: '',
-  THEME_COLOR: '#3B82F6',
+  THEME_COLOR: 'oklch(0.63 0.17 149.2)',
 };
 
 // Page-specific SEO data
