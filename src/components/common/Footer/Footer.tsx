@@ -33,17 +33,17 @@ const Footer: React.FC<FooterProps> = ({
   // Create social icons map
   const socialIcons = [
     {
-      icon: <Instagram className="h-5 w-5 transition-colors" />,
-      href: "https://instagram.com/coldop",
+      icon: <Instagram className="h-5 w-5 transition-all group-hover:scale-110 group-hover:rotate-6" />,
+      href: "https://www.instagram.com/coldop.in/",
       label: "Instagram"
     },
     {
-      icon: <Linkedin className="h-5 w-5 transition-colors" />,
-      href: "https://linkedin.com/company/coldop",
+      icon: <Linkedin className="h-5 w-5 transition-all group-hover:scale-110 group-hover:rotate-6" />,
+      href: "https://www.linkedin.com/company/coldop/",
       label: "LinkedIn"
     },
     {
-      icon: <Twitter className="h-5 w-5 transition-colors" />,
+      icon: <Twitter className="h-5 w-5 transition-all group-hover:scale-110 group-hover:rotate-6" />,
       href: "https://twitter.com/coldop",
       label: "Twitter"
     }
@@ -78,7 +78,7 @@ const Footer: React.FC<FooterProps> = ({
                     href={social.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-2 text-gray-500 hover:text-primary hover:bg-white rounded-lg transition-all duration-200 border border-transparent hover:border-gray-200 hover:shadow-sm"
+                    className="group p-2 text-gray-500 hover:text-primary transition-all duration-300 ease-in-out"
                     aria-label={social.label}
                   >
                     {social.icon}
