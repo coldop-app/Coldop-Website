@@ -8,10 +8,12 @@ import {
 } from "react-router-dom";
 import { Provider } from "react-redux";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import store from "./store.ts";
 import "./index.css";
 import App from "./App.tsx";
 import PrivateRoute from "./components/auth/PrivateRoute.tsx";
+import PublicRoute from "./components/auth/PublicRoute.tsx";
 import ERPLayout from "./components/layouts/ERPLayout.tsx";
 import NotFound from "./screens/NotFound/NotFound";
 import Error from "./screens/Error/Error";
@@ -33,6 +35,12 @@ const ProfileSettingsScreen = lazy(() => import("./screens/Erp/ProfileSettingsSc
 const BillingSettingsScreen = lazy(() => import("./screens/Erp/BillingSettingsScreen.tsx"));
 const ContactSupportScreen = lazy(() => import("./screens/Erp/ContactSupportScreen.tsx"));
 
+// New pages
+const FAQ = lazy(() => import("./screens/FAQ/FAQ.tsx"));
+const Support = lazy(() => import("./screens/Support/Support.tsx"));
+const Privacy = lazy(() => import("./screens/Privacy/Privacy.tsx"));
+const CaseStudies = lazy(() => import("./screens/CaseStudies/CaseStudies.tsx"));
+
 // Loading component
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
@@ -46,31 +54,56 @@ const queryClient = new QueryClient();
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />} errorElement={<Error />}>
-        <Route index element={
+        <Route element={<PublicRoute />}>
+          <Route index element={
+            <Suspense fallback={<LoadingFallback />}>
+              <HomeScreen />
+            </Suspense>
+          } />
+          <Route path="signup" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <StoreAdminSignup />
+            </Suspense>
+          } />
+          <Route path="signup/store-admin" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <StoreAdminSignup />
+            </Suspense>
+          } />
+          <Route path="login/store-admin" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <StoreAdminLogin />
+            </Suspense>
+          } />
+          <Route path="login/farmer" element={
+            <Suspense fallback={<LoadingFallback />}>
+              <FarmerLogin />
+            </Suspense>
+          } />
+        </Route>
+
+        {/* Public pages */}
+        <Route path="faq" element={
           <Suspense fallback={<LoadingFallback />}>
-            <HomeScreen />
+            <FAQ />
           </Suspense>
         } />
-        <Route path="signup" element={
+        <Route path="support" element={
           <Suspense fallback={<LoadingFallback />}>
-            <StoreAdminSignup />
+            <Support />
           </Suspense>
         } />
-        <Route path="signup/store-admin" element={
+        <Route path="privacy" element={
           <Suspense fallback={<LoadingFallback />}>
-            <StoreAdminSignup />
+            <Privacy />
           </Suspense>
         } />
-        <Route path="login/store-admin" element={
+        <Route path="case-studies" element={
           <Suspense fallback={<LoadingFallback />}>
-            <StoreAdminLogin />
+            <CaseStudies />
           </Suspense>
         } />
-        <Route path="login/farmer" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <FarmerLogin />
-          </Suspense>
-        } />
+
       <Route path="" element={<PrivateRoute />}>
         <Route path="erp" element={<ERPLayout />}>
           <Route path="daybook" element={
@@ -139,10 +172,12 @@ const router = createBrowserRouter(
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Provider store={store}>
-      <QueryClientProvider client={queryClient}>
-        <RouterProvider router={router} />
-      </QueryClientProvider>
-    </Provider>
+    <HelmetProvider>
+      <Provider store={store}>
+        <QueryClientProvider client={queryClient}>
+          <RouterProvider router={router} />
+        </QueryClientProvider>
+      </Provider>
+    </HelmetProvider>
   </StrictMode>
 );

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, RefObject } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useBeforeUnload } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { ArrowLeft, Upload, Check, X, Image as ImageIcon, Pencil, Trash2, Plus, Phone } from "lucide-react";
+import { ArrowLeft, Upload, Check, X, Image as ImageIcon, Pencil, Trash2, Plus, Phone, GripVertical } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,6 +69,11 @@ const ProfileSettingsScreen = () => {
   const dispatch = useDispatch();
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
 
+  // Add state for tracking unsaved changes
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+
   // Redirect if not logged in or not a store admin
   useEffect(() => {
     if (!adminInfo || !isStoreAdmin(adminInfo)) {
@@ -86,7 +91,7 @@ const ProfileSettingsScreen = () => {
     coldStorageContactNumber: "",
     capacity: "",
     imageUrl: "",
-    bagSizes: ["ration", "seed", "number-12", "goli", "cut-tok"]
+    bagSizes: [] as string[]  // Initialize as empty array
   });
 
   // Image handling states
@@ -97,7 +102,58 @@ const ProfileSettingsScreen = () => {
   const [newBagSize, setNewBagSize] = useState("");
   const [editingBagSize, setEditingBagSize] = useState<string | null>(null);
   const [editingValue, setEditingValue] = useState("");
-  const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
+
+  // Add drag and drop states
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Drag and drop handlers for bag sizes
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    const newBagSizes = [...formData.bagSizes];
+    const draggedItem = newBagSizes[draggedIndex];
+
+    // Remove the dragged item
+    newBagSizes.splice(draggedIndex, 1);
+
+    // Insert at the new position
+    newBagSizes.splice(dropIndex, 0, draggedItem);
+
+    setFormData(prev => ({
+      ...prev,
+      bagSizes: newBagSizes
+    }));
+
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   // Bag size handlers
   const handleAddBagSize = () => {
@@ -113,13 +169,10 @@ const ProfileSettingsScreen = () => {
   };
 
   const handleRemoveCustomBagSize = (bagSize: string) => {
-    // Only allow removing if not a default
-    if (!defaultBagSizes.includes(bagSize)) {
-      setFormData(prev => ({
-        ...prev,
-        bagSizes: prev.bagSizes.filter(size => size !== bagSize)
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      bagSizes: prev.bagSizes.filter(size => size !== bagSize)
+    }));
   };
 
   const handleEditBagSize = (bagSize: string) => {
@@ -163,7 +216,7 @@ const ProfileSettingsScreen = () => {
         coldStorageContactNumber: adminInfo.coldStorageDetails.coldStorageContactNumber || "",
         capacity: adminInfo.coldStorageDetails.capacity?.toString() || "",
         imageUrl: adminInfo.imageUrl || "",
-        bagSizes: adminInfo.preferences?.bagSizes?.map(size => size.toLowerCase()) || defaultBagSizes
+        bagSizes: adminInfo.preferences?.bagSizes?.map(size => size.toLowerCase()) || []
       });
       if (adminInfo.imageUrl) {
         setImagePreview(adminInfo.imageUrl);
@@ -449,6 +502,63 @@ const ProfileSettingsScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPasswordFields, setShowPasswordFields] = useState(false);
 
+  // Add effect to track form changes
+  useEffect(() => {
+    if (adminInfo && isStoreAdmin(adminInfo)) {
+      const hasChanges =
+        formData.name !== (adminInfo.name || "") ||
+        formData.personalAddress !== (adminInfo.personalAddress || "") ||
+        formData.mobileNumber !== (adminInfo.mobileNumber || "") ||
+        formData.coldStorageName !== (adminInfo.coldStorageDetails.coldStorageName || "") ||
+        formData.coldStorageAddress !== (adminInfo.coldStorageDetails.coldStorageAddress || "") ||
+        formData.coldStorageContactNumber !== (adminInfo.coldStorageDetails.coldStorageContactNumber || "") ||
+        formData.capacity !== (adminInfo.coldStorageDetails.capacity?.toString() || "") ||
+        formData.imageUrl !== (adminInfo.imageUrl || "") ||
+        JSON.stringify(formData.bagSizes) !== JSON.stringify(adminInfo.preferences?.bagSizes?.map(size => size.toLowerCase()) || []) ||
+        password !== "" ||
+        confirmPassword !== "";
+
+      setHasUnsavedChanges(hasChanges);
+    }
+  }, [formData, password, confirmPassword, adminInfo]);
+
+  // Add browser navigation warning
+  useBeforeUnload(
+    React.useCallback(
+      (event) => {
+        if (hasUnsavedChanges) {
+          event.preventDefault();
+          event.returnValue = "";
+        }
+      },
+      [hasUnsavedChanges]
+    )
+  );
+
+  // Modify navigation handler
+  const handleNavigation = (path: string) => {
+    if (hasUnsavedChanges) {
+      setPendingNavigation(path);
+      setShowUnsavedDialog(true);
+    } else {
+      navigate(path);
+    }
+  };
+
+  const handleConfirmNavigation = () => {
+    setShowUnsavedDialog(false);
+    if (pendingNavigation) {
+      navigate(pendingNavigation);
+    }
+    setPendingNavigation(null);
+  };
+
+  const handleCancelNavigation = () => {
+    setShowUnsavedDialog(false);
+    setPendingNavigation(null);
+  };
+
+  // Modify the submit handler to reset unsaved changes
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!adminInfo || !isStoreAdmin(adminInfo)) return;
@@ -486,7 +596,8 @@ const ProfileSettingsScreen = () => {
       ? { ...basePayload, password }
       : basePayload as UpdateProfilePayload; // Type assertion since password is optional in UpdateProfilePayload
 
-    updateProfile(payload);
+    await updateProfile(payload);
+    setHasUnsavedChanges(false);  // Reset unsaved changes after successful update
   };
 
   return (
@@ -495,12 +606,33 @@ const ProfileSettingsScreen = () => {
         <Button
           variant="ghost"
           className="mr-4 -ml-4"
-          onClick={() => navigate('/erp/settings')}
+          onClick={() => handleNavigation('/erp/settings')}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Settings
         </Button>
       </div>
+
+      {/* Add Unsaved Changes Dialog */}
+      <AlertDialog open={showUnsavedDialog} onOpenChange={setShowUnsavedDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={handleCancelNavigation}>Stay</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmNavigation}
+              className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
+            >
+              Leave Without Saving
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Add AlertDialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
@@ -892,15 +1024,32 @@ const ProfileSettingsScreen = () => {
             <div className="space-y-4 pt-6">
               <h3 className="text-lg font-semibold">Bag Size Preferences</h3>
               <p className="text-sm text-muted-foreground">
-                Select the bag sizes you use in your cold storage.
+                Manage the bag sizes you use in your cold storage. You can drag and drop to reorder them.
               </p>
 
               <div className="space-y-3">
-                {[...new Set([...defaultBagSizes, ...formData.bagSizes])].map((size) => (
+                {formData.bagSizes.map((size, index) => (
                   <div
                     key={size}
-                    className="flex items-center gap-2 sm:gap-3 py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
+                    draggable={editingBagSize !== size}
+                    onDragStart={(e) => handleDragStart(e, index)}
+                    onDragOver={(e) => handleDragOver(e, index)}
+                    onDragLeave={handleDragLeave}
+                    onDrop={(e) => handleDrop(e, index)}
+                    onDragEnd={handleDragEnd}
+                    className={`flex items-center gap-2 sm:gap-3 py-2 px-2 rounded-md transition-colors ${
+                      draggedIndex === index
+                        ? 'opacity-50 bg-muted'
+                        : dragOverIndex === index
+                          ? 'bg-blue-50 border-2 border-blue-300 border-dashed'
+                          : 'hover:bg-muted/50'
+                    } ${editingBagSize !== size ? 'cursor-move' : ''}`}
                   >
+                    {editingBagSize !== size && (
+                      <div className="cursor-move text-muted-foreground">
+                        <GripVertical size={16} />
+                      </div>
+                    )}
                     {editingBagSize === size ? (
                       <>
                         <input
@@ -933,7 +1082,7 @@ const ProfileSettingsScreen = () => {
                       </>
                     ) : (
                       <>
-                        <label className="ml-2 text-sm font-medium flex-1 truncate">
+                        <label className="text-sm font-medium flex-1 truncate">
                           {size.charAt(0).toUpperCase() + size.slice(1).replace(/-/g, " ")}
                         </label>
                         <button

@@ -137,6 +137,22 @@ interface DeleteProfilePhotoResponse {
   message?: string;
 }
 
+interface TopFarmer {
+  farmerId: string;
+  farmerName: string;
+  totalBags: number;
+  bagSummary: {
+    [key: string]: number;
+  };
+}
+
+interface CountResponse {
+  success: boolean;
+  currentCount: number;
+  message?: string;
+  error?: string;
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -472,6 +488,47 @@ export const storeAdminApi = {
           'Content-Type': 'application/json'
         },
         data: payload
+      }
+    );
+    return response.data;
+  },
+
+  getTopFarmers: async (token: string) => {
+    const response = await axios.get<{
+      status: string;
+      message: string;
+      data: TopFarmer[];
+    }>(
+      `${BASE_URL}/api/store-admin/top-farmers`,
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  incrementCount: async () => {
+    const response = await axios.post<CountResponse>(
+      `${BASE_URL}/api/count/increment`,
+      {},
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  },
+
+  getCount: async () => {
+    const response = await axios.get<CountResponse>(
+      `${BASE_URL}/api/count`,
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       }
     );
     return response.data;

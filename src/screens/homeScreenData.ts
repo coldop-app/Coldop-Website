@@ -32,7 +32,7 @@ export const heroData: HeroData = {
   heading: "The Complete Cold Storage Management Platform.",
   description: "Mobile app, web dashboard, WhatsApp updates, and instant receipt printing — all in one system. Stay connected and in control. Anytime, anywhere.",
   ctaButtons: [
-    { text: "Start Managing", link: "#" },
+    { text: "Start Today", link: "#" },
     { text: "How It Works ↓", link: "#" }
   ],
   customerImages: [
@@ -48,8 +48,8 @@ export const heroData: HeroData = {
     text: "using Coldop to manage their harvests."
   },
   heroImage: {
-    webp: "./hero.webp",
-    png: "./hero-min.png",
+    webp: "",
+    png: "/hero-min.png",
     alt: "Woman enjoying food, meals in storage container, and food bowls on a table"
   }
 };
@@ -89,14 +89,15 @@ export const pricingData: PricingData = {
   plans: [
     {
       name: "Starter",
-      price: "399",
-      currency: "$",
+      price: "36,500",
+      currency: "₹",
       period: "per month.",
       features: [
-        "1 crop per day",
-        "Order from 11am to 9pm",
-        "Recovery is free",
-        ""
+        "Order Management<br/><span class='text-muted text-sm'>Handle incoming & outgoing orders seamlessly</span>",
+        "Smart Analytics<br/><span class='text-muted text-sm'>Get detailed insights into your storage operations</span>",
+        "Stock Tracking<br/><span class='text-muted text-sm'>Monitor inventory levels and movements</span>",
+        "PDF Reports<br/><span class='text-muted text-sm'>Generate professional reports instantly</span>",
+        "WhatsApp Updates<br/><span class='text-muted text-sm'>Stay updated with instant notifications</span>"
       ],
       cta: {
         text: "Start storing",
@@ -105,14 +106,15 @@ export const pricingData: PricingData = {
     },
     {
       name: "Complete",
-      price: "649",
-      currency: "$",
+      price: "50,000",
+      currency: "₹",
       period: "per month.",
       features: [
-        "<strong>2 crops</strong> per day",
-        "Order <strong>24/7</strong>",
-        "Recovery is free",
-        "Get access to all storages"
+        "Everything in Starter<br/><span class='text-muted text-sm'>All features from the Starter plan</span>",
+        "Advanced Printing System<br/><span class='text-muted text-sm'>Print receipts and reports on demand</span>",
+        "Financial Management Suite<br/><span class='text-muted text-sm'>Handle payments and transactions efficiently</span>",
+        "Smart Rent Calculator<br/><span class='text-muted text-sm'>Automated rent calculations and billing</span>",
+        "HR Management Tools<br/><span class='text-muted text-sm'>Manage employee salaries and records</span>"
       ],
       cta: {
         text: "Start storing",
@@ -276,48 +278,41 @@ export interface FooterData {
   address: string;
   phone: string;
   email: string;
-  socialLinks: SocialLink[];
   navColumns: FooterNavColumn[];
 }
 
 // Footer data
 export const footerData: FooterData = {
-  companyName: "Coldstorage",
-  year: "2027",
-  logo: "omnifood-logo.png",
-  address: "623 Harrison St., 2nd Floor, San Francisco, CA 94107",
-  phone: "415-201-6370",
-  email: "hello@omnifood.com",
-  socialLinks: [
-    { icon: "I1", href: "#" },
-    { icon: "I1", href: "#" },
-    { icon: "I1", href: "#" }
-  ],
+  companyName: "Coldop",
+  year: new Date().getFullYear().toString(),
+  logo: "/coldop-logo.png",
+  address: "123 Cold Storage Lane, Tech Park, Bangalore 560001",
+  phone: "+91 9877741375 / +91 9646996729",
+  email: "coldop.app@gmail.com",
   navColumns: [
-    {
-      title: "Account",
-      links: [
-        { text: "Create account", href: "#" },
-        { text: "Sign In", href: "#" },
-        { text: "iOS app", href: "#" },
-        { text: "Android app", href: "#" }
-      ]
-    },
     {
       title: "Company",
       links: [
-        { text: "About Cold Storage", href: "#" },
-        { text: "For Business", href: "#" },
-        { text: "Our partners", href: "#" },
-        { text: "Careers", href: "#" }
+        { text: "About", href: "#about" },
+        { text: "How it works", href: "#how-it-works" },
+        { text: "Pricing", href: "#pricing" },
+        { text: "Case Studies", href: "/case-studies" }
       ]
     },
     {
       title: "Resources",
       links: [
-        { text: "Recipe directory", href: "#" },
-        { text: "Help center", href: "#" },
-        { text: "Privacy & terms", href: "#" }
+        { text: "Help center", href: "/support" },
+        { text: "Privacy & terms", href: "/privacy" },
+        { text: "FAQs", href: "/faq" }
+      ]
+    },
+    {
+      title: "Get in touch",
+      links: [
+        { text: "Support", href: "mailto:coldop.app@gmail.com?subject=Support Request&body=Hi Coldop team,%0D%0A%0D%0AI need help with:" },
+        { text: "Partner with us", href: "mailto:coldop.app@gmail.com?subject=Partnership Inquiry&body=Hi Coldop team,%0D%0A%0D%0AI'm interested in partnering with Coldop:" },
+        { text: "Careers", href: "mailto:coldop.app@gmail.com?subject=Career Inquiry&body=Hi Coldop team,%0D%0A%0D%0AI'm interested in career opportunities at Coldop:" }
       ]
     }
   ]

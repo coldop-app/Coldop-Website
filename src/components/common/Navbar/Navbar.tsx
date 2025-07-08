@@ -53,13 +53,6 @@ const Navbar = () => {
     };
   }, []);
 
-  const handleSectionClick = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
-    }
-  };
-
   const openSignInModal = () => {
     setIsSignInModalOpen(true);
   };
@@ -90,12 +83,12 @@ const Navbar = () => {
         className={`${navbarClass} flex h-16 items-center justify-between px-6 lg:hidden`}
         style={navbarStyle}
       >
-        <Link to="/" className="cursor-pointer">
+        <Link to="/" className="cursor-pointer flex items-center">
           <img src="/coldop-logo.png" alt="Coldop Logo" className="w-10" />
         </Link>
-        <nav>
+        <nav className="flex items-center">
           <Sheet>
-            <SheetTrigger>
+            <SheetTrigger className="flex items-center">
               <Menu size={24} />
             </SheetTrigger>
             <SheetContent side={side}>
@@ -103,46 +96,34 @@ const Navbar = () => {
                 <SheetDescription className="font-custom m-4 inline-block cursor-pointer text-xl font-medium no-underline duration-100 active:underline">
                   <nav>
                     <ul className="flex list-none flex-col items-center gap-8">
-                      <li>
-                        <button
-                          onClick={() => handleSectionClick('how-it-works')}
-                          className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
-                        >
-                          {t('nav.howItWorks')}
-                        </button>
+                      <li className="flex items-center">
+                        <Link to="/" className="font-custom inline-flex items-center cursor-pointer font-medium no-underline duration-100 active:underline">
+                          {t('nav.home')}
+                        </Link>
                       </li>
-                      <li>
-                        <button
-                          onClick={() => handleSectionClick('testimonials')}
-                          className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
-                        >
-                          {t('nav.testimonials')}
-                        </button>
+                      <li className="flex items-center">
+                        <Link to="/faq" className="font-custom inline-flex items-center cursor-pointer font-medium no-underline duration-100 active:underline">
+                          {t('nav.faq')}
+                        </Link>
                       </li>
-                      <li>
-                        <button
-                          onClick={() => handleSectionClick('pricing')}
-                          className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
-                        >
-                          {t('nav.pricing')}
-                        </button>
+                      <li className="flex items-center">
+                        <Link to="/case-studies" className="font-custom inline-flex items-center cursor-pointer font-medium no-underline duration-100 active:underline">
+                          {t('nav.caseStudies')}
+                        </Link>
                       </li>
-                      <li>
-                        <button
-                          onClick={() => handleSectionClick('about')}
-                          className="font-custom inline-block cursor-pointer font-medium no-underline duration-100 active:underline"
-                        >
-                          {t('nav.about')}
-                        </button>
+                      <li className="flex items-center">
+                        <Link to="/support" className="font-custom inline-flex items-center cursor-pointer font-medium no-underline duration-100 active:underline">
+                          {t('nav.support')}
+                        </Link>
                       </li>
-                      <li>
+                      <li className="flex items-center">
                         <LanguageSelector isMobile={true} />
                       </li>
-                      <li>
+                      <li className="flex items-center">
                         <SheetClose asChild>
                           <button
                             onClick={openSignInModal}
-                            className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
+                            className="font-custom inline-flex items-center cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
                           >
                             {t('nav.signIn')}
                           </button>
@@ -162,50 +143,38 @@ const Navbar = () => {
         className={`${navbarClass} hidden h-20 items-center justify-between px-16 lg:flex`}
         style={navbarStyle}
       >
-        <Link to="/" className="cursor-pointer">
+        <Link to="/" className="cursor-pointer flex items-center">
           <img src="/coldop-logo.png" alt="Coldop Logo" className="w-16" />
         </Link>
-        <nav>
+        <nav className="flex items-center">
           <ul className="flex list-none items-center gap-12">
-            <li>
-              <button
-                onClick={() => handleSectionClick('how-it-works')}
-                className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
-              >
-                {t('nav.howItWorks')}
-              </button>
+            <li className="flex items-center">
+              <Link to="/" className="font-custom inline-flex items-center cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline">
+                {t('nav.home')}
+              </Link>
             </li>
-            <li>
-              <button
-                onClick={() => handleSectionClick('testimonials')}
-                className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
-              >
-                {t('nav.testimonials')}
-              </button>
+            <li className="flex items-center">
+              <Link to="/faq" className="font-custom inline-flex items-center cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline">
+                {t('nav.faq')}
+              </Link>
             </li>
-            <li>
-              <button
-                onClick={() => handleSectionClick('pricing')}
-                className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
-              >
-                {t('nav.pricing')}
-              </button>
+            <li className="flex items-center">
+              <Link to="/case-studies" className="font-custom inline-flex items-center cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline">
+                {t('nav.caseStudies')}
+              </Link>
             </li>
-            <li>
-              <button
-                onClick={() => handleSectionClick('about')}
-                className="font-custom inline-block cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline"
-              >
-                {t('nav.about')}
-              </button>
+            <li className="flex items-center">
+              <Link to="/support" className="font-custom inline-flex items-center cursor-pointer text-xl font-medium no-underline duration-100 hover:text-primary active:underline">
+                {t('nav.support')}
+              </Link>
             </li>
-            <li>
-              <LanguageSelector />
+            <li className="flex items-center">
+              <LanguageSelector isMobile={false} />
             </li>
-            <li>
+            <li className="flex items-center">
               <button
                 onClick={openSignInModal}
-                className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
+                className="font-custom inline-flex items-center cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
               >
                 {t('nav.signIn')}
               </button>

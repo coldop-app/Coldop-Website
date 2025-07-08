@@ -3,12 +3,22 @@ import Footer from "@/components/common/Footer/Footer";
 import FarmerLoginForm from "@/components/auth/FarmerLoginForm";
 import { useTranslation } from 'react-i18next';
 import { footerData } from "../homeScreenData";
+import SEO from "@/components/common/SEO/SEO";
+import { SEO_PAGES, getPageUrl } from "@/utils/seo";
 
 const FarmerLogin = () => {
   const { t } = useTranslation();
-  
+
   return (
     <>
+      <SEO
+        title={SEO_PAGES.FARMER_LOGIN.title}
+        description={SEO_PAGES.FARMER_LOGIN.description}
+        keywords={SEO_PAGES.FARMER_LOGIN.keywords}
+        url={getPageUrl('/login/farmer')}
+        noindex={SEO_PAGES.FARMER_LOGIN.noindex}
+        nofollow={SEO_PAGES.FARMER_LOGIN.nofollow}
+      />
       <Navbar />
       <div className="py-16 px-4 bg-secondary min-h-screen">
         <div className="container mx-auto max-w-4xl">

@@ -1,9 +1,5 @@
 import React from 'react';
-
-interface SocialLink {
-  icon: string;
-  href: string;
-}
+import { Instagram, Linkedin, Twitter } from 'lucide-react';
 
 interface FooterNavLink {
   text: string;
@@ -22,7 +18,6 @@ interface FooterProps {
   address: string;
   phone: string;
   email: string;
-  socialLinks: SocialLink[];
   navColumns: FooterNavColumn[];
 }
 
@@ -33,51 +28,45 @@ const Footer: React.FC<FooterProps> = ({
   address,
   phone,
   email,
-  socialLinks,
   navColumns
 }) => {
-  return (
-    <>
-      {/* Mobile Footer */}
-      <footer
-        id="footer"
-        className="border-t border-solid border-gray-300 py-[8rem] sm:hidden"
-      >
-        <div
-          className="mx-auto grid max-w-[75rem] gap-x-8 gap-y-24 px-8"
-          style={{
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gridTemplateRows: "1fr 1fr",
-          }}
-        >
-          {navColumns.map((column, index) => (
-            <nav key={`mobile-nav-${index}`}>
-              <p className="mb-8 text-base font-medium">{column.title}</p>
-              <ul className="flex list-none flex-col gap-6">
-                {column.links.map((link, linkIndex) => (
-                  <li key={`mobile-nav-${index}-link-${linkIndex}`}>
-                    <a
-                      className="text-sm text-[#767676] no-underline transition-all hover:text-[#555] active:text-[#555]"
-                      href={link.href}
-                    >
-                      {link.text}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          ))}
+  // Create social icons map
+  const socialIcons = [
+    {
+      icon: <Instagram className="h-5 w-5 transition-all group-hover:scale-110 group-hover:rotate-6" />,
+      href: "https://www.instagram.com/coldop.in/",
+      label: "Instagram"
+    },
+    {
+      icon: <Linkedin className="h-5 w-5 transition-all group-hover:scale-110 group-hover:rotate-6" />,
+      href: "https://www.linkedin.com/company/coldop/",
+      label: "LinkedIn"
+    },
+    {
+      icon: <Twitter className="h-5 w-5 transition-all group-hover:scale-110 group-hover:rotate-6" />,
+      href: "https://twitter.com/coldop",
+      label: "Twitter"
+    }
+  ];
 
-          <div className="flex flex-col">
-            <div>
-              <a href="#" className="footer-logo">
+  return (
+    <footer className="bg-secondary border-t border-gray-200">
+      {/* Main Footer Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8 lg:gap-12">
+
+          {/* Company Info - Mobile: Full width, Desktop: 2 columns */}
+          <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-4">
+              <a href="/" className="inline-block">
                 <img
-                  className="mt-[4.5px]"
+                  className="h-10 w-auto"
                   alt={`${companyName} logo`}
                   src={logo}
                 />
               </a>
 
+<<<<<<< HEAD
               <ul className="social-links mt-4 flex list-none gap-6">
                 {socialLinks.map((link, index) => (
                   <li key={`mobile-social-${index}`}>
@@ -116,92 +105,113 @@ const Footer: React.FC<FooterProps> = ({
                 >
                   {email}
                 </a>
+=======
+              <p className="text-gray-600 text-sm max-w-md leading-relaxed">
+                The complete cold storage management platform. Mobile app, web dashboard, WhatsApp updates, and instant receipt printing — all in one system.
+>>>>>>> dev
               </p>
-            </address>
-          </div>
-        </div>
-      </footer>
 
-      {/* Desktop Footer */}
-      <footer
-        id="footer"
-        className="hidden border-t border-solid border-gray-300 py-[8rem] sm:block"
-      >
-        <div
-          className="mx-auto grid max-w-[75rem] gap-x-16 gap-y-24 px-8 md:grid-cols-5"
-          style={{
-            gridTemplateColumns: "1.5fr 1.5fr 1fr 1fr 1fr",
-          }}
-        >
-          <div className="flex flex-col">
-            <a href="#">
-              <img
-                className="logo mt-[6px] h-4 w-32"
-                alt={`${companyName} logo`}
-                src={logo}
-              />
-            </a>
-
-            <ul className="social-links mt-6 flex list-none gap-6">
-              {socialLinks.map((link, index) => (
-                <li key={`desktop-social-${index}`}>
+              {/* Social Links */}
+              <div className="flex space-x-4">
+                {socialIcons.map((social, index) => (
                   <a
-                    className="footer-link text-base text-foreground no-underline transition-all hover:text-[primary] active:text-[primary]"
-                    href={link.href}
+                    key={index}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group p-2 text-gray-500 hover:text-primary transition-all duration-300 ease-in-out"
+                    aria-label={social.label}
                   >
-                    {link.icon}
+                    {social.icon}
                   </a>
-                </li>
-              ))}
-            </ul>
-            <p className="copyright mt-20 text-sm leading-[1.6] text-[#767676]">
-              Copyright &copy; <span className="year">{year}</span> by{" "}
-              {companyName}, Inc. All rights reserved.
-            </p>
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div>
-            <p className="mb-10 text-lg font-medium">Contact us</p>
-            <address className="contacts font-serif text-base leading-[1.6]">
-              <p className="address mb-6">{address}</p>
-              <p>
-                <a
-                  className="footer-link text-base text-[#767676] no-underline transition-all hover:text-[#555] active:text-[#555]"
-                  href={`tel:${phone}`}
-                >
-                  {phone}
-                </a>
-                <br />
-                <a
-                  className="footer-link text-base text-[#767676] no-underline transition-all hover:text-[#555] active:text-[#555]"
-                  href={`mailto:${email}`}
-                >
-                  {email}
-                </a>
+          {/* Contact Info */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
+              Contact us
+            </h3>
+            <div className="space-y-3 text-sm">
+              <p className="text-gray-600 leading-relaxed">
+                {address}
               </p>
-            </address>
+              <div className="space-y-2">
+                <p>
+                  <a
+                    href={`tel:${phone.split(' / ')[0]}`}
+                    className="text-gray-600 hover:text-primary transition-colors"
+                  >
+                    {phone.split(' / ')[0]}
+                  </a>
+                </p>
+                <p>
+                  <a
+                    href={`tel:${phone.split(' / ')[1]}`}
+                    className="text-gray-600 hover:text-primary transition-colors"
+                  >
+                    {phone.split(' / ')[1]}
+                  </a>
+                </p>
+                <p>
+                  <a
+                    href={`mailto:${email}`}
+                    className="text-gray-600 hover:text-primary transition-colors"
+                  >
+                    {email}
+                  </a>
+                </p>
+              </div>
+            </div>
           </div>
 
+          {/* Navigation Columns */}
           {navColumns.map((column, index) => (
-            <nav className="nav-col" key={`desktop-nav-${index}`}>
-              <p className="footer-heading mb-10 text-lg font-medium">{column.title}</p>
-              <ul className="footer-nav flex list-none flex-col gap-6">
+            <div key={index} className="space-y-4">
+              <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
+                {column.title}
+              </h3>
+              <ul className="space-y-3">
                 {column.links.map((link, linkIndex) => (
-                  <li key={`desktop-nav-${index}-link-${linkIndex}`}>
+                  <li key={linkIndex}>
                     <a
-                      className="footer-link text-base text-[#767676] no-underline transition-all hover:text-[#555] active:text-[#555]"
                       href={link.href}
+                      className="text-sm text-gray-600 hover:text-primary transition-colors"
                     >
                       {link.text}
                     </a>
                   </li>
                 ))}
               </ul>
-            </nav>
+            </div>
           ))}
         </div>
-      </footer>
-    </>
+      </div>
+
+      {/* Bottom Bar */}
+      <div className="border-t border-gray-200 bg-white/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col sm:flex-row justify-between items-center space-y-3 sm:space-y-0">
+            <p className="text-sm text-gray-500">
+              Copyright © {year} {companyName}, Inc. All rights reserved.
+            </p>
+            <div className="flex space-x-6 text-sm">
+              <a href="/privacy" className="text-gray-500 hover:text-primary transition-colors">
+                Privacy Policy
+              </a>
+              <a href="/support" className="text-gray-500 hover:text-primary transition-colors">
+                Terms of Service
+              </a>
+              <a href="/cookies" className="text-gray-500 hover:text-primary transition-colors">
+                Cookie Policy
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
   );
 };
 
