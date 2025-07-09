@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, KeyboardEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Plus, Loader2, X } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -418,6 +418,25 @@ const IncomingOrderFormContent = () => {
     }));
   };
 
+  // Add this new function to handle enter key press
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, currentBagSize: string) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const bagSizes = adminInfo?.preferences?.bagSizes || [];
+      const currentIndex = bagSizes.indexOf(currentBagSize);
+      const nextIndex = currentIndex + 1;
+
+      // If there's a next bag size, focus its input
+      if (nextIndex < bagSizes.length) {
+        const nextFieldName = getBagSizeFieldName(bagSizes[nextIndex]);
+        const nextInput = document.querySelector(`input[name="${nextFieldName}"]`) as HTMLInputElement;
+        if (nextInput) {
+          nextInput.focus();
+        }
+      }
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <h1 className="text-2xl font-bold text-center mb-6">{t('incomingOrder.title')}</h1>
@@ -604,8 +623,10 @@ const IncomingOrderFormContent = () => {
                         <label className="text-sm font-medium">{formatBagSizeLabel(bagSize)}</label>
                         <input
                           type="text"
+                          name={fieldName}
                           value={formData.quantities[fieldName] || ""}
                           onChange={(e) => updateQuantity(fieldName, e.target.value)}
+                          onKeyDown={(e) => handleKeyDown(e, bagSize)}
                           placeholder="-"
                           disabled={!formData.variety}
                           className={cn(
