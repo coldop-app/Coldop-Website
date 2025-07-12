@@ -4,7 +4,7 @@ import Footer from "../../components/common/Footer/Footer";
 import Hero from "@/components/sections/Hero/Hero";
 import HowItWorks from "@/components/sections/HowItWorks/HowItWorks";
 // import Testimonials from "@/components/sections/Testimonials/Testimonials";
-import Pricing from "@/components/sections/Pricing/Pricing";
+// import Pricing from "@/components/sections/Pricing/Pricing";
 import DemoVideo from "@/components/sections/DemoVideo/DemoVideo";
 import About from "@/components/sections/About/About";
 import SEO from "@/components/common/SEO/SEO";
@@ -13,7 +13,7 @@ import {
   heroData,
   howItWorksData,
   // testimonialsData,
-  pricingData,
+  // pricingData,
   footerData
 } from "../homeScreenData";
 import { SEO_PAGES, getOrganizationStructuredData, getSoftwareApplicationStructuredData } from "@/utils/seo";
@@ -103,14 +103,14 @@ const HomeScreen = () => {
       >
         <DemoVideo />
       </motion.div>
-
+{/*
       <motion.div
         id="pricing"
         {...fadeInUp}
         //className="w-full"
       >
         <Pricing plans={pricingData.plans} />
-      </motion.div>
+      </motion.div> */}
 
       <motion.div
         id="about"

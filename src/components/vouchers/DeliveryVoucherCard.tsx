@@ -82,7 +82,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
     const message: WebViewMessage = {
       type: 'SHARE_CARD',
       title: "Delivery Voucher " + cardData.voucher.voucherNumber,
-      message: cardData.orderDetails[0]?.variety || '',
+      message: JSON.stringify(cardData),
     };
 
     window.ReactNativeWebView?.postMessage(JSON.stringify(message));

@@ -6,12 +6,16 @@ import './i18n';
 
 const App = () => {
   //useWebViewAuth();
+  const isWebView = () => {
+    return window.ReactNativeWebView !== undefined;
+  };
 
   return (
     <>
       <Toaster position="top-center" reverseOrder={false} />
       <Outlet />
-      <CookieBanner />
+
+      {!isWebView() && <CookieBanner />}
     </>
   );
 };

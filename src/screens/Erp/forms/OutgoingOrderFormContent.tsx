@@ -382,6 +382,62 @@ const OutgoingOrderFormContent = () => {
     );
   };
 
+  // Add handleSelectAll function after handleQuantityRemove
+  const handleSelectAll = () => {
+    // If we have selections matching all available quantities, deselect all
+    const totalAvailableQuantities = filteredOrders.reduce((total, order) => {
+      order.orderDetails.forEach(detail => {
+        detail.bagSizes.forEach(bagSize => {
+          if (bagSize.quantity.currentQuantity > 0) {
+            total++;
+          }
+        });
+      });
+      return total;
+    }, 0);
+
+    if (selectedQuantities.length === totalAvailableQuantities) {
+      // Deselect all
+      setSelectedQuantities([]);
+      return;
+    }
+
+    // Select all
+    const newSelectedQuantities: BagSizeSelection[] = [];
+    filteredOrders.forEach(order => {
+      order.orderDetails.forEach(detail => {
+        detail.bagSizes.forEach(bagSize => {
+          if (bagSize.quantity.currentQuantity > 0) {
+            newSelectedQuantities.push({
+              receiptNumber: order.voucher.voucherNumber,
+              bagSize: bagSize.size,
+              selectedQuantity: bagSize.quantity.currentQuantity,
+              maxQuantity: bagSize.quantity.currentQuantity
+            });
+          }
+        });
+      });
+    });
+
+    setSelectedQuantities(newSelectedQuantities);
+  };
+
+  // Add isAllSelected computation
+  const isAllSelected = useMemo(() => {
+    const totalAvailableQuantities = filteredOrders.reduce((total, order) => {
+      order.orderDetails.forEach(detail => {
+        detail.bagSizes.forEach(bagSize => {
+          if (bagSize.quantity.currentQuantity > 0) {
+            total++;
+          }
+        });
+      });
+      return total;
+    }, 0);
+
+    return selectedQuantities.length === totalAvailableQuantities && totalAvailableQuantities > 0;
+  }, [selectedQuantities, filteredOrders]);
+
   // Get box color based on quantities
   const getBoxColor = (currentQuantity: number, initialQuantity: number, isSelected: boolean) => {
     if (isSelected) return 'border-green-500 bg-green-50';
@@ -615,6 +671,21 @@ const OutgoingOrderFormContent = () => {
                       </div>
                     ) : filteredOrders.length > 0 ? (
                       <>
+                        {/* Select/Deselect All Button */}
+                        <div className="mb-4">
+                          <button
+                            type="button"
+                            onClick={handleSelectAll}
+                            className={`inline-flex items-center px-4 py-2 text-sm font-medium rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-colors ${
+                              isAllSelected
+                                ? "bg-primary text-white hover:bg-primary/90"
+                                : "text-primary border border-primary hover:bg-primary/5"
+                            }`}
+                          >
+                            {isAllSelected ? "Deselect All Quantities" : "Select All Quantities"}
+                          </button>
+                        </div>
+
                         {/* Desktop View - Hidden on mobile */}
                         <div className="hidden md:block relative -mx-4">
                           <div className="overflow-x-auto">
