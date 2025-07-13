@@ -1,8 +1,9 @@
 import { useNavigate } from "react-router-dom";
-import { UserCircle, CreditCard, HelpCircle } from "lucide-react";
+import { UserCircle, CreditCard, HelpCircle, Globe } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import TopBar from "@/components/common/Topbar/Topbar";
 import { useTranslation } from "react-i18next";
+import LanguageSelector from "@/components/common/LanguageSelector/LanguageSelector";
 
 const SettingsScreen = () => {
   const navigate = useNavigate();
@@ -10,29 +11,30 @@ const SettingsScreen = () => {
 
   const settingsOptions = [
     {
-      title: "Profile Settings",
-      description: "Manage your personal and cold storage information",
+      title: t('settings.options.profile.title'),
+      description: t('settings.options.profile.description'),
       icon: UserCircle,
       path: "/erp/settings/profile",
       iconBg: "bg-blue-50 text-blue-500",
       borderColor: "border-blue-100"
     },
     {
-      title: "Billing Settings",
-      description: "View and manage your billing information and subscriptions",
+      title: t('settings.options.billing.title'),
+      description: t('settings.options.billing.description'),
       icon: CreditCard,
       path: "/erp/settings/billing",
       iconBg: "bg-green-50 text-green-500",
       borderColor: "border-green-100"
     },
     {
-      title: "Contact Support",
-      description: "Get help from our support team",
+      title: t('settings.options.support.title'),
+      description: t('settings.options.support.description'),
       icon: HelpCircle,
       path: "/erp/settings/support",
       iconBg: "bg-purple-50 text-purple-500",
       borderColor: "border-purple-100"
-    }
+    },
+   
   ];
 
   return (
@@ -41,6 +43,7 @@ const SettingsScreen = () => {
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         {/* Settings Options Grid */}
         <div className="grid gap-4 sm:gap-6">
+       
           {settingsOptions.map((option) => (
             <Card
               key={option.title}
@@ -76,6 +79,10 @@ const SettingsScreen = () => {
               </div>
             </Card>
           ))}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingLeft: '10px' }}>
+            <div>{t('settings.language')}</div>
+            <LanguageSelector isMobile={true} isInSettings={true} />
+          </div>
         </div>
       </div>
     </>

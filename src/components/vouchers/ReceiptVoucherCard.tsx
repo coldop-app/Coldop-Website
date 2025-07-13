@@ -101,10 +101,26 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   };
 
   const shareCard = (order: Order) => {
+    // Create a formatted message string with order details
+    const orderSummary = `Receipt Voucher: ${order.voucher.voucherNumber}
+Date: ${order.dateOfSubmission}
+Party: ${order.farmerId.name} (${order.farmerId.farmerId})
+Variety: ${order.orderDetails[0]?.variety || 'N/A'}
+Lot No: ${calculateLotNo(order.orderDetails)}
+Current Stock: ${order.currentStockAtThatTime}
+${order.remarks ? `Remarks: ${order.remarks}` : ''}
+
+Stock Details:
+${order.orderDetails.map(detail => 
+  detail.bagSizes.map(bag => 
+    `${bag.size}: ${bag.quantity?.currentQuantity || 0}/${bag.quantity?.initialQuantity || 0}`
+  ).join('\n')
+).join('\n')}`;
+
     const message: WebViewMessage = {
       type: 'SHARE_CARD',
       title: "Receipt Voucher " + order.voucher.voucherNumber,
-      message: order.farmerId.name,
+      message: orderSummary,
     };
 
     window.ReactNativeWebView?.postMessage(JSON.stringify(message));
