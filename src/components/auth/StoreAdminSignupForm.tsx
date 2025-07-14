@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode, useRef, RefObject, ChangeEvent } from "react";
+import { useState, useEffect, ReactNode, useRef, ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Check, X, Trash2, Plus, Phone, Upload, Image as ImageIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
@@ -74,10 +74,10 @@ const StoreAdminSignupForm = () => {
 
   // Add new state for OTP verification
   const [isMobileVerified, setIsMobileVerified] = useState(false);
-  const [showOtpInput, setShowOtpInput] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [canResendOtp, setCanResendOtp] = useState(false);
-  const [resendTimer, setResendTimer] = useState(30);
+  // const [showOtpInput, setShowOtpInput] = useState(false);
+  // const [otp, setOtp] = useState("");
+  // const [canResendOtp, setCanResendOtp] = useState(false);
+  // const [resendTimer, setResendTimer] = useState(30);
 
   // Add new state for error message
   const [mobileError, setMobileError] = useState("");
@@ -91,12 +91,13 @@ const StoreAdminSignupForm = () => {
 
   const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
 
-  const otpInputRefs: RefObject<HTMLInputElement | null>[] = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null)
-  ];
+  // Commented out since OTP verification is not mandatory
+  // const otpInputRefs: RefObject<HTMLInputElement | null>[] = [
+  //   useRef<HTMLInputElement>(null),
+  //   useRef<HTMLInputElement>(null),
+  //   useRef<HTMLInputElement>(null),
+  //   useRef<HTMLInputElement>(null)
+  // ];
 
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -167,7 +168,7 @@ const StoreAdminSignupForm = () => {
         capacity: data.capacity ? parseInt(data.capacity) : undefined,
         password: data.password,
         imageUrl: data.imageUrl || "",
-        isVerified: true,
+        isVerified: false,
         isMobile: true,
         preferences: {
           bagSizes: data.bagSizes.map(size => size.charAt(0).toUpperCase() + size.slice(1))
@@ -200,11 +201,11 @@ const StoreAdminSignupForm = () => {
       return;
     }
 
-    // Validate mobile verification
-    if (!isMobileVerified) {
-      toast.error("Please verify your mobile number first");
-      return;
-    }
+    // Validate mobile verification - Commented out to make mobile verification non-mandatory
+    // if (!isMobileVerified) {
+    //   toast.error("Please verify your mobile number first");
+    //   return;
+    // }
 
     console.log('Submitting form with data:', { ...formData, password: '[REDACTED]' }); // Debug log
     createAccountMutation.mutate(formData);
@@ -225,8 +226,8 @@ const StoreAdminSignupForm = () => {
     },
     onSuccess: () => {
       setIsMobileVerified(false);
-      setShowOtpInput(false);
-      setOtp("");
+      // setShowOtpInput(false);
+      // setOtp("");
       setMobileError("");
       toast.success("Mobile number updated successfully!");
     },
@@ -250,47 +251,47 @@ const StoreAdminSignupForm = () => {
   };
 
   // Add mutation for sending OTP
-  const sendOtpMutation = useMutation({
-    mutationFn: async (mobileNumber: string) => {
-      return storeAdminApi.sendOtp(mobileNumber);
-    },
-    onSuccess: () => {
-      setShowOtpInput(true);
-      setCanResendOtp(false);
-      setResendTimer(30);
-      setMobileError("");
-      setOtp(""); // Reset OTP when sending new OTP
-      // Clear any existing interval before starting a new one
-      if (resendTimerRef.current) {
-        clearInterval(resendTimerRef.current);
-      }
-      resendTimerRef.current = setInterval(() => {
-        setResendTimer(prev => {
-          if (prev <= 1) {
-            if (resendTimerRef.current) clearInterval(resendTimerRef.current);
-            setCanResendOtp(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      toast.success("OTP sent successfully!");
-    },
-    onError: (error) => {
-      setMobileError("Failed to send OTP. Please try again.");
-      toast.error("Failed to send OTP");
-      console.error("Error sending OTP:", error);
-    },
-  });
+  // const sendOtpMutation = useMutation({
+  //   mutationFn: async (mobileNumber: string) => {
+  //     return storeAdminApi.sendOtp(mobileNumber);
+  //   },
+  //   onSuccess: () => {
+  //     setShowOtpInput(true);
+  //     setCanResendOtp(false);
+  //     setResendTimer(30);
+  //     setMobileError("");
+  //     setOtp(""); // Reset OTP when sending new OTP
+  //     // Clear any existing interval before starting a new one
+  //     if (resendTimerRef.current) {
+  //       clearInterval(resendTimerRef.current);
+  //     }
+  //     resendTimerRef.current = setInterval(() => {
+  //       setResendTimer(prev => {
+  //         if (prev <= 1) {
+  //           if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+  //           setCanResendOtp(true);
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+  //     toast.success("OTP sent successfully!");
+  //   },
+  //   onError: (error) => {
+  //     setMobileError("Failed to send OTP. Please try again.");
+  //     toast.error("Failed to send OTP");
+  //     console.error("Error sending OTP:", error);
+  //   },
+  // });
 
-  // Update handleSendOtp to use the mutation
-  const handleSendOtp = () => {
-    if (formData.mobileNumber.length !== 10) {
-      setMobileError("Please enter a valid 10 digit mobile number.");
-      return;
-    }
-    sendOtpMutation.mutate(formData.mobileNumber);
-  };
+  // Update handleSendOtp to use the mutation - Commented out since OTP verification is not mandatory
+  // const handleSendOtp = () => {
+  //   if (formData.mobileNumber.length !== 10) {
+  //     setMobileError("Please enter a valid 10 digit mobile number.");
+  //     return;
+  //   }
+  //   sendOtpMutation.mutate(formData.mobileNumber);
+  // };
 
   // Clean up interval on unmount
   useEffect(() => {
@@ -300,70 +301,70 @@ const StoreAdminSignupForm = () => {
   }, []);
 
   // Add mutation for verifying OTP
-  const verifyOtpMutation = useMutation({
-    mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
-      return storeAdminApi.verifyOtp(mobileNumber, otp);
-    },
-    onSuccess: () => {
-      setIsMobileVerified(true);
-      setShowOtpInput(false);
-      toast.success("Mobile number verified successfully!");
-    },
-    onError: (error) => {
-      setMobileError("Invalid OTP. Please try again.");
-      toast.error("Failed to verify OTP");
-      console.error("Error verifying OTP:", error);
-    },
-  });
+  // const verifyOtpMutation = useMutation({
+  //   mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
+  //     return storeAdminApi.verifyOtp(mobileNumber, otp);
+  //   },
+  //   onSuccess: () => {
+  //     setIsMobileVerified(true);
+  //     setShowOtpInput(false);
+  //     toast.success("Mobile number verified successfully!");
+  //   },
+  //   onError: (error) => {
+  //     setMobileError("Invalid OTP. Please try again.");
+  //     toast.error("Failed to verify OTP");
+  //     console.error("Error verifying OTP:", error);
+  //   },
+  // });
 
-  // Update handleVerifyOtp to use the mutation
-  const handleVerifyOtp = () => {
-    if (otp.length === 4) {
-      verifyOtpMutation.mutate({
-        mobileNumber: formData.mobileNumber,
-        otp: otp
-      });
-    }
-  };
+  // Update handleVerifyOtp to use the mutation - Commented out since OTP verification is not mandatory
+  // const handleVerifyOtp = () => {
+  //   if (otp.length === 4) {
+  //     verifyOtpMutation.mutate({
+  //       mobileNumber: formData.mobileNumber,
+  //       otp: otp
+  //     });
+  //   }
+  // };
 
   // Add mutation for resending OTP
-  const resendOtpMutation = useMutation({
-    mutationFn: async (mobileNumber: string) => {
-      return storeAdminApi.resendOtp(mobileNumber);
-    },
-    onSuccess: () => {
-      setCanResendOtp(false);
-      setResendTimer(30);
-      setOtp(""); // Reset OTP when resending
-      // Clear any existing interval before starting a new one
-      if (resendTimerRef.current) {
-        clearInterval(resendTimerRef.current);
-      }
-      resendTimerRef.current = setInterval(() => {
-        setResendTimer(prev => {
-          if (prev <= 1) {
-            if (resendTimerRef.current) clearInterval(resendTimerRef.current);
-            setCanResendOtp(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      toast.success("OTP resent successfully!");
-    },
-    onError: (error) => {
-      setMobileError("Failed to resend OTP. Please try again.");
-      toast.error("Failed to resend OTP");
-      console.error("Error resending OTP:", error);
-    },
-  });
+  // const resendOtpMutation = useMutation({
+  //   mutationFn: async (mobileNumber: string) => {
+  //     return storeAdminApi.resendOtp(mobileNumber);
+  //   },
+  //   onSuccess: () => {
+  //     setCanResendOtp(false);
+  //     setResendTimer(30);
+  //     setOtp(""); // Reset OTP when resending
+  //     // Clear any existing interval before starting a new one
+  //     if (resendTimerRef.current) {
+  //       clearInterval(resendTimerRef.current);
+  //     }
+  //     resendTimerRef.current = setInterval(() => {
+  //       setResendTimer(prev => {
+  //         if (prev <= 1) {
+  //           if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+  //           setCanResendOtp(true);
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+  //     toast.success("OTP resent successfully!");
+  //   },
+  //   onError: (error) => {
+  //     setMobileError("Failed to resend OTP. Please try again.");
+  //     toast.error("Failed to resend OTP");
+  //     console.error("Error resending OTP:", error);
+  //   },
+  // });
 
-  // Update handleResendOtp to use the mutation
-  const handleResendOtp = () => {
-    if (canResendOtp) {
-      resendOtpMutation.mutate(formData.mobileNumber);
-    }
-  };
+  // Update handleResendOtp to use the mutation - Commented out since OTP verification is not mandatory
+  // const handleResendOtp = () => {
+  //   if (canResendOtp) {
+  //     resendOtpMutation.mutate(formData.mobileNumber);
+  //   }
+  // };
 
   // Add upload profile photo mutation
   const uploadPhotoMutation = useMutation({
@@ -537,7 +538,8 @@ const StoreAdminSignupForm = () => {
                         </span>
                       )}
                     </div>
-                    {!isMobileVerified && (
+                    {/* Commented out Send OTP button since mobile verification is not mandatory */}
+                    {/* {!isMobileVerified && (
                       <button
                         type="button"
                         onClick={handleSendOtp}
@@ -551,12 +553,13 @@ const StoreAdminSignupForm = () => {
                       >
                         Send OTP
                       </button>
-                    )}
+                    )} */}
                   </div>
                   {mobileError && (
                     <div className="text-xs text-red-500 mt-1 ml-1">{mobileError}</div>
                   )}
-                  {showOtpInput && !isMobileVerified && (
+                  {/* Commented out OTP verification UI since mobile verification is not mandatory */}
+                  {/* {showOtpInput && !isMobileVerified && (
                     <div className="space-y-2 mt-2">
                       <div className="flex items-center gap-2">
                         <div className="flex gap-2">
@@ -640,7 +643,7 @@ const StoreAdminSignupForm = () => {
                         )}
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
 
