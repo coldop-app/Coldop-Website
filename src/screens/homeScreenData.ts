@@ -286,7 +286,7 @@ export const footerData: FooterData = {
   companyName: "Coldop",
   year: new Date().getFullYear().toString(),
   logo: "/coldop-logo.png",
-  address: "123 Cold Storage Lane, Tech Park, Bangalore 560001",
+  address: "172 new jawahar nagar, Jalandhar",
   phone: "+91 9877741375 / +91 9646996729",
   email: "coldop.app@gmail.com",
   navColumns: [

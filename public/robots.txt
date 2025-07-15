@@ -1,45 +1,49 @@
 # Coldop Website - Robots.txt
 # This file tells search engine crawlers which pages or files the crawler can or can't request from your site.
 
-# Allow all crawlers to access the site
+# Default rules for all crawlers
 User-agent: *
-Allow: /
 
-# Explicitly allow public information pages
+# Allow public pages and assets
+Allow: /
 Allow: /faq
 Allow: /privacy
 Allow: /support
 Allow: /case-studies
-
-# Block access to authentication pages and admin areas
-Disallow: /login/
-Disallow: /signup/
-Disallow: /erp/
-
-# Block access to internal files and directories
-Disallow: /src/
-Disallow: /node_modules/
-Disallow: /*.json
-Disallow: /*.ts
-Disallow: /*.tsx
-Disallow: /*.js.map
-Disallow: /*.css.map
-
-# Allow specific public assets
+Allow: /sitemap.xml
+Allow: /robots.txt
+Allow: /*.css
+Allow: /*.js
 Allow: /coldop-logo.png
 Allow: /favicon.ico
 Allow: /app-screen-*.png
 Allow: /hero-min.png
-Allow: /*.css
-Allow: /*.js
 
-# Sitemap location
-Sitemap: https://coldop.com/sitemap.xml
+# Block sensitive and internal paths
+Disallow: /login/
+Disallow: /signup/
+Disallow: /erp/
+Disallow: /admin/
+Disallow: /api/
+Disallow: /src/
+Disallow: /node_modules/
+Disallow: /build/
+Disallow: /dist/
+Disallow: /coverage/
+Disallow: /tests/
+Disallow: /*.json
+Disallow: /*.ts
+Disallow: /*.tsx
+Disallow: /*.map
+Disallow: /*.config.js
+Disallow: /*.lock
+Disallow: /.env*
+Disallow: /.git*
 
-# Crawl delay (optional - helps prevent overwhelming the server)
-Crawl-delay: 1
+# Crawl-delay directive (in seconds)
+Crawl-delay: 2
 
-# Specific rules for major search engines
+# Rules for specific search engines
 User-agent: Googlebot
 Allow: /
 Disallow: /login/
@@ -52,7 +56,13 @@ Disallow: /login/
 Disallow: /signup/
 Disallow: /erp/
 
-# Block common bad bots
+User-agent: DuckDuckBot
+Allow: /
+Disallow: /login/
+Disallow: /signup/
+Disallow: /erp/
+
+# Block known aggressive or unwanted bots
 User-agent: AhrefsBot
 Disallow: /
 
@@ -61,3 +71,15 @@ Disallow: /
 
 User-agent: SemrushBot
 Disallow: /
+
+User-agent: PetalBot
+Disallow: /
+
+User-agent: ZoominfoBot
+Disallow: /
+
+User-agent: ChatGPT-User
+Disallow: /
+
+# Sitemap declaration
+Sitemap: https://coldop.in/sitemap.xml
