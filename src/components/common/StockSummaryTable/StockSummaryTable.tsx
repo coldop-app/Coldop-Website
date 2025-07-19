@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useSelector } from 'react-redux';
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { StoreAdmin } from '@/utils/types';
 
@@ -32,6 +33,7 @@ const calculateTotalBags = (stockSummary: StockSummary[], allBagSizes: string[])
 
 const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
+  const navigate = useNavigate();
 
   // Get all bag sizes from admin preferences for consistent table columns
   const allBagSizes = useMemo(() => {
@@ -59,6 +61,16 @@ const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
     }, 0);
   };
 
+  // Handle cell click to navigate to variety breakdown
+  const handleCellClick = (variety: StockSummary, bagSize: string) => {
+    const quantity = getQuantityForSize(variety, bagSize);
+    if (quantity > 0) {
+      navigate('/erp/variety-breakdown', {
+        state: { variety: variety.variety, bagSize }
+      });
+    }
+  };
+
   // Sort varieties alphabetically
   const sortedVarieties = useMemo(() => {
     return [...stockSummary].sort((a, b) => a.variety.localeCompare(b.variety));
@@ -70,7 +82,9 @@ const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
     <Card className="bg-white shadow-sm">
       <CardHeader className="bg-gray-50 border-b px-4 sm:px-6 py-3 sm:py-4">
         <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Stock Summary</CardTitle>
-        <p className="text-xs sm:text-sm text-gray-600">Distribution of potato varieties by size category</p>
+        <p className="text-xs sm:text-sm text-gray-600">
+          Distribution of potato varieties by size category. Click on any cell with quantity to view detailed breakdown.
+        </p>
       </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
@@ -99,9 +113,21 @@ const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
                         {variety.variety}
                       </div>
                     </td>
-                    {allBagSizes.map(size => (
-                      <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm">
+                                        {allBagSizes.map(size => (
+                      <td
+                        key={size}
+                        className={`px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm ${
+                          getQuantityForSize(variety, size) > 0
+                            ? 'cursor-pointer hover:bg-blue-50 transition-colors relative group'
+                            : ''
+                        }`}
+                        onClick={() => handleCellClick(variety, size)}
+                        title={getQuantityForSize(variety, size) > 0 ? `Click to view ${variety.variety} - ${size} breakdown` : ''}
+                      >
                         {getQuantityForSize(variety, size)}
+                        {getQuantityForSize(variety, size) > 0 && (
+                          <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none" />
+                        )}
                       </td>
                     ))}
                     <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm">
