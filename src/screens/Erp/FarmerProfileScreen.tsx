@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Phone, MapPin, Calendar, Package, Boxes, TrendingUp, ArrowDownCircle, ArrowUpCircle, FileText } from 'lucide-react';
+import { Phone, MapPin, Calendar, Package, Boxes, ArrowDownCircle, ArrowUpCircle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
 import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
 import { Order, StoreAdmin } from '@/utils/types';
@@ -84,7 +84,56 @@ const FarmerProfileScreen = () => {
 
   const stockSummary = (stockData as StockSummaryResponse)?.stockSummary || [];
 
-  const totalBags = calculateFarmerTotalBags(stockSummary);
+  // Sort bag sizes according to admin preferences using useMemo
+  const sortBagSizes = useMemo(() => {
+    if (!adminInfo?.preferences?.bagSizes) {
+      return (bagSizes: StockSummary['sizes']) => bagSizes;
+    }
+
+    // Create a map of normalized bag size names to their index in admin preferences
+    const preferenceOrder = new Map(
+      adminInfo.preferences.bagSizes.map((size, index) => [
+        size.toLowerCase().replace(/[-\s]/g, ''), // Normalize by removing hyphens and spaces
+        index
+      ])
+    );
+
+    // Return a sorting function
+    return (bagSizes: StockSummary['sizes']) => {
+      if (!bagSizes.length) return bagSizes;
+
+      return [...bagSizes].sort((a, b) => {
+        // Normalize the bag size names for comparison
+        const aNormalized = a.size.toLowerCase().replace(/[-\s]/g, '');
+        const bNormalized = b.size.toLowerCase().replace(/[-\s]/g, '');
+
+        const aIndex = preferenceOrder.get(aNormalized);
+        const bIndex = preferenceOrder.get(bNormalized);
+
+        // If both sizes are in preferences, sort by their order
+        if (aIndex !== undefined && bIndex !== undefined) {
+          return aIndex - bIndex;
+        }
+
+        // If only one size is in preferences, put it first
+        if (aIndex !== undefined) return -1;
+        if (bIndex !== undefined) return 1;
+
+        // If neither size is in preferences, maintain original order
+        return 0;
+      });
+    };
+  }, [adminInfo?.preferences?.bagSizes]); // Only recompute when preferences change
+
+  // Sort the stock summary data according to admin preferences
+  const sortedStockSummary = useMemo(() => {
+    return stockSummary.map(variety => ({
+      ...variety,
+      sizes: sortBagSizes(variety.sizes)
+    }));
+  }, [stockSummary, sortBagSizes]);
+
+  const totalBags = calculateFarmerTotalBags(sortedStockSummary);
 
           const handleGenerateReport = async () => {
     if (!adminInfo || !farmer) {
@@ -344,6 +393,102 @@ const FarmerProfileScreen = () => {
           </CardContent>
         </Card>
 
+        {/* Stock Summary Section */}
+        <Card>
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-4 sm:px-6 py-4">
+            <div className="flex items-center gap-2">
+              <Package size={20} className="text-primary" />
+              <CardTitle className="text-base sm:text-lg md:text-xl">{t('farmerProfile.stockSummary')}</CardTitle>
+            </div>
+            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
+              <Boxes size={14} className="hidden sm:block" />
+              <span>{t('farmerProfile.totalVarieties')}: {sortedStockSummary.length}</span>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            {isStockLoading ? (
+              <div className="p-4 sm:p-6 space-y-4">
+                <Skeleton className="h-20 sm:h-24 w-full" />
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-6 sm:h-8 w-1/3" />
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
+                      {[1, 2, 3, 4, 5].map((j) => (
+                        <Skeleton key={j} className="h-20 sm:h-24" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : sortedStockSummary.length === 0 ? (
+              <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-gray-500">
+                {t('farmerProfile.noStockFound')}
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <div className="min-w-full inline-block align-middle">
+                  <table className="w-full">
+                    <thead className="bg-gray-50 border-b">
+                      <tr>
+                        <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
+                          Varieties
+                        </th>
+                        {sortedStockSummary.length > 0 && sortedStockSummary[0].sizes.map(size => (
+                          <th key={size.size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
+                            {size.size}
+                          </th>
+                        ))}
+                        <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 bg-blue-50 whitespace-nowrap">
+                          Total
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {sortedStockSummary.map((variety, index) => (
+                        <tr key={variety.variety} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                          <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 font-medium text-gray-900 border-r text-xs sm:text-sm">
+                            <div className="truncate max-w-[120px] sm:max-w-none" title={variety.variety}>
+                              {variety.variety}
+                            </div>
+                          </td>
+                          {variety.sizes.map(size => (
+                            <td key={size.size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm">
+                              {size.currentQuantity}
+                            </td>
+                          ))}
+                          <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm">
+                            {calculateVarietyTotal(variety.sizes)}
+                          </td>
+                        </tr>
+                      ))}
+                      {/* Totals Row */}
+                      <tr className="bg-gray-100 font-bold">
+                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-gray-900 border-r text-xs sm:text-sm">
+                          Bag Total
+                        </td>
+                        {sortedStockSummary.length > 0 && sortedStockSummary[0].sizes.map(size => {
+                          const sizeTotal = sortedStockSummary.reduce((total, variety) => {
+                            const sizeData = variety.sizes.find(s => s.size === size.size);
+                            return total + (sizeData ? sizeData.currentQuantity : 0);
+                          }, 0);
+                          return (
+                            <td key={size.size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-900 border-r text-xs sm:text-sm">
+                              {sizeTotal}
+                            </td>
+                          );
+                        })}
+                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-blue-600 bg-blue-100 text-xs sm:text-sm">
+                          {totalBags}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         {/* Show/Hide Orders Button */}
         <div className="flex justify-center">
           <Button
@@ -394,104 +539,6 @@ const FarmerProfileScreen = () => {
             </Card>
           </div>
         )}
-
-        {/* Stock Summary Section */}
-        <Card>
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-4 sm:px-6 py-4">
-            <div className="flex items-center gap-2">
-              <Package size={20} className="text-primary" />
-              <CardTitle className="text-base sm:text-lg md:text-xl">{t('farmerProfile.stockSummary')}</CardTitle>
-            </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
-              <Boxes size={14} className="hidden sm:block" />
-              <span>{t('farmerProfile.totalVarieties')}: {stockSummary.length}</span>
-            </div>
-          </CardHeader>
-          <CardContent className="p-2 sm:p-4 md:p-6">
-            {isStockLoading ? (
-              <div className="space-y-4">
-                <Skeleton className="h-20 sm:h-24 w-full" />
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="space-y-2">
-                    <Skeleton className="h-6 sm:h-8 w-1/3" />
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
-                      {[1, 2, 3, 4, 5].map((j) => (
-                        <Skeleton key={j} className="h-20 sm:h-24" />
-                      ))}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-4 sm:space-y-6">
-                {/* Summary Cards */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
-                  {stockSummary.map((variety) => {
-                    const totalBags = calculateVarietyTotal(variety.sizes);
-                    return (
-                      <div
-                        key={variety.variety}
-                        className="bg-gray-50 rounded-lg p-2 sm:p-3 md:p-4 hover:bg-gray-100 transition-colors cursor-pointer"
-                        onClick={() => {
-                          const element = document.getElementById(`variety-${variety.variety}`);
-                          element?.scrollIntoView({ behavior: 'smooth' });
-                        }}
-                      >
-                        <div className="flex items-center justify-between mb-1 sm:mb-2">
-                          <span className="font-medium text-gray-900 text-xs sm:text-sm md:text-base truncate">{variety.variety}</span>
-                          <span className="text-primary font-semibold text-xs sm:text-sm md:text-base">{totalBags}</span>
-                        </div>
-                        <div className="text-[10px] sm:text-xs md:text-sm text-gray-500">{t('farmerProfile.totalBagsLabel')}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Detailed Cards */}
-                <div className="space-y-3 sm:space-y-4 md:space-y-6">
-                  {stockSummary.map((variety) => {
-                    const totalBags = calculateVarietyTotal(variety.sizes);
-                    return (
-                      <Card key={variety.variety} id={`variety-${variety.variety}`} className="overflow-hidden">
-                        <CardHeader className="bg-gray-50 px-3 sm:px-4 md:px-6 py-2 sm:py-3 md:py-4">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
-                            <CardTitle className="text-sm sm:text-base md:text-lg">{variety.variety}</CardTitle>
-                            <div className="flex items-center gap-1 sm:gap-2 text-primary font-medium text-xs sm:text-sm md:text-base">
-                              <TrendingUp size={14} className="sm:w-4 sm:h-4 md:w-5 md:h-5" />
-                              <span>{t('daybook.totalOrders')}: {totalBags} {t('farmerProfile.totalBagsLabel').toLowerCase()}</span>
-                            </div>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="p-2 sm:p-4 md:p-6">
-                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-3 md:gap-4">
-                            {variety.sizes.map((size) => (
-                              <div
-                                key={size.size}
-                                className="bg-gray-50 rounded-lg p-2 sm:p-3 md:p-4 hover:bg-gray-100 transition-colors"
-                              >
-                                <div className="text-xs sm:text-sm font-medium text-gray-500 mb-1 sm:mb-2">{size.size}</div>
-                                <div className="space-y-1">
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-[10px] sm:text-xs text-gray-600">{t('farmerProfile.currentStock')}</span>
-                                    <span className="font-semibold text-gray-900 text-xs sm:text-sm">{size.currentQuantity}</span>
-                                  </div>
-                                  <div className="flex justify-between items-center">
-                                    <span className="text-[10px] sm:text-xs text-gray-600">{t('farmerProfile.initialStock')}</span>
-                                    <span className="font-semibold text-gray-900 text-xs sm:text-sm">{size.initialQuantity}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
     </>
   );
