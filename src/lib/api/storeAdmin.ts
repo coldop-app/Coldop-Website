@@ -44,6 +44,11 @@ interface SearchReceiptParams {
   receiptNumber: number;
 }
 
+interface SearchByVarietyParams {
+  variety: string;
+  storeAdminId: string;
+}
+
 interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string;
@@ -261,6 +266,20 @@ export const storeAdminApi = {
   searchReceipt: async (params: SearchReceiptParams, token: string) => {
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/daybook/search-receipt`,
+      params,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  searchByVariety: async (params: SearchByVarietyParams, token: string) => {
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/orders/search-by-variety`,
       params,
       {
         headers: {

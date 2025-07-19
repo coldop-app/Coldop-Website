@@ -49,13 +49,16 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
-const calculateVarietyTotal = (sizes: StockSummary['sizes']) => {
-  return sizes.reduce((acc, size) => acc + size.currentQuantity, 0);
+const calculateVarietyTotal = (variety: StockSummary, allBagSizes: string[]) => {
+  return allBagSizes.reduce((acc, sizeName) => {
+    const sizeData = variety.sizes.find(s => s.size === sizeName);
+    return acc + (sizeData ? sizeData.currentQuantity : 0);
+  }, 0);
 };
 
-const calculateFarmerTotalBags = (stockSummary: StockSummary[]) => {
+const calculateFarmerTotalBags = (stockSummary: StockSummary[], allBagSizes: string[]) => {
   return stockSummary.reduce((total, variety) => {
-    return total + variety.sizes.reduce((sum, size) => sum + size.currentQuantity, 0);
+    return total + calculateVarietyTotal(variety, allBagSizes);
   }, 0);
 };
 
@@ -133,7 +136,33 @@ const FarmerProfileScreen = () => {
     }));
   }, [stockSummary, sortBagSizes]);
 
-  const totalBags = calculateFarmerTotalBags(sortedStockSummary);
+  // Get all bag sizes from admin preferences for consistent table columns
+  const allBagSizes = useMemo(() => {
+    if (!adminInfo?.preferences?.bagSizes || adminInfo.preferences.bagSizes.length === 0) {
+      // Fallback: use all unique bag sizes from the stock data
+      const uniqueSizes = new Set<string>();
+      stockSummary.forEach(variety => {
+        variety.sizes.forEach(size => uniqueSizes.add(size.size));
+      });
+      return Array.from(uniqueSizes).sort();
+    }
+    return adminInfo.preferences.bagSizes;
+  }, [adminInfo?.preferences?.bagSizes, stockSummary]);
+
+  // Helper function to get quantity for a specific bag size and variety
+  const getQuantityForSize = (variety: StockSummary, sizeName: string) => {
+    const sizeData = variety.sizes.find(s => s.size === sizeName);
+    return sizeData ? sizeData.currentQuantity : 0;
+  };
+
+  // Helper function to calculate total for a specific bag size across all varieties
+  const getTotalForSize = (sizeName: string) => {
+    return sortedStockSummary.reduce((total, variety) => {
+      return total + getQuantityForSize(variety, sizeName);
+    }, 0);
+  };
+
+  const totalBags = calculateFarmerTotalBags(sortedStockSummary, allBagSizes);
 
           const handleGenerateReport = async () => {
     if (!adminInfo || !farmer) {
@@ -433,9 +462,9 @@ const FarmerProfileScreen = () => {
                         <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
                           Varieties
                         </th>
-                        {sortedStockSummary.length > 0 && sortedStockSummary[0].sizes.map(size => (
-                          <th key={size.size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
-                            {size.size}
+                        {allBagSizes.map(size => (
+                          <th key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
+                            {size}
                           </th>
                         ))}
                         <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 bg-blue-50 whitespace-nowrap">
@@ -451,13 +480,13 @@ const FarmerProfileScreen = () => {
                               {variety.variety}
                             </div>
                           </td>
-                          {variety.sizes.map(size => (
-                            <td key={size.size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm">
-                              {size.currentQuantity}
+                          {allBagSizes.map(size => (
+                            <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm">
+                              {getQuantityForSize(variety, size)}
                             </td>
                           ))}
                           <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm">
-                            {calculateVarietyTotal(variety.sizes)}
+                            {calculateVarietyTotal(variety, allBagSizes)}
                           </td>
                         </tr>
                       ))}
@@ -466,17 +495,11 @@ const FarmerProfileScreen = () => {
                         <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-gray-900 border-r text-xs sm:text-sm">
                           Bag Total
                         </td>
-                        {sortedStockSummary.length > 0 && sortedStockSummary[0].sizes.map(size => {
-                          const sizeTotal = sortedStockSummary.reduce((total, variety) => {
-                            const sizeData = variety.sizes.find(s => s.size === size.size);
-                            return total + (sizeData ? sizeData.currentQuantity : 0);
-                          }, 0);
-                          return (
-                            <td key={size.size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-900 border-r text-xs sm:text-sm">
-                              {sizeTotal}
-                            </td>
-                          );
-                        })}
+                        {allBagSizes.map(size => (
+                          <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-900 border-r text-xs sm:text-sm">
+                            {getTotalForSize(size)}
+                          </td>
+                        ))}
                         <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-blue-600 bg-blue-100 text-xs sm:text-sm">
                           {totalBags}
                         </td>
