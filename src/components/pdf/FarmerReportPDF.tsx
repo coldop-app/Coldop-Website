@@ -20,37 +20,35 @@ interface FarmerReportPDFProps {
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
-    backgroundColor: '#FEFDF8', // Cream paper color
-    padding: 20,
+    backgroundColor: '#FEFDF8',
+    padding: 16,
     fontFamily: 'Helvetica',
-    fontSize: 10,
+    fontSize: 8,
   },
 
-  // Header styles
   header: {
-    marginBottom: 16,
+    marginBottom: 12,
     borderBottomWidth: 2,
     borderBottomColor: '#000',
-    paddingBottom: 8,
+    paddingBottom: 6,
   },
   companyName: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#000',
-    marginBottom: 4,
+    marginBottom: 3,
   },
   reportTitle: {
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#000',
-    marginBottom: 8,
+    marginBottom: 6,
   },
 
-  // Farmer info section
   farmerInfoSection: {
-    marginBottom: 16,
+    marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
@@ -62,8 +60,8 @@ const styles = StyleSheet.create({
   },
   infoRow: {
     flexDirection: 'row',
-    marginBottom: 4,
-    fontSize: 9,
+    marginBottom: 3,
+    fontSize: 8,
   },
   infoLabel: {
     width: '40%',
@@ -75,21 +73,19 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 
-  // Ledger table styles
   ledgerContainer: {
-    marginTop: 16,
-    marginBottom: 16,
+    marginTop: 12,
+    marginBottom: 12,
   },
   ledgerTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     color: '#000',
     textTransform: 'uppercase',
   },
 
-  // Table styles
   table: {
     borderWidth: 1,
     borderColor: '#000',
@@ -99,110 +95,117 @@ const styles = StyleSheet.create({
     backgroundColor: '#E8E8E8',
     borderBottomWidth: 1,
     borderBottomColor: '#000',
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
   tableRow: {
     flexDirection: 'row',
     borderBottomWidth: 0.5,
     borderBottomColor: '#666',
-    paddingVertical: 3,
-    minHeight: 20,
+    paddingVertical: 2,
+    minHeight: 16,
   },
 
-  // Column styles - matching ledger layout
+  // Column styles - updated for new layout
   colDate: {
-    width: '12%',
+    width: '8%',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
     paddingHorizontal: 2,
     justifyContent: 'center',
   },
   colVoucher: {
-    width: '12%',
+    width: '8%',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
     paddingHorizontal: 2,
     justifyContent: 'center',
   },
   colVariety: {
-    width: '15%',
+    width: '10%',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
     paddingHorizontal: 2,
     justifyContent: 'center',
   },
   colLocation: {
-    width: '12%',
+    width: '8%',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
     paddingHorizontal: 2,
     justifyContent: 'center',
   },
   colBagSize: {
-    width: '10%',
+    width: '6%',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
     paddingHorizontal: 2,
     justifyContent: 'center',
   },
-  colReceived: {
-    width: '10%',
+  colTotal: {
+    width: '8%',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
     paddingHorizontal: 2,
     justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
   },
-  colDelivered: {
-    width: '10%',
+  colGrandTotal: {
+    width: '8%',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
     paddingHorizontal: 2,
     justifyContent: 'center',
+    backgroundColor: '#E8E8E8',
   },
-  colBalance: {
-    width: '10%',
+  colMarka: {
+    width: '8%',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
     paddingHorizontal: 2,
     justifyContent: 'center',
-  },
-  colRemarks: {
-    width: '9%',
-    paddingHorizontal: 2,
-    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
   },
 
-  // Cell text styles
   cellHeaderText: {
-    fontSize: 8,
+    fontSize: 7,
     fontWeight: 'bold',
     textAlign: 'center',
     color: '#000',
   },
   cellText: {
-    fontSize: 8,
+    fontSize: 7,
     textAlign: 'center',
     color: '#000',
   },
   cellTextLeft: {
-    fontSize: 8,
+    fontSize: 7,
     textAlign: 'left',
     color: '#000',
   },
 
-  // Summary section
+  totalRow: {
+    backgroundColor: '#E0E0E0',
+    fontWeight: 'bold',
+  },
+  balanceText: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#000',
+  },
+
   summaryContainer: {
-    marginTop: 16,
-    padding: 12,
+    marginTop: 12,
+    padding: 8,
     borderWidth: 2,
     borderColor: '#000',
     backgroundColor: '#F5F5F5',
   },
   summaryTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
     textTransform: 'uppercase',
     color: '#000',
   },
@@ -214,19 +217,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     borderBottomWidth: 0.5,
     borderBottomColor: '#666',
-    paddingVertical: 4,
+    paddingVertical: 3,
   },
   summaryLabel: {
     width: '70%',
-    paddingHorizontal: 6,
-    fontSize: 9,
+    paddingHorizontal: 4,
+    fontSize: 8,
     fontWeight: 'bold',
     color: '#000',
   },
   summaryValue: {
     width: '30%',
-    paddingHorizontal: 6,
-    fontSize: 9,
+    paddingHorizontal: 4,
+    fontSize: 8,
     fontWeight: 'bold',
     textAlign: 'right',
     borderLeftWidth: 0.5,
@@ -234,21 +237,20 @@ const styles = StyleSheet.create({
     color: '#000',
   },
 
-  // Footer
   footer: {
     position: 'absolute',
-    bottom: 20,
-    left: 20,
-    right: 20,
+    bottom: 16,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: '#000',
-    paddingTop: 8,
+    paddingTop: 6,
   },
   footerText: {
-    fontSize: 8,
+    fontSize: 7,
     color: '#000',
   },
   footerLeft: {
@@ -263,37 +265,24 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   logo: {
-    width: 24,
-    height: 24,
-    marginBottom: 4,
+    width: 20,
+    height: 20,
+    marginBottom: 3,
     opacity: 0.85,
   },
   poweredBy: {
-    fontSize: 7,
+    fontSize: 6,
     color: '#555',
     marginTop: 2,
     fontStyle: 'italic',
   },
 
-  // Page numbers and stamps
   pageNumber: {
     position: 'absolute',
-    bottom: 8,
-    right: 20,
-    fontSize: 8,
+    bottom: 6,
+    right: 16,
+    fontSize: 7,
     color: '#666',
-  },
-
-  // Running balance styles
-  totalRow: {
-    backgroundColor: '#E0E0E0',
-    fontWeight: 'bold',
-  },
-  balanceText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#000',
   },
 });
 
@@ -303,11 +292,9 @@ interface LedgerEntry {
   type: 'RECEIPT' | 'DELIVERY';
   variety: string;
   location: string;
-  bagSize: string;
-  received: number | '-';
-  delivered: number | '-';
-  balance: number;
-  remarks: string;
+  quantities: { [bagSize: string]: number }; // Map of bag size to quantity
+  total: number;
+  grandTotal: number;
 }
 
 const formatDate = (date: string | Date | undefined): string => {
@@ -340,70 +327,274 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
     );
   }
 
+  const bagSizes = adminInfo.preferences?.bagSizes || [];
   const receiptOrders = orders.filter(order => order.voucher.type === 'RECEIPT');
   const deliveryOrders = orders.filter(order => order.voucher.type === 'DELIVERY');
 
-  // Create combined ledger entries
-  const createLedgerEntries = () => {
+  // Create receipt ledger entries with totals
+  const createReceiptEntries = () => {
     const entries: LedgerEntry[] = [];
-    let runningBalance = 0;
 
-    // Add receipt entries
+    // First create all entries
     receiptOrders.forEach(order => {
+      // Initialize quantities map for all bag sizes
+      const quantities: { [bagSize: string]: number } = {};
+      bagSizes.forEach(size => {
+        quantities[size] = 0;
+      });
+
+      // Collect all quantities for this voucher
+      let voucherTotal = 0;
       order.orderDetails.forEach(detail => {
         detail.bagSizes.forEach(bag => {
           const quantity = bag.quantity?.initialQuantity || 0;
-          runningBalance += quantity;
-          entries.push({
-            date: new Date().toISOString(), // Temporarily using current date for testing
-            voucher: order.voucher.voucherNumber,
-            type: 'RECEIPT',
-            variety: detail.variety,
-            location: detail.location || '-',
-            bagSize: bag.size,
-            received: quantity,
-            delivered: '-',
-            balance: runningBalance,
-            remarks: order.remarks || '-'
-          });
+          quantities[bag.size] = (quantities[bag.size] || 0) + quantity;
+          voucherTotal += quantity;
         });
+      });
+
+      // Get the first variety and location for the voucher
+      const firstDetail = order.orderDetails[0];
+
+      entries.push({
+        date: order.createdAt,
+        voucher: order.voucher.voucherNumber,
+        type: 'RECEIPT',
+        variety: firstDetail?.variety || '-',
+        location: firstDetail?.location || '-',
+        quantities,
+        total: voucherTotal,
+        grandTotal: 0 // Will be calculated after sorting
       });
     });
 
-    // Add delivery entries
+    // Sort entries by voucher number
+    entries.sort((a, b) => a.voucher - b.voucher);
+
+    // Calculate running grand total after sorting
+    let total = 0;
+    entries.forEach(entry => {
+      total += entry.total;
+      entry.grandTotal = total;
+    });
+
+    return entries;
+  };
+
+  // Create delivery ledger entries with totals
+  const createDeliveryEntries = () => {
+    const entries: LedgerEntry[] = [];
+
+    // First create all entries
     deliveryOrders.forEach(order => {
+      // Initialize quantities map for all bag sizes
+      const quantities: { [bagSize: string]: number } = {};
+      bagSizes.forEach(size => {
+        quantities[size] = 0;
+      });
+
+      // Collect all quantities for this voucher
+      let voucherTotal = 0;
       order.orderDetails.forEach(detail => {
         detail.bagSizes.forEach(bag => {
           const quantity = bag.quantityRemoved || 0;
-          runningBalance -= quantity;
-          entries.push({
-            date: new Date().toISOString(), // Temporarily using current date for testing
-            voucher: order.voucher.voucherNumber,
-            type: 'DELIVERY',
-            variety: detail.variety,
-            location: detail.location || '-',
-            bagSize: bag.size,
-            received: '-',
-            delivered: quantity,
-            balance: runningBalance,
-            remarks: order.remarks || '-'
-          });
+          quantities[bag.size] = (quantities[bag.size] || 0) + quantity;
+          voucherTotal += quantity;
         });
+      });
+
+      // Get the first variety and location for the voucher
+      const firstDetail = order.orderDetails[0];
+
+      entries.push({
+        date: order.createdAt,
+        voucher: order.voucher.voucherNumber,
+        type: 'DELIVERY',
+        variety: firstDetail?.variety || '-',
+        location: firstDetail?.location || '-',
+        quantities,
+        total: voucherTotal,
+        grandTotal: 0 // Will be calculated after sorting
       });
     });
 
-    // Sort by date
-    return entries.sort((a, b) => {
-      const dateA = a.date ? new Date(a.date).getTime() : 0;
-      const dateB = b.date ? new Date(b.date).getTime() : 0;
-      return dateA - dateB;
+    // Sort entries by voucher number
+    entries.sort((a, b) => a.voucher - b.voucher);
+
+    // Calculate running grand total after sorting
+    let total = 0;
+    entries.forEach(entry => {
+      total += entry.total;
+      entry.grandTotal = total;
     });
+
+    return entries;
   };
 
-  const ledgerEntries = createLedgerEntries();
-  const totalReceived = ledgerEntries.reduce((sum, entry) => sum + (typeof entry.received === 'number' ? entry.received : 0), 0);
-  const totalDelivered = ledgerEntries.reduce((sum, entry) => sum + (typeof entry.delivered === 'number' ? entry.delivered : 0), 0);
-  const finalBalance = totalReceived - totalDelivered;
+  const receiptEntries = createReceiptEntries();
+  const deliveryEntries = createDeliveryEntries();
+
+  // Calculate totals for each bag size
+  const calculateBagSizeTotals = (entries: LedgerEntry[]) => {
+    const totals: { [key: string]: number } = {};
+    bagSizes.forEach(size => {
+      totals[size] = entries.reduce((sum, entry) => sum + (entry.quantities[size] || 0), 0);
+    });
+    return totals;
+  };
+
+  const receiptTotals = calculateBagSizeTotals(receiptEntries);
+  const deliveryTotals = calculateBagSizeTotals(deliveryEntries);
+
+  const renderTable = (entries: LedgerEntry[], title: string, totals: { [key: string]: number }, isDeliveryTable: boolean = false, receiptTotals?: { [key: string]: number }) => {
+    const initialGrandTotal = isDeliveryTable && receiptTotals
+      ? Object.values(receiptTotals).reduce((sum, qty) => sum + qty, 0)
+      : 0;
+
+    return (
+      <View style={styles.ledgerContainer}>
+        <Text style={styles.ledgerTitle}>{title}</Text>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={styles.colDate}>
+              <Text style={styles.cellHeaderText}>DATE</Text>
+            </View>
+            <View style={styles.colVoucher}>
+              <Text style={styles.cellHeaderText}>VOUCHER</Text>
+            </View>
+            <View style={styles.colVariety}>
+              <Text style={styles.cellHeaderText}>VARIETY</Text>
+            </View>
+            <View style={styles.colLocation}>
+              <Text style={styles.cellHeaderText}>LOCATION</Text>
+            </View>
+            {bagSizes.map(size => (
+              <View key={size} style={styles.colBagSize}>
+                <Text style={styles.cellHeaderText}>{size}</Text>
+              </View>
+            ))}
+            <View style={styles.colTotal}>
+              <Text style={styles.cellHeaderText}>TOTAL</Text>
+            </View>
+            <View style={styles.colGrandTotal}>
+              <Text style={styles.cellHeaderText}>G.TOTAL</Text>
+            </View>
+            {/* Show Marka column only for receipt table */}
+            {!isDeliveryTable && (
+              <View style={styles.colMarka}>
+                <Text style={styles.cellHeaderText}>MARKA</Text>
+              </View>
+            )}
+          </View>
+
+          {/* For delivery table, show receipt totals as first row */}
+          {isDeliveryTable && receiptTotals && (
+            <View style={[styles.tableRow, { backgroundColor: '#F5F5F5' }]}>
+              <View style={styles.colDate}>
+                <Text style={styles.balanceText}>OPENING</Text>
+              </View>
+              <View style={styles.colVoucher}>
+                <Text style={styles.balanceText}>BALANCE</Text>
+              </View>
+              <View style={styles.colVariety}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colLocation}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              {bagSizes.map(size => (
+                <View key={size} style={styles.colBagSize}>
+                  <Text style={styles.balanceText}>{receiptTotals[size]}</Text>
+                </View>
+              ))}
+              <View style={styles.colTotal}>
+                <Text style={styles.balanceText}>{initialGrandTotal}</Text>
+              </View>
+              <View style={styles.colGrandTotal}>
+                <Text style={styles.balanceText}>{initialGrandTotal}</Text>
+              </View>
+            </View>
+          )}
+
+          {entries.map((entry, index) => (
+            <View key={index} style={styles.tableRow}>
+              <View style={styles.colDate}>
+                <Text style={styles.cellText}>{formatDate(entry.date)}</Text>
+              </View>
+              <View style={styles.colVoucher}>
+                <Text style={styles.cellText}>{entry.voucher}</Text>
+              </View>
+              <View style={styles.colVariety}>
+                <Text style={styles.cellTextLeft}>{entry.variety}</Text>
+              </View>
+              <View style={styles.colLocation}>
+                <Text style={styles.cellText}>{entry.location}</Text>
+              </View>
+              {bagSizes.map(size => (
+                <View key={size} style={styles.colBagSize}>
+                  <Text style={styles.cellText}>
+                    {entry.quantities[size] || '-'}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.colTotal}>
+                <Text style={styles.balanceText}>{entry.total}</Text>
+              </View>
+              <View style={styles.colGrandTotal}>
+                <Text style={styles.balanceText}>
+                  {isDeliveryTable
+                    ? initialGrandTotal - entry.grandTotal
+                    : entry.grandTotal}
+                </Text>
+              </View>
+              {/* Show Marka column only for receipt table */}
+              {!isDeliveryTable && (
+                <View style={styles.colMarka}>
+                  <Text style={styles.cellText}>{`${entry.voucher}/${entry.total}`}</Text>
+                </View>
+              )}
+            </View>
+          ))}
+
+          {/* Show total row only for receipt table */}
+          {!isDeliveryTable && (
+            <View style={[styles.tableRow, styles.totalRow]}>
+              <View style={styles.colDate}>
+                <Text style={styles.balanceText}>TOTAL</Text>
+              </View>
+              <View style={styles.colVoucher}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colVariety}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colLocation}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              {bagSizes.map(size => (
+                <View key={size} style={styles.colBagSize}>
+                  <Text style={styles.balanceText}>{totals[size]}</Text>
+                </View>
+              ))}
+              <View style={styles.colTotal}>
+                <Text style={styles.balanceText}>
+                  {entries[entries.length - 1]?.grandTotal || 0}
+                </Text>
+              </View>
+              <View style={styles.colGrandTotal}>
+                <Text style={styles.balanceText}>
+                  {entries[entries.length - 1]?.grandTotal || 0}
+                </Text>
+              </View>
+              <View style={styles.colMarka}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <Document>
@@ -448,111 +639,11 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
           </View>
         </View>
 
-        {/* Ledger Table */}
-        <View style={styles.ledgerContainer}>
-          <Text style={styles.ledgerTitle}>Storage Details</Text>
+        {/* Receipt Table */}
+        {renderTable(receiptEntries, 'Receipt Details', receiptTotals)}
 
-          <View style={styles.table}>
-            {/* Table Header */}
-            <View style={styles.tableHeader}>
-              <View style={styles.colDate}>
-                <Text style={styles.cellHeaderText}>DATE</Text>
-              </View>
-              <View style={styles.colVoucher}>
-                <Text style={styles.cellHeaderText}>VOUCHER</Text>
-              </View>
-              <View style={styles.colVariety}>
-                <Text style={styles.cellHeaderText}>VARIETY</Text>
-              </View>
-              <View style={styles.colLocation}>
-                <Text style={styles.cellHeaderText}>LOCATION</Text>
-              </View>
-              <View style={styles.colBagSize}>
-                <Text style={styles.cellHeaderText}>BAG SIZE</Text>
-              </View>
-              <View style={styles.colReceived}>
-                <Text style={styles.cellHeaderText}>RECEIVED</Text>
-              </View>
-              <View style={styles.colDelivered}>
-                <Text style={styles.cellHeaderText}>DELIVERED</Text>
-              </View>
-              <View style={styles.colBalance}>
-                <Text style={styles.cellHeaderText}>BALANCE</Text>
-              </View>
-              <View style={styles.colRemarks}>
-                <Text style={styles.cellHeaderText}>REMARKS</Text>
-              </View>
-            </View>
-
-            {/* Table Rows */}
-            {ledgerEntries.map((entry, index) => (
-              <View key={index} style={styles.tableRow}>
-                <View style={styles.colDate}>
-                  <Text style={styles.cellText}>
-                    {formatDate(entry.date)}
-                  </Text>
-                </View>
-                <View style={styles.colVoucher}>
-                  <Text style={styles.cellText}>{entry.voucher}</Text>
-                </View>
-                <View style={styles.colVariety}>
-                  <Text style={styles.cellTextLeft}>{entry.variety}</Text>
-                </View>
-                <View style={styles.colLocation}>
-                  <Text style={styles.cellText}>{entry.location}</Text>
-                </View>
-                <View style={styles.colBagSize}>
-                  <Text style={styles.cellText}>{entry.bagSize}</Text>
-                </View>
-                <View style={styles.colReceived}>
-                  <Text style={styles.cellText}>{entry.received}</Text>
-                </View>
-                <View style={styles.colDelivered}>
-                  <Text style={styles.cellText}>{entry.delivered}</Text>
-                </View>
-                <View style={styles.colBalance}>
-                  <Text style={styles.balanceText}>{entry.balance}</Text>
-                </View>
-                <View style={styles.colRemarks}>
-                  <Text style={styles.cellText}>
-                    {entry.remarks.length > 10 ? entry.remarks.substring(0, 10) + '...' : entry.remarks}
-                  </Text>
-                </View>
-              </View>
-            ))}
-
-            {/* Total Row */}
-            <View style={[styles.tableRow, styles.totalRow]}>
-              <View style={styles.colDate}>
-                <Text style={styles.balanceText}>TOTAL</Text>
-              </View>
-              <View style={styles.colVoucher}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colVariety}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colLocation}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colBagSize}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colReceived}>
-                <Text style={styles.balanceText}>{totalReceived}</Text>
-              </View>
-              <View style={styles.colDelivered}>
-                <Text style={styles.balanceText}>{totalDelivered}</Text>
-              </View>
-              <View style={styles.colBalance}>
-                <Text style={styles.balanceText}>{finalBalance}</Text>
-              </View>
-              <View style={styles.colRemarks}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-            </View>
-          </View>
-        </View>
+        {/* Delivery Table */}
+        {renderTable(deliveryEntries, 'Delivery Details', deliveryTotals, true, receiptTotals)}
 
         {/* Summary Box */}
         <View style={styles.summaryContainer}>
@@ -568,18 +659,22 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Bags Received:</Text>
-              <Text style={styles.summaryValue}>{totalReceived}</Text>
+              <Text style={styles.summaryValue}>{receiptEntries[receiptEntries.length - 1]?.grandTotal || 0}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
-              <Text style={styles.summaryValue}>{totalDelivered}</Text>
+              <Text style={styles.summaryValue}>{deliveryEntries[deliveryEntries.length - 1]?.grandTotal || 0}</Text>
             </View>
             <View style={[styles.summaryRow, { backgroundColor: '#D0D0D0' }]}>
               <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
-              <Text style={styles.summaryValue}>{finalBalance}</Text>
+              <Text style={styles.summaryValue}>
+                {(receiptEntries[receiptEntries.length - 1]?.grandTotal || 0) -
+                 (deliveryEntries[deliveryEntries.length - 1]?.grandTotal || 0)}
+              </Text>
             </View>
           </View>
         </View>
+
         {/* Footer */}
         <View style={styles.footer}>
           <View style={styles.footerLeft}>
