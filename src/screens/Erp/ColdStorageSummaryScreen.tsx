@@ -12,6 +12,7 @@ import { StoreAdmin } from '@/utils/types';
 import StockTrendChart from '@/components/charts/StockTrendChart';
 import VarietyDistributionChart from '@/components/charts/VarietyDistributionChart';
 import TopFarmersChart from '@/components/charts/TopFarmersChart';
+import StockSummaryTable from '@/components/common/StockSummaryTable';
 
 interface StockSummary {
   variety: string;
@@ -109,10 +110,7 @@ const ColdStorageSummaryScreen = () => {
     totalBags: farmer.totalBags
   })) || [];
 
-  // Get unique bag sizes for table headers
-  const allBagSizes = [...new Set(stockSummary.flatMap(variety =>
-    variety.sizes.map(size => size.size)
-  ))].sort();
+
 
   if (isStockLoading || isTopFarmersLoading) {
     return (
@@ -292,77 +290,7 @@ const ColdStorageSummaryScreen = () => {
         </div>
 
         {/* Stock Summary Table */}
-        <Card className="bg-white shadow-sm">
-          <CardHeader className="bg-gray-50 border-b px-4 sm:px-6 py-3 sm:py-4">
-            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Stock Summary</CardTitle>
-            <p className="text-xs sm:text-sm text-gray-600">Distribution of potato varieties by size category</p>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <div className="min-w-full inline-block align-middle">
-                <table className="w-full">
-                  <thead className="bg-gray-50 border-b">
-                    <tr>
-                      <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
-                        Varieties
-                      </th>
-                      {allBagSizes.map(size => (
-                        <th key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
-                          {size}
-                        </th>
-                      ))}
-                      <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 bg-blue-50 whitespace-nowrap">
-                        Total
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {stockSummary.map((variety, index) => (
-                      <tr key={variety.variety} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
-                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 font-medium text-gray-900 border-r text-xs sm:text-sm">
-                          <div className="truncate max-w-[120px] sm:max-w-none" title={variety.variety}>
-                            {variety.variety}
-                          </div>
-                        </td>
-                        {allBagSizes.map(size => {
-                          const sizeData = variety.sizes.find(s => s.size === size);
-                          return (
-                            <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm">
-                              {sizeData ? sizeData.currentQuantity : 0}
-                            </td>
-                          );
-                        })}
-                        <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm">
-                          {calculateVarietyTotal(variety.sizes)}
-                        </td>
-                      </tr>
-                    ))}
-                    {/* Totals Row */}
-                    <tr className="bg-gray-100 font-bold">
-                      <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-gray-900 border-r text-xs sm:text-sm">
-                        Bag Total
-                      </td>
-                      {allBagSizes.map(size => {
-                        const sizeTotal = stockSummary.reduce((total, variety) => {
-                          const sizeData = variety.sizes.find(s => s.size === size);
-                          return total + (sizeData ? sizeData.currentQuantity : 0);
-                        }, 0);
-                        return (
-                          <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-900 border-r text-xs sm:text-sm">
-                            {sizeTotal}
-                          </td>
-                        );
-                      })}
-                      <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-blue-600 bg-blue-100 text-xs sm:text-sm">
-                        {totalBags}
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <StockSummaryTable stockSummary={stockSummary} />
 
         {/* Capacity Utilization */}
         <Card className="bg-white shadow-sm">

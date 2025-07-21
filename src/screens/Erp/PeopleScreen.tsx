@@ -15,6 +15,7 @@ interface Farmer {
   name: string;
   address: string;
   mobileNumber: string;
+  farmerId: string;
   createdAt: string;
   imageUrl?: string;
 }
@@ -45,7 +46,7 @@ const PeopleScreen = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<'name' | 'createdAt'>('name');
+  const [sortBy, setSortBy] = useState<'name' | 'createdAt' | 'farmerId'>('farmerId');
   const [sortOpen, setSortOpen] = useState(false);
   const [isNewFarmerModalOpen, setIsNewFarmerModalOpen] = useState(false);
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
@@ -110,6 +111,8 @@ const PeopleScreen = () => {
   farmers = [...farmers].sort((a, b) => {
     if (sortBy === 'name') {
       return a.name.localeCompare(b.name);
+    } else if (sortBy === 'farmerId') {
+      return parseInt(a.farmerId) - parseInt(b.farmerId);
     } else {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
@@ -197,7 +200,11 @@ const PeopleScreen = () => {
                   className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base transition-all duration-200 flex items-center justify-between"
                 >
                   <span className="text-gray-700">
-                    {sortBy === 'name' ? t('people.name') : t('people.recentlyAdded')}
+                    {sortBy === 'name' 
+                      ? t('people.name') 
+                      : sortBy === 'farmerId'
+                      ? 'Account Number'
+                      : t('people.recentlyAdded')}
                   </span>
                   <ChevronDown size={18} className="text-gray-400" />
                 </button>
@@ -208,6 +215,12 @@ const PeopleScreen = () => {
                       onClick={() => { setSortBy('name'); setSortOpen(false); }}
                     >
                       {t('people.name')}
+                    </button>
+                    <button
+                      className={`block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50/50 transition-colors ${sortBy === 'farmerId' ? 'text-primary font-medium bg-primary/5' : 'text-gray-700'}`}
+                      onClick={() => { setSortBy('farmerId'); setSortOpen(false); }}
+                    >
+                      Account Number
                     </button>
                     <button
                       className={`block w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50/50 transition-colors ${sortBy === 'createdAt' ? 'text-primary font-medium bg-primary/5' : 'text-gray-700'}`}
@@ -257,6 +270,7 @@ const PeopleScreen = () => {
                       name: farmer.name,
                       address: farmer.address,
                       mobileNumber: farmer.mobileNumber,
+                      farmerId: farmer.farmerId,
                       createdAt: farmer.createdAt,
                       imageUrl: farmer.imageUrl
                     }
@@ -277,6 +291,13 @@ const PeopleScreen = () => {
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{farmer.name}</h3>
                     <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <rect x="3" y="4" width="18" height="16" rx="2" />
+                          <path d="M8 8h8M8 12h8M8 16h4" />
+                        </svg>
+                        <span>Account Number: {farmer.farmerId}</span>
+                      </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Phone size={16} className="text-gray-400" />
                         <span>{farmer.mobileNumber}</span>

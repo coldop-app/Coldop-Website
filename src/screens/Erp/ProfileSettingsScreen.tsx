@@ -112,6 +112,7 @@ const ProfileSettingsScreen = () => {
   const [touchStartIndex, setTouchStartIndex] = useState<number | null>(null);
   const [isTouchDragging, setIsTouchDragging] = useState(false);
   const [touchDragTimeout, setTouchDragTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isPreparingDrag, setIsPreparingDrag] = useState(false);
   const bagSizesContainerRef = useRef<HTMLDivElement>(null);
 
   // Drag and drop handlers for bag sizes (desktop)
@@ -162,20 +163,26 @@ const ProfileSettingsScreen = () => {
     setDragOverIndex(null);
   };
 
-  // Touch reordering handlers for mobile
+    // Touch reordering handlers for mobile
   const handleTouchStart = (e: React.TouchEvent, index: number) => {
     if (editingBagSize !== null) return; // Don't allow reordering while editing
+
+    // Prevent text selection
+    e.preventDefault();
 
     const touch = e.touches[0];
     setTouchStartY(touch.clientY);
     setTouchStartIndex(index);
 
-    // Start a timeout to initiate drag after 500ms
+    // Start a timeout to initiate drag after 300ms (reduced from 500ms)
     const timeout = setTimeout(() => {
       setIsTouchDragging(true);
       setDraggedIndex(index);
-      toast.success("You can now drag to reorder", { duration: 2000 });
-    }, 500);
+      setIsPreparingDrag(false);
+      toast.success("Drag to reorder", { duration: 1500 });
+    }, 300);
+
+    setIsPreparingDrag(true);
 
     setTouchDragTimeout(timeout);
   };
@@ -241,6 +248,7 @@ const ProfileSettingsScreen = () => {
     setDragOverIndex(null);
     setTouchStartY(null);
     setTouchStartIndex(null);
+    setIsPreparingDrag(false);
   };
 
   const handleTouchCancel = () => {
@@ -253,6 +261,7 @@ const ProfileSettingsScreen = () => {
     setDragOverIndex(null);
     setTouchStartY(null);
     setTouchStartIndex(null);
+    setIsPreparingDrag(false);
   };
 
   // Bag size handlers
@@ -1133,7 +1142,7 @@ const ProfileSettingsScreen = () => {
             <div className="space-y-4 pt-6">
               <h3 className="text-lg font-semibold">Bag Size Preferences</h3>
               <p className="text-sm text-muted-foreground">
-                Manage the bag sizes you use in your cold storage. You can drag and drop to reorder them on desktop, or long-press and drag on mobile devices.
+                Manage the bag sizes you use in your cold storage. You can drag and drop to reorder them on desktop, or long-press (300ms) and drag on mobile devices. The item will highlight when ready to drag.
               </p>
 
               <div className="space-y-3" ref={bagSizesContainerRef}>
@@ -1150,13 +1159,15 @@ const ProfileSettingsScreen = () => {
                      onTouchMove={handleTouchMove}
                      onTouchEnd={handleTouchEnd}
                     onTouchCancel={handleTouchCancel}
-                    className={`flex items-center gap-2 sm:gap-3 py-2 px-2 rounded-md transition-colors ${
+                    className={`flex items-center gap-2 sm:gap-3 py-2 px-2 rounded-md transition-colors select-none ${
                       draggedIndex === index
-                        ? 'opacity-50 bg-muted'
+                        ? 'opacity-50 bg-muted shadow-lg scale-105'
                         : dragOverIndex === index
                           ? 'bg-blue-50 border-2 border-blue-300 border-dashed'
-                          : 'hover:bg-muted/50'
-                    } ${editingBagSize !== size ? 'cursor-move' : ''}`}
+                          : isPreparingDrag && touchStartIndex === index
+                            ? 'bg-yellow-50 border-2 border-yellow-300'
+                            : 'hover:bg-muted/50'
+                    } ${editingBagSize !== size ? 'cursor-move' : ''} ${isTouchDragging ? 'touch-none' : ''}`}
                   >
                     {editingBagSize !== size && (
                       <div className="cursor-move text-muted-foreground">
@@ -1195,9 +1206,9 @@ const ProfileSettingsScreen = () => {
                       </>
                     ) : (
                       <>
-                        <label className="text-sm font-medium flex-1 truncate">
+                        <span className="text-sm font-medium flex-1 truncate pointer-events-none">
                           {size.charAt(0).toUpperCase() + size.slice(1).replace(/-/g, " ")}
-                        </label>
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleEditBagSize(size)}

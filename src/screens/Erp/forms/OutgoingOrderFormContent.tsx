@@ -206,6 +206,13 @@ const OutgoingOrderFormContent = () => {
   const farmer = location.state?.farmer as Farmer | undefined;
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
 
+  // Get receipt number for outgoing order
+  const { data: receiptNumberData, isLoading: isLoadingReceiptNumber } = useQuery({
+    queryKey: ['outgoingReceiptNumber'],
+    queryFn: () => storeAdminApi.getReceiptNumber('outgoing', adminInfo?.token || ''),
+    enabled: !!adminInfo?.token
+  });
+
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -501,7 +508,20 @@ const OutgoingOrderFormContent = () => {
   return (
     <div className="w-full bg-background rounded-lg shadow-lg border border-border overflow-hidden">
       <div className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5">
-        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-3 sm:mb-4 md:mb-5">{t('outgoingOrder.title')}</h1>
+        <div className="flex flex-col items-center mb-3 sm:mb-4 md:mb-5">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-3">{t('outgoingOrder.title')}</h1>
+          {isLoadingReceiptNumber ? (
+            <div className="inline-flex items-center gap-2 bg-red-50 px-4 py-1.5 rounded-full">
+              <Loader2 className="h-3 w-3 animate-spin text-red-600" />
+              <span className="text-sm text-red-600">{t('outgoingOrder.loadingReceiptNumber')}</span>
+            </div>
+          ) : receiptNumberData?.receiptNumber ? (
+            <div className="inline-flex items-center gap-2 bg-red-50/50 px-4 py-1.5 rounded-full">
+              <span className="text-sm text-gray-600">{t('outgoingOrder.receiptNumber')}:</span>
+              <span className="text-sm font-semibold text-red-600">#{receiptNumberData.receiptNumber}</span>
+            </div>
+          ) : null}
+        </div>
 
         {/* Progress indicator */}
         <div className="mb-4 sm:mb-5 md:mb-6">
