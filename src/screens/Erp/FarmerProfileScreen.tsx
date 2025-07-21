@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Phone, MapPin, Calendar, Package, Boxes, ArrowDownCircle, ArrowUpCircle, FileText } from 'lucide-react';
+import { Phone, MapPin, Package, Boxes, ArrowDownCircle, ArrowUpCircle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -22,6 +22,7 @@ interface Farmer {
   name: string;
   address: string;
   mobileNumber: string;
+  farmerId: string;
   createdAt: string;
   imageUrl?: string;
 }
@@ -355,6 +356,24 @@ const FarmerProfileScreen = () => {
           {/* Information Cards Section */}
           <CardContent className="p-6 sm:p-8 bg-white">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+              {/* Account Number Card */}
+              <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <svg className="w-[18px] h-[18px] text-primary" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="4" width="18" height="16" rx="2" />
+                      <path d="M8 8h8M8 12h8M8 16h4" />
+                    </svg>
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                      Account Number
+                    </div>
+                    <div className="font-medium text-gray-900 truncate">{farmer.farmerId}</div>
+                  </div>
+                </div>
+              </div>
+
               {/* Phone Number Card */}
               <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
                 <div className="flex items-center gap-3">
@@ -382,23 +401,6 @@ const FarmerProfileScreen = () => {
                     </div>
                     <div className="font-medium text-gray-900 line-clamp-2 text-sm leading-relaxed">
                       {farmer.address}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Member Since Card */}
-              <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-primary/10 rounded-lg">
-                    <Calendar size={18} className="text-primary" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
-                      {t('farmerProfile.memberSince')}
-                    </div>
-                    <div className="font-medium text-gray-900">
-                      {new Date(farmer.createdAt).toLocaleDateString()}
                     </div>
                   </div>
                 </div>

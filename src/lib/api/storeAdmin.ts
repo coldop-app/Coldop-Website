@@ -142,6 +142,20 @@ interface DeleteProfilePhotoResponse {
   message?: string;
 }
 
+interface Farmer {
+  _id: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+  farmerId: string;
+  createdAt: string;
+}
+
+interface FarmersResponse {
+  status: string;
+  populatedFarmers: Farmer[];
+}
+
 interface TopFarmer {
   farmerId: string;
   farmerName: string;
@@ -296,8 +310,8 @@ export const storeAdminApi = {
     return response.data;
   },
 
-  getFarmers: async (token: string) => {
-    const response = await axios.get(
+  getFarmers: async (token: string): Promise<FarmersResponse> => {
+    const response = await axios.get<FarmersResponse>(
       `${BASE_URL}/api/store-admin/farmers`,
       {
         headers: {
