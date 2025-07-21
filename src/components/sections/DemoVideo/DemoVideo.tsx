@@ -9,7 +9,10 @@ const DemoVideo = () => {
   };
 
   return (
-    <section className="py-20 sm:py-32 w-full bg-gradient-to-b from-white via-secondary/30 to-white relative overflow-hidden" id="demo">
+    <section
+      className="py-20 sm:py-32 w-full bg-gradient-to-b from-white via-secondary/30 to-white relative overflow-hidden"
+      id="demo"
+    >
       {/* Subtle background decoration */}
       <div className="absolute inset-0 bg-gradient-to-r from-primary/5 via-transparent to-primary/5 opacity-50"></div>
 
@@ -47,7 +50,8 @@ const DemoVideo = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.7, delay: 0.4 }}
           >
-            Discover how Coldop simplifies cold storage management. Watch our comprehensive demo to see all features in action.
+            Discover how Coldop simplifies cold storage management. Watch our
+            comprehensive demo to see all features in action.
           </motion.p>
         </motion.div>
 
@@ -66,7 +70,7 @@ const DemoVideo = () => {
                 {/* Thumbnail Image (placeholder) */}
                 <div className="absolute inset-0 bg-gray-900/20 flex items-center justify-center">
                   <img
-                    src="https://img.youtube.com/vi/5QHgN50tTMI/maxresdefault.jpg"
+                    src="https://img.youtube.com/vi/VGvGvVX_LBY/maxresdefault.jpg"
                     alt="Demo Video Thumbnail"
                     className="w-full h-full object-cover"
                   />
@@ -98,7 +102,7 @@ const DemoVideo = () => {
             ) : (
               <div className="aspect-video">
                 <iframe
-                  src="https://www.youtube.com/embed/5QHgN50tTMI?autoplay=1&rel=0&modestbranding=1"
+                  src="https://www.youtube.com/embed/VGvGvVX_LBY?autoplay=1&rel=0&modestbranding=1"
                   title="Coldop Demo Video"
                   className="w-full h-full rounded-[11px]"
                   frameBorder="0"
@@ -133,7 +137,9 @@ const DemoVideo = () => {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: 0.9 }}
             >
-              This comprehensive demo showcases how farmers and cold storage managers can streamline their operations, track inventory, and manage transactions efficiently with Coldop.
+              This comprehensive demo showcases how farmers and cold storage
+              managers can streamline their operations, track inventory, and
+              manage transactions efficiently with Coldop.
             </motion.p>
           </motion.div>
         </motion.div>
@@ -160,9 +166,9 @@ const DemoVideo = () => {
             className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-4 text-xl font-semibold text-secondary hover:bg-primary/85 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             onClick={(e) => {
               e.preventDefault();
-              const element = document.getElementById('pricing');
+              const element = document.getElementById("pricing");
               if (element) {
-                element.scrollIntoView({ behavior: 'smooth' });
+                element.scrollIntoView({ behavior: "smooth" });
               }
             }}
             initial={{ opacity: 0, scale: 0.95 }}
