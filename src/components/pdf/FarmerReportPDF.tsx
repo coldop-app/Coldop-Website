@@ -300,6 +300,13 @@ interface LedgerEntry {
 const formatDate = (date: string | Date | undefined): string => {
   if (!date) return '-';
   try {
+    // Check if date is in DD.MM.YY format
+    if (typeof date === 'string' && date.match(/^\d{2}\.\d{2}\.\d{2}$/)) {
+      // Already in the desired format, just replace dots with slashes
+      return date.replace(/\./g, '/');
+    }
+
+    // For other formats, parse and format
     const parsedDate = typeof date === 'string' ? new Date(date) : date;
     if (isNaN(parsedDate.getTime())) return '-';
 
@@ -311,6 +318,14 @@ const formatDate = (date: string | Date | undefined): string => {
   } catch {
     return '-';
   }
+};
+
+const getOrderDate = (order: Order): string | undefined => {
+  // Try all possible date fields in order of preference
+  return order.dateOfSubmission ||
+         order.dateOfExtraction ||
+         order.createdAt ||
+         undefined;
 };
 
 const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, orders }) => {
@@ -357,7 +372,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
       const firstDetail = order.orderDetails[0];
 
       entries.push({
-        date: order.createdAt,
+        date: getOrderDate(order),
         voucher: order.voucher.voucherNumber,
         type: 'RECEIPT',
         variety: firstDetail?.variety || '-',
@@ -407,7 +422,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
       const firstDetail = order.orderDetails[0];
 
       entries.push({
-        date: order.createdAt,
+        date: getOrderDate(order),
         voucher: order.voucher.voucherNumber,
         type: 'DELIVERY',
         variety: firstDetail?.variety || '-',
