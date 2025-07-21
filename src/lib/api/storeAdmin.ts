@@ -158,6 +158,11 @@ interface CountResponse {
   error?: string;
 }
 
+interface ReceiptNumberResponse {
+  status: string;
+  receiptNumber: number;
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -546,6 +551,20 @@ export const storeAdminApi = {
       `${BASE_URL}/api/count`,
       {
         headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  },
+
+  getReceiptNumber: async (type: 'incoming' | 'outgoing', token: string) => {
+    const response = await axios.get<ReceiptNumberResponse>(
+      `${BASE_URL}/api/store-admin/receipt-number`,
+      {
+        params: { type },
+        headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       }
