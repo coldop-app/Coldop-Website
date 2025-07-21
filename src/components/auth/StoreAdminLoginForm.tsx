@@ -15,15 +15,14 @@ const StoreAdminLoginForm = () => {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     mobileNumber: "",
-    password: "",
-    rememberMe: false
+    password: ""
   });
 
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value
+      [name]: value
     }));
   };
 
@@ -91,22 +90,8 @@ const StoreAdminLoginForm = () => {
           />
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-0">
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="rememberMe"
-              name="rememberMe"
-              checked={formData.rememberMe}
-              onChange={updateFormData}
-              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-            />
-            <label htmlFor="rememberMe" className="ml-2 text-sm font-medium">
-              {t('storeAdminLogin.rememberMe')}
-            </label>
-          </div>
-
-          <a href="#" className="text-sm text-green-600 hover:underline text-right sm:text-left">
+        <div className="flex justify-start">
+          <a href="#" className="text-sm text-green-600 hover:underline text-left">
             {t('storeAdminLogin.forgotPassword')}
           </a>
         </div>

@@ -89,8 +89,6 @@ const StoreAdminSignupForm = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
-
   // Commented out since OTP verification is not mandatory
   // const otpInputRefs: RefObject<HTMLInputElement | null>[] = [
   //   useRef<HTMLInputElement>(null),
@@ -102,6 +100,119 @@ const StoreAdminSignupForm = () => {
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Bag size drag-and-drop and edit states
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchStartIndex, setTouchStartIndex] = useState<number | null>(null);
+  const [isTouchDragging, setIsTouchDragging] = useState(false);
+  const [touchDragTimeout, setTouchDragTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isPreparingDrag, setIsPreparingDrag] = useState(false);
+  const bagSizesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Drag and drop handlers for bag sizes (desktop)
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const newBagSizes = [...formData.bagSizes];
+    const draggedItem = newBagSizes[draggedIndex];
+    newBagSizes.splice(draggedIndex, 1);
+    newBagSizes.splice(dropIndex, 0, draggedItem);
+    setFormData(prev => ({ ...prev, bagSizes: newBagSizes }));
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+  // Touch reordering handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent, index: number) => {
+    if (editingBagSize !== null) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    setTouchStartY(touch.clientY);
+    setTouchStartIndex(index);
+    const timeout = setTimeout(() => {
+      setIsTouchDragging(true);
+      setDraggedIndex(index);
+      setIsPreparingDrag(false);
+      toast.success("Drag to reorder", { duration: 1500 });
+    }, 300);
+    setIsPreparingDrag(true);
+    setTouchDragTimeout(timeout);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isTouchDragging || touchStartY === null || touchStartIndex === null) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (bagSizesContainerRef.current) {
+      const containerRect = bagSizesContainerRef.current.getBoundingClientRect();
+      const relativeY = touch.clientY - containerRect.top;
+      const itemHeight = 48; // Approximate height of each item
+      const newIndex = Math.max(0, Math.min(
+        formData.bagSizes.length - 1,
+        Math.floor(relativeY / itemHeight)
+      ));
+      if (newIndex !== dragOverIndex) {
+        setDragOverIndex(newIndex);
+      }
+    }
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchDragTimeout) {
+      clearTimeout(touchDragTimeout);
+      setTouchDragTimeout(null);
+    }
+    if (!isTouchDragging) {
+      setTouchStartY(null);
+      setTouchStartIndex(null);
+      return;
+    }
+    e.preventDefault();
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newBagSizes = [...formData.bagSizes];
+      const draggedItem = newBagSizes[draggedIndex];
+      newBagSizes.splice(draggedIndex, 1);
+      newBagSizes.splice(dragOverIndex, 0, draggedItem);
+      setFormData(prev => ({ ...prev, bagSizes: newBagSizes }));
+    }
+    setIsTouchDragging(false);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setTouchStartY(null);
+    setTouchStartIndex(null);
+    setIsPreparingDrag(false);
+  };
+  const handleTouchCancel = () => {
+    if (touchDragTimeout) {
+      clearTimeout(touchDragTimeout);
+      setTouchDragTimeout(null);
+    }
+    setIsTouchDragging(false);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setTouchStartY(null);
+    setTouchStartIndex(null);
+    setIsPreparingDrag(false);
   };
 
   const handleAddBagSize = () => {
@@ -116,14 +227,12 @@ const StoreAdminSignupForm = () => {
     setNewBagSize("");
   };
 
+  // Fix handleRemoveCustomBagSize to allow removing any bag size (including defaults)
   const handleRemoveCustomBagSize = (bagSize: string) => {
-    // Only allow removing if not a default
-    if (!defaultBagSizes.includes(bagSize)) {
-      setFormData(prev => ({
-        ...prev,
-        bagSizes: prev.bagSizes.filter(size => size !== bagSize)
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      bagSizes: prev.bagSizes.filter(size => size !== bagSize)
+    }));
   };
 
   const handleEditBagSize = (bagSize: string) => {
@@ -868,15 +977,37 @@ const StoreAdminSignupForm = () => {
               <div>
                 <h3 className="text-lg font-medium mb-3">Bag Size Preferences</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Select the bag sizes you use in your cold storage.
+                  Select, edit, and reorder the bag sizes you use in your cold storage. Drag and drop to reorder on desktop, or long-press (300ms) and drag on mobile.
                 </p>
-
-                <div className="space-y-3">
-                  {[...new Set([...defaultBagSizes, ...formData.bagSizes])].map((size) => (
+                <div className="space-y-3" ref={bagSizesContainerRef}>
+                  {formData.bagSizes.map((size, index) => (
                     <div
                       key={size}
-                      className="flex items-center gap-2 sm:gap-3 py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
+                      draggable={editingBagSize !== size}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      onTouchStart={(e) => handleTouchStart(e, index)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      onTouchCancel={handleTouchCancel}
+                      className={`flex items-center gap-2 sm:gap-3 py-1 px-2 rounded-md transition-colors select-none ${
+                        draggedIndex === index
+                          ? 'opacity-50 bg-muted shadow-lg scale-105'
+                          : dragOverIndex === index
+                            ? 'bg-blue-50 border-2 border-blue-300 border-dashed'
+                            : isPreparingDrag && touchStartIndex === index
+                              ? 'bg-yellow-50 border-2 border-yellow-300'
+                              : 'hover:bg-muted/50'
+                      } ${editingBagSize !== size ? 'cursor-move' : ''} ${isTouchDragging ? 'touch-none' : ''}`}
                     >
+                      {editingBagSize !== size && (
+                        <span className="cursor-move text-muted-foreground">
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 6h.01M16 6h.01M8 12h.01M16 12h.01M8 18h.01M16 18h.01"/></svg>
+                        </span>
+                      )}
                       {editingBagSize === size ? (
                         <>
                           <input
