@@ -2,7 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Home, ShoppingBag, Users, Settings } from "lucide-react";
+import { BookOpen, Users, BarChart2, Settings, LogOut } from "lucide-react";
 
 interface SidebarProps {
   className?: string;
@@ -12,11 +12,15 @@ const Sidebar = ({ className }: SidebarProps) => {
   const { t } = useTranslation();
   const location = useLocation();
   const menuItems = [
-    { icon: Home, labelKey: "erpFooter.daybook", href: "/erp/daybook" },
+    { icon: BookOpen, labelKey: "erpFooter.daybook", href: "/erp/daybook" },
     { icon: Users, labelKey: "erpFooter.people", href: "/erp/people" },
-    { icon: ShoppingBag, labelKey: "erpFooter.analytics", href: "/erp/analytics" },
+    { icon: BarChart2, labelKey: "erpFooter.analytics", href: "/erp/analytics" },
     { icon: Settings, labelKey: "erpFooter.settings", href: "/erp/settings" },
   ];
+
+  const handleLogout = () => {
+    localStorage.removeItem("adminInfo");
+  };
 
   const SidebarContent = () => (
     <div className="flex h-full flex-col bg-secondary">
@@ -62,8 +66,16 @@ const Sidebar = ({ className }: SidebarProps) => {
         </nav>
       </ScrollArea>
 
-      {/* Subtle Branding Footer */}
-      <div className="border-t border-gray-200/30 bg-gray-50/30 px-6 py-3">
+      {/* Footer Section with Logout and Branding */}
+      <div className="flex flex-col gap-2 border-t border-gray-200/30 bg-gray-50/30 px-6 py-4">
+        <a
+          href="/"
+          onClick={handleLogout}
+          className="group flex items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 text-gray-600 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+        >
+          <LogOut className="h-4 w-4 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+          <span className="font-medium">Go to Homescreen</span>
+        </a>
         <p className="text-center text-xs text-gray-400">powered by coldop</p>
       </div>
     </div>
