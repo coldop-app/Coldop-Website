@@ -59,7 +59,7 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
     if (field === 'accNo') {
       const numericValue = value.replace(/[^0-9]/g, '');
       setFormData(prev => ({ ...prev, [field]: numericValue }));
-      
+
       // Debounced check for existing farmer ID
       if (numericValue && farmerIdsData?.data?.registeredFarmers) {
         debouncedCheckFarmerId(numericValue, farmerIdsData.data.registeredFarmers);
@@ -126,30 +126,43 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
         <h2 className="text-xl font-bold mb-6">Add New Farmer</h2>
 
-        {farmerIdsData?.data?.registeredFarmers && (
-          <div className="mb-4 p-3 bg-secondary/50 rounded-md">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium">
-                  Current Farmer ID: {Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id)))}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  Next farmer will be assigned ID: {Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id))) + 1}
-                </p>
-              </div>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <button
-                    type="button"
-                    className="p-2 hover:bg-secondary rounded-full transition-colors"
-                  >
-                    <HelpCircle className="h-4 w-4 text-muted-foreground" />
-                  </button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80">
-                  <div className="space-y-2">
-                    <h4 className="font-medium">Used Farmer IDs</h4>
-                    <div className="max-h-40 overflow-y-auto">
+        <div className="mb-4 p-3 bg-secondary/50 rounded-md">
+          <div className="flex items-center justify-between">
+            <div>
+              {farmerIdsData?.data?.registeredFarmers?.length > 0 ? (
+                <>
+                  <p className="text-sm font-medium">
+                    Current Farmer ID: {Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id)))}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Next farmer will be assigned ID: {Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id))) + 1}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium">
+                    You have no registered farmers
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    The farmer will be assigned ID: 1
+                  </p>
+                </>
+              )}
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="p-2 hover:bg-secondary rounded-full transition-colors"
+                >
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Used Farmer IDs</h4>
+                  <div className="max-h-40 overflow-y-auto">
+                    {farmerIdsData?.data?.registeredFarmers?.length > 0 ? (
                       <div className="grid grid-cols-5 gap-2">
                         {farmerIdsData.data.registeredFarmers
                           .sort((a: string, b: string) => parseInt(a) - parseInt(b))
@@ -162,13 +175,15 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
                             </div>
                           ))}
                       </div>
-                    </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No farmer IDs registered yet</p>
+                    )}
                   </div>
-                </PopoverContent>
-              </Popover>
-            </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
-        )}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

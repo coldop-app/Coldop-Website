@@ -8,6 +8,7 @@ interface Farmer {
   name: string;
   address: string;
   mobileNumber: string;
+  farmerId: string;
   createdAt: string;
 }
 
@@ -627,7 +628,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
           <View style={styles.farmerInfoLeft}>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>A/c No.:</Text>
-              <Text style={styles.infoValue}>{farmer._id.slice(-6).toUpperCase()}</Text>
+              <Text style={styles.infoValue}>{farmer.farmerId}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Name:</Text>
