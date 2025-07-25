@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { UserCircle, CreditCard, HelpCircle, Globe } from "lucide-react";
+import { UserCircle, CreditCard, HelpCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import TopBar from "@/components/common/Topbar/Topbar";
 import { useTranslation } from "react-i18next";
@@ -34,7 +34,7 @@ const SettingsScreen = () => {
       iconBg: "bg-purple-50 text-purple-500",
       borderColor: "border-purple-100"
     },
-   
+
   ];
 
   return (
@@ -43,7 +43,7 @@ const SettingsScreen = () => {
       <div className="p-4 sm:p-6 max-w-7xl mx-auto">
         {/* Settings Options Grid */}
         <div className="grid gap-4 sm:gap-6">
-       
+
           {settingsOptions.map((option) => (
             <Card
               key={option.title}
