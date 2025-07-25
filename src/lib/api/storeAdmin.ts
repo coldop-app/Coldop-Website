@@ -44,6 +44,11 @@ interface SearchReceiptParams {
   receiptNumber: number;
 }
 
+interface SearchByVarietyParams {
+  variety: string;
+  storeAdminId: string;
+}
+
 interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string;
@@ -137,6 +142,20 @@ interface DeleteProfilePhotoResponse {
   message?: string;
 }
 
+interface Farmer {
+  _id: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+  farmerId: string;
+  createdAt: string;
+}
+
+interface FarmersResponse {
+  status: string;
+  populatedFarmers: Farmer[];
+}
+
 interface TopFarmer {
   farmerId: string;
   farmerName: string;
@@ -151,6 +170,11 @@ interface CountResponse {
   currentCount: number;
   message?: string;
   error?: string;
+}
+
+interface ReceiptNumberResponse {
+  status: string;
+  receiptNumber: number;
 }
 
 export const storeAdminApi = {
@@ -272,8 +296,22 @@ export const storeAdminApi = {
     return response.data;
   },
 
-  getFarmers: async (token: string) => {
-    const response = await axios.get(
+  searchByVariety: async (params: SearchByVarietyParams, token: string) => {
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/orders/search-by-variety`,
+      params,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  getFarmers: async (token: string): Promise<FarmersResponse> => {
+    const response = await axios.get<FarmersResponse>(
       `${BASE_URL}/api/store-admin/farmers`,
       {
         headers: {
@@ -527,6 +565,20 @@ export const storeAdminApi = {
       `${BASE_URL}/api/count`,
       {
         headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
+  },
+
+  getReceiptNumber: async (type: 'incoming' | 'outgoing', token: string) => {
+    const response = await axios.get<ReceiptNumberResponse>(
+      `${BASE_URL}/api/store-admin/receipt-number`,
+      {
+        params: { type },
+        headers: {
+          'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         }
       }

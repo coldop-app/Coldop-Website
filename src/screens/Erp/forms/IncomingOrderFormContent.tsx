@@ -324,8 +324,8 @@ const IncomingOrderFormContent = () => {
       return;
     }
 
-    // Generate voucher number (you might want to get this from API or generate differently)
-    const voucherNumber = Math.floor(Math.random() * 100000);
+    // Use the receipt number from our query
+    const voucherNumber = receiptData?.receiptNumber || 1;
 
     // Prepare order data according to API structure
     const orderData: CreateOrderPayload = {
@@ -437,9 +437,28 @@ const IncomingOrderFormContent = () => {
     }
   };
 
+  // Query for receipt number
+  const { data: receiptData, isLoading: isLoadingReceipt } = useQuery({
+    queryKey: ['receiptNumber', 'incoming'],
+    queryFn: () => storeAdminApi.getReceiptNumber('incoming', adminInfo?.token || ''),
+    enabled: !!adminInfo?.token,
+  });
+
   return (
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
-      <h1 className="text-2xl font-bold text-center mb-6">{t('incomingOrder.title')}</h1>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold mb-3">{t('incomingOrder.title')}</h1>
+        
+        {/* Receipt Number Display - centered with primary color highlight */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full shadow-sm">
+          <span className="text-xs font-medium text-primary uppercase tracking-wide">{t('voucher no:')}</span>
+          {isLoadingReceipt ? (
+            <div className="h-4 w-10 animate-pulse bg-primary/20 rounded"></div>
+          ) : (
+            <span className="text-sm font-bold text-primary">#{receiptData?.receiptNumber || '-'}</span>
+          )}
+        </div>
+      </div>
 
       {/* Progress indicator */}
       <div className="mb-8">

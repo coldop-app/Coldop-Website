@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode, useRef, RefObject, ChangeEvent } from "react";
+import { useState, useEffect, ReactNode, useRef, ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Pencil, Check, X, Trash2, Plus, Phone, Upload, Image as ImageIcon } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
@@ -74,10 +74,10 @@ const StoreAdminSignupForm = () => {
 
   // Add new state for OTP verification
   const [isMobileVerified, setIsMobileVerified] = useState(false);
-  const [showOtpInput, setShowOtpInput] = useState(false);
-  const [otp, setOtp] = useState("");
-  const [canResendOtp, setCanResendOtp] = useState(false);
-  const [resendTimer, setResendTimer] = useState(30);
+  // const [showOtpInput, setShowOtpInput] = useState(false);
+  // const [otp, setOtp] = useState("");
+  // const [canResendOtp, setCanResendOtp] = useState(false);
+  // const [resendTimer, setResendTimer] = useState(30);
 
   // Add new state for error message
   const [mobileError, setMobileError] = useState("");
@@ -89,18 +89,130 @@ const StoreAdminSignupForm = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const defaultBagSizes = ["ration", "seed", "number-12", "goli", "cut-tok"];
-
-  const otpInputRefs: RefObject<HTMLInputElement | null>[] = [
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null)
-  ];
+  // Commented out since OTP verification is not mandatory
+  // const otpInputRefs: RefObject<HTMLInputElement | null>[] = [
+  //   useRef<HTMLInputElement>(null),
+  //   useRef<HTMLInputElement>(null),
+  //   useRef<HTMLInputElement>(null),
+  //   useRef<HTMLInputElement>(null)
+  // ];
 
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  // Bag size drag-and-drop and edit states
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchStartIndex, setTouchStartIndex] = useState<number | null>(null);
+  const [isTouchDragging, setIsTouchDragging] = useState(false);
+  const [touchDragTimeout, setTouchDragTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isPreparingDrag, setIsPreparingDrag] = useState(false);
+  const bagSizesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Drag and drop handlers for bag sizes (desktop)
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+  const handleDragLeave = () => {
+    setDragOverIndex(null);
+  };
+  const handleDrop = (e: React.DragEvent, dropIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+    const newBagSizes = [...formData.bagSizes];
+    const draggedItem = newBagSizes[draggedIndex];
+    newBagSizes.splice(draggedIndex, 1);
+    newBagSizes.splice(dropIndex, 0, draggedItem);
+    setFormData(prev => ({ ...prev, bagSizes: newBagSizes }));
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+  // Touch reordering handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent, index: number) => {
+    if (editingBagSize !== null) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    setTouchStartY(touch.clientY);
+    setTouchStartIndex(index);
+    const timeout = setTimeout(() => {
+      setIsTouchDragging(true);
+      setDraggedIndex(index);
+      setIsPreparingDrag(false);
+      toast.success("Drag to reorder", { duration: 1500 });
+    }, 300);
+    setIsPreparingDrag(true);
+    setTouchDragTimeout(timeout);
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isTouchDragging || touchStartY === null || touchStartIndex === null) return;
+    e.preventDefault();
+    const touch = e.touches[0];
+    if (bagSizesContainerRef.current) {
+      const containerRect = bagSizesContainerRef.current.getBoundingClientRect();
+      const relativeY = touch.clientY - containerRect.top;
+      const itemHeight = 48; // Approximate height of each item
+      const newIndex = Math.max(0, Math.min(
+        formData.bagSizes.length - 1,
+        Math.floor(relativeY / itemHeight)
+      ));
+      if (newIndex !== dragOverIndex) {
+        setDragOverIndex(newIndex);
+      }
+    }
+  };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchDragTimeout) {
+      clearTimeout(touchDragTimeout);
+      setTouchDragTimeout(null);
+    }
+    if (!isTouchDragging) {
+      setTouchStartY(null);
+      setTouchStartIndex(null);
+      return;
+    }
+    e.preventDefault();
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newBagSizes = [...formData.bagSizes];
+      const draggedItem = newBagSizes[draggedIndex];
+      newBagSizes.splice(draggedIndex, 1);
+      newBagSizes.splice(dragOverIndex, 0, draggedItem);
+      setFormData(prev => ({ ...prev, bagSizes: newBagSizes }));
+    }
+    setIsTouchDragging(false);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setTouchStartY(null);
+    setTouchStartIndex(null);
+    setIsPreparingDrag(false);
+  };
+  const handleTouchCancel = () => {
+    if (touchDragTimeout) {
+      clearTimeout(touchDragTimeout);
+      setTouchDragTimeout(null);
+    }
+    setIsTouchDragging(false);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setTouchStartY(null);
+    setTouchStartIndex(null);
+    setIsPreparingDrag(false);
   };
 
   const handleAddBagSize = () => {
@@ -115,14 +227,12 @@ const StoreAdminSignupForm = () => {
     setNewBagSize("");
   };
 
+  // Fix handleRemoveCustomBagSize to allow removing any bag size (including defaults)
   const handleRemoveCustomBagSize = (bagSize: string) => {
-    // Only allow removing if not a default
-    if (!defaultBagSizes.includes(bagSize)) {
-      setFormData(prev => ({
-        ...prev,
-        bagSizes: prev.bagSizes.filter(size => size !== bagSize)
-      }));
-    }
+    setFormData(prev => ({
+      ...prev,
+      bagSizes: prev.bagSizes.filter(size => size !== bagSize)
+    }));
   };
 
   const handleEditBagSize = (bagSize: string) => {
@@ -167,7 +277,7 @@ const StoreAdminSignupForm = () => {
         capacity: data.capacity ? parseInt(data.capacity) : undefined,
         password: data.password,
         imageUrl: data.imageUrl || "",
-        isVerified: true,
+        isVerified: false,
         isMobile: true,
         preferences: {
           bagSizes: data.bagSizes.map(size => size.charAt(0).toUpperCase() + size.slice(1))
@@ -200,11 +310,11 @@ const StoreAdminSignupForm = () => {
       return;
     }
 
-    // Validate mobile verification
-    if (!isMobileVerified) {
-      toast.error("Please verify your mobile number first");
-      return;
-    }
+    // Validate mobile verification - Commented out to make mobile verification non-mandatory
+    // if (!isMobileVerified) {
+    //   toast.error("Please verify your mobile number first");
+    //   return;
+    // }
 
     console.log('Submitting form with data:', { ...formData, password: '[REDACTED]' }); // Debug log
     createAccountMutation.mutate(formData);
@@ -225,8 +335,8 @@ const StoreAdminSignupForm = () => {
     },
     onSuccess: () => {
       setIsMobileVerified(false);
-      setShowOtpInput(false);
-      setOtp("");
+      // setShowOtpInput(false);
+      // setOtp("");
       setMobileError("");
       toast.success("Mobile number updated successfully!");
     },
@@ -250,47 +360,47 @@ const StoreAdminSignupForm = () => {
   };
 
   // Add mutation for sending OTP
-  const sendOtpMutation = useMutation({
-    mutationFn: async (mobileNumber: string) => {
-      return storeAdminApi.sendOtp(mobileNumber);
-    },
-    onSuccess: () => {
-      setShowOtpInput(true);
-      setCanResendOtp(false);
-      setResendTimer(30);
-      setMobileError("");
-      setOtp(""); // Reset OTP when sending new OTP
-      // Clear any existing interval before starting a new one
-      if (resendTimerRef.current) {
-        clearInterval(resendTimerRef.current);
-      }
-      resendTimerRef.current = setInterval(() => {
-        setResendTimer(prev => {
-          if (prev <= 1) {
-            if (resendTimerRef.current) clearInterval(resendTimerRef.current);
-            setCanResendOtp(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      toast.success("OTP sent successfully!");
-    },
-    onError: (error) => {
-      setMobileError("Failed to send OTP. Please try again.");
-      toast.error("Failed to send OTP");
-      console.error("Error sending OTP:", error);
-    },
-  });
+  // const sendOtpMutation = useMutation({
+  //   mutationFn: async (mobileNumber: string) => {
+  //     return storeAdminApi.sendOtp(mobileNumber);
+  //   },
+  //   onSuccess: () => {
+  //     setShowOtpInput(true);
+  //     setCanResendOtp(false);
+  //     setResendTimer(30);
+  //     setMobileError("");
+  //     setOtp(""); // Reset OTP when sending new OTP
+  //     // Clear any existing interval before starting a new one
+  //     if (resendTimerRef.current) {
+  //       clearInterval(resendTimerRef.current);
+  //     }
+  //     resendTimerRef.current = setInterval(() => {
+  //       setResendTimer(prev => {
+  //         if (prev <= 1) {
+  //           if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+  //           setCanResendOtp(true);
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+  //     toast.success("OTP sent successfully!");
+  //   },
+  //   onError: (error) => {
+  //     setMobileError("Failed to send OTP. Please try again.");
+  //     toast.error("Failed to send OTP");
+  //     console.error("Error sending OTP:", error);
+  //   },
+  // });
 
-  // Update handleSendOtp to use the mutation
-  const handleSendOtp = () => {
-    if (formData.mobileNumber.length !== 10) {
-      setMobileError("Please enter a valid 10 digit mobile number.");
-      return;
-    }
-    sendOtpMutation.mutate(formData.mobileNumber);
-  };
+  // Update handleSendOtp to use the mutation - Commented out since OTP verification is not mandatory
+  // const handleSendOtp = () => {
+  //   if (formData.mobileNumber.length !== 10) {
+  //     setMobileError("Please enter a valid 10 digit mobile number.");
+  //     return;
+  //   }
+  //   sendOtpMutation.mutate(formData.mobileNumber);
+  // };
 
   // Clean up interval on unmount
   useEffect(() => {
@@ -300,70 +410,70 @@ const StoreAdminSignupForm = () => {
   }, []);
 
   // Add mutation for verifying OTP
-  const verifyOtpMutation = useMutation({
-    mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
-      return storeAdminApi.verifyOtp(mobileNumber, otp);
-    },
-    onSuccess: () => {
-      setIsMobileVerified(true);
-      setShowOtpInput(false);
-      toast.success("Mobile number verified successfully!");
-    },
-    onError: (error) => {
-      setMobileError("Invalid OTP. Please try again.");
-      toast.error("Failed to verify OTP");
-      console.error("Error verifying OTP:", error);
-    },
-  });
+  // const verifyOtpMutation = useMutation({
+  //   mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
+  //     return storeAdminApi.verifyOtp(mobileNumber, otp);
+  //   },
+  //   onSuccess: () => {
+  //     setIsMobileVerified(true);
+  //     setShowOtpInput(false);
+  //     toast.success("Mobile number verified successfully!");
+  //   },
+  //   onError: (error) => {
+  //     setMobileError("Invalid OTP. Please try again.");
+  //     toast.error("Failed to verify OTP");
+  //     console.error("Error verifying OTP:", error);
+  //   },
+  // });
 
-  // Update handleVerifyOtp to use the mutation
-  const handleVerifyOtp = () => {
-    if (otp.length === 4) {
-      verifyOtpMutation.mutate({
-        mobileNumber: formData.mobileNumber,
-        otp: otp
-      });
-    }
-  };
+  // Update handleVerifyOtp to use the mutation - Commented out since OTP verification is not mandatory
+  // const handleVerifyOtp = () => {
+  //   if (otp.length === 4) {
+  //     verifyOtpMutation.mutate({
+  //       mobileNumber: formData.mobileNumber,
+  //       otp: otp
+  //     });
+  //   }
+  // };
 
   // Add mutation for resending OTP
-  const resendOtpMutation = useMutation({
-    mutationFn: async (mobileNumber: string) => {
-      return storeAdminApi.resendOtp(mobileNumber);
-    },
-    onSuccess: () => {
-      setCanResendOtp(false);
-      setResendTimer(30);
-      setOtp(""); // Reset OTP when resending
-      // Clear any existing interval before starting a new one
-      if (resendTimerRef.current) {
-        clearInterval(resendTimerRef.current);
-      }
-      resendTimerRef.current = setInterval(() => {
-        setResendTimer(prev => {
-          if (prev <= 1) {
-            if (resendTimerRef.current) clearInterval(resendTimerRef.current);
-            setCanResendOtp(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-      toast.success("OTP resent successfully!");
-    },
-    onError: (error) => {
-      setMobileError("Failed to resend OTP. Please try again.");
-      toast.error("Failed to resend OTP");
-      console.error("Error resending OTP:", error);
-    },
-  });
+  // const resendOtpMutation = useMutation({
+  //   mutationFn: async (mobileNumber: string) => {
+  //     return storeAdminApi.resendOtp(mobileNumber);
+  //   },
+  //   onSuccess: () => {
+  //     setCanResendOtp(false);
+  //     setResendTimer(30);
+  //     setOtp(""); // Reset OTP when resending
+  //     // Clear any existing interval before starting a new one
+  //     if (resendTimerRef.current) {
+  //       clearInterval(resendTimerRef.current);
+  //     }
+  //     resendTimerRef.current = setInterval(() => {
+  //       setResendTimer(prev => {
+  //         if (prev <= 1) {
+  //           if (resendTimerRef.current) clearInterval(resendTimerRef.current);
+  //           setCanResendOtp(true);
+  //           return 0;
+  //         }
+  //         return prev - 1;
+  //       });
+  //     }, 1000);
+  //     toast.success("OTP resent successfully!");
+  //   },
+  //   onError: (error) => {
+  //     setMobileError("Failed to resend OTP. Please try again.");
+  //     toast.error("Failed to resend OTP");
+  //     console.error("Error resending OTP:", error);
+  //   },
+  // });
 
-  // Update handleResendOtp to use the mutation
-  const handleResendOtp = () => {
-    if (canResendOtp) {
-      resendOtpMutation.mutate(formData.mobileNumber);
-    }
-  };
+  // Update handleResendOtp to use the mutation - Commented out since OTP verification is not mandatory
+  // const handleResendOtp = () => {
+  //   if (canResendOtp) {
+  //     resendOtpMutation.mutate(formData.mobileNumber);
+  //   }
+  // };
 
   // Add upload profile photo mutation
   const uploadPhotoMutation = useMutation({
@@ -537,7 +647,8 @@ const StoreAdminSignupForm = () => {
                         </span>
                       )}
                     </div>
-                    {!isMobileVerified && (
+                    {/* Commented out Send OTP button since mobile verification is not mandatory */}
+                    {/* {!isMobileVerified && (
                       <button
                         type="button"
                         onClick={handleSendOtp}
@@ -551,12 +662,13 @@ const StoreAdminSignupForm = () => {
                       >
                         Send OTP
                       </button>
-                    )}
+                    )} */}
                   </div>
                   {mobileError && (
                     <div className="text-xs text-red-500 mt-1 ml-1">{mobileError}</div>
                   )}
-                  {showOtpInput && !isMobileVerified && (
+                  {/* Commented out OTP verification UI since mobile verification is not mandatory */}
+                  {/* {showOtpInput && !isMobileVerified && (
                     <div className="space-y-2 mt-2">
                       <div className="flex items-center gap-2">
                         <div className="flex gap-2">
@@ -640,7 +752,7 @@ const StoreAdminSignupForm = () => {
                         )}
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
 
@@ -865,15 +977,37 @@ const StoreAdminSignupForm = () => {
               <div>
                 <h3 className="text-lg font-medium mb-3">Bag Size Preferences</h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Select the bag sizes you use in your cold storage.
+                  Select, edit, and reorder the bag sizes you use in your cold storage. Drag and drop to reorder on desktop, or long-press (300ms) and drag on mobile.
                 </p>
-
-                <div className="space-y-3">
-                  {[...new Set([...defaultBagSizes, ...formData.bagSizes])].map((size) => (
+                <div className="space-y-3" ref={bagSizesContainerRef}>
+                  {formData.bagSizes.map((size, index) => (
                     <div
                       key={size}
-                      className="flex items-center gap-2 sm:gap-3 py-1 px-2 rounded-md hover:bg-muted/50 transition-colors"
+                      draggable={editingBagSize !== size}
+                      onDragStart={(e) => handleDragStart(e, index)}
+                      onDragOver={(e) => handleDragOver(e, index)}
+                      onDragLeave={handleDragLeave}
+                      onDrop={(e) => handleDrop(e, index)}
+                      onDragEnd={handleDragEnd}
+                      onTouchStart={(e) => handleTouchStart(e, index)}
+                      onTouchMove={handleTouchMove}
+                      onTouchEnd={handleTouchEnd}
+                      onTouchCancel={handleTouchCancel}
+                      className={`flex items-center gap-2 sm:gap-3 py-1 px-2 rounded-md transition-colors select-none ${
+                        draggedIndex === index
+                          ? 'opacity-50 bg-muted shadow-lg scale-105'
+                          : dragOverIndex === index
+                            ? 'bg-blue-50 border-2 border-blue-300 border-dashed'
+                            : isPreparingDrag && touchStartIndex === index
+                              ? 'bg-yellow-50 border-2 border-yellow-300'
+                              : 'hover:bg-muted/50'
+                      } ${editingBagSize !== size ? 'cursor-move' : ''} ${isTouchDragging ? 'touch-none' : ''}`}
                     >
+                      {editingBagSize !== size && (
+                        <span className="cursor-move text-muted-foreground">
+                          <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 6h.01M16 6h.01M8 12h.01M16 12h.01M8 18h.01M16 18h.01"/></svg>
+                        </span>
+                      )}
                       {editingBagSize === size ? (
                         <>
                           <input

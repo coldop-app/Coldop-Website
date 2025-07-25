@@ -1,12 +1,14 @@
 import React from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { Order, StoreAdmin } from '@/utils/types';
+import coldopLogo from '/coldop-logo.png';
 
 interface Farmer {
   _id: string;
   name: string;
   address: string;
   mobileNumber: string;
+  farmerId: string;
   createdAt: string;
 }
 
@@ -19,467 +21,696 @@ interface FarmerReportPDFProps {
 const styles = StyleSheet.create({
   page: {
     flexDirection: 'column',
-    backgroundColor: '#FFFFFF',
-    padding: 24,
+    backgroundColor: '#FEFDF8',
+    padding: 16,
     fontFamily: 'Helvetica',
-    lineHeight: 1.6,
+    fontSize: 8,
   },
-  brandHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 24,
-    paddingBottom: 16,
-    borderBottomWidth: 2,
-    borderBottomColor: '#22c55e',
-  },
-  logo: {
-    width: 40,
-    height: 40,
-    marginRight: 12,
-  },
-  brandTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#22c55e',
-    letterSpacing: -0.5,
-  },
+
   header: {
-    marginBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    paddingBottom: 12,
+    marginBottom: 12,
+    borderBottomWidth: 2,
+    borderBottomColor: '#000',
+    paddingBottom: 6,
   },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    textAlign: 'center',
-    marginBottom: 6,
-    letterSpacing: -0.3,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    fontWeight: 'normal',
-  },
-  section: {
-    marginBottom: 24,
-    padding: 20,
-    backgroundColor: '#F9FAFB',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  sectionTitle: {
+  companyName: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#22c55e',
+    textAlign: 'center',
+    color: '#000',
+    marginBottom: 3,
+  },
+  reportTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#000',
+    marginBottom: 6,
+  },
+
+  farmerInfoSection: {
     marginBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
-    paddingBottom: 6,
-    letterSpacing: -0.2,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  farmerInfoLeft: {
+    width: '48%',
+  },
+  farmerInfoRight: {
+    width: '48%',
   },
   infoRow: {
     flexDirection: 'row',
-    marginBottom: 10,
-    alignItems: 'flex-start',
+    marginBottom: 3,
+    fontSize: 8,
   },
   infoLabel: {
-    fontSize: 11,
+    width: '40%',
     fontWeight: 'bold',
-    color: '#374151',
-    width: '35%',
-    paddingRight: 8,
+    color: '#000',
   },
   infoValue: {
-    fontSize: 11,
-    color: '#1F2937',
-    width: '65%',
-    lineHeight: 1.4,
+    width: '60%',
+    color: '#000',
   },
-  orderCard: {
-    marginBottom: 16,
-    padding: 16,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
-  },
-  orderHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingBottom: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#F3F4F6',
-  },
-  voucherInfo: {
-    fontSize: 13,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    letterSpacing: -0.1,
-  },
-  voucherType: {
-    fontSize: 9,
-    color: '#FFFFFF',
-    backgroundColor: '#22c55e',
-    padding: '3 8',
-    borderRadius: 4,
-    fontWeight: 'bold',
-  },
-  orderDate: {
-    fontSize: 10,
-    color: '#6B7280',
-    fontWeight: 'normal',
-  },
-  varietySection: {
-    marginBottom: 12,
-  },
-  varietyTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#1F2937',
-    marginBottom: 6,
-    letterSpacing: -0.1,
-  },
-  bagSizeRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-    paddingHorizontal: 10,
-    backgroundColor: '#F3F4F6',
-    marginBottom: 3,
-    borderRadius: 4,
-    alignItems: 'center',
-  },
-  bagSizeLabel: {
-    fontSize: 10,
-    color: '#374151',
-    fontWeight: 'normal',
-  },
-  bagSizeValue: {
-    fontSize: 10,
-    color: '#1F2937',
-    fontWeight: 'bold',
-  },
-  remarksSection: {
+
+  ledgerContainer: {
     marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
+    marginBottom: 12,
   },
-  remarksLabel: {
+  ledgerTitle: {
     fontSize: 10,
     fontWeight: 'bold',
-    color: '#374151',
-    marginBottom: 4,
+    textAlign: 'center',
+    marginBottom: 6,
+    color: '#000',
+    textTransform: 'uppercase',
   },
-  remarksText: {
-    fontSize: 9,
-    color: '#6B7280',
-    fontStyle: 'italic',
-    lineHeight: 1.3,
+
+  table: {
+    borderWidth: 1,
+    borderColor: '#000',
   },
-  summarySection: {
-    marginTop: 24,
-    padding: 20,
-    backgroundColor: '#F0FDF4',
-    borderRadius: 8,
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#E8E8E8',
+    borderBottomWidth: 1,
+    borderBottomColor: '#000',
+    paddingVertical: 3,
+  },
+  tableRow: {
+    flexDirection: 'row',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#666',
+    paddingVertical: 2,
+    minHeight: 16,
+  },
+
+  // Column styles - updated for new layout
+  colDate: {
+    width: '8%',
+    borderRightWidth: 0.5,
+    borderRightColor: '#666',
+    paddingHorizontal: 2,
+    justifyContent: 'center',
+  },
+  colVoucher: {
+    width: '8%',
+    borderRightWidth: 0.5,
+    borderRightColor: '#666',
+    paddingHorizontal: 2,
+    justifyContent: 'center',
+  },
+  colVariety: {
+    width: '10%',
+    borderRightWidth: 0.5,
+    borderRightColor: '#666',
+    paddingHorizontal: 2,
+    justifyContent: 'center',
+  },
+  colLocation: {
+    width: '8%',
+    borderRightWidth: 0.5,
+    borderRightColor: '#666',
+    paddingHorizontal: 2,
+    justifyContent: 'center',
+  },
+  colBagSize: {
+    width: '6%',
+    borderRightWidth: 0.5,
+    borderRightColor: '#666',
+    paddingHorizontal: 2,
+    justifyContent: 'center',
+  },
+  colTotal: {
+    width: '8%',
+    borderRightWidth: 0.5,
+    borderRightColor: '#666',
+    paddingHorizontal: 2,
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+  colGrandTotal: {
+    width: '8%',
+    borderRightWidth: 0.5,
+    borderRightColor: '#666',
+    paddingHorizontal: 2,
+    justifyContent: 'center',
+    backgroundColor: '#E8E8E8',
+  },
+  colMarka: {
+    width: '8%',
+    borderRightWidth: 0.5,
+    borderRightColor: '#666',
+    paddingHorizontal: 2,
+    justifyContent: 'center',
+    backgroundColor: '#F5F5F5',
+  },
+
+  cellHeaderText: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#000',
+  },
+  cellText: {
+    fontSize: 7,
+    textAlign: 'center',
+    color: '#000',
+  },
+  cellTextLeft: {
+    fontSize: 7,
+    textAlign: 'left',
+    color: '#000',
+  },
+
+  totalRow: {
+    backgroundColor: '#E0E0E0',
+    fontWeight: 'bold',
+  },
+  balanceText: {
+    fontSize: 7,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    color: '#000',
+  },
+
+  summaryContainer: {
+    marginTop: 12,
+    padding: 8,
     borderWidth: 2,
-    borderColor: '#22c55e',
+    borderColor: '#000',
+    backgroundColor: '#F5F5F5',
   },
   summaryTitle: {
-    fontSize: 16,
+    fontSize: 10,
     fontWeight: 'bold',
-    color: '#22c55e',
-    marginBottom: 12,
     textAlign: 'center',
-    letterSpacing: -0.2,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+    color: '#000',
+  },
+  summaryTable: {
+    borderWidth: 1,
+    borderColor: '#000',
   },
   summaryRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 8,
-    alignItems: 'center',
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#666',
+    paddingVertical: 3,
   },
   summaryLabel: {
-    fontSize: 11,
-    color: '#166534',
+    width: '70%',
+    paddingHorizontal: 4,
+    fontSize: 8,
     fontWeight: 'bold',
+    color: '#000',
   },
   summaryValue: {
-    fontSize: 11,
-    color: '#166534',
+    width: '30%',
+    paddingHorizontal: 4,
+    fontSize: 8,
     fontWeight: 'bold',
+    textAlign: 'right',
+    borderLeftWidth: 0.5,
+    borderLeftColor: '#666',
+    color: '#000',
   },
+
   footer: {
     position: 'absolute',
-    bottom: 24,
-    left: 24,
-    right: 24,
+    bottom: 16,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    fontSize: 9,
-    color: '#6B7280',
     borderTopWidth: 1,
-    borderTopColor: '#E5E7EB',
-    paddingTop: 12,
+    borderTopColor: '#000',
+    paddingTop: 6,
   },
   footerText: {
-    fontSize: 9,
-    color: '#6B7280',
+    fontSize: 7,
+    color: '#000',
   },
-  footerBrand: {
-    fontSize: 9,
-    color: '#22c55e',
-    fontWeight: 'bold',
+  footerLeft: {
+    flex: 1,
+  },
+  footerCenter: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  footerRight: {
+    flex: 1,
+    alignItems: 'flex-end',
+  },
+  logo: {
+    width: 20,
+    height: 20,
+    marginBottom: 3,
+    opacity: 0.85,
+  },
+  poweredBy: {
+    fontSize: 6,
+    color: '#555',
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
+
+  pageNumber: {
+    position: 'absolute',
+    bottom: 6,
+    right: 16,
+    fontSize: 7,
+    color: '#666',
   },
 });
 
+interface LedgerEntry {
+  date: string | undefined;
+  voucher: number;
+  type: 'RECEIPT' | 'DELIVERY';
+  variety: string;
+  location: string;
+  quantities: { [bagSize: string]: number }; // Map of bag size to quantity
+  total: number;
+  grandTotal: number;
+}
+
+const formatDate = (date: string | Date | undefined): string => {
+  if (!date) return '-';
+  try {
+    // Check if date is in DD.MM.YY format
+    if (typeof date === 'string' && date.match(/^\d{2}\.\d{2}\.\d{2}$/)) {
+      // Already in the desired format, just replace dots with slashes
+      return date.replace(/\./g, '/');
+    }
+
+    // For other formats, parse and format
+    const parsedDate = typeof date === 'string' ? new Date(date) : date;
+    if (isNaN(parsedDate.getTime())) return '-';
+
+    const day = parsedDate.getDate().toString().padStart(2, '0');
+    const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+    const year = parsedDate.getFullYear().toString().slice(-2);
+
+    return `${day}/${month}/${year}`;
+  } catch {
+    return '-';
+  }
+};
+
+const getOrderDate = (order: Order): string | undefined => {
+  // Try all possible date fields in order of preference
+  return order.dateOfSubmission ||
+         order.dateOfExtraction ||
+         order.createdAt ||
+         undefined;
+};
+
 const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, orders }) => {
+  if (!orders || orders.length === 0) {
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <View style={styles.header}>
+            <Text style={styles.companyName}>{adminInfo.coldStorageDetails.coldStorageName.toUpperCase()}</Text>
+            <Text style={styles.reportTitle}>NO TRANSACTIONS FOUND</Text>
+          </View>
+        </Page>
+      </Document>
+    );
+  }
+
+  const bagSizes = adminInfo.preferences?.bagSizes || [];
   const receiptOrders = orders.filter(order => order.voucher.type === 'RECEIPT');
   const deliveryOrders = orders.filter(order => order.voucher.type === 'DELIVERY');
 
-    const calculateTotalBags = (orders: Order[]) => {
-    return orders.reduce((total, order) => {
-      return total + order.orderDetails.reduce((orderTotal, detail) => {
-        if (order.voucher.type === 'RECEIPT') {
-          return orderTotal + detail.bagSizes.reduce((bagTotal, bag) =>
-            bagTotal + (bag.quantity?.initialQuantity || 0), 0
-          );
-        } else {
-          return orderTotal + detail.bagSizes.reduce((bagTotal, bag) =>
-            bagTotal + (bag.quantityRemoved || 0), 0
-          );
-        }
-      }, 0);
-    }, 0);
+  // Create receipt ledger entries with totals
+  const createReceiptEntries = () => {
+    const entries: LedgerEntry[] = [];
+
+    // First create all entries
+    receiptOrders.forEach(order => {
+      // Initialize quantities map for all bag sizes
+      const quantities: { [bagSize: string]: number } = {};
+      bagSizes.forEach(size => {
+        quantities[size] = 0;
+      });
+
+      // Collect all quantities for this voucher
+      let voucherTotal = 0;
+      order.orderDetails.forEach(detail => {
+        detail.bagSizes.forEach(bag => {
+          const quantity = bag.quantity?.initialQuantity || 0;
+          quantities[bag.size] = (quantities[bag.size] || 0) + quantity;
+          voucherTotal += quantity;
+        });
+      });
+
+      // Get the first variety and location for the voucher
+      const firstDetail = order.orderDetails[0];
+
+      entries.push({
+        date: getOrderDate(order),
+        voucher: order.voucher.voucherNumber,
+        type: 'RECEIPT',
+        variety: firstDetail?.variety || '-',
+        location: firstDetail?.location || '-',
+        quantities,
+        total: voucherTotal,
+        grandTotal: 0 // Will be calculated after sorting
+      });
+    });
+
+    // Sort entries by voucher number
+    entries.sort((a, b) => a.voucher - b.voucher);
+
+    // Calculate running grand total after sorting
+    let total = 0;
+    entries.forEach(entry => {
+      total += entry.total;
+      entry.grandTotal = total;
+    });
+
+    return entries;
   };
 
-  const totalReceiptBags = calculateTotalBags(receiptOrders);
-  const totalDeliveryBags = calculateTotalBags(deliveryOrders);
-  const netBags = totalReceiptBags - totalDeliveryBags;
+  // Create delivery ledger entries with totals
+  const createDeliveryEntries = () => {
+    const entries: LedgerEntry[] = [];
+
+    // First create all entries
+    deliveryOrders.forEach(order => {
+      // Initialize quantities map for all bag sizes
+      const quantities: { [bagSize: string]: number } = {};
+      bagSizes.forEach(size => {
+        quantities[size] = 0;
+      });
+
+      // Collect all quantities for this voucher
+      let voucherTotal = 0;
+      order.orderDetails.forEach(detail => {
+        detail.bagSizes.forEach(bag => {
+          const quantity = bag.quantityRemoved || 0;
+          quantities[bag.size] = (quantities[bag.size] || 0) + quantity;
+          voucherTotal += quantity;
+        });
+      });
+
+      // Get the first variety and location for the voucher
+      const firstDetail = order.orderDetails[0];
+
+      entries.push({
+        date: getOrderDate(order),
+        voucher: order.voucher.voucherNumber,
+        type: 'DELIVERY',
+        variety: firstDetail?.variety || '-',
+        location: firstDetail?.location || '-',
+        quantities,
+        total: voucherTotal,
+        grandTotal: 0 // Will be calculated after sorting
+      });
+    });
+
+    // Sort entries by voucher number
+    entries.sort((a, b) => a.voucher - b.voucher);
+
+    // Calculate running grand total after sorting
+    let total = 0;
+    entries.forEach(entry => {
+      total += entry.total;
+      entry.grandTotal = total;
+    });
+
+    return entries;
+  };
+
+  const receiptEntries = createReceiptEntries();
+  const deliveryEntries = createDeliveryEntries();
+
+  // Calculate totals for each bag size
+  const calculateBagSizeTotals = (entries: LedgerEntry[]) => {
+    const totals: { [key: string]: number } = {};
+    bagSizes.forEach(size => {
+      totals[size] = entries.reduce((sum, entry) => sum + (entry.quantities[size] || 0), 0);
+    });
+    return totals;
+  };
+
+  const receiptTotals = calculateBagSizeTotals(receiptEntries);
+  const deliveryTotals = calculateBagSizeTotals(deliveryEntries);
+
+  const renderTable = (entries: LedgerEntry[], title: string, totals: { [key: string]: number }, isDeliveryTable: boolean = false, receiptTotals?: { [key: string]: number }) => {
+    const initialGrandTotal = isDeliveryTable && receiptTotals
+      ? Object.values(receiptTotals).reduce((sum, qty) => sum + qty, 0)
+      : 0;
+
+    return (
+      <View style={styles.ledgerContainer}>
+        <Text style={styles.ledgerTitle}>{title}</Text>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={styles.colDate}>
+              <Text style={styles.cellHeaderText}>DATE</Text>
+            </View>
+            <View style={styles.colVoucher}>
+              <Text style={styles.cellHeaderText}>VOUCHER</Text>
+            </View>
+            <View style={styles.colVariety}>
+              <Text style={styles.cellHeaderText}>VARIETY</Text>
+            </View>
+            <View style={styles.colLocation}>
+              <Text style={styles.cellHeaderText}>LOCATION</Text>
+            </View>
+            {bagSizes.map(size => (
+              <View key={size} style={styles.colBagSize}>
+                <Text style={styles.cellHeaderText}>{size}</Text>
+              </View>
+            ))}
+            <View style={styles.colTotal}>
+              <Text style={styles.cellHeaderText}>TOTAL</Text>
+            </View>
+            <View style={styles.colGrandTotal}>
+              <Text style={styles.cellHeaderText}>G.TOTAL</Text>
+            </View>
+            {/* Show Marka column only for receipt table */}
+            {!isDeliveryTable && (
+              <View style={styles.colMarka}>
+                <Text style={styles.cellHeaderText}>MARKA</Text>
+              </View>
+            )}
+          </View>
+
+          {/* For delivery table, show receipt totals as first row */}
+          {isDeliveryTable && receiptTotals && (
+            <View style={[styles.tableRow, { backgroundColor: '#F5F5F5' }]}>
+              <View style={styles.colDate}>
+                <Text style={styles.balanceText}>OPENING</Text>
+              </View>
+              <View style={styles.colVoucher}>
+                <Text style={styles.balanceText}>BALANCE</Text>
+              </View>
+              <View style={styles.colVariety}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colLocation}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              {bagSizes.map(size => (
+                <View key={size} style={styles.colBagSize}>
+                  <Text style={styles.balanceText}>{receiptTotals[size]}</Text>
+                </View>
+              ))}
+              <View style={styles.colTotal}>
+                <Text style={styles.balanceText}>{initialGrandTotal}</Text>
+              </View>
+              <View style={styles.colGrandTotal}>
+                <Text style={styles.balanceText}>{initialGrandTotal}</Text>
+              </View>
+            </View>
+          )}
+
+          {entries.map((entry, index) => (
+            <View key={index} style={styles.tableRow}>
+              <View style={styles.colDate}>
+                <Text style={styles.cellText}>{formatDate(entry.date)}</Text>
+              </View>
+              <View style={styles.colVoucher}>
+                <Text style={styles.cellText}>{entry.voucher}</Text>
+              </View>
+              <View style={styles.colVariety}>
+                <Text style={styles.cellTextLeft}>{entry.variety}</Text>
+              </View>
+              <View style={styles.colLocation}>
+                <Text style={styles.cellText}>{entry.location}</Text>
+              </View>
+              {bagSizes.map(size => (
+                <View key={size} style={styles.colBagSize}>
+                  <Text style={styles.cellText}>
+                    {entry.quantities[size] || '-'}
+                  </Text>
+                </View>
+              ))}
+              <View style={styles.colTotal}>
+                <Text style={styles.balanceText}>{entry.total}</Text>
+              </View>
+              <View style={styles.colGrandTotal}>
+                <Text style={styles.balanceText}>
+                  {isDeliveryTable
+                    ? initialGrandTotal - entry.grandTotal
+                    : entry.grandTotal}
+                </Text>
+              </View>
+              {/* Show Marka column only for receipt table */}
+              {!isDeliveryTable && (
+                <View style={styles.colMarka}>
+                  <Text style={styles.cellText}>{`${entry.voucher}/${entry.total}`}</Text>
+                </View>
+              )}
+            </View>
+          ))}
+
+          {/* Show total row only for receipt table */}
+          {!isDeliveryTable && (
+            <View style={[styles.tableRow, styles.totalRow]}>
+              <View style={styles.colDate}>
+                <Text style={styles.balanceText}>TOTAL</Text>
+              </View>
+              <View style={styles.colVoucher}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colVariety}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colLocation}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              {bagSizes.map(size => (
+                <View key={size} style={styles.colBagSize}>
+                  <Text style={styles.balanceText}>{totals[size]}</Text>
+                </View>
+              ))}
+              <View style={styles.colTotal}>
+                <Text style={styles.balanceText}>
+                  {entries[entries.length - 1]?.grandTotal || 0}
+                </Text>
+              </View>
+              <View style={styles.colGrandTotal}>
+                <Text style={styles.balanceText}>
+                  {entries[entries.length - 1]?.grandTotal || 0}
+                </Text>
+              </View>
+              <View style={styles.colMarka}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  };
 
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        {/* Brand Header */}
-        <View style={styles.brandHeader}>
-          <Image
-            style={styles.logo}
-            src="/coldop-logo.png"
-          />
-          <Text style={styles.brandTitle}>COLDOP</Text>
-          {adminInfo.imageUrl && (
-            <Image
-              style={[styles.logo, { marginLeft: 'auto' }]}
-              src={adminInfo.imageUrl}
-            />
-          )}
-        </View>
-
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.title}>Farmer Report</Text>
-          <Text style={styles.subtitle}>{adminInfo.coldStorageDetails.coldStorageName}</Text>
+          <Text style={styles.companyName}>
+            {adminInfo.coldStorageDetails.coldStorageName.toUpperCase()}
+          </Text>
+          <Text style={styles.reportTitle}>FARMER ACCOUNT LEDGER</Text>
         </View>
 
-        {/* Cold Storage Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Cold Storage Information</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Name:</Text>
-            <Text style={styles.infoValue}>{adminInfo.coldStorageDetails.coldStorageName}</Text>
+        {/* Farmer Information */}
+        <View style={styles.farmerInfoSection}>
+          <View style={styles.farmerInfoLeft}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>A/c No.:</Text>
+              <Text style={styles.infoValue}>{farmer.farmerId}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Name:</Text>
+              <Text style={styles.infoValue}>{farmer.name.toUpperCase()}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Address:</Text>
+              <Text style={styles.infoValue}>{farmer.address}</Text>
+            </View>
           </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Address:</Text>
-            <Text style={styles.infoValue}>{adminInfo.coldStorageDetails.coldStorageAddress}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Contact:</Text>
-            <Text style={styles.infoValue}>{adminInfo.coldStorageDetails.coldStorageContactNumber}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Admin:</Text>
-            <Text style={styles.infoValue}>{adminInfo.name}</Text>
-          </View>
-        </View>
-
-        {/* Farmer Info */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Farmer Information</Text>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Name:</Text>
-            <Text style={styles.infoValue}>{farmer.name}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Address:</Text>
-            <Text style={styles.infoValue}>{farmer.address}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Mobile:</Text>
-            <Text style={styles.infoValue}>{farmer.mobileNumber}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Member Since:</Text>
-            <Text style={styles.infoValue}>{new Date(farmer.createdAt).toLocaleDateString()}</Text>
+          <View style={styles.farmerInfoRight}>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Mobile:</Text>
+              <Text style={styles.infoValue}>{farmer.mobileNumber}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Member Since:</Text>
+              <Text style={styles.infoValue}>{formatDate(farmer.createdAt)}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Report Date:</Text>
+              <Text style={styles.infoValue}>{formatDate(new Date())}</Text>
+            </View>
           </View>
         </View>
 
-        {/* Summary */}
-        <View style={styles.summarySection}>
-          <Text style={styles.summaryTitle}>Summary</Text>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Receipt Orders:</Text>
-            <Text style={styles.summaryValue}>{receiptOrders.length}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Delivery Orders:</Text>
-            <Text style={styles.summaryValue}>{deliveryOrders.length}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Bags Received:</Text>
-            <Text style={styles.summaryValue}>{totalReceiptBags}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
-            <Text style={styles.summaryValue}>{totalDeliveryBags}</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Net Bags in Storage:</Text>
-            <Text style={styles.summaryValue}>{netBags}</Text>
+        {/* Receipt Table */}
+        {renderTable(receiptEntries, 'Receipt Details', receiptTotals)}
+
+        {/* Delivery Table */}
+        {renderTable(deliveryEntries, 'Delivery Details', deliveryTotals, true, receiptTotals)}
+
+        {/* Summary Box */}
+        <View style={styles.summaryContainer}>
+          <Text style={styles.summaryTitle}>Account Summary</Text>
+          <View style={styles.summaryTable}>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total Receipt Transactions:</Text>
+              <Text style={styles.summaryValue}>{receiptOrders.length}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total Delivery Transactions:</Text>
+              <Text style={styles.summaryValue}>{deliveryOrders.length}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total Bags Received:</Text>
+              <Text style={styles.summaryValue}>{receiptEntries[receiptEntries.length - 1]?.grandTotal || 0}</Text>
+            </View>
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
+              <Text style={styles.summaryValue}>{deliveryEntries[deliveryEntries.length - 1]?.grandTotal || 0}</Text>
+            </View>
+            <View style={[styles.summaryRow, { backgroundColor: '#D0D0D0' }]}>
+              <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
+              <Text style={styles.summaryValue}>
+                {(receiptEntries[receiptEntries.length - 1]?.grandTotal || 0) -
+                 (deliveryEntries[deliveryEntries.length - 1]?.grandTotal || 0)}
+              </Text>
+            </View>
           </View>
         </View>
-
-        {/* Receipt Orders */}
-        {receiptOrders.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Receipt Orders ({receiptOrders.length})</Text>
-            {receiptOrders.map((order) => (
-              <View key={order._id} style={styles.orderCard}>
-                <View style={styles.orderHeader}>
-                  <Text style={styles.voucherInfo}>Voucher #{order.voucher.voucherNumber}</Text>
-                  <Text style={styles.voucherType}>{order.voucher.type}</Text>
-                  <Text style={styles.orderDate}>{order.dateOfSubmission}</Text>
-                </View>
-
-                {order.orderDetails.map((detail, index) => (
-                  <View key={index} style={styles.varietySection}>
-                    <Text style={styles.varietyTitle}>{detail.variety} - {detail.location}</Text>
-                    {detail.bagSizes.map((bag, bagIndex) => (
-                      <View key={bagIndex} style={styles.bagSizeRow}>
-                        <Text style={styles.bagSizeLabel}>{bag.size}</Text>
-                        <Text style={styles.bagSizeValue}>
-                          Initial: {bag.quantity?.initialQuantity || 0} | Current: {bag.quantity?.currentQuantity || 0}
-                        </Text>
-                      </View>
-                    ))}
-                  </View>
-                ))}
-
-                {order.remarks && (
-                  <View style={styles.remarksSection}>
-                    <Text style={styles.remarksLabel}>Remarks:</Text>
-                    <Text style={styles.remarksText}>{order.remarks}</Text>
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-        )}
 
         {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>
-            Generated on {new Date().toLocaleDateString()}
-          </Text>
-          <Text style={styles.footerBrand}>
-            Powered by COLDOP
-          </Text>
-        </View>
-      </Page>
-
-      {/* Second Page for Delivery Orders if they exist */}
-      {deliveryOrders.length > 0 && (
-        <Page size="A4" style={styles.page}>
-          {/* Brand Header */}
-          <View style={styles.brandHeader}>
-            <Image
-              style={styles.logo}
-              src="/coldop-logo.png"
-            />
-            <Text style={styles.brandTitle}>COLDOP</Text>
-            {adminInfo.imageUrl && (
-              <Image
-                style={[styles.logo, { marginLeft: 'auto' }]}
-                src={adminInfo.imageUrl}
-              />
-            )}
-          </View>
-
-          <View style={styles.header}>
-            <Text style={styles.title}>Delivery Orders</Text>
-            <Text style={styles.subtitle}>{farmer.name}</Text>
-          </View>
-
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Delivery Orders ({deliveryOrders.length})</Text>
-            {deliveryOrders.map((order) => (
-              <View key={order._id} style={styles.orderCard}>
-                <View style={styles.orderHeader}>
-                  <Text style={styles.voucherInfo}>Voucher #{order.voucher.voucherNumber}</Text>
-                  <Text style={styles.voucherType}>{order.voucher.type}</Text>
-                  <Text style={styles.orderDate}>{order.dateOfExtraction}</Text>
-                </View>
-
-                {order.orderDetails.map((detail, index) => (
-                  <View key={index} style={styles.varietySection}>
-                    <Text style={styles.varietyTitle}>{detail.variety}</Text>
-                    {detail.bagSizes.map((bag, bagIndex) => (
-                      <View key={bagIndex} style={styles.bagSizeRow}>
-                        <Text style={styles.bagSizeLabel}>{bag.size}</Text>
-                        <Text style={styles.bagSizeValue}>
-                          Quantity Removed: {bag.quantityRemoved}
-                        </Text>
-                      </View>
-                    ))}
-                    {detail.incomingOrder && (
-                      <View style={styles.remarksSection}>
-                        <Text style={styles.remarksLabel}>From Receipt Voucher:</Text>
-                        <Text style={styles.remarksText}>
-                          #{detail.incomingOrder.voucher.voucherNumber} - {detail.incomingOrder.location}
-                        </Text>
-                      </View>
-                    )}
-                  </View>
-                ))}
-
-                {order.remarks && (
-                  <View style={styles.remarksSection}>
-                    <Text style={styles.remarksLabel}>Remarks:</Text>
-                    <Text style={styles.remarksText}>{order.remarks}</Text>
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-
-          <View style={styles.footer}>
+          <View style={styles.footerLeft}>
             <Text style={styles.footerText}>
-              Generated on {new Date().toLocaleDateString()}
-            </Text>
-            <Text style={styles.footerBrand}>
-              Powered by COLDOP
+              Authorized Signature: ____________________
             </Text>
           </View>
-        </Page>
-      )}
+          <View style={styles.footerCenter}>
+            <Image style={styles.logo} src={coldopLogo} />
+            <Text style={styles.poweredBy}>Powered by Coldop</Text>
+          </View>
+          <View style={styles.footerRight}>
+            <Text style={styles.footerText}>
+              Date: {formatDate(new Date())}
+            </Text>
+          </View>
+        </View>
+
+        <Text style={styles.pageNumber}>Page 1</Text>
+      </Page>
     </Document>
   );
 };

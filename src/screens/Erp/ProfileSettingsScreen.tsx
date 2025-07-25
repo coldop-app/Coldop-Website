@@ -107,7 +107,15 @@ const ProfileSettingsScreen = () => {
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  // Drag and drop handlers for bag sizes
+  // Add touch reordering states
+  const [touchStartY, setTouchStartY] = useState<number | null>(null);
+  const [touchStartIndex, setTouchStartIndex] = useState<number | null>(null);
+  const [isTouchDragging, setIsTouchDragging] = useState(false);
+  const [touchDragTimeout, setTouchDragTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isPreparingDrag, setIsPreparingDrag] = useState(false);
+  const bagSizesContainerRef = useRef<HTMLDivElement>(null);
+
+  // Drag and drop handlers for bag sizes (desktop)
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
     e.dataTransfer.effectAllowed = 'move';
@@ -153,6 +161,107 @@ const ProfileSettingsScreen = () => {
   const handleDragEnd = () => {
     setDraggedIndex(null);
     setDragOverIndex(null);
+  };
+
+    // Touch reordering handlers for mobile
+  const handleTouchStart = (e: React.TouchEvent, index: number) => {
+    if (editingBagSize !== null) return; // Don't allow reordering while editing
+
+    // Prevent text selection
+    e.preventDefault();
+
+    const touch = e.touches[0];
+    setTouchStartY(touch.clientY);
+    setTouchStartIndex(index);
+
+    // Start a timeout to initiate drag after 300ms (reduced from 500ms)
+    const timeout = setTimeout(() => {
+      setIsTouchDragging(true);
+      setDraggedIndex(index);
+      setIsPreparingDrag(false);
+      toast.success("Drag to reorder", { duration: 1500 });
+    }, 300);
+
+    setIsPreparingDrag(true);
+
+    setTouchDragTimeout(timeout);
+  };
+
+      const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isTouchDragging || touchStartY === null || touchStartIndex === null) return;
+
+    e.preventDefault();
+    const touch = e.touches[0];
+
+    // Calculate which index we're hovering over based on touch position
+    if (bagSizesContainerRef.current) {
+      const containerRect = bagSizesContainerRef.current.getBoundingClientRect();
+      const relativeY = touch.clientY - containerRect.top;
+      const itemHeight = 60; // Approximate height of each item
+      const newIndex = Math.max(0, Math.min(
+        formData.bagSizes.length - 1,
+        Math.floor(relativeY / itemHeight)
+      ));
+
+      if (newIndex !== dragOverIndex) {
+        setDragOverIndex(newIndex);
+      }
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    // Clear the timeout if it hasn't fired yet
+    if (touchDragTimeout) {
+      clearTimeout(touchDragTimeout);
+      setTouchDragTimeout(null);
+    }
+
+    if (!isTouchDragging) {
+      // If we weren't dragging, this was just a tap
+      setTouchStartY(null);
+      setTouchStartIndex(null);
+      return;
+    }
+
+    e.preventDefault();
+
+    // Perform the reorder
+    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+      const newBagSizes = [...formData.bagSizes];
+      const draggedItem = newBagSizes[draggedIndex];
+
+      // Remove the dragged item
+      newBagSizes.splice(draggedIndex, 1);
+
+      // Insert at the new position
+      newBagSizes.splice(dragOverIndex, 0, draggedItem);
+
+      setFormData(prev => ({
+        ...prev,
+        bagSizes: newBagSizes
+      }));
+    }
+
+    // Reset all touch states
+    setIsTouchDragging(false);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setTouchStartY(null);
+    setTouchStartIndex(null);
+    setIsPreparingDrag(false);
+  };
+
+  const handleTouchCancel = () => {
+    if (touchDragTimeout) {
+      clearTimeout(touchDragTimeout);
+      setTouchDragTimeout(null);
+    }
+    setIsTouchDragging(false);
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+    setTouchStartY(null);
+    setTouchStartIndex(null);
+    setIsPreparingDrag(false);
   };
 
   // Bag size handlers
@@ -444,6 +553,15 @@ const ProfileSettingsScreen = () => {
       if (resendTimerRef.current) clearInterval(resendTimerRef.current);
     };
   }, []);
+
+  // Clean up touch timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (touchDragTimeout) {
+        clearTimeout(touchDragTimeout);
+      }
+    };
+  }, [touchDragTimeout]);
 
   const handleMobileNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, '').slice(0, 10);
@@ -1024,10 +1142,10 @@ const ProfileSettingsScreen = () => {
             <div className="space-y-4 pt-6">
               <h3 className="text-lg font-semibold">Bag Size Preferences</h3>
               <p className="text-sm text-muted-foreground">
-                Manage the bag sizes you use in your cold storage. You can drag and drop to reorder them.
+                Manage the bag sizes you use in your cold storage. You can drag and drop to reorder them on desktop, or long-press (300ms) and drag on mobile devices. The item will highlight when ready to drag.
               </p>
 
-              <div className="space-y-3">
+              <div className="space-y-3" ref={bagSizesContainerRef}>
                 {formData.bagSizes.map((size, index) => (
                   <div
                     key={size}
@@ -1037,13 +1155,19 @@ const ProfileSettingsScreen = () => {
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
-                    className={`flex items-center gap-2 sm:gap-3 py-2 px-2 rounded-md transition-colors ${
+                                         onTouchStart={(e) => handleTouchStart(e, index)}
+                     onTouchMove={handleTouchMove}
+                     onTouchEnd={handleTouchEnd}
+                    onTouchCancel={handleTouchCancel}
+                    className={`flex items-center gap-2 sm:gap-3 py-2 px-2 rounded-md transition-colors select-none ${
                       draggedIndex === index
-                        ? 'opacity-50 bg-muted'
+                        ? 'opacity-50 bg-muted shadow-lg scale-105'
                         : dragOverIndex === index
                           ? 'bg-blue-50 border-2 border-blue-300 border-dashed'
-                          : 'hover:bg-muted/50'
-                    } ${editingBagSize !== size ? 'cursor-move' : ''}`}
+                          : isPreparingDrag && touchStartIndex === index
+                            ? 'bg-yellow-50 border-2 border-yellow-300'
+                            : 'hover:bg-muted/50'
+                    } ${editingBagSize !== size ? 'cursor-move' : ''} ${isTouchDragging ? 'touch-none' : ''}`}
                   >
                     {editingBagSize !== size && (
                       <div className="cursor-move text-muted-foreground">
@@ -1082,9 +1206,9 @@ const ProfileSettingsScreen = () => {
                       </>
                     ) : (
                       <>
-                        <label className="text-sm font-medium flex-1 truncate">
+                        <span className="text-sm font-medium flex-1 truncate pointer-events-none">
                           {size.charAt(0).toUpperCase() + size.slice(1).replace(/-/g, " ")}
-                        </label>
+                        </span>
                         <button
                           type="button"
                           onClick={() => handleEditBagSize(size)}

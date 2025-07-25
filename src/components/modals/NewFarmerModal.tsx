@@ -1,7 +1,9 @@
-import React, { useState } from "react";
-import { X, Loader2 } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { X, Loader2, HelpCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
+import debounce from "lodash/debounce";
+import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
 
 export interface NewFarmerFormData {
   accNo: string;
@@ -25,15 +27,11 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
   isLoading,
   token
 }) => {
-  const { data: farmerIdsData, isLoading: isLoadingFarmerIds } = useQuery({
+  const { data: farmerIdsData } = useQuery({
     queryKey: ['farmerIds'],
     queryFn: () => storeAdminApi.checkFarmerId(token),
     enabled: isOpen, // Only fetch when modal is open
   });
-
-  const latestFarmerId = farmerIdsData?.data?.registeredFarmers?.length > 0
-    ? Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id)))
-    : 0;
 
   const [formData, setFormData] = useState<NewFarmerFormData>({
     accNo: "",
@@ -41,12 +39,33 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
     address: "",
     contact: ""
   });
+  const [accNoError, setAccNoError] = useState<string>("");
+
+  // Create a debounced function to check farmer ID
+  const debouncedCheckFarmerId = useMemo(
+    () =>
+      debounce((id: string, registeredFarmers: string[]) => {
+        if (registeredFarmers.includes(id)) {
+          setAccNoError(`Farmer ID ${id} is already taken. Please use a different ID.`);
+        } else {
+          setAccNoError("");
+        }
+      }, 500),
+    []
+  );
 
   const handleChange = (field: keyof NewFarmerFormData, value: string) => {
     // Handle numeric-only validation for accNo field
     if (field === 'accNo') {
       const numericValue = value.replace(/[^0-9]/g, '');
       setFormData(prev => ({ ...prev, [field]: numericValue }));
+
+      // Debounced check for existing farmer ID
+      if (numericValue && farmerIdsData?.data?.registeredFarmers) {
+        debouncedCheckFarmerId(numericValue, farmerIdsData.data.registeredFarmers);
+      } else {
+        setAccNoError("");
+      }
       return;
     }
 
@@ -64,6 +83,17 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate that the farmer ID doesn't exist
+    if (farmerIdsData?.data?.registeredFarmers?.includes(formData.accNo)) {
+      setAccNoError(`Farmer ID ${formData.accNo} is already taken. Please use a different ID.`);
+      return;
+    }
+
+    // Don't submit if there's an error with the account number
+    if (accNoError) {
+      return;
+    }
 
     // Validate contact number length
     if (formData.contact.length !== 10) {
@@ -96,17 +126,64 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
         <h2 className="text-xl font-bold mb-6">Add New Farmer</h2>
 
-        {isLoadingFarmerIds ? (
-          <div className="mb-4 p-3 bg-secondary/50 rounded-md flex items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin mr-2" />
-            <span>Loading latest farmer ID...</span>
+        <div className="mb-4 p-3 bg-secondary/50 rounded-md">
+          <div className="flex items-center justify-between">
+            <div>
+              {farmerIdsData?.data?.registeredFarmers?.length > 0 ? (
+                <>
+                  <p className="text-sm font-medium">
+                    Current Farmer ID: {Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id)))}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    Next farmer will be assigned ID: {Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id))) + 1}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm font-medium">
+                    You have no registered farmers
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    The farmer will be assigned ID: 1
+                  </p>
+                </>
+              )}
+            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  type="button"
+                  className="p-2 hover:bg-secondary rounded-full transition-colors"
+                >
+                  <HelpCircle className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Used Farmer IDs</h4>
+                  <div className="max-h-40 overflow-y-auto">
+                    {farmerIdsData?.data?.registeredFarmers?.length > 0 ? (
+                      <div className="grid grid-cols-5 gap-2">
+                        {farmerIdsData.data.registeredFarmers
+                          .sort((a: string, b: string) => parseInt(a) - parseInt(b))
+                          .map((id: string) => (
+                            <div
+                              key={id}
+                              className="px-2 py-1 bg-secondary text-center rounded text-sm"
+                            >
+                              {id}
+                            </div>
+                          ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No farmer IDs registered yet</p>
+                    )}
+                  </div>
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
-        ) : latestFarmerId > 0 && (
-          <div className="mb-4 p-3 bg-secondary/50 rounded-md">
-            <p className="text-sm font-medium">Current Farmer ID: {latestFarmerId}</p>
-            <p className="text-xs text-muted-foreground">Next farmer will be assigned ID: {latestFarmerId + 1}</p>
-          </div>
-        )}
+        </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -120,6 +197,9 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
               required
               disabled={isLoading}
             />
+            {accNoError && (
+              <p className="text-xs text-red-500 mt-1">{accNoError}</p>
+            )}
           </div>
 
           <div>

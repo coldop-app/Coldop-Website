@@ -6,7 +6,7 @@ import HowItWorks from "@/components/sections/HowItWorks/HowItWorks";
 // import Testimonials from "@/components/sections/Testimonials/Testimonials";
 // import Pricing from "@/components/sections/Pricing/Pricing";
 import DemoVideo from "@/components/sections/DemoVideo/DemoVideo";
-import About from "@/components/sections/About/About";
+// import About from "@/components/sections/About/About";
 import SEO from "@/components/common/SEO/SEO";
 import OnboardingWebview from "@/components/sections/OnboardingWebview/OnboardingWebview";
 import { useEffect, useState } from "react";
@@ -151,13 +151,14 @@ const HomeScreen = () => {
         <Pricing plans={pricingData.plans} />
       </motion.div> */}
 
-      <motion.div
+      {/* <motion.div
         id="about"
         {...fadeInUp}
         //className="w-full"
       >
         <About />
-      </motion.div>
+      </motion.div> */}
+
       <motion.div
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}

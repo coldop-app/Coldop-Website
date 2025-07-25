@@ -206,6 +206,13 @@ const OutgoingOrderFormContent = () => {
   const farmer = location.state?.farmer as Farmer | undefined;
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
 
+  // Get receipt number for outgoing order
+  const { data: receiptNumberData, isLoading: isLoadingReceiptNumber } = useQuery({
+    queryKey: ['outgoingReceiptNumber'],
+    queryFn: () => storeAdminApi.getReceiptNumber('outgoing', adminInfo?.token || ''),
+    enabled: !!adminInfo?.token
+  });
+
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -438,6 +445,73 @@ const OutgoingOrderFormContent = () => {
     return selectedQuantities.length === totalAvailableQuantities && totalAvailableQuantities > 0;
   }, [selectedQuantities, filteredOrders]);
 
+  // Add handleSelectVoucher function after handleSelectAll
+  const handleSelectVoucher = (voucherNumber: number) => {
+    // Check if all quantities for this voucher are already selected
+    const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
+    const totalAvailableQuantitiesForVoucher = filteredOrders
+      .filter(order => order.voucher.voucherNumber === voucherNumber)
+      .reduce((total, order) => {
+        order.orderDetails.forEach(detail => {
+          detail.bagSizes.forEach(bagSize => {
+            if (bagSize.quantity.currentQuantity > 0) {
+              total++;
+            }
+          });
+        });
+        return total;
+      }, 0);
+
+    if (voucherSelections.length === totalAvailableQuantitiesForVoucher) {
+      // Deselect all quantities for this voucher
+      setSelectedQuantities(prev => prev.filter(sq => sq.receiptNumber !== voucherNumber));
+      return;
+    }
+
+    // Select all available quantities for this voucher
+    const order = filteredOrders.find(o => o.voucher.voucherNumber === voucherNumber);
+    if (!order) return;
+
+    const newSelections: BagSizeSelection[] = [];
+    order.orderDetails.forEach(detail => {
+      detail.bagSizes.forEach(bagSize => {
+        if (bagSize.quantity.currentQuantity > 0) {
+          newSelections.push({
+            receiptNumber: voucherNumber,
+            bagSize: bagSize.size,
+            selectedQuantity: bagSize.quantity.currentQuantity,
+            maxQuantity: bagSize.quantity.currentQuantity
+          });
+        }
+      });
+    });
+
+    // Merge new selections with existing ones (excluding current voucher)
+    setSelectedQuantities(prev => [
+      ...prev.filter(sq => sq.receiptNumber !== voucherNumber),
+      ...newSelections
+    ]);
+  };
+
+  // Add isVoucherSelected function after handleSelectVoucher
+  const isVoucherSelected = (voucherNumber: number) => {
+    const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
+    const totalAvailableQuantitiesForVoucher = filteredOrders
+      .filter(order => order.voucher.voucherNumber === voucherNumber)
+      .reduce((total, order) => {
+        order.orderDetails.forEach(detail => {
+          detail.bagSizes.forEach(bagSize => {
+            if (bagSize.quantity.currentQuantity > 0) {
+              total++;
+            }
+          });
+        });
+        return total;
+      }, 0);
+
+    return voucherSelections.length === totalAvailableQuantitiesForVoucher && totalAvailableQuantitiesForVoucher > 0;
+  };
+
   // Get box color based on quantities
   const getBoxColor = (currentQuantity: number, initialQuantity: number, isSelected: boolean) => {
     if (isSelected) return 'border-green-500 bg-green-50';
@@ -501,7 +575,20 @@ const OutgoingOrderFormContent = () => {
   return (
     <div className="w-full bg-background rounded-lg shadow-lg border border-border overflow-hidden">
       <div className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5">
-        <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-center mb-3 sm:mb-4 md:mb-5">{t('outgoingOrder.title')}</h1>
+        <div className="flex flex-col items-center mb-3 sm:mb-4 md:mb-5">
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-3">{t('outgoingOrder.title')}</h1>
+          {isLoadingReceiptNumber ? (
+            <div className="inline-flex items-center gap-2 bg-red-50 px-4 py-1.5 rounded-full">
+              <Loader2 className="h-3 w-3 animate-spin text-red-600" />
+              <span className="text-sm text-red-600">{t('outgoingOrder.loadingReceiptNumber')}</span>
+            </div>
+          ) : receiptNumberData?.receiptNumber ? (
+            <div className="inline-flex items-center gap-2 bg-red-50/50 px-4 py-1.5 rounded-full">
+              <span className="text-sm text-gray-600">{t('outgoingOrder.receiptNumber')}:</span>
+              <span className="text-sm font-semibold text-red-600">#{receiptNumberData.receiptNumber}</span>
+            </div>
+          ) : null}
+        </div>
 
         {/* Progress indicator */}
         <div className="mb-4 sm:mb-5 md:mb-6">
@@ -693,9 +780,17 @@ const OutgoingOrderFormContent = () => {
                               <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
                                 <thead>
                                   <tr className="bg-gray-100">
+                                    <th className="p-2.5 text-center border-b font-medium text-sm text-gray-600 w-12">
+                                      <input
+                                        type="checkbox"
+                                        checked={isAllSelected}
+                                        onChange={handleSelectAll}
+                                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                      />
+                                    </th>
                                     <th className="p-2.5 text-left border-b font-medium text-sm text-gray-600 w-28">{t('outgoingOrder.orders.receiptVoucher')}</th>
                                     {sortedBagSizes(availableBagSizes).map(size => (
-                                      <th key={size} className="p-2.5 text-center border-b font-medium text-sm text-gray-600 w-[calc((100%-112px)/5)]">
+                                      <th key={size} className="p-2.5 text-center border-b font-medium text-sm text-gray-600 w-[calc((100%-160px)/5)]">
                                         {size}
                                       </th>
                                     ))}
@@ -707,13 +802,23 @@ const OutgoingOrderFormContent = () => {
                                       key={order._id}
                                       className="hover:bg-gray-50/50 transition-colors"
                                     >
+                                      <td className="p-2.5 border-b text-center">
+                                        <input
+                                          type="checkbox"
+                                          checked={isVoucherSelected(order.voucher.voucherNumber)}
+                                          onChange={() => handleSelectVoucher(order.voucher.voucherNumber)}
+                                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                                        />
+                                      </td>
                                       <td className="p-2.5 border-b">
-                                        <div className="font-medium text-base">#{order.voucher.voucherNumber}</div>
-                                        {order.orderDetails[0]?.location && (
-                                          <div className="text-xs text-gray-500">
-                                            {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
-                                          </div>
-                                        )}
+                                        <div className="flex flex-col gap-1">
+                                          <div className="font-medium text-base">#{order.voucher.voucherNumber}</div>
+                                          {order.orderDetails[0]?.location && (
+                                            <div className="text-xs text-gray-500">
+                                              {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
+                                            </div>
+                                          )}
+                                        </div>
                                       </td>
                                       {availableBagSizes.map(size => {
                                         const totalQuantities = order.orderDetails.reduce((acc, detail) => {
@@ -788,12 +893,25 @@ const OutgoingOrderFormContent = () => {
                           {filteredOrders.map(order => (
                             <div key={order._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                               <div className="p-3 bg-gray-50 border-b border-gray-200">
-                                <div className="font-medium">#{order.voucher.voucherNumber}</div>
-                                {order.orderDetails[0]?.location && (
-                                  <div className="text-xs text-gray-500 mt-0.5">
-                                    {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
-                                  </div>
-                                )}
+                                <div className="flex flex-col gap-1">
+                                  <div className="font-medium">#{order.voucher.voucherNumber}</div>
+                                  {order.orderDetails[0]?.location && (
+                                    <div className="text-xs text-gray-500 mt-0.5">
+                                      {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
+                                    </div>
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSelectVoucher(order.voucher.voucherNumber)}
+                                    className={`text-xs px-2 py-1 rounded-md w-fit transition-colors ${
+                                      isVoucherSelected(order.voucher.voucherNumber)
+                                        ? "bg-primary text-white hover:bg-primary/90"
+                                        : "text-primary border border-primary hover:bg-primary/5"
+                                    }`}
+                                  >
+                                    {isVoucherSelected(order.voucher.voucherNumber) ? "Deselect Voucher" : "Select Voucher"}
+                                  </button>
+                                </div>
                               </div>
                               <div className="p-3">
                                 <div className="grid grid-cols-3 gap-2">
