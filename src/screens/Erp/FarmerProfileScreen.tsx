@@ -41,6 +41,10 @@ interface StockSummaryResponse {
   stockSummary: StockSummary[];
 }
 
+// Add new type definitions for filters
+type OrderType = 'all' | 'incoming' | 'outgoing';
+type SortOrder = 'latest' | 'oldest';
+
 const getInitials = (name: string) => {
   return name
     .split(' ')
@@ -71,8 +75,12 @@ const FarmerProfileScreen = () => {
   const farmer = location.state?.farmer as Farmer;
   console.log(farmer)
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
-  const [showOrders, setShowOrders] = useState(false);
+  const [showOrders, setShowOrders] = useState(true); // Set to true by default
   const [showPDFDownload, setShowPDFDownload] = useState(false);
+
+  // Add new state for filters
+  const [orderType, setOrderType] = useState<OrderType>('all');
+  const [sortBy, setSortBy] = useState<SortOrder>('latest');
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
     queryKey: ['farmerStock', id, adminInfo?.token],
@@ -81,10 +89,33 @@ const FarmerProfileScreen = () => {
   });
 
   const { data: ordersData, isLoading: isOrdersLoading } = useQuery({
-    queryKey: ['farmerOrders', id, adminInfo?.token],
+    queryKey: ['farmerOrders', id, adminInfo?.token, orderType, sortBy],
     queryFn: () => storeAdminApi.getFarmerOrders(id || '', adminInfo?.token || ''),
     enabled: !!id && !!adminInfo?.token,
   });
+
+  // Filter orders based on type
+  const filteredOrders = useMemo(() => {
+    if (!ordersData?.data) return [];
+
+    let orders = [...ordersData.data];
+
+    // Filter by type
+    if (orderType === 'incoming') {
+      orders = orders.filter(order => order.voucher.type === 'RECEIPT');
+    } else if (orderType === 'outgoing') {
+      orders = orders.filter(order => order.voucher.type === 'DELIVERY');
+    }
+
+    // Sort orders
+    orders.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sortBy === 'latest' ? dateB - dateA : dateA - dateB;
+    });
+
+    return orders;
+  }, [ordersData?.data, orderType, sortBy]);
 
   const stockSummary = (stockData as StockSummaryResponse)?.stockSummary || [];
 
@@ -533,10 +564,34 @@ const FarmerProfileScreen = () => {
           <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
             <Card>
               <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-                <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
-                  <Package className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary" />
-                  {t('farmerProfile.ordersHistory')}
-                </CardTitle>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary" />
+                    {t('farmerProfile.ordersHistory')}
+                  </CardTitle>
+
+                  {/* Filters Row */}
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <select
+                      value={orderType}
+                      onChange={(e) => setOrderType(e.target.value as OrderType)}
+                      className="w-full sm:w-[150px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all duration-200"
+                    >
+                      <option value="all">{t('daybook.allOrders')}</option>
+                      <option value="incoming">{t('daybook.incoming')}</option>
+                      <option value="outgoing">{t('daybook.outgoing')}</option>
+                    </select>
+
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOrder)}
+                      className="w-full sm:w-[150px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all duration-200"
+                    >
+                      <option value="latest">{t('daybook.latestFirst')}</option>
+                      <option value="oldest">{t('daybook.oldestFirst')}</option>
+                    </select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-4 md:p-6">
                 {isOrdersLoading ? (
@@ -545,13 +600,13 @@ const FarmerProfileScreen = () => {
                       <Skeleton key={i} className="h-24 sm:h-28 md:h-32 w-full" />
                     ))}
                   </div>
-                ) : ordersData?.data?.length === 0 ? (
+                ) : filteredOrders.length === 0 ? (
                   <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-gray-500">
                     {t('farmerProfile.noOrdersFound')}
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
-                    {ordersData?.data?.map((order: Order) => (
+                    {filteredOrders.map((order: Order) => (
                       order.voucher.type === 'DELIVERY' ? (
                         <DeliveryVoucherCard key={order._id} order={order} />
                       ) : (

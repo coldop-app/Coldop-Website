@@ -111,8 +111,8 @@ Current Stock: ${order.currentStockAtThatTime}
 ${order.remarks ? `Remarks: ${order.remarks}` : ''}
 
 Stock Details:
-${order.orderDetails.map(detail => 
-  detail.bagSizes.map(bag => 
+${order.orderDetails.map(detail =>
+  detail.bagSizes.map(bag =>
     `${bag.size}: ${bag.quantity?.currentQuantity || 0}/${bag.quantity?.initialQuantity || 0}`
   ).join('\n')
 ).join('\n')}`;
@@ -228,8 +228,13 @@ ${order.orderDetails.map(detail =>
               Receipt Voucher: <span className="text-primary">{order.voucher.voucherNumber}</span>
             </span>
           </div>
-          <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md w-fit">
-            C.Stock: <span className="font-medium text-gray-900">{order.currentStockAtThatTime}</span>
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
+              Date: <span className="font-medium text-gray-900">{order.dateOfSubmission || 'N/A'}</span>
+            </div>
+            <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
+              C.Stock: <span className="font-medium text-gray-900">{order.currentStockAtThatTime}</span>
+            </div>
           </div>
         </div>
 

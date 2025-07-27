@@ -188,8 +188,13 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
               Delivery Voucher: <span className="text-rose-600">{order.voucher.voucherNumber}</span>
             </span>
           </div>
-          <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md w-fit">
-            C.Stock: <span className="font-medium text-gray-900">{order.currentStockAtThatTime}</span>
+          <div className="flex items-center gap-2">
+            <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
+              Date: <span className="font-medium text-gray-900">{order.dateOfExtraction || 'N/A'}</span>
+            </div>
+            <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
+              C.Stock: <span className="font-medium text-gray-900">{order.currentStockAtThatTime}</span>
+            </div>
           </div>
         </div>
 

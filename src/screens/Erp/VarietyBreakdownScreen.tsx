@@ -74,7 +74,7 @@ const VarietyBreakdownScreen = () => {
   const { variety, bagSize } = location.state || {};
 
   const [selectedBagSizeFilter, setSelectedBagSizeFilter] = useState<string>(
-    bagSize || "all"
+    bagSize === "All Sizes" ? "all" : bagSize || "all"
   );
 
   // Get all bag sizes from admin preferences

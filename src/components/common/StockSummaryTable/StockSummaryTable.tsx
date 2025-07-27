@@ -130,8 +130,26 @@ const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
                         )}
                       </td>
                     ))}
-                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm">
+                    <td
+                      className={`px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm ${
+                        calculateVarietyTotal(variety, allBagSizes) > 0
+                          ? 'cursor-pointer hover:bg-blue-100 transition-colors relative group'
+                          : ''
+                      }`}
+                      onClick={() => {
+                        const total = calculateVarietyTotal(variety, allBagSizes);
+                        if (total > 0) {
+                          navigate('/erp/variety-breakdown', {
+                            state: { variety: variety.variety, bagSize: 'All Sizes' }
+                          });
+                        }
+                      }}
+                      title={calculateVarietyTotal(variety, allBagSizes) > 0 ? `Click to view all sizes for ${variety.variety}` : ''}
+                    >
                       {calculateVarietyTotal(variety, allBagSizes)}
+                      {calculateVarietyTotal(variety, allBagSizes) > 0 && (
+                        <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none" />
+                      )}
                     </td>
                   </tr>
                 ))}
