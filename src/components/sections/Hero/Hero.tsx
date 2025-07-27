@@ -137,7 +137,7 @@ const Hero = ({
         </div>
       </section>
 
-      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} />
+      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} isMobileApp={false} />
     </>
   );
 };

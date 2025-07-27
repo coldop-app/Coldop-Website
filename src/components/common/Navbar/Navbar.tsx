@@ -187,7 +187,7 @@ const Navbar = () => {
       <div className="h-16 lg:h-20" />
 
       {/* Sign In Modal */}
-      <SignInModal isOpen={isSignInModalOpen} onClose={closeSignInModal} />
+      <SignInModal isOpen={isSignInModalOpen} onClose={closeSignInModal} isMobileApp={false} />
     </>
   );
 };
