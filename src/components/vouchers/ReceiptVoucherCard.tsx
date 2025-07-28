@@ -153,6 +153,8 @@ ${order.orderDetails.map(detail =>
         variety: order.orderDetails[0]?.variety || '',
         farmerName: order.farmerId.name,
         farmerId: order.farmerId.farmerId,
+        farmerAddress: order.farmerId.address,
+        farmerMobileNumber: order.farmerId.mobileNumber,
         currentStock: order.currentStockAtThatTime,
         remarks: order.remarks || '',
         orderDetails: order.orderDetails.map(detail => ({
@@ -317,6 +319,21 @@ ${order.orderDetails.map(detail =>
       {isExpanded && (
         <div className="border-t border-gray-100">
           <div className="p-3 sm:p-4 lg:p-5 space-y-6">
+            {/* Farmer Details */}
+            <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+              <h3 className="text-sm font-medium text-gray-900 mb-4">Farmer Details</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <span className="text-xs text-gray-500 block mb-1">Address</span>
+                  <p className="text-sm font-medium text-gray-900">{order.farmerId.address || 'N/A'}</p>
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 block mb-1">Mobile Number</span>
+                  <p className="text-sm font-medium text-gray-900">{order.farmerId.mobileNumber || 'N/A'}</p>
+                </div>
+              </div>
+            </div>
+
             {/* Stock Details */}
             {sortedOrderDetails.map((detail, index) => (
               <div key={index} className="space-y-4">
