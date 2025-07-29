@@ -1,8 +1,10 @@
 import { motion } from "motion/react";
 import { useState } from "react";
+import SignInModal from "@/components/auth/SignInModal";
 
 const DemoVideo = () => {
   const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
   const handlePlayVideo = () => {
     setIsVideoLoaded(true);
@@ -166,10 +168,7 @@ const DemoVideo = () => {
             className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-4 text-xl font-semibold text-secondary hover:bg-primary/85 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             onClick={(e) => {
               e.preventDefault();
-              const element = document.getElementById("pricing");
-              if (element) {
-                element.scrollIntoView({ behavior: "smooth" });
-              }
+              setIsSignInModalOpen(true);
             }}
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
@@ -182,6 +181,11 @@ const DemoVideo = () => {
           </motion.a>
         </motion.div>
       </div>
+      <SignInModal
+        isOpen={isSignInModalOpen}
+        onClose={() => setIsSignInModalOpen(false)}
+        isMobileApp={false}
+      />
     </section>
   );
 };
