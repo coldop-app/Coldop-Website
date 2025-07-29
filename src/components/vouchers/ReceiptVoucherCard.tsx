@@ -252,7 +252,7 @@ ${order.orderDetails.map(detail =>
               </div>
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Lot No</span>
-                <p className="text-sm font-medium text-gray-900">{calculateLotNo(order.orderDetails)}</p>
+                <p className="text-sm font-medium text-gray-900">{order.voucher.voucherNumber}/{order.orderDetails[0]?.bagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}</p>
               </div>
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Party Name</span>

@@ -212,7 +212,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
               </div>
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Lot No</span>
-                <p className="text-sm font-medium text-gray-900">{calculateLotNo()}</p>
+                <p className="text-sm font-medium text-gray-900">{order.voucher.voucherNumber}/{order.orderDetails.reduce((total, detail) => total + detail.bagSizes.reduce((sum, bag) => sum + (bag.quantityRemoved || 0), 0), 0)}</p>
               </div>
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Party Name</span>
