@@ -7,6 +7,14 @@ interface WebViewMessage {
   message: string;
 }
 
+// Add PDF message interface
+interface WebViewPDFMessage {
+  type: 'OPEN_PDF_NATIVE';
+  title: string;
+  fileName: string;
+  pdfData: string; // base64 encoded PDF
+}
+
 interface ReactNativeWebViewType {
   postMessage(message: string): void;
 }
@@ -18,7 +26,7 @@ declare global {
 }
 import { Order, StoreAdmin } from '@/utils/types';
 import { Printer } from 'lucide-react';
-import { PDFViewer } from '@react-pdf/renderer';
+import { PDFViewer, pdf } from '@react-pdf/renderer';
 import OrderVoucherPDF from '../pdf/OrderVoucherPDF';
 import * as ReactDOM from 'react-dom/client';
 import { useSelector } from 'react-redux';
@@ -30,6 +38,7 @@ interface DeliveryVoucherCardProps {
 
 const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // Loading state for PDF generation
 
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
 
@@ -107,48 +116,60 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
     }));
   }, [order.orderDetails, sortBagSizes]);
 
-  const handlePrint = () => {
-    if (isWebView()) {
-      const printData = {
-        type: 'PRINT_RECEIPT',
-        voucherType: 'DELIVERY',
-        voucherNumber: order.voucher.voucherNumber,
-        date: order.dateOfExtraction,
-        variety: order.orderDetails[0]?.variety || '',
-        farmerName: order.farmerId.name,
-        farmerId: order.farmerId.farmerId,
-        farmerAddress: order.farmerId.address,
-        farmerMobileNumber: order.farmerId.mobileNumber,
-        currentStock: order.currentStockAtThatTime,
-        remarks: order.remarks || '',
-        orderDetails: order.orderDetails.map(detail => ({
-          variety: detail.variety,
-          location: detail.incomingOrder?.location || '',
-          receiptNumber: detail.incomingOrder?.voucher.voucherNumber || '',
-          bagSizes: detail.bagSizes.map(bag => {
-            const incomingBagSize = detail.incomingOrder?.incomingBagSizes.find(
-              b => b.size === bag.size
-            );
-            return {
-              size: bag.size,
-              initialQuantity: incomingBagSize?.initialQuantity || 0,
-              quantityRemoved: bag.quantityRemoved || 0,
-              availableQuantity: incomingBagSize?.currentQuantity || 0
-            };
-          })
-        })),
-        summary: {
-          totalLocations: new Set(order.orderDetails.map(d => d.incomingOrder?.location).filter(Boolean)).size,
-          totalBagTypes: new Set(order.orderDetails.flatMap(d => d.bagSizes.map(b => b.size))).size,
-          totalRemoved: order.orderDetails.reduce((total, detail) =>
-            total + detail.bagSizes.reduce((sum, bag) =>
-              sum + (bag.quantityRemoved || 0), 0
-            ), 0
-          )
-        }
-      };
+  const handlePrint = async () => {
+    if (!adminInfo) {
+      alert('Admin information not available for PDF generation');
+      return;
+    }
 
-      window.ReactNativeWebView?.postMessage(JSON.stringify(printData));
+    if (isWebView()) {
+      // Set loading state for WebView
+      setIsGeneratingPDF(true);
+      
+      try {
+        console.log('Starting PDF generation for Delivery Voucher...');
+
+        const pdfDoc = <OrderVoucherPDF order={order} adminInfo={adminInfo} />;
+
+        // Generate PDF as blob
+        const pdfBlob = await pdf(pdfDoc).toBlob();
+        console.log('PDF blob generated, size:', pdfBlob.size, 'bytes');
+
+        // Convert blob to base64
+        const reader = new FileReader();
+        reader.onload = function() {
+          const base64Data = (reader.result as string).split(',')[1]; // Remove data:application/pdf;base64, prefix
+          
+          const fileName = `Delivery_Voucher_${order.voucher.voucherNumber}_${new Date().toISOString().split('T')[0]}.pdf`;
+          
+          const message: WebViewPDFMessage = {
+            type: 'OPEN_PDF_NATIVE',
+            title: `Delivery Voucher ${order.voucher.voucherNumber}`,
+            fileName: fileName,
+            pdfData: base64Data
+          };
+
+          window.ReactNativeWebView?.postMessage(JSON.stringify(message));
+          console.log('PDF data sent to React Native');
+          
+          // Reset loading state after successful send
+          setIsGeneratingPDF(false);
+        };
+
+        reader.onerror = function() {
+          console.error('Error converting PDF to base64');
+          alert('Error preparing PDF for native viewer. Please try again.');
+          // Reset loading state on error
+          setIsGeneratingPDF(false);
+        };
+
+        reader.readAsDataURL(pdfBlob);
+      } catch (error) {
+        console.error('Error generating PDF:', error);
+        alert('Failed to generate PDF. Please try again.');
+        // Reset loading state on error
+        setIsGeneratingPDF(false);
+      }
     } else {
       // Handle printing in web browser (existing PDF functionality)
       const printWindow = window.open('', '_blank');
@@ -176,6 +197,50 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
         }
       }
     }
+
+    /* 
+    // COMMENTED OUT: Old print data structure for React Native
+    // This was replaced with PDF generation for native viewing
+    
+    const printData = {
+      type: 'PRINT_RECEIPT',
+      voucherType: 'DELIVERY',
+      voucherNumber: order.voucher.voucherNumber,
+      date: order.dateOfExtraction,
+      variety: order.orderDetails[0]?.variety || '',
+      farmerName: order.farmerId.name,
+      farmerId: order.farmerId.farmerId,
+      farmerAddress: order.farmerId.address,
+      farmerMobileNumber: order.farmerId.mobileNumber,
+      currentStock: order.currentStockAtThatTime,
+      remarks: order.remarks || '',
+      orderDetails: order.orderDetails.map(detail => ({
+        variety: detail.variety,
+        location: detail.incomingOrder?.location || '',
+        receiptNumber: detail.incomingOrder?.voucher.voucherNumber || '',
+        bagSizes: detail.bagSizes.map(bag => {
+          const incomingBagSize = detail.incomingOrder?.incomingBagSizes.find(
+            b => b.size === bag.size
+          );
+          return {
+            size: bag.size,
+            initialQuantity: incomingBagSize?.initialQuantity || 0,
+            quantityRemoved: bag.quantityRemoved || 0,
+            availableQuantity: incomingBagSize?.currentQuantity || 0
+          };
+        })
+      })),
+      summary: {
+        totalLocations: new Set(order.orderDetails.map(d => d.incomingOrder?.location).filter(Boolean)).size,
+        totalBagTypes: new Set(order.orderDetails.flatMap(d => d.bagSizes.map(b => b.size))).size,
+        totalRemoved: order.orderDetails.reduce((total, detail) =>
+          total + detail.bagSizes.reduce((sum, bag) =>
+            sum + (bag.quantityRemoved || 0), 0
+          ), 0
+        )
+      }
+    };
+    */
   };
 
   return (
@@ -231,10 +296,20 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
             <div className="flex flex-wrap gap-2 sm:order-1 lg:order-2">
               <button
                 onClick={handlePrint}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200 flex-shrink-0"
+                disabled={isWebView() && isGeneratingPDF}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200 flex-shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Printer size={14} />
-                <span className="hidden xs:inline">Print</span>
+                {(isWebView() && isGeneratingPDF) ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-gray-600"></div>
+                    <span className="hidden xs:inline">Generating...</span>
+                  </>
+                ) : (
+                  <>
+                    <Printer size={14} />
+                    <span className="hidden xs:inline">Print</span>
+                  </>
+                )}
               </button>
               {isWebView() && (
                 <button
