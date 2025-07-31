@@ -1,5 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from 'react-i18next';
 
 interface StockTrendItem {
   month: string;
@@ -12,13 +13,14 @@ interface StockTrendChartProps {
 }
 
 const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
+  const { t } = useTranslation();
   const maxStock = Math.max(...data.map(item => item.totalStock));
 
   return (
     <Card className="bg-white shadow-sm">
       <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Stock Trend Analysis</CardTitle>
-        <p className="text-xs sm:text-sm text-gray-600">Monthly stock levels over the past 12 months</p>
+        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{t('coldStorageSummary.stockTrendAnalysis')}</CardTitle>
+        <p className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.monthlyStockLevels')}</p>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
         <div className="h-[280px] sm:h-[350px] lg:h-[400px]">
@@ -48,8 +50,8 @@ const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
                 width={50}
               />
               <Tooltip
-                formatter={(value) => [`${value} bags`, 'Total Stock']}
-                labelFormatter={(label) => `Month: ${label}`}
+                formatter={(value) => [`${value} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalStock')]}
+                labelFormatter={(label) => `${t('coldStorageSummary.month')}: ${label}`}
                 contentStyle={{
                   backgroundColor: '#fff',
                   border: '1px solid #e5e7eb',
@@ -73,11 +75,11 @@ const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">{currentStock}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Current Stock</div>
+              <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.currentStock')}</div>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
               <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{maxStock}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Peak Stock</div>
+              <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.peakStock')}</div>
             </div>
           </div>
         </div>

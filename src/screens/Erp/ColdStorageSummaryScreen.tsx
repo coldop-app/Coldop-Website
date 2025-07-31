@@ -131,7 +131,7 @@ const ColdStorageSummaryScreen = () => {
 
   return (
     <>
-      <TopBar title="Cold Storage Analytics" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+      <TopBar title={t('coldStorageSummary.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
       <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-20">
 
         {/* Cold Storage Branding Card */}
@@ -188,11 +188,11 @@ const ColdStorageSummaryScreen = () => {
                       <Package className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
                     </div>
                     <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                      Total Inventory
+                      {t('coldStorageSummary.totalInventory')}
                     </p>
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{totalBags}</h3>
-                  <p className="text-xs sm:text-sm text-gray-500">Total bags stored</p>
+                  <p className="text-xs sm:text-sm text-gray-500">{t('coldStorageSummary.totalBagsStored')}</p>
                 </div>
               </div>
             </CardContent>
@@ -217,15 +217,15 @@ const ColdStorageSummaryScreen = () => {
                           <Boxes className="w-4 h-4 sm:w-5 sm:h-5 text-purple-500" />
                         </div>
                         <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                          Top Variety
+                          {t('coldStorageSummary.topVariety')}
                         </p>
                       </div>
                       <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 truncate">{topVariety.variety}</h3>
                       <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                        {topVarietyTotal} bags stored
+                        {topVarietyTotal} {t('coldStorageSummary.bagsStored')}
                       </p>
                       <p className="text-xs text-purple-600 font-medium">
-                        {topVarietyPercentage.toFixed(1)}% of total inventory
+                        {topVarietyPercentage.toFixed(1)}% {t('coldStorageSummary.ofTotalInventory')}
                       </p>
                     </div>
                   </div>
@@ -244,15 +244,15 @@ const ColdStorageSummaryScreen = () => {
                         <Package className="w-4 h-4 sm:w-5 sm:h-5 text-pink-500" />
                       </div>
                       <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                        Second Variety
+                        {t('coldStorageSummary.secondVariety')}
                       </p>
                     </div>
                     <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{finalVarietyDistribution[1].variety}</h3>
                     <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                      {finalVarietyDistribution[1].quantity} bags
+                      {finalVarietyDistribution[1].quantity} {t('coldStorageSummary.bags')}
                     </p>
                     <p className="text-xs text-pink-600 font-medium">
-                      {finalVarietyDistribution[1].percentage.toFixed(1)}% of all varieties
+                      {finalVarietyDistribution[1].percentage.toFixed(1)}% {t('coldStorageSummary.ofAllVarieties')}
                     </p>
                   </div>
                 </div>
@@ -270,17 +270,17 @@ const ColdStorageSummaryScreen = () => {
                         <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                       </div>
                       <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                        Top Farmer
+                        {t('coldStorageSummary.topFarmer')}
                       </p>
                     </div>
                     <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 truncate">
                       {topFarmersData.data[0].farmerName}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                      {topFarmersData.data[0].totalBags} bags stored
+                      {topFarmersData.data[0].totalBags} {t('coldStorageSummary.bagsStored')}
                     </p>
                     <p className="text-xs text-green-600 font-medium truncate">
-                      Specializes in {Object.entries(topFarmersData.data[0].bagSummary)[0]?.[0]} ({Object.entries(topFarmersData.data[0].bagSummary)[0]?.[1]} bags)
+                      {t('coldStorageSummary.specializesIn')} {Object.entries(topFarmersData.data[0].bagSummary)[0]?.[0]} ({Object.entries(topFarmersData.data[0].bagSummary)[0]?.[1]} {t('coldStorageSummary.bags')})
                     </p>
                   </div>
                 </div>
@@ -295,7 +295,7 @@ const ColdStorageSummaryScreen = () => {
         {/* Capacity Utilization */}
         <Card className="bg-white shadow-sm">
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Capacity Utilization</CardTitle>
+            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{t('coldStorageSummary.capacityUtilization')}</CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <div className="space-y-4">
@@ -327,15 +327,15 @@ const ColdStorageSummaryScreen = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
                 <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-gray-900">{capacity - totalBags}</div>
-                  <div className="text-xs sm:text-sm text-gray-600">Available Space</div>
+                  <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.availableSpace')}</div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-blue-600">{totalBags}</div>
-                  <div className="text-xs sm:text-sm text-gray-600">Currently Stored</div>
+                  <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.currentlyStored')}</div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-green-600">{capacity}</div>
-                  <div className="text-xs sm:text-sm text-gray-600">Total Capacity</div>
+                  <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.totalCapacity')}</div>
                 </div>
               </div>
             </div>

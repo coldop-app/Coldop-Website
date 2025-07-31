@@ -20,6 +20,7 @@ import Error from "./screens/Error/Error";
 import IncomingOrderForm from "./screens/Erp/IncomingOrderForm.tsx";
 import OutgoingOrderForm from "./screens/Erp/OutgoingOrderForm.tsx";
 import EditIncomingOrderForm from "./screens/Erp/EditIncomingOrderForm.tsx";
+import EnhancedLoadingFallback from "./components/common/Shimmer/EnhancedLoadingFallback.tsx";
 
 // Lazy load components
 const HomeScreen = lazy(() => import("./screens/HomeScreen/HomeScreen.tsx"));
@@ -42,7 +43,7 @@ const Support = lazy(() => import("./screens/Support/Support.tsx"));
 const Privacy = lazy(() => import("./screens/Privacy/Privacy.tsx"));
 const CaseStudies = lazy(() => import("./screens/CaseStudies/CaseStudies.tsx"));
 
-// Loading component
+// Loading component for non-ERP routes
 const LoadingFallback = () => (
   <div className="flex items-center justify-center min-h-screen">
     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
@@ -108,62 +109,62 @@ const router = createBrowserRouter(
       <Route path="" element={<PrivateRoute />}>
         <Route path="erp" element={<ERPLayout />}>
           <Route path="daybook" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <DaybookScreen />
             </Suspense>
           } />
           <Route path="people" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <PeopleScreen />
             </Suspense>
           } />
           <Route path="people/:id" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <FarmerProfileScreen />
             </Suspense>
           } />
           <Route path="analytics" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <ColdStorageSummaryScreen />
             </Suspense>
           } />
           <Route path="variety-breakdown" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <VarietyBreakdownScreen />
             </Suspense>
           } />
           <Route path="incoming-order" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <IncomingOrderForm />
             </Suspense>
           } />
           <Route path="incoming-order/edit" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <EditIncomingOrderForm />
             </Suspense>
           } />
           <Route path="outgoing-order" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <OutgoingOrderForm />
             </Suspense>
           } />
           <Route path="settings" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <SettingsScreen />
             </Suspense>
           } />
           <Route path="settings/profile" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <ProfileSettingsScreen />
             </Suspense>
           } />
           <Route path="settings/billing" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <BillingSettingsScreen />
             </Suspense>
           } />
           <Route path="settings/support" element={
-            <Suspense fallback={<LoadingFallback />}>
+            <Suspense fallback={<EnhancedLoadingFallback />}>
               <ContactSupportScreen />
             </Suspense>
           } />

@@ -262,7 +262,8 @@ const VarietyBreakdownScreen = () => {
       </>
     );
   }
-
+  {typeof window !== "undefined" && (window as any).isWebview === undefined && ((window as any).isWebview = /wv|WebView|iPhone.*AppleWebKit(?!.*Safari)/i.test(window.navigator.userAgent))}
+  const isWebview = typeof window !== "undefined" ? (window as any).isWebview : false;
   return (
     <>
       <TopBar
@@ -270,9 +271,12 @@ const VarietyBreakdownScreen = () => {
         isSidebarOpen={false}
         setIsSidebarOpen={() => {}}
       />
+      {/* Define isWebview based on window.navigator.userAgent or other logic */}
+     
+
       <div className="p-4 max-w-6xl mx-auto space-y-4 pb-20">
         {/* Header */}
-        <div className="flex items-center justify-between">
+       {  !isWebview  && <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Button onClick={() => navigate(-1)} variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4" />
@@ -285,7 +289,7 @@ const VarietyBreakdownScreen = () => {
               </p>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
