@@ -1,5 +1,6 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from 'react-i18next';
 
 interface TopFarmerItem {
   name: string;
@@ -22,11 +23,12 @@ interface TopFarmersChartProps {
 }
 
 const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartProps) => {
+  const { t } = useTranslation();
   return (
     <Card className="bg-white shadow-sm">
       <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Top Farmers</CardTitle>
-        <p className="text-xs sm:text-sm text-gray-600">Farmers with the highest storage inventory</p>
+        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{t('coldStorageSummary.topFarmers')}</CardTitle>
+        <p className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.highestStorageInventory')}</p>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
         <div className="h-[280px] sm:h-[350px] lg:h-[400px]">
@@ -56,7 +58,7 @@ const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartPro
                 width={50}
               />
               <Tooltip
-                formatter={(value) => [`${value} bags`, 'Total Bags']}
+                formatter={(value) => [`${value} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalBags')]}
                 contentStyle={{
                   backgroundColor: '#fff',
                   border: '1px solid #e5e7eb',
@@ -67,7 +69,7 @@ const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartPro
               <Bar
                 dataKey="totalBags"
                 fill="#3b82f6"
-                name="Total Bags"
+                name={t('coldStorageSummary.totalBags')}
                 radius={[4, 4, 0, 0]}
               />
             </BarChart>
@@ -75,37 +77,37 @@ const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartPro
         </div>
         {topFarmersData?.data?.[0] && (
           <div className="mt-4">
-            <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">Top Farmer Insights</h4>
+            <h4 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">{t('coldStorageSummary.topFarmerInsights')}</h4>
             <div className="space-y-2">
               <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
                 <div className="min-w-0 flex-1">
-                  <p className="text-xs sm:text-sm font-medium text-gray-900">Top Contributor</p>
+                  <p className="text-xs sm:text-sm font-medium text-gray-900">{t('coldStorageSummary.topContributor')}</p>
                   <p className="text-xs sm:text-sm text-gray-600 truncate" title={topFarmersData.data[0].farmerName}>
                     {topFarmersData.data[0].farmerName}
                   </p>
                 </div>
                 <p className="text-sm sm:text-lg font-bold text-blue-600 ml-2 whitespace-nowrap">
-                  {topFarmersData.data[0].totalBags} bags
+                  {topFarmersData.data[0].totalBags} {t('coldStorageSummary.bags')}
                 </p>
               </div>
               {topFarmersData.data[1] && (
                 <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
                   <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm font-medium text-gray-900">Comparison</p>
+                    <p className="text-xs sm:text-sm font-medium text-gray-900">{t('coldStorageSummary.comparison')}</p>
                     <p className="text-xs sm:text-sm text-gray-600">
-                      Stores {(topFarmersData.data[0].totalBags / topFarmersData.data[1].totalBags).toFixed(1)}x more than second-ranked farmer
+                      {t('coldStorageSummary.storesMoreThan')} {(topFarmersData.data[0].totalBags / topFarmersData.data[1].totalBags).toFixed(1)}x {t('coldStorageSummary.moreThanSecond')}
                     </p>
                   </div>
                 </div>
               )}
             </div>
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-              <h5 className="font-medium text-gray-900 mb-2 text-sm">Storage Share</h5>
+              <h5 className="font-medium text-gray-900 mb-2 text-sm">{t('coldStorageSummary.storageShare')}</h5>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {((topFarmersData.data[0].totalBags / totalBags) * 100).toFixed(1)}%
                 </div>
-                <div className="text-xs sm:text-sm text-gray-600">of total inventory</div>
+                <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.ofTotalInventory')}</div>
               </div>
             </div>
           </div>

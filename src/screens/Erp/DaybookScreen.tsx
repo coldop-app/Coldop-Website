@@ -232,13 +232,20 @@ const DaybookScreen = () => {
     );
   };
 
+  // Check if running in webview
+  const isWebView = () => {
+    return window.ReactNativeWebView !== undefined;
+  };
+
   if (isLoading && !orders.length) {
     return (
       <>
         <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
+        {!isWebView() && (
+          <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+          </div>
+        )}
       </>
     );
   }

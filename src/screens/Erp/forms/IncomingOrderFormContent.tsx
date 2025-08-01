@@ -448,7 +448,7 @@ const IncomingOrderFormContent = () => {
     <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold mb-3">{t('incomingOrder.title')}</h1>
-        
+
         {/* Receipt Number Display - centered with primary color highlight */}
         <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full shadow-sm">
           <span className="text-xs font-medium text-primary uppercase tracking-wide">{t('voucher no:')}</span>

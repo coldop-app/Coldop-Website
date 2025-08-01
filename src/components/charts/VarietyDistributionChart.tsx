@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useTranslation } from 'react-i18next';
 
 interface VarietyDistributionItem {
   variety: string;
@@ -22,14 +23,15 @@ const COLORS = [
 ];
 
 const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
+  const { t } = useTranslation();
   const othersQuantity = data.find(item => item.variety === 'Others')?.quantity || 0;
   const othersPercentage = data.find(item => item.variety === 'Others')?.percentage || 0;
 
   return (
     <Card className="bg-white shadow-sm">
       <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Variety Distribution</CardTitle>
-        <p className="text-xs sm:text-sm text-gray-600">Percentage breakdown by potato variety</p>
+        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{t('coldStorageSummary.varietyDistribution')}</CardTitle>
+        <p className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.percentageBreakdown')}</p>
       </CardHeader>
       <CardContent className="p-4 sm:p-6">
         <div className="h-[280px] sm:h-[350px] lg:h-[400px]">
@@ -57,7 +59,7 @@ const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
                 ))}
               </Pie>
               <Tooltip
-                formatter={(value) => [`${value} bags`, 'Quantity']}
+                formatter={(value) => [`${value} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.quantity')]}
                 contentStyle={{
                   backgroundColor: '#fff',
                   border: '1px solid #e5e7eb',
@@ -69,7 +71,7 @@ const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
           </ResponsiveContainer>
         </div>
         <div className="mt-4 space-y-2">
-          <h4 className="font-medium text-gray-900 text-sm sm:text-base">Variety Distribution & Insights</h4>
+          <h4 className="font-medium text-gray-900 text-sm sm:text-base">{t('coldStorageSummary.varietyInsights')}</h4>
           <div className="space-y-2">
             {data.slice(0, 3).map((item, index) => (
               <div key={item.variety} className="flex items-center justify-between">
@@ -81,18 +83,18 @@ const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
                   <span className="text-xs sm:text-sm font-medium truncate">{item.variety}</span>
                 </div>
                 <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap ml-2">
-                  {item.quantity} bags ({item.percentage.toFixed(1)}%)
+                  {item.quantity} {t('coldStorageSummary.bags')} ({item.percentage.toFixed(1)}%)
                 </span>
               </div>
             ))}
           </div>
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-            <h5 className="font-medium text-blue-900 mb-2 text-sm">Distribution Insights</h5>
+            <h5 className="font-medium text-blue-900 mb-2 text-sm">{t('coldStorageSummary.distributionInsights')}</h5>
             <ul className="space-y-1 text-xs sm:text-sm text-blue-800">
-              <li>• {data[0]?.variety} is the most stored variety at {data[0]?.percentage.toFixed(1)}% of all inventory</li>
-              <li>• Top 2 varieties account for {(data[0]?.percentage + (data[1]?.percentage || 0)).toFixed(1)}% of inventory</li>
+              <li>• {data[0]?.variety} {t('coldStorageSummary.mostStoredVariety')} {data[0]?.percentage.toFixed(1)}% {t('coldStorageSummary.ofAllInventory')}</li>
+              <li>• {t('coldStorageSummary.topVarietiesAccount')} {(data[0]?.percentage + (data[1]?.percentage || 0)).toFixed(1)}% {t('coldStorageSummary.ofInventory')}</li>
               {data.length > 5 && othersQuantity > 0 && (
-                <li>• {data.length - 5} varieties grouped as "Others" account for {othersPercentage.toFixed(1)}% of inventory</li>
+                <li>• {data.length - 5} {t('coldStorageSummary.varietiesGroupedAs')} "{t('coldStorageSummary.others')}" {t('coldStorageSummary.accountFor')} {othersPercentage.toFixed(1)}% {t('coldStorageSummary.ofInventory')}</li>
               )}
             </ul>
           </div>

@@ -77,7 +77,7 @@ const Hero = ({
                 onClick={() => setIsSignInModalOpen(true)}
                 className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-4 py-2 text-lg font-bold text-secondary hover:bg-primary/85 sm:text-xl sm:px-8 sm:py-4 sm:mr-4"
               >
-                {t('hero.startManaging')}
+                {t('hero.getStarted')}
               </button>
               <button
                 onClick={handleHowItWorksClick}
@@ -137,7 +137,7 @@ const Hero = ({
         </div>
       </section>
 
-      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} />
+      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} isMobileApp={false} />
     </>
   );
 };

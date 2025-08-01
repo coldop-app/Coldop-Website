@@ -11,14 +11,95 @@ import {
 
 interface SignInModalProps {
   isOpen: boolean;
+  isMobileApp: boolean;
   onClose: () => void;
 }
 
-const SignInModal = ({ isOpen, onClose }: SignInModalProps) => {
+const SignInModal = ({ isOpen, onClose, isMobileApp=false }: SignInModalProps) => {
   const { t } = useTranslation();
   const [selectedRole, setSelectedRole] = useState<"farmer" | "store-admin" | null>(null);
 
-  return (
+  return isMobileApp ? (
+      <div className="min-h-screen bg-white flex flex-col">
+        {/* Header */} 
+        
+        
+        {/* Main Content */}
+        <div className="flex-1  mx-2  p-8 flex flex-col items-center">
+                     <h1 className="text-2xl font-medium text-gray-800 mb-12 text-center">
+             Pick your role
+           </h1>
+          
+                     {/* Store Manager Option */}
+           <Link
+             to="/login/store-admin"
+             className="w-full max-w-sm mb-1 p-6 transition-all cursor-pointer block rounded-xl"
+             onClick={onClose}
+           >
+                         {/* Store manager image */}
+             <div className="w-full h-48 rounded-lg mb-6 overflow-hidden">
+               <img 
+                 src="/store-owner.png" 
+                 alt="Store Manager" 
+                 className="w-full h-full object-cover"
+               />
+             </div>
+                         <h3 className="text-base font-medium text-gray-800 text-center">
+               I'm a Store Manager
+             </h3>
+                         {/* {selectedRole === "store-admin" && (
+               <div className="absolute top-4 right-4">
+                 <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                     <polyline points="20,6 9,17 4,12"></polyline>
+                   </svg>
+                 </div>
+               </div>
+             )} */}
+           </Link>
+          
+          {/* OR Divider */}
+          <div className="flex items-center w-full max-w-sm mb-4">
+            <div className="flex-1 h-px bg-gray-300"></div>
+                         <span className="px-4 text-gray-500 text-xs font-normal">or</span>
+            <div className="flex-1 h-px bg-gray-300"></div>
+          </div>
+          
+                     {/* Farmer Option */}
+           <Link
+             to="/login/farmer"
+             className="w-full max-w-sm mb-8 p-6 transition-all cursor-pointer block rounded-xl relative"
+             onClick={onClose}
+           >
+            {/* "Currently in progress" label */}
+           
+            
+                         {/* Farmer image */}
+             <div className="w-full h-48 rounded-lg mb-6 overflow-hidden">
+               <img 
+                 src="/farmer.png" 
+                 alt="Farmer" 
+                 className="w-full h-full object-cover"
+               />
+             </div>
+                         <h3 className="text-base font-medium text-gray-800 text-center">
+               I'm a Farmer
+             </h3>
+                         {/* {selectedRole === "farmer" && (
+               <div className="absolute top-4 right-4">
+                 <div className="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center">
+                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                     <polyline points="20,6 9,17 4,12"></polyline>
+                   </svg>
+                 </div>
+               </div>
+             )} */}
+           </Link>
+          
+          
+        </div>
+      </div>
+    ) : (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="mb-6">

@@ -1047,14 +1047,27 @@ const OutgoingOrderFormContent = () => {
                   <div className="bg-gray-50 rounded-lg p-4 mb-6">
                     <h4 className="font-medium mb-3">{t('outgoingOrder.selectedQuantities.title')}</h4>
                     <div className="space-y-2">
-                      {selectedQuantities.map((sq, index) => (
-                        <div key={index} className="flex items-center justify-between text-sm">
-                          <span>
-                            {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}
-                          </span>
-                                                      <span className="font-medium">{sq.selectedQuantity} {t('outgoingOrder.selectedQuantities.bags')}</span>
-                        </div>
-                      ))}
+                      {selectedQuantities.map((sq, index) => {
+                        // Find the order and its location
+                        const order = filteredOrders.find(o => o.voucher.voucherNumber === sq.receiptNumber);
+                        const location = order?.orderDetails[0]?.location;
+
+                        return (
+                          <div key={index} className="flex flex-col gap-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <span>
+                                {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}
+                              </span>
+                              <span className="font-medium">{sq.selectedQuantity} {t('outgoingOrder.selectedQuantities.bags')}</span>
+                            </div>
+                            {location && (
+                              <div className="text-xs text-gray-500">
+                                📍 {location}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 

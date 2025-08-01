@@ -17,6 +17,24 @@ import { Order, StoreAdmin } from '@/utils/types';
 import { pdf, PDFDownloadLink } from '@react-pdf/renderer';
 import FarmerReportPDF from '@/components/pdf/FarmerReportPDF';
 
+// Add WebView interfaces
+interface WebViewPDFMessage {
+  type: 'OPEN_PDF_NATIVE';
+  title: string;
+  fileName: string;
+  pdfData: string; // base64 encoded PDF
+}
+
+interface ReactNativeWebViewType {
+  postMessage(message: string): void;
+}
+
+declare global {
+  interface Window {
+    ReactNativeWebView?: ReactNativeWebViewType;
+  }
+}
+
 interface Farmer {
   _id: string;
   name: string;
@@ -40,6 +58,10 @@ interface StockSummaryResponse {
   status: string;
   stockSummary: StockSummary[];
 }
+
+// Add new type definitions for filters
+type OrderType = 'all' | 'incoming' | 'outgoing';
+type SortOrder = 'latest' | 'oldest';
 
 const getInitials = (name: string) => {
   return name
@@ -71,8 +93,18 @@ const FarmerProfileScreen = () => {
   const farmer = location.state?.farmer as Farmer;
   console.log(farmer)
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
-  const [showOrders, setShowOrders] = useState(false);
+  const [showOrders, setShowOrders] = useState(true); // Set to true by default
   const [showPDFDownload, setShowPDFDownload] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // Loading state for PDF generation
+
+  // Add new state for filters
+  const [orderType, setOrderType] = useState<OrderType>('all');
+  const [sortBy, setSortBy] = useState<SortOrder>('latest');
+
+  // Add WebView detection function
+  const isWebView = () => {
+    return window.ReactNativeWebView !== undefined;
+  };
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
     queryKey: ['farmerStock', id, adminInfo?.token],
@@ -81,10 +113,33 @@ const FarmerProfileScreen = () => {
   });
 
   const { data: ordersData, isLoading: isOrdersLoading } = useQuery({
-    queryKey: ['farmerOrders', id, adminInfo?.token],
+    queryKey: ['farmerOrders', id, adminInfo?.token, orderType, sortBy],
     queryFn: () => storeAdminApi.getFarmerOrders(id || '', adminInfo?.token || ''),
     enabled: !!id && !!adminInfo?.token,
   });
+
+  // Filter orders based on type
+  const filteredOrders = useMemo(() => {
+    if (!ordersData?.data) return [];
+
+    let orders = [...ordersData.data];
+
+    // Filter by type
+    if (orderType === 'incoming') {
+      orders = orders.filter(order => order.voucher.type === 'RECEIPT');
+    } else if (orderType === 'outgoing') {
+      orders = orders.filter(order => order.voucher.type === 'DELIVERY');
+    }
+
+    // Sort orders
+    orders.sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sortBy === 'latest' ? dateB - dateA : dateA - dateB;
+    });
+
+    return orders;
+  }, [ordersData?.data, orderType, sortBy]);
 
   const stockSummary = (stockData as StockSummaryResponse)?.stockSummary || [];
 
@@ -166,78 +221,127 @@ const FarmerProfileScreen = () => {
   const totalBags = calculateFarmerTotalBags(sortedStockSummary, allBagSizes);
 
           const handleGenerateReport = async () => {
-    if (!adminInfo || !farmer) {
-      alert('Please ensure farmer and admin data is available');
-      return;
-    }
+  if (!adminInfo || !farmer) {
+    alert('Please ensure farmer and admin data is available');
+    return;
+  }
 
-    if (!ordersData?.data) {
-      alert('Orders data is still loading. Please try again in a moment.');
-      return;
-    }
+  if (!ordersData?.data) {
+    alert('Orders data is still loading. Please try again in a moment.');
+    return;
+  }
 
-    try {
-      console.log('Starting PDF generation...');
+  // Set loading state for WebView
+  if (isWebView()) {
+    setIsGeneratingPDF(true);
+  }
 
-      const pdfDoc = <FarmerReportPDF
-        farmer={farmer}
-        adminInfo={adminInfo}
-        orders={ordersData.data}
-      />;
+  try {
+    console.log('Starting PDF generation...');
 
-      console.log('PDF component created, generating blob...');
+    const pdfDoc = <FarmerReportPDF
+      farmer={farmer}
+      adminInfo={adminInfo}
+      orders={ordersData.data}
+    />;
 
-      // Generate PDF as blob
-      const pdfBlob = await pdf(pdfDoc).toBlob();
-      console.log('PDF blob generated, size:', pdfBlob.size, 'bytes');
+    console.log('PDF component created, generating blob...');
 
-      // Create a more reliable blob URL by ensuring proper MIME type
-      const enhancedBlob = new Blob([pdfBlob], {
-        type: 'application/pdf'
-      });
+    // Generate PDF as blob
+    const pdfBlob = await pdf(pdfDoc).toBlob();
+    console.log('PDF blob generated, size:', pdfBlob.size, 'bytes');
 
-      const pdfUrl = URL.createObjectURL(enhancedBlob);
-      console.log('PDF URL created:', pdfUrl);
+    // Check if running in WebView
+    if (isWebView()) {
+      console.log('WebView detected, sending PDF to React Native...');
 
-      // Create filename with farmer name and date for fallback download
-      const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+      // Convert blob to base64
+      const reader = new FileReader();
+      reader.onload = function() {
+        const base64Data = (reader.result as string).split(',')[1]; // Remove data:application/pdf;base64, prefix
+        
+        const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        
+        const message: WebViewPDFMessage = {
+          type: 'OPEN_PDF_NATIVE',
+          title: `${farmer.name} - Farmer Report`,
+          fileName: fileName,
+          pdfData: base64Data
+        };
 
-      // Open PDF in new tab for viewing (not downloading)
-      const newWindow = window.open(pdfUrl, '_blank');
+        window.ReactNativeWebView?.postMessage(JSON.stringify(message));
+        console.log('PDF data sent to React Native');
+        
+        // Reset loading state after successful send
+        setIsGeneratingPDF(false);
+      };
 
-      if (newWindow) {
-        console.log('PDF opened in new tab successfully');
+      reader.onerror = function() {
+        console.error('Error converting PDF to base64');
+        alert('Error preparing PDF for native viewer. Please try again.');
+        // Reset loading state on error
+        setIsGeneratingPDF(false);
+      };
 
-        // Clean up the URL object after a delay to ensure PDF loads
-        setTimeout(() => {
-          URL.revokeObjectURL(pdfUrl);
-          console.log('PDF URL cleaned up');
-        }, 5000);
+      reader.readAsDataURL(pdfBlob);
       } else {
-        // Popup blocked - fallback to download
-        console.log('Popup blocked, creating download link...');
-        const downloadLink = document.createElement('a');
-        downloadLink.href = pdfUrl;
-        downloadLink.download = fileName;
-        downloadLink.style.display = 'none';
+        // Web browser handling (existing code)
+        console.log('Web browser detected, opening PDF in new tab...');
+        
+        // Create a more reliable blob URL by ensuring proper MIME type
+        const enhancedBlob = new Blob([pdfBlob], {
+          type: 'application/pdf'
+        });
 
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
+        const pdfUrl = URL.createObjectURL(enhancedBlob);
+        console.log('PDF URL created:', pdfUrl);
 
-        alert('Popup was blocked. PDF has been downloaded instead.');
+        // Create filename with farmer name and date for fallback download
+        const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
 
-        setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+        // Open PDF in new tab for viewing (not downloading)
+        const newWindow = window.open(pdfUrl, '_blank');
+
+        if (newWindow) {
+          console.log('PDF opened in new tab successfully');
+
+          // Clean up the URL object after a delay to ensure PDF loads
+          setTimeout(() => {
+            URL.revokeObjectURL(pdfUrl);
+            console.log('PDF URL cleaned up');
+          }, 5000);
+        } else {
+          // Popup blocked - fallback to download
+          console.log('Popup blocked, creating download link...');
+          const downloadLink = document.createElement('a');
+          downloadLink.href = pdfUrl;
+          downloadLink.download = fileName;
+          downloadLink.style.display = 'none';
+
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+
+          alert('Popup was blocked. PDF has been downloaded instead.');
+
+          setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+        }
       }
 
-    } catch (error) {
-      console.error('Error generating PDF:', error);
+      } catch (error) {
+    console.error('Error generating PDF:', error);
 
-      // Fallback to PDFDownloadLink on error
+    // For WebView, show a simple error message
+    if (isWebView()) {
+      setIsGeneratingPDF(false); // Reset loading state on error
+      alert('Failed to generate PDF. Please try again.');
+    } else {
+      // Fallback to PDFDownloadLink on error for web browsers
       console.log('Falling back to PDFDownloadLink method...');
       setShowPDFDownload(true);
       alert('PDF generation failed with the primary method. Please use the "Download Report" button that will appear.');
     }
+  }
   };
 
   if (!farmer) {
@@ -303,13 +407,19 @@ const FarmerProfileScreen = () => {
                     onClick={handleGenerateReport}
                     variant="outline"
                     className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
-                    disabled={isOrdersLoading}
+                    disabled={isOrdersLoading || (isWebView() && isGeneratingPDF)}
                   >
                     {isOrdersLoading ? (
                       <>
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
                         <span className="hidden sm:inline">{t('farmerProfile.loading')}</span>
                         <span className="sm:hidden">Loading</span>
+                      </>
+                    ) : (isWebView() && isGeneratingPDF) ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                        <span className="hidden sm:inline">Generating PDF...</span>
+                        <span className="sm:hidden">Generating...</span>
                       </>
                     ) : (
                       <>
@@ -533,10 +643,34 @@ const FarmerProfileScreen = () => {
           <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
             <Card>
               <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-                <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
-                  <Package className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary" />
-                  {t('farmerProfile.ordersHistory')}
-                </CardTitle>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary" />
+                    {t('farmerProfile.ordersHistory')}
+                  </CardTitle>
+
+                  {/* Filters Row */}
+                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                    <select
+                      value={orderType}
+                      onChange={(e) => setOrderType(e.target.value as OrderType)}
+                      className="w-full sm:w-[150px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all duration-200"
+                    >
+                      <option value="all">{t('daybook.allOrders')}</option>
+                      <option value="incoming">{t('daybook.incoming')}</option>
+                      <option value="outgoing">{t('daybook.outgoing')}</option>
+                    </select>
+
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOrder)}
+                      className="w-full sm:w-[150px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all duration-200"
+                    >
+                      <option value="latest">{t('daybook.latestFirst')}</option>
+                      <option value="oldest">{t('daybook.oldestFirst')}</option>
+                    </select>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-2 sm:p-4 md:p-6">
                 {isOrdersLoading ? (
@@ -545,13 +679,13 @@ const FarmerProfileScreen = () => {
                       <Skeleton key={i} className="h-24 sm:h-28 md:h-32 w-full" />
                     ))}
                   </div>
-                ) : ordersData?.data?.length === 0 ? (
+                ) : filteredOrders.length === 0 ? (
                   <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-gray-500">
                     {t('farmerProfile.noOrdersFound')}
                   </div>
                 ) : (
                   <div className="space-y-3 sm:space-y-4">
-                    {ordersData?.data?.map((order: Order) => (
+                    {filteredOrders.map((order: Order) => (
                       order.voucher.type === 'DELIVERY' ? (
                         <DeliveryVoucherCard key={order._id} order={order} />
                       ) : (
