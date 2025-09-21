@@ -63,8 +63,8 @@ interface CreateOrderPayload {
         initialQuantity: number;
         currentQuantity: number;
       };
+      location: string;
     }[];
-    location: string;
   }[];
 }
 
