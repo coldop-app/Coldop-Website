@@ -65,6 +65,7 @@ export interface BagSize {
   size: string;
   quantity?: BagSizeQuantity;
   quantityRemoved?: number;
+  location?: string; // Location for each bag size
 }
 
 export interface IncomingBagSize {

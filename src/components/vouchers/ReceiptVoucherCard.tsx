@@ -2,6 +2,11 @@ import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { Order, StoreAdmin, OrderDetails, BagSize } from '@/utils/types';
+
+// Extended BagSize interface to include location property
+interface BagSizeWithLocation extends BagSize {
+  location?: string;
+}
 import { ChevronDown, ChevronUp, Pencil, Share2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Printer } from 'lucide-react';
@@ -160,7 +165,7 @@ ${order.orderDetails.map(detail =>
     if (isWebView()) {
       // Set loading state for WebView
       setIsGeneratingPDF(true);
-      
+
       try {
         console.log('Starting PDF generation for Receipt Voucher...');
 
@@ -174,9 +179,9 @@ ${order.orderDetails.map(detail =>
         const reader = new FileReader();
         reader.onload = function() {
           const base64Data = (reader.result as string).split(',')[1]; // Remove data:application/pdf;base64, prefix
-          
+
           const fileName = `Receipt_Voucher_${order.voucher.voucherNumber}_${new Date().toISOString().split('T')[0]}.pdf`;
-          
+
           const message: WebViewPDFMessage = {
             type: 'OPEN_PDF_NATIVE',
             title: `Receipt Voucher ${order.voucher.voucherNumber}`,
@@ -186,7 +191,7 @@ ${order.orderDetails.map(detail =>
 
           window.ReactNativeWebView?.postMessage(JSON.stringify(message));
           console.log('PDF data sent to React Native');
-          
+
           // Reset loading state after successful send
           setIsGeneratingPDF(false);
         };
@@ -233,10 +238,10 @@ ${order.orderDetails.map(detail =>
       }
     }
 
-    /* 
+    /*
     // COMMENTED OUT: Old print data structure for React Native
     // This was replaced with PDF generation for native viewing
-    
+
     const printData = {
       type: 'PRINT_RECEIPT',
       voucherType: 'RECEIPT',
@@ -413,30 +418,70 @@ ${order.orderDetails.map(detail =>
               <div key={index} className="space-y-4">
                 {/* Mobile View - Stacked Layout */}
                 <div className="block sm:hidden space-y-3">
-                  {detail.sortedBagSizes.map((bagSize, idx) => {
-                    const current = bagSize.quantity?.currentQuantity || 0;
-                    const initial = bagSize.quantity?.initialQuantity || 0;
-                    const bagName = bagSize.size;
+                  {/* Quantity Section */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-900">Quantity</h4>
+                    {detail.sortedBagSizes.map((bagSize, idx) => {
+                      const current = bagSize.quantity?.currentQuantity || 0;
+                      const initial = bagSize.quantity?.initialQuantity || 0;
+                      const bagName = bagSize.size;
 
-                    return (
-                      <div key={idx} className="bg-gray-50 rounded-lg p-3">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-medium text-gray-900">{bagName}</span>
-                          <span className="text-sm font-medium text-gray-900">{current}/{initial}</span>
+                      return (
+                        <div key={idx} className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-900">{bagName}</span>
+                            <span className="text-sm font-medium text-gray-900">{current}/{initial}</span>
+                          </div>
                         </div>
+                      );
+                    })}
+                    {/* Total Row for Mobile */}
+                    <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-semibold text-gray-900">Total</span>
+                        <span className="text-sm font-semibold text-primary">
+                          {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}/
+                          {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}
+                        </span>
                       </div>
-                    );
-                  })}
-
-                  {/* Total Row for Mobile */}
-                  <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
-                    <div className="flex justify-between items-center">
-                      <span className="text-sm font-semibold text-gray-900">Total</span>
-                      <span className="text-sm font-semibold text-primary">
-                        {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.currentQuantity || 0), 0)}/
-                        {detail.sortedBagSizes.reduce((sum, bag) => sum + (bag.quantity?.initialQuantity || 0), 0)}
-                      </span>
                     </div>
+                  </div>
+
+                  {/* Location Section */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-900">Location</h4>
+                    {detail.sortedBagSizes.map((bagSize, idx) => {
+                      const bagName = bagSize.size;
+                      const location = (bagSize as BagSizeWithLocation).location || 'N/A';
+
+                      return (
+                        <div key={idx} className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-900">{bagName}</span>
+                            <span className="text-sm font-medium text-gray-900">{location}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Marka Section */}
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-gray-900">Marka</h4>
+                    {detail.sortedBagSizes.map((bagSize, idx) => {
+                      const bagName = bagSize.size;
+                      const initial = bagSize.quantity?.initialQuantity || 0;
+                      const marka = initial > 0 ? `${order.voucher.voucherNumber}/${initial}` : 'N/A';
+
+                      return (
+                        <div key={idx} className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium text-gray-900">{bagName}</span>
+                            <span className="text-sm font-medium text-gray-900">{marka}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -447,18 +492,25 @@ ${order.orderDetails.map(detail =>
                       <table className="w-full text-sm border-collapse">
                         <thead>
                           <tr className="bg-gray-50">
+                            <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200">
+                              Type
+                            </th>
                             {detail.sortedBagSizes.map((bagSize, idx) => (
-                              <th key={idx} className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200" style={{ width: `${100 / (detail.sortedBagSizes.length + 1)}%` }}>
+                              <th key={idx} className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200">
                                 {formatBagSizeName(bagSize.size)}
                               </th>
                             ))}
-                            <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200" style={{ width: `${100 / (detail.sortedBagSizes.length + 1)}%` }}>
+                            <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200">
                               Total
                             </th>
                           </tr>
                         </thead>
                         <tbody>
+                          {/* Quantity Row */}
                           <tr className="border-b border-gray-100">
+                            <td className="py-3 px-3 text-center font-medium text-gray-900">
+                              Quantity
+                            </td>
                             {detail.sortedBagSizes.map((bagSize, idx) => (
                               <td key={idx} className="py-3 px-3 text-center">
                                 {(() => {
@@ -479,17 +531,51 @@ ${order.orderDetails.map(detail =>
                               </span>
                             </td>
                           </tr>
+
+                          {/* Location Row */}
+                          <tr className="border-b border-gray-100">
+                            <td className="py-3 px-3 text-center font-medium text-gray-900">
+                              Location
+                            </td>
+                            {detail.sortedBagSizes.map((bagSize, idx) => (
+                              <td key={idx} className="py-3 px-3 text-center">
+                                <span className="font-medium text-gray-900">
+                                  {(bagSize as BagSizeWithLocation).location || '-'}
+                                </span>
+                              </td>
+                            ))}
+                            <td className="py-3 px-3 text-center">
+                              <span className="font-medium text-gray-500">-</span>
+                            </td>
+                          </tr>
+
+                          {/* Marka Row */}
+                          <tr className="border-b border-gray-100">
+                            <td className="py-3 px-3 text-center font-medium text-gray-900">
+                              Marka
+                            </td>
+                            {detail.sortedBagSizes.map((bagSize, idx) => (
+                              <td key={idx} className="py-3 px-3 text-center">
+                                {(() => {
+                                  const qty = bagSize.quantity;
+                                  return qty && qty.initialQuantity ? (
+                                    <span className="font-medium text-gray-900">
+                                      {order.voucher.voucherNumber}/{qty.initialQuantity}
+                                    </span>
+                                  ) : '-';
+                                })()}
+                              </td>
+                            ))}
+                            <td className="py-3 px-3 text-center">
+                              <span className="font-medium text-gray-500">-</span>
+                            </td>
+                          </tr>
                         </tbody>
                       </table>
                     </div>
                   </div>
                 </div>
 
-                {/* Location */}
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gray-50 rounded-lg p-3 gap-2">
-                  <span className="text-sm text-gray-600 font-medium">Location:</span>
-                  <span className="text-sm font-medium text-gray-900">{detail.location}</span>
-                </div>
               </div>
             ))}
 
