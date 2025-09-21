@@ -105,6 +105,7 @@ interface BagSizeQuantity {
 interface OrderBagSize {
   size: string;
   quantity: BagSizeQuantity;
+  location: string;
 }
 
 interface Voucher {
@@ -281,6 +282,13 @@ const OutgoingOrderFormContent = () => {
     return sortBagSizes(adminInfo?.preferences?.bagSizes);
   }, [adminInfo?.preferences?.bagSizes]);
 
+  // Farmer search query
+  const { data: searchResults, isLoading: isSearching, refetch } = useQuery({
+    queryKey: ['searchFarmers', searchQuery],
+    queryFn: () => storeAdminApi.searchFarmers(adminInfo?._id || '', searchQuery, adminInfo?.token || ''),
+    enabled: false, // We'll manually trigger this with the debounced function
+  });
+
   // Create a debounced search function
   const debouncedSearch = useCallback(
     debounce((query: string) => {
@@ -288,15 +296,8 @@ const OutgoingOrderFormContent = () => {
         refetch();
       }
     }, 300),
-    []
+    [refetch]
   );
-
-  // Farmer search query
-  const { data: searchResults, isLoading: isSearching, refetch } = useQuery({
-    queryKey: ['searchFarmers', searchQuery],
-    queryFn: () => storeAdminApi.searchFarmers(adminInfo?._id || '', searchQuery, adminInfo?.token || ''),
-    enabled: false, // We'll manually trigger this with the debounced function
-  });
 
   // Add useEffect to update form when farmer changes
   useEffect(() => {
@@ -830,6 +831,11 @@ const OutgoingOrderFormContent = () => {
                                           return acc;
                                         }, { current: 0, initial: 0 });
 
+                                        // Get location for this bag size
+                                        const bagSizeLocation = order.orderDetails.find(detail =>
+                                          detail.bagSizes.some(b => b.size === size)
+                                        )?.bagSizes.find(b => b.size === size)?.location;
+
                                         const isSelected = selectedQuantities.some(
                                           sq => sq.receiptNumber === order.voucher.voucherNumber &&
                                                sq.bagSize === size
@@ -837,7 +843,7 @@ const OutgoingOrderFormContent = () => {
 
                                         return (
                                           <td key={size} className="p-2 border-b text-center">
-                                            <div className="flex items-center justify-center">
+                                            <div className="flex flex-col items-center justify-center">
                                               <button
                                                 type="button"
                                                 onClick={(e) => handleBoxClick(
@@ -847,7 +853,7 @@ const OutgoingOrderFormContent = () => {
                                                   e
                                                 )}
                                                 className={`
-                                                  relative w-14 h-14 rounded-lg border-2
+                                                  relative w-16 h-16 rounded-lg border-2
                                                   ${getBoxColor(
                                                     totalQuantities.current,
                                                     totalQuantities.initial,
@@ -855,15 +861,26 @@ const OutgoingOrderFormContent = () => {
                                                   )}
                                                   transition-all duration-200 transform hover:scale-105
                                                   disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+                                                  flex flex-col items-center justify-center
                                                 `}
                                                 disabled={totalQuantities.current === 0}
                                               >
+                                                {/* Location at the top */}
+                                                <div className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
+                                                  <span>📍</span>
+                                                  <span className="truncate max-w-[50px]">
+                                                    {bagSizeLocation || ''}
+                                                  </span>
+                                                </div>
+
+                                                {/* Quantity in the middle */}
                                                 <div className="text-xs font-medium">
                                                   {totalQuantities.current}
                                                 </div>
                                                 <div className="text-xs text-gray-500">
                                                   /{totalQuantities.initial}
                                                 </div>
+
                                                 {selectedQuantities.some(sq =>
                                                   sq.receiptNumber === order.voucher.voucherNumber &&
                                                   sq.bagSize === size
@@ -925,6 +942,11 @@ const OutgoingOrderFormContent = () => {
                                       return acc;
                                     }, { current: 0, initial: 0 });
 
+                                    // Get location for this bag size
+                                    const bagSizeLocation = order.orderDetails.find(detail =>
+                                      detail.bagSizes.some(b => b.size === size)
+                                    )?.bagSizes.find(b => b.size === size)?.location;
+
                                     const isSelected = selectedQuantities.some(
                                       sq => sq.receiptNumber === order.voucher.voucherNumber &&
                                            sq.bagSize === size
@@ -950,15 +972,26 @@ const OutgoingOrderFormContent = () => {
                                             )}
                                             transition-all duration-200 active:scale-95
                                             disabled:opacity-50 disabled:cursor-not-allowed
+                                            flex flex-col items-center justify-center
                                           `}
                                           disabled={totalQuantities.current === 0}
                                         >
+                                          {/* Location at the top */}
+                                          <div className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
+                                            <span>📍</span>
+                                            <span className="truncate max-w-[50px]">
+                                              {bagSizeLocation || ''}
+                                            </span>
+                                          </div>
+
+                                          {/* Quantity in the middle */}
                                           <div className="text-sm font-medium">
                                             {totalQuantities.current}
                                           </div>
                                           <div className="text-xs text-gray-500">
                                             /{totalQuantities.initial}
                                           </div>
+
                                           {selectedQuantities.some(sq =>
                                             sq.receiptNumber === order.voucher.voucherNumber &&
                                             sq.bagSize === size

@@ -136,7 +136,8 @@ const PeopleScreen = () => {
     );
   }
 
-  if (error) {
+  // Only show error if there's an actual API error, not just empty data
+  if (error && !data) {
     return (
       <>
         <TopBar title={t('people.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
@@ -207,8 +208,8 @@ const PeopleScreen = () => {
                   className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base transition-all duration-200 flex items-center justify-between"
                 >
                   <span className="text-gray-700">
-                    {sortBy === 'name' 
-                      ? t('people.name') 
+                    {sortBy === 'name'
+                      ? t('people.name')
                       : sortBy === 'farmerId'
                       ? 'Account Number'
                       : t('people.recentlyAdded')}
@@ -258,11 +259,20 @@ const PeopleScreen = () => {
                   <Users2 className="w-8 h-8 text-gray-400" />
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-1">
-                  {t('people.noPeopleFound')}
+                  {searchQuery ? t('people.noPeopleFound') : 'No Registered Farmers'}
                 </h3>
                 <p className="text-gray-500">
-                  {t('people.addNewFarmer')}
+                  {searchQuery ? 'Try adjusting your search terms' : 'Start by adding your first farmer to the system'}
                 </p>
+                {!searchQuery && (
+                  <button
+                    onClick={() => setIsNewFarmerModalOpen(true)}
+                    className="mt-4 px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-sm font-medium inline-flex items-center gap-2"
+                  >
+                    <Plus size={16} />
+                    Add First Farmer
+                  </button>
+                )}
               </div>
             </div>
           ) : (
