@@ -669,6 +669,7 @@ const OutgoingOrderFormContent = () => {
                     <div className="flex gap-2 items-center relative">
                       <input
                         id="farmer-search-input"
+                        autoComplete="off"
                         type="text"
                         value={searchQuery}
                         onChange={handleSearchChange}

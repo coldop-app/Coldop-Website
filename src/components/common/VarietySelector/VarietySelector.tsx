@@ -100,6 +100,7 @@ const VarietySelector = ({ value, onValueChange, token }: VarietySelectorProps) 
           <input
             id="variety-search-input"
             type="text"
+            autoComplete="off"
             value={searchQuery}
             onChange={handleSearchChange}
             onFocus={() => setShowDropdown(true)}

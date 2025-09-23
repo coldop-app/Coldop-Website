@@ -654,6 +654,7 @@ const IncomingOrderFormContent = () => {
                       <input
                         id="farmer-search-input"
                         type="text"
+                        autoComplete="off"
                         value={selectedFarmer ? selectedFarmer.name : searchQuery}
                         onChange={handleSearchChange}
                         onFocus={() => setShowDropdown(true)}
@@ -747,6 +748,7 @@ const IncomingOrderFormContent = () => {
                         <label className="text-sm font-medium">{formatBagSizeLabel(bagSize)}</label>
                         <input
                           type="text"
+                          autoComplete="off"
                           name={fieldName}
                           value={formData.quantities[fieldName] || ""}
                           onChange={(e) => updateQuantity(fieldName, e.target.value)}
