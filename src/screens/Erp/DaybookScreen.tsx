@@ -412,10 +412,10 @@ const DaybookScreen = () => {
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-1">
-                  {searchReceiptNumber ? t('daybook.noReceiptFound') : t('daybook.noOrdersFound')}
+                  {searchReceiptNumber ? t('daybook.noReceiptFound') : 'No orders found'}
                 </h3>
                 <p className="text-gray-500">
-                  {searchReceiptNumber ? t('daybook.tryDifferentNumber') : t('daybook.createNewOrder')}
+                  {searchReceiptNumber ? t('daybook.tryDifferentNumber') : 'Click on add incoming to create new orders'}
                 </p>
               </div>
             </div>
