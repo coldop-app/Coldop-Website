@@ -12,7 +12,9 @@ import Loader from "@/components/common/Loader/Loader";
 import VarietySelector from "@/components/common/VarietySelector/VarietySelector";
 import { cn } from "@/lib/utils";
 import debounce from "lodash/debounce";
-import NewFarmerModal, { NewFarmerFormData } from "@/components/modals/NewFarmerModal";
+import NewFarmerModal, {
+  NewFarmerFormData,
+} from "@/components/modals/NewFarmerModal";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -42,7 +44,8 @@ const AnimatedFormStep = ({ isVisible, children }: AnimatedFormStepProps) => {
         opacity,
         transform,
         position: "relative",
-        transition: "opacity 500ms cubic-bezier(0.4, 0, 0.2, 1), transform 500ms cubic-bezier(0.4, 0, 0.2, 1)"
+        transition:
+          "opacity 500ms cubic-bezier(0.4, 0, 0.2, 1), transform 500ms cubic-bezier(0.4, 0, 0.2, 1)",
       }}
     >
       {children}
@@ -51,20 +54,16 @@ const AnimatedFormStep = ({ isVisible, children }: AnimatedFormStepProps) => {
 };
 
 interface BagQuantities {
-  [key: string]: string;  // Make it an index signature to accept any string key
+  [key: string]: string; // Make it an index signature to accept any string key
 }
 
 // Helper function to format bag size label
 const formatBagSizeLabel = (bagSize: string): string => {
-  // Handle special cases first
-  if (bagSize === 'number-12') return 'Number-12';
-  if (bagSize === 'cut-tok') return 'Cut & Tok';
+  // Handle special cases
+  if (bagSize === "cut-tok") return "Cut & Tok";
 
-  // For other cases, capitalize and format
-  return bagSize
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  // For all other cases, just capitalize the first letter
+  return bagSize.charAt(0).toUpperCase() + bagSize.slice(1);
 };
 
 // Helper function to convert bag size to field name
@@ -84,6 +83,13 @@ interface FormData {
   farmerName: string;
   farmerId: string;
   quantities: BagQuantities;
+  generation: string;
+  roughing: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: "Weighed" | "Not Weighed";
+  approxWeight: string;
+  bagType: "jute" | "leno";
 
   // Step 2
   bagLocations: { [key: string]: BagLocation }; // Key is bag size field name
@@ -98,9 +104,15 @@ interface FormData {
 interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string;
-  voucherNumber: number;
   dateOfSubmission: string;
   remarks: string;
+  generation: string;
+  roughing: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: string;
+  approxWeight: string;
+  bagType: string;
   orderDetails: {
     variety: string;
     bagSizes: {
@@ -134,7 +146,9 @@ const IncomingOrderFormContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const farmer = location.state?.farmer as Farmer | undefined;
-  const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
+  const { adminInfo } = useSelector((state: RootState) => state.auth) as {
+    adminInfo: StoreAdmin | null;
+  };
 
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -149,24 +163,41 @@ const IncomingOrderFormContent = () => {
     bagLocations: {},
     remarks: "",
     voucherNumber: 0,
-    dateOfSubmission: new Date().toISOString().split('T')[0],
-    variety: ""
+    dateOfSubmission: new Date().toISOString().split("T")[0],
+    variety: "",
+    generation: "",
+    roughing: "",
+    tuberType: "",
+    grader: "",
+    weighedStatus: "Weighed",
+    approxWeight: "",
+    bagType: "jute",
   });
 
   // Farmer search query
-  const { data: searchResults, isLoading: isSearching, refetch } = useQuery({
-    queryKey: ['searchFarmers', searchQuery],
-    queryFn: () => storeAdminApi.searchFarmers(adminInfo?._id || '', searchQuery, adminInfo?.token || ''),
+  const {
+    data: searchResults,
+    isLoading: isSearching,
+    refetch,
+  } = useQuery({
+    queryKey: ["searchFarmers", searchQuery],
+    queryFn: () =>
+      storeAdminApi.searchFarmers(
+        adminInfo?._id || "",
+        searchQuery,
+        adminInfo?.token || ""
+      ),
     enabled: false, // We'll manually trigger this with the debounced function
   });
 
   // Create a debounced search function
   const debouncedSearch = useMemo(
-    () => debounce((query: string) => {
-      if (query.length >= 2) {
-        refetch();
-      }
-    }, 300),
+    () =>
+      debounce((query: string) => {
+        if (query.length >= 2) {
+          refetch();
+        }
+      }, 300),
     [refetch]
   );
 
@@ -176,20 +207,20 @@ const IncomingOrderFormContent = () => {
       const initialQuantities: BagQuantities = {};
       const initialLocations: { [key: string]: BagLocation } = {};
 
-      adminInfo.preferences.bagSizes.forEach(bagSize => {
+      adminInfo.preferences.bagSizes.forEach((bagSize) => {
         const fieldName = getBagSizeFieldName(bagSize);
         initialQuantities[fieldName] = "";
         initialLocations[fieldName] = {
           chamber: "",
           floor: "",
-          row: ""
+          row: "",
         };
       });
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         quantities: initialQuantities,
-        bagLocations: initialLocations
+        bagLocations: initialLocations,
       }));
     }
   }, [adminInfo?.preferences?.bagSizes]);
@@ -197,40 +228,44 @@ const IncomingOrderFormContent = () => {
   // Add useEffect to update form when farmer changes
   useEffect(() => {
     if (farmer) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         farmerName: farmer.name,
-        farmerId: farmer._id
+        farmerId: farmer._id,
       }));
     }
   }, [farmer]);
 
   const updateFormData = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const updateQuantity = (bagType: string, value: string) => {
     // Only allow numbers
-    const numericValue = value.replace(/\D/g, '');
-    setFormData(prev => ({
+    const numericValue = value.replace(/\D/g, "");
+    setFormData((prev) => ({
       ...prev,
       quantities: {
         ...prev.quantities,
-        [bagType]: numericValue
-      }
+        [bagType]: numericValue,
+      },
     }));
   };
 
-  const updateLocation = (bagType: string, field: keyof BagLocation, value: string) => {
-    setFormData(prev => ({
+  const updateLocation = (
+    bagType: string,
+    field: keyof BagLocation,
+    value: string
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       bagLocations: {
         ...prev.bagLocations,
         [bagType]: {
           ...prev.bagLocations[bagType],
-          [field]: value
-        }
-      }
+          [field]: value,
+        },
+      },
     }));
   };
 
@@ -249,22 +284,44 @@ const IncomingOrderFormContent = () => {
   };
 
   const calculateTotal = () => {
-    return Object.values(formData.quantities)
-      .reduce((sum, quantity) => sum + (parseInt(quantity) || 0), 0);
+    return Object.values(formData.quantities).reduce(
+      (sum, quantity) => sum + (parseInt(quantity) || 0),
+      0
+    );
   };
 
   const nextStep = () => {
     // Validate step 1
     if (!formData.farmerName.trim()) {
-      toast.error(t('incomingOrder.errors.enterFarmerName'));
+      toast.error(t("incomingOrder.errors.enterFarmerName"));
       return;
     }
     if (!formData.variety) {
-      toast.error(t('incomingOrder.errors.selectVariety'));
+      toast.error(t("incomingOrder.errors.selectVariety"));
+      return;
+    }
+    if (!formData.generation) {
+      toast.error("Please select generation");
+      return;
+    }
+    if (!formData.roughing) {
+      toast.error("Please select roughing");
+      return;
+    }
+    if (!formData.tuberType) {
+      toast.error("Please select tuber type");
+      return;
+    }
+    if (!formData.grader) {
+      toast.error("Please select grade");
+      return;
+    }
+    if (!formData.approxWeight) {
+      toast.error("Please enter approximate weight");
       return;
     }
     if (calculateTotal() === 0) {
-      toast.error(t('incomingOrder.errors.enterQuantity'));
+      toast.error(t("incomingOrder.errors.enterQuantity"));
       return;
     }
     setCurrentStep(2);
@@ -283,7 +340,7 @@ const IncomingOrderFormContent = () => {
       return storeAdminApi.createIncomingOrder(orderData, adminInfo.token);
     },
     onSuccess: () => {
-      toast.success(t('incomingOrder.success.orderCreated'));
+      toast.success(t("incomingOrder.success.orderCreated"));
       // Reset form
       setFormData({
         farmerName: "",
@@ -292,22 +349,32 @@ const IncomingOrderFormContent = () => {
         bagLocations: {},
         remarks: "",
         voucherNumber: 0,
-        dateOfSubmission: new Date().toISOString().split('T')[0],
-        variety: ""
+        dateOfSubmission: new Date().toISOString().split("T")[0],
+        variety: "",
+        generation: "",
+        roughing: "",
+        tuberType: "",
+        grader: "",
+        weighedStatus: "Weighed",
+        approxWeight: "",
+        bagType: "jute",
       });
       setCurrentStep(1);
       // Navigate back or to orders list
-      navigate('/erp/daybook');
+      navigate("/erp/daybook");
     },
     onError: (error: unknown) => {
       console.error("Error creating order:", error);
       if (error instanceof Error) {
         const apiError = error as ApiError;
-        toast.error(apiError.response?.data?.message || t('incomingOrder.errors.failedToCreate'));
+        toast.error(
+          apiError.response?.data?.message ||
+            t("incomingOrder.errors.failedToCreate")
+        );
       } else {
-        toast.error(t('incomingOrder.errors.failedToCreate'));
+        toast.error(t("incomingOrder.errors.failedToCreate"));
       }
-    }
+    },
   });
 
   // Create farmer mutation
@@ -316,29 +383,32 @@ const IncomingOrderFormContent = () => {
       if (!adminInfo?.token) {
         throw new Error("No authentication token found");
       }
-      return storeAdminApi.quickRegister({
-        name: farmerData.name,
-        address: farmerData.address,
-        mobileNumber: farmerData.contact,
-        password: "123456", // Hardcoded default password
-        imageUrl: "",
-        farmerId: farmerData.accNo
-      }, adminInfo.token);
+      return storeAdminApi.quickRegister(
+        {
+          name: farmerData.name,
+          address: farmerData.address,
+          mobileNumber: farmerData.contact,
+          password: "123456", // Hardcoded default password
+          imageUrl: "",
+          farmerId: farmerData.accNo,
+        },
+        adminInfo.token
+      );
     },
     onSuccess: (data) => {
-      toast.success(t('incomingOrder.success.farmerCreated'));
+      toast.success(t("incomingOrder.success.farmerCreated"));
       // Create a farmer object with the new data
       const newFarmer: Farmer = {
         _id: data.data._id,
         name: data.data.name,
         address: data.data.address || "",
-        mobileNumber: data.data.mobileNumber
+        mobileNumber: data.data.mobileNumber,
       };
       // Update form with new farmer
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         farmerName: newFarmer.name,
-        farmerId: newFarmer._id
+        farmerId: newFarmer._id,
       }));
       setSearchQuery(newFarmer.name);
       // Show the farmer details by simulating a selection
@@ -350,58 +420,69 @@ const IncomingOrderFormContent = () => {
       console.error("Error creating farmer:", error);
       if (error instanceof Error) {
         const apiError = error as ApiError;
-        toast.error(apiError.response?.data?.message || t('incomingOrder.errors.failedToCreateFarmer'));
+        toast.error(
+          apiError.response?.data?.message ||
+            t("incomingOrder.errors.failedToCreateFarmer")
+        );
       } else {
-        toast.error(t('incomingOrder.errors.failedToCreateFarmer'));
+        toast.error(t("incomingOrder.errors.failedToCreateFarmer"));
       }
-    }
+    },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // Validate step 2 - check that all bag sizes with quantities have complete locations
-    const bagSizesWithQuantities = adminInfo?.preferences?.bagSizes?.filter(bagSize => {
-      const fieldName = getBagSizeFieldName(bagSize);
-      const quantity = parseInt(formData.quantities[fieldName] || "0");
-      return quantity > 0;
-    }) || [];
+    const bagSizesWithQuantities =
+      adminInfo?.preferences?.bagSizes?.filter((bagSize) => {
+        const fieldName = getBagSizeFieldName(bagSize);
+        const quantity = parseInt(formData.quantities[fieldName] || "0");
+        return quantity > 0;
+      }) || [];
 
     for (const bagSize of bagSizesWithQuantities) {
       const fieldName = getBagSizeFieldName(bagSize);
       const location = formData.bagLocations[fieldName];
       if (!location || !location.chamber || !location.floor || !location.row) {
-        toast.error(t('incomingOrder.errors.enterLocationForAllBags'));
+        toast.error(t("incomingOrder.errors.enterLocationForAllBags"));
         return;
       }
     }
-
-    // Use the receipt number from our query
-    const voucherNumber = receiptData?.receiptNumber || 1;
 
     // Prepare order data according to API structure
     const orderData: CreateOrderPayload = {
       coldStorageId: adminInfo?._id || "",
       farmerId: formData.farmerId || "temp-farmer-id",
-      voucherNumber: voucherNumber,
       dateOfSubmission: formData.dateOfSubmission,
       remarks: formData.remarks,
+      generation: formData.generation,
+      roughing: formData.roughing,
+      tuberType: formData.tuberType,
+      grader: formData.grader,
+      weighedStatus: formData.weighedStatus === "Weighed",
+      approxWeight: formData.approxWeight,
+      bagType: formData.bagType,
       orderDetails: [
         {
           variety: formData.variety,
-          bagSizes: bagSizesWithQuantities.map(bagSize => {
+          bagSizes: bagSizesWithQuantities.map((bagSize) => {
             const fieldName = getBagSizeFieldName(bagSize);
             return {
               size: bagSize,
               quantity: {
-                initialQuantity: parseInt(formData.quantities[fieldName] || "0"),
-                currentQuantity: parseInt(formData.quantities[fieldName] || "0")
+                initialQuantity: parseInt(
+                  formData.quantities[fieldName] || "0"
+                ),
+                currentQuantity: parseInt(
+                  formData.quantities[fieldName] || "0"
+                ),
               },
-              location: getCombinedLocation(fieldName)
+              location: getCombinedLocation(fieldName),
             };
-          })
-        }
-      ]
+          }),
+        },
+      ],
     };
 
     createOrderMutation.mutate(orderData);
@@ -410,16 +491,16 @@ const IncomingOrderFormContent = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchQuery(value);
-    setFormData(prev => ({ ...prev, farmerName: value, farmerId: '' }));
+    setFormData((prev) => ({ ...prev, farmerName: value, farmerId: "" }));
     setShowDropdown(true);
     debouncedSearch(value);
   };
 
   const handleSelectFarmer = (selectedFarmer: Farmer) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       farmerName: selectedFarmer.name,
-      farmerId: selectedFarmer._id
+      farmerId: selectedFarmer._id,
     }));
     setSearchQuery(selectedFarmer.name);
     setShowDropdown(false);
@@ -428,15 +509,20 @@ const IncomingOrderFormContent = () => {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const dropdown = document.getElementById('farmer-search-dropdown');
-      const input = document.getElementById('farmer-search-input');
-      if (dropdown && input && !dropdown.contains(event.target as Node) && !input.contains(event.target as Node)) {
+      const dropdown = document.getElementById("farmer-search-dropdown");
+      const input = document.getElementById("farmer-search-input");
+      if (
+        dropdown &&
+        input &&
+        !dropdown.contains(event.target as Node) &&
+        !input.contains(event.target as Node)
+      ) {
         setShowDropdown(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleNewFarmerSubmit = async (farmerData: NewFarmerFormData) => {
@@ -447,13 +533,13 @@ const IncomingOrderFormContent = () => {
         _id: response.data._id,
         name: response.data.name,
         address: farmerData.address,
-        mobileNumber: response.data.mobileNumber
+        mobileNumber: response.data.mobileNumber,
       };
       // Update form with new farmer
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         farmerName: newFarmer.name,
-        farmerId: newFarmer._id
+        farmerId: newFarmer._id,
       }));
       setSearchQuery(newFarmer.name);
       // Show the farmer details by simulating a selection
@@ -466,16 +552,19 @@ const IncomingOrderFormContent = () => {
   const clearSelectedFarmer = () => {
     setSelectedFarmer(null);
     setSearchQuery("");
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       farmerName: "",
-      farmerId: ""
+      farmerId: "",
     }));
   };
 
   // Add this new function to handle enter key press for quantity inputs
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, currentBagSize: string) => {
-    if (e.key === 'Enter') {
+  const handleKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    currentBagSize: string
+  ) => {
+    if (e.key === "Enter") {
       e.preventDefault();
       const bagSizes = adminInfo?.preferences?.bagSizes || [];
       const currentIndex = bagSizes.indexOf(currentBagSize);
@@ -484,7 +573,9 @@ const IncomingOrderFormContent = () => {
       // If there's a next bag size, focus its input
       if (nextIndex < bagSizes.length) {
         const nextFieldName = getBagSizeFieldName(bagSizes[nextIndex]);
-        const nextInput = document.querySelector(`input[name="${nextFieldName}"]`) as HTMLInputElement;
+        const nextInput = document.querySelector(
+          `input[name="${nextFieldName}"]`
+        ) as HTMLInputElement;
         if (nextInput) {
           nextInput.focus();
         }
@@ -493,25 +584,31 @@ const IncomingOrderFormContent = () => {
   };
 
   // Handle Enter key navigation for location fields
-  const handleLocationKeyDown = (e: KeyboardEvent<HTMLInputElement>, bagType: string, currentField: keyof BagLocation) => {
-    if (e.key === 'Enter') {
+  const handleLocationKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    bagType: string,
+    currentField: keyof BagLocation
+  ) => {
+    if (e.key === "Enter") {
       e.preventDefault();
 
-      const fieldOrder: (keyof BagLocation)[] = ['chamber', 'floor', 'row'];
+      const fieldOrder: (keyof BagLocation)[] = ["chamber", "floor", "row"];
       const currentIndex = fieldOrder.indexOf(currentField);
       const nextIndex = currentIndex + 1;
 
       // If there's a next field in the same bag type, focus it
       if (nextIndex < fieldOrder.length) {
         const nextField = fieldOrder[nextIndex];
-        const nextInput = document.querySelector(`input[data-bag-type="${bagType}"][data-field="${nextField}"]`) as HTMLInputElement;
+        const nextInput = document.querySelector(
+          `input[data-bag-type="${bagType}"][data-field="${nextField}"]`
+        ) as HTMLInputElement;
         if (nextInput) {
           nextInput.focus();
         }
       } else {
         // If this is the last field (row), check if there are more bag types with quantities
         const bagSizes = adminInfo?.preferences?.bagSizes || [];
-        const currentBagIndex = bagSizes.findIndex(bagSize => {
+        const currentBagIndex = bagSizes.findIndex((bagSize) => {
           const fieldName = getBagSizeFieldName(bagSize);
           return fieldName === bagType;
         });
@@ -520,10 +617,16 @@ const IncomingOrderFormContent = () => {
           // Find the next bag type that has quantities > 0
           let nextBagIndex = currentBagIndex + 1;
           while (nextBagIndex < bagSizes.length) {
-            const nextBagFieldName = getBagSizeFieldName(bagSizes[nextBagIndex]);
-            const quantity = parseInt(formData.quantities[nextBagFieldName] || "0");
+            const nextBagFieldName = getBagSizeFieldName(
+              bagSizes[nextBagIndex]
+            );
+            const quantity = parseInt(
+              formData.quantities[nextBagFieldName] || "0"
+            );
             if (quantity > 0) {
-              const nextBagChamberInput = document.querySelector(`input[data-bag-type="${nextBagFieldName}"][data-field="chamber"]`) as HTMLInputElement;
+              const nextBagChamberInput = document.querySelector(
+                `input[data-bag-type="${nextBagFieldName}"][data-field="chamber"]`
+              ) as HTMLInputElement;
               if (nextBagChamberInput) {
                 nextBagChamberInput.focus();
                 return;
@@ -533,7 +636,9 @@ const IncomingOrderFormContent = () => {
           }
 
           // If no more bag types with quantities, focus the remarks field
-          const remarksTextarea = document.getElementById('remarks-textarea') as HTMLTextAreaElement;
+          const remarksTextarea = document.getElementById(
+            "remarks-textarea"
+          ) as HTMLTextAreaElement;
           if (remarksTextarea) {
             remarksTextarea.focus();
           }
@@ -544,60 +649,79 @@ const IncomingOrderFormContent = () => {
 
   // Query for receipt number
   const { data: receiptData, isLoading: isLoadingReceipt } = useQuery({
-    queryKey: ['receiptNumber', 'incoming'],
-    queryFn: () => storeAdminApi.getReceiptNumber('incoming', adminInfo?.token || ''),
+    queryKey: ["receiptNumber", "incoming"],
+    queryFn: () =>
+      storeAdminApi.getReceiptNumber("incoming", adminInfo?.token || ""),
     enabled: !!adminInfo?.token,
   });
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold mb-3">{t('incomingOrder.title')}</h1>
+    <div className="w-full max-w-2xl mx-auto p-3 sm:p-6 bg-background rounded-lg shadow-lg border border-border">
+      <div className="text-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">
+          {t("incomingOrder.title")}
+        </h1>
 
         {/* Receipt Number Display - centered with primary color highlight */}
-        <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/10 border border-primary/20 rounded-full shadow-sm">
-          <span className="text-xs font-medium text-primary uppercase tracking-wide">{t('voucher no:')}</span>
+        <div className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 border border-primary/20 rounded-full shadow-sm">
+          <span className="text-xs font-medium text-primary uppercase tracking-wide">
+            GatePass No:
+          </span>
           {isLoadingReceipt ? (
             <div className="h-4 w-10 animate-pulse bg-primary/20 rounded"></div>
           ) : (
-            <span className="text-sm font-bold text-primary">#{receiptData?.receiptNumber || '-'}</span>
+            <span className="text-sm font-bold text-primary">
+              #{receiptData?.receiptNumber || "-"}
+            </span>
           )}
         </div>
       </div>
 
       {/* Progress indicator */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center justify-center">
-          <div className="w-[90%] max-w-md">
+          <div className="w-[95%] sm:w-[90%] max-w-md">
             <div className="relative flex justify-between">
               {/* Line background */}
-              <div className="absolute h-0.5 bg-muted top-5 left-10 w-[calc(100%-80px)]"></div>
+              <div className="absolute h-0.5 bg-muted top-4 sm:top-5 left-8 sm:left-10 w-[calc(100%-64px)] sm:w-[calc(100%-80px)]"></div>
 
               {/* Line active */}
               <div
                 className={`absolute h-0.5 top-5 left-10 w-[calc(100%-80px)] transition-colors duration-500 ease-in-out ${
-                  currentStep >= 2 ? 'bg-primary' : 'bg-muted'
+                  currentStep >= 2 ? "bg-primary" : "bg-muted"
                 }`}
               ></div>
 
               {/* Step 1 */}
               <div className="relative flex flex-col items-center">
-                <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
-                  currentStep >= 1 ? 'bg-primary text-secondary' : 'bg-muted text-muted-foreground'
-                }`}>
+                <div
+                  className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
+                    currentStep >= 1
+                      ? "bg-primary text-secondary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   1
                 </div>
-                <span className="text-xs mt-2 text-center">{t('incomingOrder.steps.quantities')}</span>
+                <span className="text-xs mt-2 text-center">
+                  {t("incomingOrder.steps.quantities")}
+                </span>
               </div>
 
               {/* Step 2 */}
               <div className="relative flex flex-col items-center">
-                <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
-                  currentStep >= 2 ? 'bg-primary text-secondary' : 'bg-muted text-muted-foreground'
-                }`}>
+                <div
+                  className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
+                    currentStep >= 2
+                      ? "bg-primary text-secondary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   2
                 </div>
-                <span className="text-xs mt-2 text-center">{t('incomingOrder.steps.details')}</span>
+                <span className="text-xs mt-2 text-center">
+                  {t("incomingOrder.steps.details")}
+                </span>
               </div>
             </div>
           </div>
@@ -610,7 +734,7 @@ const IncomingOrderFormContent = () => {
         onClose={() => setIsNewFarmerModalOpen(false)}
         onSubmit={handleNewFarmerSubmit}
         isLoading={createFarmerMutation.isPending}
-        token={adminInfo?.token || ''}
+        token={adminInfo?.token || ""}
       />
 
       <form onSubmit={handleSubmit}>
@@ -621,14 +745,16 @@ const IncomingOrderFormContent = () => {
               {/* Farmer Selection */}
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  {t('incomingOrder.farmer.label')}
+                  {t("incomingOrder.farmer.label")}
                 </label>
                 {farmer ? (
                   // Show farmer details when pre-selected
                   <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="text-lg font-medium">{farmer.name}</h3>
-                      <span className="text-sm text-muted-foreground">{t('incomingOrder.farmer.preSelected')}</span>
+                      <span className="text-sm text-muted-foreground">
+                        {t("incomingOrder.farmer.preSelected")}
+                      </span>
                     </div>
                     {(farmer.mobileNumber || farmer.address) && (
                       <div className="text-sm text-gray-600 space-y-1">
@@ -655,10 +781,14 @@ const IncomingOrderFormContent = () => {
                         id="farmer-search-input"
                         type="text"
                         autoComplete="off"
-                        value={selectedFarmer ? selectedFarmer.name : searchQuery}
+                        value={
+                          selectedFarmer ? selectedFarmer.name : searchQuery
+                        }
                         onChange={handleSearchChange}
                         onFocus={() => setShowDropdown(true)}
-                        placeholder={t('incomingOrder.farmer.searchPlaceholder')}
+                        placeholder={t(
+                          "incomingOrder.farmer.searchPlaceholder"
+                        )}
                         className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
                         required
                       />
@@ -676,44 +806,58 @@ const IncomingOrderFormContent = () => {
                     <button
                       type="button"
                       onClick={() => setIsNewFarmerModalOpen(true)}
-                      className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2.5 sm:py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-primary/50"
                     >
                       <Plus size={18} />
-                      <span className="text-sm">{t('incomingOrder.farmer.new')}</span>
+                      <span className="text-sm">
+                        <span className="sm:hidden">Add</span>
+                        <span className="hidden sm:inline">
+                          {t("incomingOrder.farmer.new")}
+                        </span>
+                      </span>
                     </button>
 
                     {/* Search Results Dropdown */}
-                    {showDropdown && (searchResults?.length > 0 || isSearching) && (
-                      <div
-                        id="farmer-search-dropdown"
-                        className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-50 bg-white rounded-md shadow-lg border border-gray-200"
-                      >
-                        {isSearching ? (
-                          <div className="flex items-center justify-center p-4">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                          </div>
-                        ) : (
-                          <div className="py-1">
-                            {searchResults?.map((result: Farmer) => (
-                              <button
-                                key={result._id}
-                                type="button"
-                                className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
-                                onClick={() => handleSelectFarmer(result)}
-                              >
-                                <div className="font-medium">{result.name}</div>
-                                {(result.mobileNumber || result.address) && (
-                                  <div className="text-sm text-gray-500">
-                                    {result.mobileNumber && <span>📱 {result.mobileNumber}</span>}
-                                    {result.address && <span className="ml-2">📍 {result.address}</span>}
+                    {showDropdown &&
+                      (searchResults?.length > 0 || isSearching) && (
+                        <div
+                          id="farmer-search-dropdown"
+                          className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-50 bg-white rounded-md shadow-lg border border-gray-200"
+                        >
+                          {isSearching ? (
+                            <div className="flex items-center justify-center p-4">
+                              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            </div>
+                          ) : (
+                            <div className="py-1">
+                              {searchResults?.map((result: Farmer) => (
+                                <button
+                                  key={result._id}
+                                  type="button"
+                                  className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                  onClick={() => handleSelectFarmer(result)}
+                                >
+                                  <div className="font-medium">
+                                    {result.name}
                                   </div>
-                                )}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    )}
+                                  {(result.mobileNumber || result.address) && (
+                                    <div className="text-sm text-gray-500">
+                                      {result.mobileNumber && (
+                                        <span>📱 {result.mobileNumber}</span>
+                                      )}
+                                      {result.address && (
+                                        <span className="ml-2">
+                                          📍 {result.address}
+                                        </span>
+                                      )}
+                                    </div>
+                                  )}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
                   </div>
                 )}
               </div>
@@ -721,22 +865,168 @@ const IncomingOrderFormContent = () => {
               {/* Variety Selection */}
               <VarietySelector
                 value={formData.variety}
-                onValueChange={(value) => updateFormData('variety', value)}
-                token={adminInfo?.token || ''}
+                onValueChange={(value) => updateFormData("variety", value)}
+                token={adminInfo?.token || ""}
               />
 
+              {/* Additional Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                {/* Generation */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Generation
+                  </label>
+                  <select
+                    value={formData.generation}
+                    onChange={(e) =>
+                      updateFormData("generation", e.target.value)
+                    }
+                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  >
+                    <option value="">Select Generation</option>
+                    <option value="F1">F1</option>
+                    <option value="F2">F2</option>
+                    <option value="F3">F3</option>
+                  </select>
+                </div>
+
+                {/* Roughing */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Roughing</label>
+                  <select
+                    value={formData.roughing}
+                    onChange={(e) => updateFormData("roughing", e.target.value)}
+                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  >
+                    <option value="">Select Roughing</option>
+                    <option value="Good">Good</option>
+                    <option value="Average">Average</option>
+                    <option value="Poor">Poor</option>
+                  </select>
+                </div>
+
+                {/* Tuber Type */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Tuber Type
+                  </label>
+                  <select
+                    value={formData.tuberType}
+                    onChange={(e) =>
+                      updateFormData("tuberType", e.target.value)
+                    }
+                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  >
+                    <option value="">Select Tuber Type</option>
+                    <option value="Round">Round</option>
+                    <option value="Oval">Oval</option>
+                    <option value="Long">Long</option>
+                  </select>
+                </div>
+
+                {/* Grader */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Grader</label>
+                  <select
+                    value={formData.grader}
+                    onChange={(e) => updateFormData("grader", e.target.value)}
+                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  >
+                    <option value="">Select Grade</option>
+                    <option value="Grade A">Grade A</option>
+                    <option value="Grade B">Grade B</option>
+                    <option value="Grade C">Grade C</option>
+                  </select>
+                </div>
+
+                {/* Weighed Status */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Weighed Status
+                  </label>
+                  <select
+                    value={formData.weighedStatus}
+                    onChange={(e) =>
+                      updateFormData("weighedStatus", e.target.value)
+                    }
+                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  >
+                    <option value="Weighed">Weighed</option>
+                    <option value="Not Weighed">Not Weighed</option>
+                  </select>
+                </div>
+
+                {/* Approximate Weight */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Approximate Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.approxWeight}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || parseInt(value) >= 0) {
+                        updateFormData("approxWeight", value);
+                      }
+                    }}
+                    placeholder="Enter weight in kg"
+                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  />
+                </div>
+              </div>
+
+              {/* Bag Type */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium mb-2">
+                  Bag Type
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="bagType"
+                      value="jute"
+                      checked={formData.bagType === "jute"}
+                      onChange={(e) =>
+                        updateFormData("bagType", e.target.value)
+                      }
+                      className="w-4 h-4 text-primary border-border focus:ring-primary"
+                    />
+                    <span>Jute</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="bagType"
+                      value="leno"
+                      checked={formData.bagType === "leno"}
+                      onChange={(e) =>
+                        updateFormData("bagType", e.target.value)
+                      }
+                      className="w-4 h-4 text-primary border-border focus:ring-primary"
+                    />
+                    <span>Leno</span>
+                  </label>
+                </div>
+              </div>
+
               {/* Quantities Section */}
-              <div className={cn(
-                "border rounded-lg p-4",
-                formData.variety
-                  ? "border-green-200 bg-green-50/50"
-                  : "border-muted bg-muted/5 opacity-75"
-              )}>
-                <h3 className="text-lg font-medium mb-2">{t('incomingOrder.quantities.title')}</h3>
+              <div
+                className={cn(
+                  "border rounded-lg p-3 sm:p-4",
+                  formData.variety
+                    ? "border-green-200 bg-green-50/50"
+                    : "border-muted bg-muted/5 opacity-75"
+                )}
+              >
+                <h3 className="text-lg font-medium mb-2">
+                  {t("incomingOrder.quantities.title")}
+                </h3>
                 <p className="text-sm text-muted-foreground mb-4">
                   {formData.variety
-                    ? t('incomingOrder.quantities.description')
-                    : t('incomingOrder.quantities.selectVarietyFirst')}
+                    ? t("incomingOrder.quantities.description")
+                    : t("incomingOrder.quantities.selectVarietyFirst")}
                 </p>
 
                 <div className="space-y-4">
@@ -744,14 +1034,21 @@ const IncomingOrderFormContent = () => {
                     const fieldName = getBagSizeFieldName(bagSize);
 
                     return (
-                      <div key={bagSize} className="flex items-center justify-between">
-                        <label className="text-sm font-medium">{formatBagSizeLabel(bagSize)}</label>
+                      <div
+                        key={bagSize}
+                        className="flex items-center justify-between"
+                      >
+                        <label className="text-sm font-medium">
+                          {formatBagSizeLabel(bagSize)}
+                        </label>
                         <input
                           type="text"
                           autoComplete="off"
                           name={fieldName}
                           value={formData.quantities[fieldName] || ""}
-                          onChange={(e) => updateQuantity(fieldName, e.target.value)}
+                          onChange={(e) =>
+                            updateQuantity(fieldName, e.target.value)
+                          }
                           onKeyDown={(e) => handleKeyDown(e, bagSize)}
                           placeholder="-"
                           disabled={!formData.variety}
@@ -769,11 +1066,17 @@ const IncomingOrderFormContent = () => {
                   <hr className="border-gray-300" />
 
                   <div className="flex items-center justify-between font-semibold">
-                    <label className="text-sm">{t('incomingOrder.quantities.total')}</label>
-                    <span className={cn(
-                      "text-lg",
-                      !formData.variety && "text-muted-foreground"
-                    )}>{calculateTotal()}</span>
+                    <label className="text-sm">
+                      {t("incomingOrder.quantities.total")}
+                    </label>
+                    <span
+                      className={cn(
+                        "text-lg",
+                        !formData.variety && "text-muted-foreground"
+                      )}
+                    >
+                      {calculateTotal()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -782,9 +1085,9 @@ const IncomingOrderFormContent = () => {
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="font-custom w-full sm:w-auto inline-block cursor-pointer rounded-lg bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  {t('incomingOrder.buttons.continue')}
+                  {t("incomingOrder.buttons.continue")}
                 </button>
               </div>
             </div>
@@ -797,29 +1100,49 @@ const IncomingOrderFormContent = () => {
             <div className="space-y-6">
               {/* Location Section */}
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-bold mb-2">Enter Address (CH R FL)</h3>
-                <p className="text-sm text-muted-foreground mb-4">This will be used as a reference in outgoing.</p>
+                <h3 className="text-lg font-bold mb-2">
+                  Enter Address (CH R FL)
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This will be used as a reference in outgoing.
+                </p>
 
                 <div className="space-y-6">
                   {adminInfo?.preferences?.bagSizes?.map((bagSize) => {
                     const fieldName = getBagSizeFieldName(bagSize);
-                    const quantity = parseInt(formData.quantities[fieldName] || "0");
+                    const quantity = parseInt(
+                      formData.quantities[fieldName] || "0"
+                    );
 
                     // Only show location inputs for bag sizes with quantities > 0
                     if (quantity === 0) return null;
 
                     return (
                       <div key={bagSize} className="space-y-3">
-                        <h4 className="text-base font-bold">{formatBagSizeLabel(bagSize)} - {quantity} bags</h4>
+                        <h4 className="text-base font-bold">
+                          {formatBagSizeLabel(bagSize)} - {quantity} bags
+                        </h4>
 
                         <div className="grid grid-cols-3 gap-4">
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Chamber</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Chamber
+                            </label>
                             <input
                               type="text"
-                              value={formData.bagLocations[fieldName]?.chamber || ""}
-                              onChange={(e) => updateLocation(fieldName, 'chamber', e.target.value)}
-                              onKeyDown={(e) => handleLocationKeyDown(e, fieldName, 'chamber')}
+                              value={
+                                formData.bagLocations[fieldName]?.chamber || ""
+                              }
+                              onChange={(e) =>
+                                updateLocation(
+                                  fieldName,
+                                  "chamber",
+                                  e.target.value
+                                )
+                              }
+                              onKeyDown={(e) =>
+                                handleLocationKeyDown(e, fieldName, "chamber")
+                              }
                               data-bag-type={fieldName}
                               data-field="chamber"
                               className="w-full p-2 border border-gray-300 rounded-md bg-white text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
@@ -827,12 +1150,24 @@ const IncomingOrderFormContent = () => {
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Floor</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Floor
+                            </label>
                             <input
                               type="text"
-                              value={formData.bagLocations[fieldName]?.floor || ""}
-                              onChange={(e) => updateLocation(fieldName, 'floor', e.target.value)}
-                              onKeyDown={(e) => handleLocationKeyDown(e, fieldName, 'floor')}
+                              value={
+                                formData.bagLocations[fieldName]?.floor || ""
+                              }
+                              onChange={(e) =>
+                                updateLocation(
+                                  fieldName,
+                                  "floor",
+                                  e.target.value
+                                )
+                              }
+                              onKeyDown={(e) =>
+                                handleLocationKeyDown(e, fieldName, "floor")
+                              }
                               data-bag-type={fieldName}
                               data-field="floor"
                               className="w-full p-2 border border-gray-300 rounded-md bg-white text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
@@ -840,12 +1175,20 @@ const IncomingOrderFormContent = () => {
                           </div>
 
                           <div>
-                            <label className="block text-sm font-medium text-gray-600 mb-1">Row</label>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Row
+                            </label>
                             <input
                               type="text"
-                              value={formData.bagLocations[fieldName]?.row || ""}
-                              onChange={(e) => updateLocation(fieldName, 'row', e.target.value)}
-                              onKeyDown={(e) => handleLocationKeyDown(e, fieldName, 'row')}
+                              value={
+                                formData.bagLocations[fieldName]?.row || ""
+                              }
+                              onChange={(e) =>
+                                updateLocation(fieldName, "row", e.target.value)
+                              }
+                              onKeyDown={(e) =>
+                                handleLocationKeyDown(e, fieldName, "row")
+                              }
                               data-bag-type={fieldName}
                               data-field="row"
                               className="w-full p-2 border border-gray-300 rounded-md bg-white text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
@@ -854,9 +1197,12 @@ const IncomingOrderFormContent = () => {
                         </div>
 
                         <div className="mt-2">
-                          <span className="text-sm font-medium text-gray-600">Combined Location: </span>
+                          <span className="text-sm font-medium text-gray-600">
+                            Combined Location:{" "}
+                          </span>
                           <span className="text-sm font-medium text-gray-800">
-                            {getCombinedLocation(fieldName) || "Enter all fields"}
+                            {getCombinedLocation(fieldName) ||
+                              "Enter all fields"}
                           </span>
                         </div>
                       </div>
@@ -871,7 +1217,7 @@ const IncomingOrderFormContent = () => {
                 <textarea
                   id="remarks-textarea"
                   value={formData.remarks}
-                  onChange={(e) => updateFormData('remarks', e.target.value)}
+                  onChange={(e) => updateFormData("remarks", e.target.value)}
                   placeholder="Enter any additional remarks..."
                   className="w-full p-3 border border-border rounded-md bg-background h-32 resize-none focus:ring-2 focus:ring-primary focus:border-primary transition"
                   rows={4}
@@ -882,24 +1228,24 @@ const IncomingOrderFormContent = () => {
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                  className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
                   style={{ minWidth: 0 }}
                 >
-                  {t('incomingOrder.buttons.back')}
+                  {t("incomingOrder.buttons.back")}
                 </button>
                 <button
                   type="submit"
                   disabled={createOrderMutation.isPending}
-                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
+                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
                   style={{ minWidth: 0 }}
                 >
                   {createOrderMutation.isPending ? (
                     <div className="flex items-center justify-center">
                       <Loader size="sm" className="mr-2" />
-                      <span>{t('incomingOrder.buttons.creating')}</span>
+                      <span>{t("incomingOrder.buttons.creating")}</span>
                     </div>
                   ) : (
-                    t('incomingOrder.buttons.create')
+                    t("incomingOrder.buttons.create")
                   )}
                 </button>
               </div>

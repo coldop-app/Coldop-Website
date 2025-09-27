@@ -1,12 +1,29 @@
 import React, { useState, useEffect, useRef, RefObject } from "react";
 import { useNavigate, useBeforeUnload } from "react-router-dom";
 import { useSelector, useDispatch } from "react-redux";
-import { ArrowLeft, Upload, Check, X, Image as ImageIcon, Pencil, Trash2, Plus, Phone, GripVertical } from "lucide-react";
+import {
+  ArrowLeft,
+  Upload,
+  Check,
+  X,
+  Image as ImageIcon,
+  Pencil,
+  Trash2,
+  Plus,
+  Phone,
+  GripVertical,
+} from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -48,20 +65,22 @@ const extractPublicId = (url: string): string | null => {
     const matches = url.match(/\/v\d+\/(.+?)(?:\.[^.]+)?$/);
     return matches ? matches[1] : null;
   } catch (error) {
-    console.error('Error extracting public ID:', error);
+    console.error("Error extracting public ID:", error);
     return null;
   }
 };
 
 // Type guard function to check if the admin is a StoreAdmin
 const isStoreAdmin = (admin: unknown): admin is StoreAdmin => {
-  return admin !== null &&
-    typeof admin === 'object' &&
-    'coldStorageDetails' in admin &&
-    'name' in admin &&
-    'personalAddress' in admin &&
-    'mobileNumber' in admin &&
-    'imageUrl' in admin;
+  return (
+    admin !== null &&
+    typeof admin === "object" &&
+    "coldStorageDetails" in admin &&
+    "name" in admin &&
+    "personalAddress" in admin &&
+    "mobileNumber" in admin &&
+    "imageUrl" in admin
+  );
 };
 
 const ProfileSettingsScreen = () => {
@@ -72,12 +91,14 @@ const ProfileSettingsScreen = () => {
   // Add state for tracking unsaved changes
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<string | null>(null);
+  const [pendingNavigation, setPendingNavigation] = useState<string | null>(
+    null
+  );
 
   // Redirect if not logged in or not a store admin
   useEffect(() => {
     if (!adminInfo || !isStoreAdmin(adminInfo)) {
-      navigate('/');
+      navigate("/");
       return;
     }
   }, [adminInfo, navigate]);
@@ -91,7 +112,7 @@ const ProfileSettingsScreen = () => {
     coldStorageContactNumber: "",
     capacity: "",
     imageUrl: "",
-    bagSizes: [] as string[]  // Initialize as empty array
+    bagSizes: [] as string[], // Initialize as empty array
   });
 
   // Image handling states
@@ -111,19 +132,20 @@ const ProfileSettingsScreen = () => {
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
   const [touchStartIndex, setTouchStartIndex] = useState<number | null>(null);
   const [isTouchDragging, setIsTouchDragging] = useState(false);
-  const [touchDragTimeout, setTouchDragTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [touchDragTimeout, setTouchDragTimeout] =
+    useState<NodeJS.Timeout | null>(null);
   const [isPreparingDrag, setIsPreparingDrag] = useState(false);
   const bagSizesContainerRef = useRef<HTMLDivElement>(null);
 
   // Drag and drop handlers for bag sizes (desktop)
   const handleDragStart = (e: React.DragEvent, index: number) => {
     setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e: React.DragEvent, index: number) => {
     e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+    e.dataTransfer.dropEffect = "move";
     setDragOverIndex(index);
   };
 
@@ -149,9 +171,9 @@ const ProfileSettingsScreen = () => {
     // Insert at the new position
     newBagSizes.splice(dropIndex, 0, draggedItem);
 
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      bagSizes: newBagSizes
+      bagSizes: newBagSizes,
     }));
 
     setDraggedIndex(null);
@@ -163,7 +185,7 @@ const ProfileSettingsScreen = () => {
     setDragOverIndex(null);
   };
 
-    // Touch reordering handlers for mobile
+  // Touch reordering handlers for mobile
   const handleTouchStart = (e: React.TouchEvent, index: number) => {
     if (editingBagSize !== null) return; // Don't allow reordering while editing
 
@@ -187,21 +209,26 @@ const ProfileSettingsScreen = () => {
     setTouchDragTimeout(timeout);
   };
 
-      const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isTouchDragging || touchStartY === null || touchStartIndex === null) return;
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isTouchDragging || touchStartY === null || touchStartIndex === null)
+      return;
 
     e.preventDefault();
     const touch = e.touches[0];
 
     // Calculate which index we're hovering over based on touch position
     if (bagSizesContainerRef.current) {
-      const containerRect = bagSizesContainerRef.current.getBoundingClientRect();
+      const containerRect =
+        bagSizesContainerRef.current.getBoundingClientRect();
       const relativeY = touch.clientY - containerRect.top;
       const itemHeight = 60; // Approximate height of each item
-      const newIndex = Math.max(0, Math.min(
-        formData.bagSizes.length - 1,
-        Math.floor(relativeY / itemHeight)
-      ));
+      const newIndex = Math.max(
+        0,
+        Math.min(
+          formData.bagSizes.length - 1,
+          Math.floor(relativeY / itemHeight)
+        )
+      );
 
       if (newIndex !== dragOverIndex) {
         setDragOverIndex(newIndex);
@@ -226,7 +253,11 @@ const ProfileSettingsScreen = () => {
     e.preventDefault();
 
     // Perform the reorder
-    if (draggedIndex !== null && dragOverIndex !== null && draggedIndex !== dragOverIndex) {
+    if (
+      draggedIndex !== null &&
+      dragOverIndex !== null &&
+      draggedIndex !== dragOverIndex
+    ) {
       const newBagSizes = [...formData.bagSizes];
       const draggedItem = newBagSizes[draggedIndex];
 
@@ -236,9 +267,9 @@ const ProfileSettingsScreen = () => {
       // Insert at the new position
       newBagSizes.splice(dragOverIndex, 0, draggedItem);
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        bagSizes: newBagSizes
+        bagSizes: newBagSizes,
       }));
     }
 
@@ -269,18 +300,23 @@ const ProfileSettingsScreen = () => {
     const trimmed = newBagSize.trim();
     if (!trimmed) return;
     // Prevent duplicates (case-insensitive)
-    if (formData.bagSizes.some(size => size.toLowerCase() === trimmed.toLowerCase())) return;
-    setFormData(prev => ({
+    if (
+      formData.bagSizes.some(
+        (size) => size.toLowerCase() === trimmed.toLowerCase()
+      )
+    )
+      return;
+    setFormData((prev) => ({
       ...prev,
-      bagSizes: [...prev.bagSizes, trimmed]
+      bagSizes: [...prev.bagSizes, trimmed],
     }));
     setNewBagSize("");
   };
 
   const handleRemoveCustomBagSize = (bagSize: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      bagSizes: prev.bagSizes.filter(size => size !== bagSize)
+      bagSizes: prev.bagSizes.filter((size) => size !== bagSize),
     }));
   };
 
@@ -295,14 +331,17 @@ const ProfileSettingsScreen = () => {
     // Prevent duplicates (case-insensitive, except for the one being edited)
     if (
       formData.bagSizes.some(
-        size => size.toLowerCase() === trimmed.toLowerCase() && size !== editingBagSize
+        (size) =>
+          size.toLowerCase() === trimmed.toLowerCase() &&
+          size !== editingBagSize
       )
-    ) return;
-    setFormData(prev => ({
+    )
+      return;
+    setFormData((prev) => ({
       ...prev,
-      bagSizes: prev.bagSizes.map(size =>
+      bagSizes: prev.bagSizes.map((size) =>
         size === editingBagSize ? trimmed : size
-      )
+      ),
     }));
     setEditingBagSize(null);
     setEditingValue("");
@@ -321,11 +360,15 @@ const ProfileSettingsScreen = () => {
         personalAddress: adminInfo.personalAddress || "",
         mobileNumber: adminInfo.mobileNumber || "",
         coldStorageName: adminInfo.coldStorageDetails.coldStorageName || "",
-        coldStorageAddress: adminInfo.coldStorageDetails.coldStorageAddress || "",
-        coldStorageContactNumber: adminInfo.coldStorageDetails.coldStorageContactNumber || "",
+        coldStorageAddress:
+          adminInfo.coldStorageDetails.coldStorageAddress || "",
+        coldStorageContactNumber:
+          adminInfo.coldStorageDetails.coldStorageContactNumber || "",
         capacity: adminInfo.coldStorageDetails.capacity?.toString() || "",
         imageUrl: adminInfo.imageUrl || "",
-        bagSizes: adminInfo.preferences?.bagSizes?.map(size => size.toLowerCase()) || []
+        bagSizes:
+          adminInfo.preferences?.bagSizes?.map((size) => size.toLowerCase()) ||
+          [],
       });
       if (adminInfo.imageUrl) {
         setImagePreview(adminInfo.imageUrl);
@@ -338,15 +381,16 @@ const ProfileSettingsScreen = () => {
 
   // Add mutation for deleting profile photo
   const { mutate: deletePhoto, isPending: isDeleting } = useMutation({
-    mutationFn: async (publicId: string) => storeAdminApi.deleteProfilePhoto({ publicId }),
+    mutationFn: async (publicId: string) =>
+      storeAdminApi.deleteProfilePhoto({ publicId }),
     onSuccess: () => {
       handleRemoveImage();
-      toast.success('Logo deleted successfully!');
+      toast.success("Logo deleted successfully!");
     },
     onError: (error: Error) => {
-      console.error('Error deleting image:', error);
-      toast.error(error.message || 'Failed to delete logo');
-    }
+      console.error("Error deleting image:", error);
+      toast.error(error.message || "Failed to delete logo");
+    },
   });
 
   const handleImageSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -376,7 +420,9 @@ const ProfileSettingsScreen = () => {
   };
 
   const handleConfirmImageDelete = async () => {
-    const publicId = formData.imageUrl ? extractPublicId(formData.imageUrl) : null;
+    const publicId = formData.imageUrl
+      ? extractPublicId(formData.imageUrl)
+      : null;
     if (publicId) {
       await deletePhoto(publicId);
     } else {
@@ -394,12 +440,13 @@ const ProfileSettingsScreen = () => {
   const handleRemoveImage = () => {
     setImagePreview(null);
     setSelectedFile(null);
-    setFormData(prev => ({ ...prev, imageUrl: '' }));
+    setFormData((prev) => ({ ...prev, imageUrl: "" }));
   };
 
   // React Query mutations
   const { mutate: updateProfile, isPending: isUpdating } = useMutation({
-    mutationFn: (data: UpdateProfilePayload) => storeAdminApi.updateProfile(data, adminInfo?.token || ""),
+    mutationFn: (data: UpdateProfilePayload) =>
+      storeAdminApi.updateProfile(data, adminInfo?.token || ""),
     onSuccess: (response) => {
       // Preserve the token from current adminInfo when updating the state
       if (adminInfo?.token) {
@@ -410,22 +457,22 @@ const ProfileSettingsScreen = () => {
       toast.success("Profile updated successfully!");
     },
     onError: (error: Error) => {
-      console.error('Error updating profile:', error);
+      console.error("Error updating profile:", error);
       toast.error(error.message || "Failed to update profile");
-    }
+    },
   });
 
   const { mutate: uploadPhoto, isPending: isUploading } = useMutation({
     mutationFn: (file: File) => storeAdminApi.uploadProfilePhoto(file),
     onSuccess: (response) => {
-      setFormData(prev => ({ ...prev, imageUrl: response.data.url }));
-      toast.success('Logo uploaded successfully!');
+      setFormData((prev) => ({ ...prev, imageUrl: response.data.url }));
+      toast.success("Logo uploaded successfully!");
       setSelectedFile(null);
     },
     onError: (error: Error) => {
-      console.error('Error uploading image:', error);
-      toast.error(error.message || 'Failed to upload logo');
-    }
+      console.error("Error uploading image:", error);
+      toast.error(error.message || "Failed to upload logo");
+    },
   });
 
   const handleImageUpload = async () => {
@@ -447,7 +494,7 @@ const ProfileSettingsScreen = () => {
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
     useRef<HTMLInputElement>(null),
-    useRef<HTMLInputElement>(null)
+    useRef<HTMLInputElement>(null),
   ];
 
   // Add mutations for mobile verification
@@ -482,7 +529,7 @@ const ProfileSettingsScreen = () => {
         clearInterval(resendTimerRef.current);
       }
       resendTimerRef.current = setInterval(() => {
-        setResendTimer(prev => {
+        setResendTimer((prev) => {
           if (prev <= 1) {
             if (resendTimerRef.current) clearInterval(resendTimerRef.current);
             setCanResendOtp(true);
@@ -501,7 +548,13 @@ const ProfileSettingsScreen = () => {
   });
 
   const verifyOtpMutation = useMutation({
-    mutationFn: async ({ mobileNumber, otp }: { mobileNumber: string; otp: string }) => {
+    mutationFn: async ({
+      mobileNumber,
+      otp,
+    }: {
+      mobileNumber: string;
+      otp: string;
+    }) => {
       return storeAdminApi.verifyOtp(mobileNumber, otp);
     },
     onSuccess: () => {
@@ -529,7 +582,7 @@ const ProfileSettingsScreen = () => {
         clearInterval(resendTimerRef.current);
       }
       resendTimerRef.current = setInterval(() => {
-        setResendTimer(prev => {
+        setResendTimer((prev) => {
           if (prev <= 1) {
             if (resendTimerRef.current) clearInterval(resendTimerRef.current);
             setCanResendOtp(true);
@@ -564,8 +617,8 @@ const ProfileSettingsScreen = () => {
   }, [touchDragTimeout]);
 
   const handleMobileNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 10);
-    setFormData(prev => ({ ...prev, mobileNumber: value }));
+    const value = e.target.value.replace(/\D/g, "").slice(0, 10);
+    setFormData((prev) => ({ ...prev, mobileNumber: value }));
     setMobileError("");
 
     // If mobile was previously verified, trigger edit mobile mutation
@@ -588,7 +641,7 @@ const ProfileSettingsScreen = () => {
     setIsEditingMobile(true);
     setIsMobileVerified(false);
     toast.success("Please verify your new mobile number", {
-      icon: '📱'
+      icon: "📱",
     });
   };
 
@@ -604,7 +657,7 @@ const ProfileSettingsScreen = () => {
     if (otp.length === 4) {
       verifyOtpMutation.mutate({
         mobileNumber: formData.mobileNumber,
-        otp: otp
+        otp: otp,
       });
     }
   };
@@ -627,12 +680,21 @@ const ProfileSettingsScreen = () => {
         formData.name !== (adminInfo.name || "") ||
         formData.personalAddress !== (adminInfo.personalAddress || "") ||
         formData.mobileNumber !== (adminInfo.mobileNumber || "") ||
-        formData.coldStorageName !== (adminInfo.coldStorageDetails.coldStorageName || "") ||
-        formData.coldStorageAddress !== (adminInfo.coldStorageDetails.coldStorageAddress || "") ||
-        formData.coldStorageContactNumber !== (adminInfo.coldStorageDetails.coldStorageContactNumber || "") ||
-        formData.capacity !== (adminInfo.coldStorageDetails.capacity?.toString() || "") ||
+        formData.coldStorageName !==
+          (adminInfo.coldStorageDetails.coldStorageName || "") ||
+        formData.coldStorageAddress !==
+          (adminInfo.coldStorageDetails.coldStorageAddress || "") ||
+        formData.coldStorageContactNumber !==
+          (adminInfo.coldStorageDetails.coldStorageContactNumber || "") ||
+        formData.capacity !==
+          (adminInfo.coldStorageDetails.capacity?.toString() || "") ||
         formData.imageUrl !== (adminInfo.imageUrl || "") ||
-        JSON.stringify(formData.bagSizes) !== JSON.stringify(adminInfo.preferences?.bagSizes?.map(size => size.toLowerCase()) || []) ||
+        JSON.stringify(formData.bagSizes) !==
+          JSON.stringify(
+            adminInfo.preferences?.bagSizes?.map((size) =>
+              size.toLowerCase()
+            ) || []
+          ) ||
         password !== "" ||
         confirmPassword !== "";
 
@@ -704,18 +766,19 @@ const ProfileSettingsScreen = () => {
       capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
       imageUrl: formData.imageUrl,
       preferences: {
-        bagSizes: formData.bagSizes.map(size => size.charAt(0).toUpperCase() + size.slice(1))
+        bagSizes: formData.bagSizes,
       },
-      isMobile: false as const
+      isMobile: false as const,
     };
 
     // Only include password in payload if it's being changed and is valid
-    const payload: UpdateProfilePayload = showPasswordFields && password
-      ? { ...basePayload, password }
-      : basePayload as UpdateProfilePayload; // Type assertion since password is optional in UpdateProfilePayload
+    const payload: UpdateProfilePayload =
+      showPasswordFields && password
+        ? { ...basePayload, password }
+        : (basePayload as UpdateProfilePayload); // Type assertion since password is optional in UpdateProfilePayload
 
     await updateProfile(payload);
-    setHasUnsavedChanges(false);  // Reset unsaved changes after successful update
+    setHasUnsavedChanges(false); // Reset unsaved changes after successful update
   };
 
   return (
@@ -724,7 +787,7 @@ const ProfileSettingsScreen = () => {
         <Button
           variant="ghost"
           className="mr-4 -ml-4"
-          onClick={() => handleNavigation('/erp/settings')}
+          onClick={() => handleNavigation("/erp/settings")}
         >
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Settings
@@ -737,11 +800,14 @@ const ProfileSettingsScreen = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
             <AlertDialogDescription>
-              You have unsaved changes. Are you sure you want to leave? Your changes will be lost.
+              You have unsaved changes. Are you sure you want to leave? Your
+              changes will be lost.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelNavigation}>Stay</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelNavigation}>
+              Stay
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmNavigation}
               className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
@@ -758,7 +824,8 @@ const ProfileSettingsScreen = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>Verify Mobile Number</AlertDialogTitle>
             <AlertDialogDescription>
-              You will need to verify your new mobile number with an OTP. Are you sure you want to proceed?
+              You will need to verify your new mobile number with an OTP. Are
+              you sure you want to proceed?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -771,17 +838,22 @@ const ProfileSettingsScreen = () => {
       </AlertDialog>
 
       {/* Add AlertDialog for image deletion confirmation */}
-      <AlertDialog open={showDeleteImageDialog} onOpenChange={setShowDeleteImageDialog}>
+      <AlertDialog
+        open={showDeleteImageDialog}
+        onOpenChange={setShowDeleteImageDialog}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Current Logo</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the current logo? You will need to upload a new image.
-              This action cannot be undone.
+              Are you sure you want to delete the current logo? You will need to
+              upload a new image. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleCancelImageDelete}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel onClick={handleCancelImageDelete}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmImageDelete}
               className="bg-red-500 hover:bg-red-600 focus:ring-red-500"
@@ -818,7 +890,9 @@ const ProfileSettingsScreen = () => {
                 <Input
                   id="name"
                   value={formData.name}
-                  onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({ ...prev, name: e.target.value }))
+                  }
                   placeholder="Enter your full name"
                 />
               </div>
@@ -828,14 +902,22 @@ const ProfileSettingsScreen = () => {
                 <textarea
                   id="personalAddress"
                   value={formData.personalAddress}
-                  onChange={(e) => setFormData(prev => ({ ...prev, personalAddress: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      personalAddress: e.target.value,
+                    }))
+                  }
                   className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   placeholder="Enter your address"
                 />
               </div>
 
               <div>
-                <Label htmlFor="mobileNumber" className="block text-sm font-medium mb-1">
+                <Label
+                  htmlFor="mobileNumber"
+                  className="block text-sm font-medium mb-1"
+                >
                   Mobile Number <span className="text-red-500">*</span>
                 </Label>
                 <div className="space-y-1">
@@ -850,7 +932,9 @@ const ProfileSettingsScreen = () => {
                         name="mobileNumber"
                         value={formData.mobileNumber}
                         onChange={handleMobileNumberChange}
-                        className={`w-full pl-10 pr-10 p-3 border border-border rounded-md bg-background font-medium text-base transition focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-muted/50 disabled:cursor-not-allowed ${isMobileVerified ? 'pr-10' : ''}`}
+                        className={`w-full pl-10 pr-10 p-3 border border-border rounded-md bg-background font-medium text-base transition focus:ring-2 focus:ring-primary focus:border-primary disabled:bg-muted/50 disabled:cursor-not-allowed ${
+                          isMobileVerified ? "pr-10" : ""
+                        }`}
                         placeholder="Enter 10 digit mobile number"
                         required
                         disabled={!isEditingMobile}
@@ -874,7 +958,9 @@ const ProfileSettingsScreen = () => {
                       <button
                         type="button"
                         onClick={handleSendOtp}
-                        disabled={formData.mobileNumber.length !== 10 || showOtpInput}
+                        disabled={
+                          formData.mobileNumber.length !== 10 || showOtpInput
+                        }
                         className={`w-full sm:w-auto h-[42px] sm:h-[48px] px-4 sm:px-6 rounded-md font-semibold text-base transition-colors duration-100 focus:outline-none focus:ring-2 focus:ring-primary/50 border border-border ${
                           formData.mobileNumber.length === 10 && !showOtpInput
                             ? "bg-primary text-secondary hover:bg-primary/85"
@@ -887,7 +973,9 @@ const ProfileSettingsScreen = () => {
                     )}
                   </div>
                   {mobileError && (
-                    <div className="text-xs text-red-500 mt-1 ml-1">{mobileError}</div>
+                    <div className="text-xs text-red-500 mt-1 ml-1">
+                      {mobileError}
+                    </div>
                   )}
                   {showOtpInput && !isMobileVerified && (
                     <div className="space-y-2 mt-2">
@@ -899,39 +987,43 @@ const ProfileSettingsScreen = () => {
                               ref={otpInputRefs[index]}
                               type="text"
                               maxLength={1}
-                              value={otp[index] || ''}
+                              value={otp[index] || ""}
                               onChange={(e) => {
-                                const value = e.target.value.replace(/\D/g, '');
+                                const value = e.target.value.replace(/\D/g, "");
                                 if (value.length === 1) {
-                                  const newOtp = otp.split('');
+                                  const newOtp = otp.split("");
                                   newOtp[index] = value;
-                                  setOtp(newOtp.join(''));
+                                  setOtp(newOtp.join(""));
                                   // Move to next input if not last
                                   if (index < 3) {
                                     otpInputRefs[index + 1].current?.focus();
                                   }
                                 } else if (value.length === 0) {
                                   // If cleared, just update
-                                  const newOtp = otp.split('');
-                                  newOtp[index] = '';
-                                  setOtp(newOtp.join(''));
+                                  const newOtp = otp.split("");
+                                  newOtp[index] = "";
+                                  setOtp(newOtp.join(""));
                                 }
                               }}
                               onKeyDown={(e) => {
-                                if (e.key === 'Backspace') {
+                                if (e.key === "Backspace") {
                                   if (otp[index]) {
                                     // Just clear current
-                                    const newOtp = otp.split('');
-                                    newOtp[index] = '';
-                                    setOtp(newOtp.join(''));
+                                    const newOtp = otp.split("");
+                                    newOtp[index] = "";
+                                    setOtp(newOtp.join(""));
                                   } else if (index > 0) {
                                     // Move to previous
                                     otpInputRefs[index - 1].current?.focus();
-                                    const newOtp = otp.split('');
-                                    newOtp[index - 1] = '';
-                                    setOtp(newOtp.join(''));
+                                    const newOtp = otp.split("");
+                                    newOtp[index - 1] = "";
+                                    setOtp(newOtp.join(""));
                                   }
-                                } else if (e.key.match(/^[0-9]$/) && otp[index] && index < 3) {
+                                } else if (
+                                  e.key.match(/^[0-9]$/) &&
+                                  otp[index] &&
+                                  index < 3
+                                ) {
                                   // If already filled, move to next
                                   otpInputRefs[index + 1].current?.focus();
                                 }
@@ -1008,7 +1100,9 @@ const ProfileSettingsScreen = () => {
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Label htmlFor="confirmPassword">
+                        Confirm New Password
+                      </Label>
                       <Input
                         id="confirmPassword"
                         type="password"
@@ -1025,14 +1119,21 @@ const ProfileSettingsScreen = () => {
 
             {/* Cold Storage Information Section */}
             <div className="space-y-4 pt-6">
-              <h3 className="text-lg font-semibold">Cold Storage Information</h3>
+              <h3 className="text-lg font-semibold">
+                Cold Storage Information
+              </h3>
 
               <div className="space-y-2">
                 <Label htmlFor="coldStorageName">Cold Storage Name</Label>
                 <Input
                   id="coldStorageName"
                   value={formData.coldStorageName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coldStorageName: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      coldStorageName: e.target.value,
+                    }))
+                  }
                   placeholder="Enter cold storage name"
                 />
               </div>
@@ -1042,18 +1143,30 @@ const ProfileSettingsScreen = () => {
                 <textarea
                   id="coldStorageAddress"
                   value={formData.coldStorageAddress}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coldStorageAddress: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      coldStorageAddress: e.target.value,
+                    }))
+                  }
                   className="w-full min-h-[100px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                   placeholder="Enter cold storage address"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="coldStorageContactNumber">Cold Storage Contact Number</Label>
+                <Label htmlFor="coldStorageContactNumber">
+                  Cold Storage Contact Number
+                </Label>
                 <Input
                   id="coldStorageContactNumber"
                   value={formData.coldStorageContactNumber}
-                  onChange={(e) => setFormData(prev => ({ ...prev, coldStorageContactNumber: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      coldStorageContactNumber: e.target.value,
+                    }))
+                  }
                   placeholder="Enter contact number"
                 />
               </div>
@@ -1064,7 +1177,12 @@ const ProfileSettingsScreen = () => {
                   id="capacity"
                   type="number"
                   value={formData.capacity}
-                  onChange={(e) => setFormData(prev => ({ ...prev, capacity: e.target.value }))}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      capacity: e.target.value,
+                    }))
+                  }
                   placeholder="Enter total storage capacity"
                 />
               </div>
@@ -1142,7 +1260,10 @@ const ProfileSettingsScreen = () => {
             <div className="space-y-4 pt-6">
               <h3 className="text-lg font-semibold">Bag Size Preferences</h3>
               <p className="text-sm text-muted-foreground">
-                Manage the bag sizes you use in your cold storage. You can drag and drop to reorder them on desktop, or long-press (300ms) and drag on mobile devices. The item will highlight when ready to drag.
+                Manage the bag sizes you use in your cold storage. You can drag
+                and drop to reorder them on desktop, or long-press (300ms) and
+                drag on mobile devices. The item will highlight when ready to
+                drag.
               </p>
 
               <div className="space-y-3" ref={bagSizesContainerRef}>
@@ -1155,19 +1276,21 @@ const ProfileSettingsScreen = () => {
                     onDragLeave={handleDragLeave}
                     onDrop={(e) => handleDrop(e, index)}
                     onDragEnd={handleDragEnd}
-                                         onTouchStart={(e) => handleTouchStart(e, index)}
-                     onTouchMove={handleTouchMove}
-                     onTouchEnd={handleTouchEnd}
+                    onTouchStart={(e) => handleTouchStart(e, index)}
+                    onTouchMove={handleTouchMove}
+                    onTouchEnd={handleTouchEnd}
                     onTouchCancel={handleTouchCancel}
                     className={`flex items-center gap-2 sm:gap-3 py-2 px-2 rounded-md transition-colors select-none ${
                       draggedIndex === index
-                        ? 'opacity-50 bg-muted shadow-lg scale-105'
+                        ? "opacity-50 bg-muted shadow-lg scale-105"
                         : dragOverIndex === index
-                          ? 'bg-blue-50 border-2 border-blue-300 border-dashed'
-                          : isPreparingDrag && touchStartIndex === index
-                            ? 'bg-yellow-50 border-2 border-yellow-300'
-                            : 'hover:bg-muted/50'
-                    } ${editingBagSize !== size ? 'cursor-move' : ''} ${isTouchDragging ? 'touch-none' : ''}`}
+                        ? "bg-blue-50 border-2 border-blue-300 border-dashed"
+                        : isPreparingDrag && touchStartIndex === index
+                        ? "bg-yellow-50 border-2 border-yellow-300"
+                        : "hover:bg-muted/50"
+                    } ${editingBagSize !== size ? "cursor-move" : ""} ${
+                      isTouchDragging ? "touch-none" : ""
+                    }`}
                   >
                     {editingBagSize !== size && (
                       <div className="cursor-move text-muted-foreground">
@@ -1179,12 +1302,18 @@ const ProfileSettingsScreen = () => {
                         <input
                           type="text"
                           value={editingValue}
-                          onChange={e => setEditingValue(e.target.value)}
+                          onChange={(e) => setEditingValue(e.target.value)}
                           className="ml-2 p-1 border border-border rounded w-32 sm:w-40 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition"
                           autoFocus
-                          onKeyDown={e => {
-                            if (e.key === 'Enter') { e.preventDefault(); handleSaveEditBagSize(); }
-                            if (e.key === 'Escape') { e.preventDefault(); handleCancelEditBagSize(); }
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleSaveEditBagSize();
+                            }
+                            if (e.key === "Escape") {
+                              e.preventDefault();
+                              handleCancelEditBagSize();
+                            }
                           }}
                         />
                         <button
@@ -1207,7 +1336,7 @@ const ProfileSettingsScreen = () => {
                     ) : (
                       <>
                         <span className="text-sm font-medium flex-1 truncate pointer-events-none">
-                          {size.charAt(0).toUpperCase() + size.slice(1).replace(/-/g, " ")}
+                          {size}
                         </span>
                         <button
                           type="button"
@@ -1235,16 +1364,21 @@ const ProfileSettingsScreen = () => {
                 <input
                   type="text"
                   value={newBagSize}
-                  onChange={e => setNewBagSize(e.target.value)}
+                  onChange={(e) => setNewBagSize(e.target.value)}
                   placeholder="Add custom bag size"
                   className="p-2 border border-border rounded-md bg-background flex-1 text-sm focus:ring-2 focus:ring-primary focus:border-primary transition"
-                  onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddBagSize(); } }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleAddBagSize();
+                    }
+                  }}
                 />
                 <button
                   type="button"
                   onClick={handleAddBagSize}
                   className="flex items-center justify-center gap-1 px-3 py-2 bg-primary text-secondary rounded-md font-medium text-base hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition min-w-[40px] h-[40px]"
-                  style={{ minWidth: '40px' }}
+                  style={{ minWidth: "40px" }}
                 >
                   <Plus size={18} />
                   <span className="hidden sm:inline">Add</span>
