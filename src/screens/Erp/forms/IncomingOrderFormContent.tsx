@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, KeyboardEvent } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { Plus, Loader2, X } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -15,6 +15,7 @@ import debounce from "lodash/debounce";
 import NewFarmerModal, {
   NewFarmerFormData,
 } from "@/components/modals/NewFarmerModal";
+import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -87,7 +88,7 @@ interface FormData {
   roughing: string;
   tuberType: string;
   grader: string;
-  weighedStatus: "Weighed" | "Not Weighed";
+  weighedStatus: string;
   approxWeight: string;
   bagType: "jute" | "leno";
 
@@ -110,7 +111,7 @@ interface CreateOrderPayload {
   roughing: string;
   tuberType: string;
   grader: string;
-  weighedStatus: string;
+  weighedStatus: boolean;
   approxWeight: string;
   bagType: string;
   orderDetails: {
@@ -144,17 +145,26 @@ interface Farmer {
 const IncomingOrderFormContent = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const farmer = location.state?.farmer as Farmer | undefined;
+  // Pre-selected farmer data
+  const farmer = useMemo<Farmer>(
+    () => ({
+      _id: "68d806e69b03e33d3848b844",
+      name: "Bhatti Agritech",
+      address: "Jalandhar",
+      mobileNumber: "9914365651",
+    }),
+    []
+  );
   const { adminInfo } = useSelector((state: RootState) => state.auth) as {
     adminInfo: StoreAdmin | null;
   };
 
   const [currentStep, setCurrentStep] = useState(1);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(farmer.name);
   const [showDropdown, setShowDropdown] = useState(false);
   const [isNewFarmerModalOpen, setIsNewFarmerModalOpen] = useState(false);
-  const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
+  const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(farmer);
+  // State removed as it's no longer needed with CustomSelect
 
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
@@ -169,7 +179,7 @@ const IncomingOrderFormContent = () => {
     roughing: "",
     tuberType: "",
     grader: "",
-    weighedStatus: "Weighed",
+    weighedStatus: "true",
     approxWeight: "",
     bagType: "jute",
   });
@@ -236,7 +246,7 @@ const IncomingOrderFormContent = () => {
     }
   }, [farmer]);
 
-  const updateFormData = (field: string, value: string) => {
+  const updateFormData = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -331,7 +341,49 @@ const IncomingOrderFormContent = () => {
     setCurrentStep(1);
   };
 
+  // Function to find the first complete location
+  const findFirstCompleteLocation = (): BagLocation | null => {
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    for (const bagSize of bagSizes) {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const location = formData.bagLocations[fieldName];
+      if (location?.chamber && location?.floor && location?.row) {
+        return location;
+      }
+    }
+    return null;
+  };
+
+  // Function to apply a location to all bag sizes with quantities
+  const applyLocationToAll = (sourceLocation: BagLocation) => {
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    const newLocations = { ...formData.bagLocations };
+
+    bagSizes.forEach((bagSize) => {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const quantity = parseInt(formData.quantities[fieldName] || "0");
+
+      if (quantity > 0) {
+        newLocations[fieldName] = { ...sourceLocation };
+      }
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      bagLocations: newLocations,
+    }));
+
+    toast.success("Location applied to all bag sizes");
+  };
+
   // Create incoming order mutation
+  // Query for Bhatti data
+  const { data: bhattiData } = useQuery({
+    queryKey: ["bhattiData"],
+    queryFn: () => storeAdminApi.getBhattiData(adminInfo?.token || ""),
+    enabled: !!adminInfo?.token,
+  });
+
   const createOrderMutation = useMutation({
     mutationFn: async (orderData: CreateOrderPayload) => {
       if (!adminInfo?.token) {
@@ -355,7 +407,7 @@ const IncomingOrderFormContent = () => {
         roughing: "",
         tuberType: "",
         grader: "",
-        weighedStatus: "Weighed",
+        weighedStatus: "true",
         approxWeight: "",
         bagType: "jute",
       });
@@ -460,7 +512,7 @@ const IncomingOrderFormContent = () => {
       roughing: formData.roughing,
       tuberType: formData.tuberType,
       grader: formData.grader,
-      weighedStatus: formData.weighedStatus === "Weighed",
+      weighedStatus: formData.weighedStatus === "true",
       approxWeight: formData.approxWeight,
       bagType: formData.bagType,
       orderDetails: [
@@ -506,19 +558,22 @@ const IncomingOrderFormContent = () => {
     setShowDropdown(false);
   };
 
-  // Close dropdown when clicking outside
+  // Close dropdowns when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      const dropdown = document.getElementById("farmer-search-dropdown");
-      const input = document.getElementById("farmer-search-input");
+      // Handle farmer search dropdown
+      const farmerDropdown = document.getElementById("farmer-search-dropdown");
+      const farmerInput = document.getElementById("farmer-search-input");
       if (
-        dropdown &&
-        input &&
-        !dropdown.contains(event.target as Node) &&
-        !input.contains(event.target as Node)
+        farmerDropdown &&
+        farmerInput &&
+        !farmerDropdown.contains(event.target as Node) &&
+        !farmerInput.contains(event.target as Node)
       ) {
         setShowDropdown(false);
       }
+
+      // Dropdown handling is now managed by CustomSelect component
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -870,39 +925,39 @@ const IncomingOrderFormContent = () => {
               />
 
               {/* Additional Details */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {/* Generation */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">
                     Generation
                   </label>
-                  <select
+                  <CustomSelect
                     value={formData.generation}
-                    onChange={(e) =>
-                      updateFormData("generation", e.target.value)
+                    onChange={(value) => updateFormData("generation", value)}
+                    placeholder="Select Generation"
+                    options={
+                      bhattiData?.data.generation.map((gen: string) => ({
+                        value: gen,
+                        label: gen,
+                      })) || []
                     }
-                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
-                  >
-                    <option value="">Select Generation</option>
-                    <option value="F1">F1</option>
-                    <option value="F2">F2</option>
-                    <option value="F3">F3</option>
-                  </select>
+                  />
                 </div>
 
                 {/* Roughing */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">Roughing</label>
-                  <select
+                  <CustomSelect
                     value={formData.roughing}
-                    onChange={(e) => updateFormData("roughing", e.target.value)}
-                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
-                  >
-                    <option value="">Select Roughing</option>
-                    <option value="Good">Good</option>
-                    <option value="Average">Average</option>
-                    <option value="Poor">Poor</option>
-                  </select>
+                    onChange={(value) => updateFormData("roughing", value)}
+                    placeholder="Select Roughing"
+                    options={
+                      bhattiData?.data.Roughing.map((rough: string) => ({
+                        value: rough,
+                        label: rough,
+                      })) || []
+                    }
+                  />
                 </div>
 
                 {/* Tuber Type */}
@@ -910,33 +965,31 @@ const IncomingOrderFormContent = () => {
                   <label className="block text-sm font-medium">
                     Tuber Type
                   </label>
-                  <select
+                  <CustomSelect
                     value={formData.tuberType}
-                    onChange={(e) =>
-                      updateFormData("tuberType", e.target.value)
-                    }
-                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
-                  >
-                    <option value="">Select Tuber Type</option>
-                    <option value="Round">Round</option>
-                    <option value="Oval">Oval</option>
-                    <option value="Long">Long</option>
-                  </select>
+                    onChange={(value) => updateFormData("tuberType", value)}
+                    placeholder="Select Tuber Type"
+                    options={[
+                      { value: "Marketable", label: "Marketable" },
+                      { value: "Cut", label: "Cut" },
+                    ]}
+                  />
                 </div>
 
                 {/* Grader */}
                 <div className="space-y-2">
                   <label className="block text-sm font-medium">Grader</label>
-                  <select
+                  <CustomSelect
                     value={formData.grader}
-                    onChange={(e) => updateFormData("grader", e.target.value)}
-                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
-                  >
-                    <option value="">Select Grade</option>
-                    <option value="Grade A">Grade A</option>
-                    <option value="Grade B">Grade B</option>
-                    <option value="Grade C">Grade C</option>
-                  </select>
+                    onChange={(value) => updateFormData("grader", value)}
+                    placeholder="Select Grade"
+                    options={
+                      bhattiData?.data.grader.map((grade: string) => ({
+                        value: grade,
+                        label: grade,
+                      })) || []
+                    }
+                  />
                 </div>
 
                 {/* Weighed Status */}
@@ -944,16 +997,17 @@ const IncomingOrderFormContent = () => {
                   <label className="block text-sm font-medium">
                     Weighed Status
                   </label>
-                  <select
-                    value={formData.weighedStatus}
-                    onChange={(e) =>
-                      updateFormData("weighedStatus", e.target.value)
+                  <CustomSelect
+                    value={formData.weighedStatus ? "true" : "false"}
+                    onChange={(value) =>
+                      updateFormData("weighedStatus", value === "true")
                     }
-                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
-                  >
-                    <option value="Weighed">Weighed</option>
-                    <option value="Not Weighed">Not Weighed</option>
-                  </select>
+                    placeholder="Select Status"
+                    options={[
+                      { value: "true", label: "Weighed" },
+                      { value: "false", label: "Not Weighed" },
+                    ]}
+                  />
                 </div>
 
                 {/* Approximate Weight */}
@@ -971,7 +1025,7 @@ const IncomingOrderFormContent = () => {
                       }
                     }}
                     placeholder="Enter weight in kg"
-                    className="w-full p-2 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
+                    className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
                   />
                 </div>
               </div>
@@ -1100,12 +1154,28 @@ const IncomingOrderFormContent = () => {
             <div className="space-y-6">
               {/* Location Section */}
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-bold mb-2">
-                  Enter Address (CH R FL)
-                </h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  This will be used as a reference in outgoing.
-                </p>
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold mb-2">
+                      Enter Address (CH R FL)
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      This will be used as a reference in outgoing.
+                    </p>
+                  </div>
+                  {findFirstCompleteLocation() && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const location = findFirstCompleteLocation();
+                        if (location) applyLocationToAll(location);
+                      }}
+                      className="px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      Apply First Location to All
+                    </button>
+                  )}
+                </div>
 
                 <div className="space-y-6">
                   {adminInfo?.preferences?.bagSizes?.map((bagSize) => {
@@ -1145,7 +1215,7 @@ const IncomingOrderFormContent = () => {
                               }
                               data-bag-type={fieldName}
                               data-field="chamber"
-                              className="w-full p-2 border border-gray-300 rounded-md bg-white text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
+                              className="w-full p-3 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
                             />
                           </div>
 
@@ -1170,7 +1240,7 @@ const IncomingOrderFormContent = () => {
                               }
                               data-bag-type={fieldName}
                               data-field="floor"
-                              className="w-full p-2 border border-gray-300 rounded-md bg-white text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
+                              className="w-full p-3 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
                             />
                           </div>
 
@@ -1191,7 +1261,7 @@ const IncomingOrderFormContent = () => {
                               }
                               data-bag-type={fieldName}
                               data-field="row"
-                              className="w-full p-2 border border-gray-300 rounded-md bg-white text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
+                              className="w-full p-3 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
                             />
                           </div>
                         </div>

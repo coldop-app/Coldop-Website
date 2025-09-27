@@ -183,6 +183,16 @@ interface ReceiptNumberResponse {
   receiptNumber: number;
 }
 
+interface BhattiDataResponse {
+  status: string;
+  message: string;
+  data: {
+    grader: string[];
+    generation: string[];
+    Roughing: string[];
+  };
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -589,6 +599,19 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/receipt-number`,
       {
         params: { type },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  getBhattiData: async (token: string) => {
+    const response = await axios.get<BhattiDataResponse>(
+      `${BASE_URL}/api/store-admin/bhatti-data`,
+      {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",

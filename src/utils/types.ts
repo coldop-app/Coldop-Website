@@ -52,8 +52,8 @@ export interface Farmer {
 }
 
 export interface Voucher {
-  type: 'RECEIPT' | 'DELIVERY';
-  voucherNumber: number;
+  type: "RECEIPT" | "DELIVERY";
+  gatePassNumber: number;
 }
 
 export interface BagSizeQuantity {
@@ -78,7 +78,7 @@ export interface IncomingBagSize {
 export interface IncomingOrder {
   _id: string;
   location: string;
-  voucher: Voucher;
+  gatePass: Voucher;
   incomingBagSizes: IncomingBagSize[];
 }
 
@@ -93,7 +93,14 @@ export interface Order {
   _id: string;
   coldStorageId: string;
   farmerId: Farmer;
-  voucher: Voucher;
+  gatePass: Voucher;
+  generation: string;
+  roughing: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: boolean;
+  approxWeight: string;
+  bagType: string;
   dateOfSubmission?: string;
   dateOfExtraction?: string;
   fulfilled?: boolean;
@@ -101,8 +108,8 @@ export interface Order {
   currentStockAtThatTime: number;
   orderDetails: OrderDetails[];
   createdAt: string;
-  updatedAt: string;
-  __v: number;
+  updatedAt?: string;
+  __v?: number;
 }
 
 export interface OutgoingBagSize {
@@ -113,9 +120,9 @@ export interface OutgoingBagSize {
 export interface IncomingOrderReference {
   _id: string;
   location: string;
-  voucher: {
+  gatePass: {
     type: string;
-    voucherNumber: number;
+    gatePassNumber: number;
   };
   incomingBagSizes: IncomingBagSize[];
 }
@@ -130,9 +137,9 @@ export interface OutgoingOrder {
   _id: string;
   coldStorageId: string; // Reference to StoreAdmin
   farmerId: string; // Reference to Farmer
-  voucher: {
+  gatePass: {
     type: string;
-    voucherNumber: number;
+    gatePassNumber: number;
   };
   dateOfExtraction: string;
   remarks?: string;
