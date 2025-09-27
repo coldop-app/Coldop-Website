@@ -390,7 +390,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   order,
   adminInfo,
 }) => {
-  const isReceipt = order.voucher.type === "RECEIPT";
+  const isReceipt = order.gatePass.type === "RECEIPT";
 
   // Get all bag sizes from admin preferences
   const allBagSizes = React.useMemo(() => {
@@ -424,7 +424,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   const calculateMarka = () => {
     const totalBags = calculateTotalBags();
     if (totalBags === 0) return "-";
-    return `${order.voucher.voucherNumber}/${totalBags}`;
+    return `${order.gatePass.gatePassNumber}/${totalBags}`;
   };
 
   // Convert number to words (basic implementation)
@@ -499,21 +499,23 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   const createTableRows = () => {
     const rows: TableRow[] = [];
 
-    order.orderDetails.forEach(detail => {
+    order.orderDetails.forEach((detail) => {
       // Create a map of size to quantity for this detail
       const sizeQuantityMap = new Map(
-        detail.bagSizes.map(bag => [
+        detail.bagSizes.map((bag) => [
           bag.size,
-          isReceipt ? bag.quantity?.initialQuantity || 0 : bag.quantityRemoved || 0
+          isReceipt
+            ? bag.quantity?.initialQuantity || 0
+            : bag.quantityRemoved || 0,
         ])
       );
 
       // Add a row for each variety
       rows.push({
         variety: detail.variety,
-        bagSizes: allBagSizes.map(size => ({
+        bagSizes: allBagSizes.map((size) => ({
           size,
-          quantity: sizeQuantityMap.get(size) || "-"
+          quantity: sizeQuantityMap.get(size) || "-",
         })),
         location: detail.location || "",
       });
@@ -529,7 +531,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   const calculateRowTotal = (bagSizes: TableBagSize[]) => {
     return bagSizes.reduce((sum, bag) => {
       const qty = bag.quantity;
-      return sum + (typeof qty === 'number' ? qty : 0);
+      return sum + (typeof qty === "number" ? qty : 0);
     }, 0);
   };
 
@@ -566,7 +568,8 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
               </Text>
               <Text style={styles.managerInfo}>
                 Manager{"\n"}
-                {adminInfo.name}{"\n"}
+                {adminInfo.name}
+                {"\n"}
                 {adminInfo.mobileNumber}
               </Text>
             </View>
@@ -577,14 +580,22 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
         <View style={styles.infoSection}>
           {/* Voucher Number and Date */}
           <View style={styles.infoRowSplit}>
-            <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
-              <Text style={styles.infoLabel}>{isReceipt ? "Receipt Voucher No:" : "Delivery Voucher No:"}</Text>
-              <Text style={styles.infoValue}>{order.voucher.voucherNumber}</Text>
+            <View
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+            >
+              <Text style={styles.infoLabel}>
+                {isReceipt ? "Receipt Voucher No:" : "Delivery Voucher No:"}
+              </Text>
+              <Text style={styles.infoValue}>
+                {order.gatePass.gatePassNumber}
+              </Text>
             </View>
             <View style={styles.dateContainer}>
               <Text style={styles.dateLabel}>Dated:</Text>
               <Text style={styles.dateValue}>
-                {new Date(order.createdAt || new Date()).toLocaleDateString("en-GB")}
+                {new Date(order.createdAt || new Date()).toLocaleDateString(
+                  "en-GB"
+                )}
               </Text>
             </View>
           </View>
@@ -604,13 +615,17 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           {/* Address */}
           <View style={styles.infoRowMain}>
             <Text style={styles.infoLabel}>Address:</Text>
-            <Text style={styles.infoValue}>{order.farmerId.address || 'N/A'}</Text>
+            <Text style={styles.infoValue}>
+              {order.farmerId.address || "N/A"}
+            </Text>
           </View>
 
           {/* Mobile */}
           <View style={styles.infoRowMain}>
             <Text style={styles.infoLabel}>Mobile:</Text>
-            <Text style={styles.infoValue}>{order.farmerId.mobileNumber || 'N/A'}</Text>
+            <Text style={styles.infoValue}>
+              {order.farmerId.mobileNumber || "N/A"}
+            </Text>
           </View>
         </View>
 
@@ -700,10 +715,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
 
         {/* Footer with Coldop Branding */}
         <View style={styles.footer}>
-          <Image
-            style={styles.coldopLogo}
-            src="/coldop-logo.png"
-          />
+          <Image style={styles.coldopLogo} src="/coldop-logo.png" />
           <Text style={styles.coldopText}>Powered by Coldop</Text>
         </View>
       </Page>

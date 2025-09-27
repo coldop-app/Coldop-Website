@@ -15,15 +15,19 @@ import {
   howItWorksData,
   // testimonialsData,
   // pricingData,
-  footerData
+  footerData,
 } from "../homeScreenData";
-import { SEO_PAGES, getOrganizationStructuredData, getSoftwareApplicationStructuredData } from "@/utils/seo";
+import {
+  SEO_PAGES,
+  getOrganizationStructuredData,
+  getSoftwareApplicationStructuredData,
+} from "@/utils/seo";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.6, ease: "easeOut" }
+  transition: { duration: 0.6 },
 };
 
 const HomeScreen = () => {
@@ -32,16 +36,16 @@ const HomeScreen = () => {
   useEffect(() => {
     const checkWebview = () => {
       const userAgent = navigator.userAgent.toLowerCase();
-      const isWebView = 
-        userAgent.includes('webview') ||
-        userAgent.includes('wv') ||
-        userAgent.includes('android') && userAgent.includes('version/') ||
-        userAgent.includes('iphone') && !userAgent.includes('safari') ||
-        userAgent.includes('ipad') && !userAgent.includes('safari') ||
+      const isWebView =
+        userAgent.includes("webview") ||
+        userAgent.includes("wv") ||
+        (userAgent.includes("android") && userAgent.includes("version/")) ||
+        (userAgent.includes("iphone") && !userAgent.includes("safari")) ||
+        (userAgent.includes("ipad") && !userAgent.includes("safari")) ||
         (window.navigator as any).standalone === true ||
-        window.location.search.includes('webview=true') ||
-        window.location.search.includes('app=true');
-      
+        window.location.search.includes("webview=true") ||
+        window.location.search.includes("app=true");
+
       setIsWebview(isWebView);
     };
 
@@ -54,30 +58,34 @@ const HomeScreen = () => {
 
     // If it doesn't exist, create it
     if (!viewportMeta) {
-      viewportMeta = document.createElement('meta');
-      viewportMeta.setAttribute('name', 'viewport');
+      viewportMeta = document.createElement("meta");
+      viewportMeta.setAttribute("name", "viewport");
       document.head.appendChild(viewportMeta);
     }
 
     // Set the content attribute to ensure proper mobile scaling
-    viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no');
+    viewportMeta.setAttribute(
+      "content",
+      "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    );
 
     return () => {
       // Reset to default when component unmounts
       if (viewportMeta) {
-        viewportMeta.setAttribute('content', 'width=device-width, initial-scale=1.0');
+        viewportMeta.setAttribute(
+          "content",
+          "width=device-width, initial-scale=1.0"
+        );
       }
     };
   }, []);
 
- 
   const combinedStructuredData = [
     SEO_PAGES.HOME.structuredData,
     getOrganizationStructuredData(),
     getSoftwareApplicationStructuredData(),
   ];
 
-  
   if (isWebview) {
     return (
       <div>
@@ -94,7 +102,6 @@ const HomeScreen = () => {
     );
   }
 
- 
   return (
     <div>
       <SEO
@@ -142,7 +149,7 @@ const HomeScreen = () => {
       >
         <DemoVideo />
       </motion.div>
-{/*
+      {/*
       <motion.div
         id="pricing"
         {...fadeInUp}

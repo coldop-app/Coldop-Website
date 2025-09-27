@@ -1,7 +1,14 @@
-import React from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
-import { Order, StoreAdmin } from '@/utils/types';
-import coldopLogo from '/coldop-logo.png';
+import React from "react";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image,
+} from "@react-pdf/renderer";
+import { Order, StoreAdmin } from "@/utils/types";
+import coldopLogo from "/coldop-logo.png";
 
 interface Farmer {
   _id: string;
@@ -20,58 +27,58 @@ interface FarmerReportPDFProps {
 
 const styles = StyleSheet.create({
   page: {
-    flexDirection: 'column',
-    backgroundColor: '#FEFDF8',
+    flexDirection: "column",
+    backgroundColor: "#FEFDF8",
     padding: 16,
-    fontFamily: 'Helvetica',
+    fontFamily: "Helvetica",
     fontSize: 8,
   },
 
   header: {
     marginBottom: 12,
     borderBottomWidth: 2,
-    borderBottomColor: '#000',
+    borderBottomColor: "#000",
     paddingBottom: 6,
   },
   companyName: {
     fontSize: 16,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#000',
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#000",
     marginBottom: 3,
   },
   reportTitle: {
     fontSize: 12,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#000',
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#000",
     marginBottom: 6,
   },
 
   farmerInfoSection: {
     marginBottom: 12,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
   },
   farmerInfoLeft: {
-    width: '48%',
+    width: "48%",
   },
   farmerInfoRight: {
-    width: '48%',
+    width: "48%",
   },
   infoRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 3,
     fontSize: 8,
   },
   infoLabel: {
-    width: '40%',
-    fontWeight: 'bold',
-    color: '#000',
+    width: "40%",
+    fontWeight: "bold",
+    color: "#000",
   },
   infoValue: {
-    width: '60%',
-    color: '#000',
+    width: "60%",
+    color: "#000",
   },
 
   ledgerContainer: {
@@ -80,190 +87,190 @@ const styles = StyleSheet.create({
   },
   ledgerTitle: {
     fontSize: 10,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 6,
-    color: '#000',
-    textTransform: 'uppercase',
+    color: "#000",
+    textTransform: "uppercase",
   },
 
   table: {
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: "#000",
   },
   tableHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#E8E8E8',
+    flexDirection: "row",
+    backgroundColor: "#E8E8E8",
     borderBottomWidth: 1,
-    borderBottomColor: '#000',
+    borderBottomColor: "#000",
     paddingVertical: 3,
   },
   tableRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 0.5,
-    borderBottomColor: '#666',
+    borderBottomColor: "#666",
     paddingVertical: 2,
     minHeight: 16,
   },
 
   // Column styles - updated for new layout
   colDate: {
-    width: '8%',
+    width: "8%",
     borderRightWidth: 0.5,
-    borderRightColor: '#666',
+    borderRightColor: "#666",
     paddingHorizontal: 2,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   colVoucher: {
-    width: '8%',
+    width: "8%",
     borderRightWidth: 0.5,
-    borderRightColor: '#666',
+    borderRightColor: "#666",
     paddingHorizontal: 2,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   colVariety: {
-    width: '10%',
+    width: "10%",
     borderRightWidth: 0.5,
-    borderRightColor: '#666',
+    borderRightColor: "#666",
     paddingHorizontal: 2,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   colLocation: {
-    width: '8%',
+    width: "8%",
     borderRightWidth: 0.5,
-    borderRightColor: '#666',
+    borderRightColor: "#666",
     paddingHorizontal: 2,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   colBagSize: {
-    width: '6%',
+    width: "6%",
     borderRightWidth: 0.5,
-    borderRightColor: '#666',
+    borderRightColor: "#666",
     paddingHorizontal: 2,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   colTotal: {
-    width: '8%',
+    width: "8%",
     borderRightWidth: 0.5,
-    borderRightColor: '#666',
+    borderRightColor: "#666",
     paddingHorizontal: 2,
-    justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
+    justifyContent: "center",
+    backgroundColor: "#F5F5F5",
   },
   colGrandTotal: {
-    width: '8%',
+    width: "8%",
     borderRightWidth: 0.5,
-    borderRightColor: '#666',
+    borderRightColor: "#666",
     paddingHorizontal: 2,
-    justifyContent: 'center',
-    backgroundColor: '#E8E8E8',
+    justifyContent: "center",
+    backgroundColor: "#E8E8E8",
   },
   colMarka: {
-    width: '8%',
+    width: "8%",
     borderRightWidth: 0.5,
-    borderRightColor: '#666',
+    borderRightColor: "#666",
     paddingHorizontal: 2,
-    justifyContent: 'center',
-    backgroundColor: '#F5F5F5',
+    justifyContent: "center",
+    backgroundColor: "#F5F5F5",
   },
 
   cellHeaderText: {
     fontSize: 7,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#000',
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#000",
   },
   cellText: {
     fontSize: 7,
-    textAlign: 'center',
-    color: '#000',
+    textAlign: "center",
+    color: "#000",
   },
   cellTextLeft: {
     fontSize: 7,
-    textAlign: 'left',
-    color: '#000',
+    textAlign: "left",
+    color: "#000",
   },
 
   totalRow: {
-    backgroundColor: '#E0E0E0',
-    fontWeight: 'bold',
+    backgroundColor: "#E0E0E0",
+    fontWeight: "bold",
   },
   balanceText: {
     fontSize: 7,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#000',
+    fontWeight: "bold",
+    textAlign: "center",
+    color: "#000",
   },
 
   summaryContainer: {
     marginTop: 12,
     padding: 8,
     borderWidth: 2,
-    borderColor: '#000',
-    backgroundColor: '#F5F5F5',
+    borderColor: "#000",
+    backgroundColor: "#F5F5F5",
   },
   summaryTitle: {
     fontSize: 10,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginBottom: 6,
-    textTransform: 'uppercase',
-    color: '#000',
+    textTransform: "uppercase",
+    color: "#000",
   },
   summaryTable: {
     borderWidth: 1,
-    borderColor: '#000',
+    borderColor: "#000",
   },
   summaryRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 0.5,
-    borderBottomColor: '#666',
+    borderBottomColor: "#666",
     paddingVertical: 3,
   },
   summaryLabel: {
-    width: '70%',
+    width: "70%",
     paddingHorizontal: 4,
     fontSize: 8,
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: "bold",
+    color: "#000",
   },
   summaryValue: {
-    width: '30%',
+    width: "30%",
     paddingHorizontal: 4,
     fontSize: 8,
-    fontWeight: 'bold',
-    textAlign: 'right',
+    fontWeight: "bold",
+    textAlign: "right",
     borderLeftWidth: 0.5,
-    borderLeftColor: '#666',
-    color: '#000',
+    borderLeftColor: "#666",
+    color: "#000",
   },
 
   footer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 16,
     left: 16,
     right: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderTopWidth: 1,
-    borderTopColor: '#000',
+    borderTopColor: "#000",
     paddingTop: 6,
   },
   footerText: {
     fontSize: 7,
-    color: '#000',
+    color: "#000",
   },
   footerLeft: {
     flex: 1,
   },
   footerCenter: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   footerRight: {
     flex: 1,
-    alignItems: 'flex-end',
+    alignItems: "flex-end",
   },
   logo: {
     width: 20,
@@ -273,24 +280,24 @@ const styles = StyleSheet.create({
   },
   poweredBy: {
     fontSize: 6,
-    color: '#555',
+    color: "#555",
     marginTop: 2,
-    fontStyle: 'italic',
+    fontStyle: "italic",
   },
 
   pageNumber: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 6,
     right: 16,
     fontSize: 7,
-    color: '#666',
+    color: "#666",
   },
 });
 
 interface LedgerEntry {
   date: string | undefined;
   voucher: number;
-  type: 'RECEIPT' | 'DELIVERY';
+  type: "RECEIPT" | "DELIVERY";
   variety: string;
   location: string;
   quantities: { [bagSize: string]: number }; // Map of bag size to quantity
@@ -299,43 +306,51 @@ interface LedgerEntry {
 }
 
 const formatDate = (date: string | Date | undefined): string => {
-  if (!date) return '-';
+  if (!date) return "-";
   try {
     // Check if date is in DD.MM.YY format
-    if (typeof date === 'string' && date.match(/^\d{2}\.\d{2}\.\d{2}$/)) {
+    if (typeof date === "string" && date.match(/^\d{2}\.\d{2}\.\d{2}$/)) {
       // Already in the desired format, just replace dots with slashes
-      return date.replace(/\./g, '/');
+      return date.replace(/\./g, "/");
     }
 
     // For other formats, parse and format
-    const parsedDate = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(parsedDate.getTime())) return '-';
+    const parsedDate = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(parsedDate.getTime())) return "-";
 
-    const day = parsedDate.getDate().toString().padStart(2, '0');
-    const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = parsedDate.getDate().toString().padStart(2, "0");
+    const month = (parsedDate.getMonth() + 1).toString().padStart(2, "0");
     const year = parsedDate.getFullYear().toString().slice(-2);
 
     return `${day}/${month}/${year}`;
   } catch {
-    return '-';
+    return "-";
   }
 };
 
 const getOrderDate = (order: Order): string | undefined => {
   // Try all possible date fields in order of preference
-  return order.dateOfSubmission ||
-         order.dateOfExtraction ||
-         order.createdAt ||
-         undefined;
+  return (
+    order.dateOfSubmission ||
+    order.dateOfExtraction ||
+    order.createdAt ||
+    undefined
+  );
 };
 
-const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, orders }) => {
+const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
+  farmer,
+  adminInfo,
+  orders,
+}) => {
   if (!orders || orders.length === 0) {
     return (
       <Document>
         <Page size="A4" style={styles.page}>
           <View style={styles.header}>
-            <Text style={styles.companyName}>{adminInfo.coldStorageDetails.coldStorageName.toUpperCase()}</Text>
+            <Text style={styles.companyName}>
+              {adminInfo.coldStorageDetails.coldStorageName.toUpperCase()}
+            </Text>
             <Text style={styles.reportTitle}>NO TRANSACTIONS FOUND</Text>
           </View>
         </Page>
@@ -344,25 +359,29 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
   }
 
   const bagSizes = adminInfo.preferences?.bagSizes || [];
-  const receiptOrders = orders.filter(order => order.voucher.type === 'RECEIPT');
-  const deliveryOrders = orders.filter(order => order.voucher.type === 'DELIVERY');
+  const receiptOrders = orders.filter(
+    (order) => order.gatePass.type === "RECEIPT"
+  );
+  const deliveryOrders = orders.filter(
+    (order) => order.gatePass.type === "DELIVERY"
+  );
 
   // Create receipt ledger entries with totals
   const createReceiptEntries = () => {
     const entries: LedgerEntry[] = [];
 
     // First create all entries
-    receiptOrders.forEach(order => {
+    receiptOrders.forEach((order) => {
       // Initialize quantities map for all bag sizes
       const quantities: { [bagSize: string]: number } = {};
-      bagSizes.forEach(size => {
+      bagSizes.forEach((size) => {
         quantities[size] = 0;
       });
 
       // Collect all quantities for this voucher
       let voucherTotal = 0;
-      order.orderDetails.forEach(detail => {
-        detail.bagSizes.forEach(bag => {
+      order.orderDetails.forEach((detail) => {
+        detail.bagSizes.forEach((bag) => {
           const quantity = bag.quantity?.initialQuantity || 0;
           quantities[bag.size] = (quantities[bag.size] || 0) + quantity;
           voucherTotal += quantity;
@@ -374,13 +393,13 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
 
       entries.push({
         date: getOrderDate(order),
-        voucher: order.voucher.voucherNumber,
-        type: 'RECEIPT',
-        variety: firstDetail?.variety || '-',
-        location: firstDetail?.location || '-',
+        voucher: order.gatePass.gatePassNumber,
+        type: "RECEIPT",
+        variety: firstDetail?.variety || "-",
+        location: firstDetail?.location || "-",
         quantities,
         total: voucherTotal,
-        grandTotal: 0 // Will be calculated after sorting
+        grandTotal: 0, // Will be calculated after sorting
       });
     });
 
@@ -389,7 +408,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
 
     // Calculate running grand total after sorting
     let total = 0;
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       total += entry.total;
       entry.grandTotal = total;
     });
@@ -402,17 +421,17 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
     const entries: LedgerEntry[] = [];
 
     // First create all entries
-    deliveryOrders.forEach(order => {
+    deliveryOrders.forEach((order) => {
       // Initialize quantities map for all bag sizes
       const quantities: { [bagSize: string]: number } = {};
-      bagSizes.forEach(size => {
+      bagSizes.forEach((size) => {
         quantities[size] = 0;
       });
 
       // Collect all quantities for this voucher
       let voucherTotal = 0;
-      order.orderDetails.forEach(detail => {
-        detail.bagSizes.forEach(bag => {
+      order.orderDetails.forEach((detail) => {
+        detail.bagSizes.forEach((bag) => {
           const quantity = bag.quantityRemoved || 0;
           quantities[bag.size] = (quantities[bag.size] || 0) + quantity;
           voucherTotal += quantity;
@@ -424,13 +443,13 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
 
       entries.push({
         date: getOrderDate(order),
-        voucher: order.voucher.voucherNumber,
-        type: 'DELIVERY',
-        variety: firstDetail?.variety || '-',
-        location: firstDetail?.location || '-',
+        voucher: order.gatePass.gatePassNumber,
+        type: "DELIVERY",
+        variety: firstDetail?.variety || "-",
+        location: firstDetail?.location || "-",
         quantities,
         total: voucherTotal,
-        grandTotal: 0 // Will be calculated after sorting
+        grandTotal: 0, // Will be calculated after sorting
       });
     });
 
@@ -439,7 +458,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
 
     // Calculate running grand total after sorting
     let total = 0;
-    entries.forEach(entry => {
+    entries.forEach((entry) => {
       total += entry.total;
       entry.grandTotal = total;
     });
@@ -453,8 +472,11 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
   // Calculate totals for each bag size
   const calculateBagSizeTotals = (entries: LedgerEntry[]) => {
     const totals: { [key: string]: number } = {};
-    bagSizes.forEach(size => {
-      totals[size] = entries.reduce((sum, entry) => sum + (entry.quantities[size] || 0), 0);
+    bagSizes.forEach((size) => {
+      totals[size] = entries.reduce(
+        (sum, entry) => sum + (entry.quantities[size] || 0),
+        0
+      );
     });
     return totals;
   };
@@ -462,10 +484,17 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
   const receiptTotals = calculateBagSizeTotals(receiptEntries);
   const deliveryTotals = calculateBagSizeTotals(deliveryEntries);
 
-  const renderTable = (entries: LedgerEntry[], title: string, totals: { [key: string]: number }, isDeliveryTable: boolean = false, receiptTotals?: { [key: string]: number }) => {
-    const initialGrandTotal = isDeliveryTable && receiptTotals
-      ? Object.values(receiptTotals).reduce((sum, qty) => sum + qty, 0)
-      : 0;
+  const renderTable = (
+    entries: LedgerEntry[],
+    title: string,
+    totals: { [key: string]: number },
+    isDeliveryTable: boolean = false,
+    receiptTotals?: { [key: string]: number }
+  ) => {
+    const initialGrandTotal =
+      isDeliveryTable && receiptTotals
+        ? Object.values(receiptTotals).reduce((sum, qty) => sum + qty, 0)
+        : 0;
 
     return (
       <View style={styles.ledgerContainer}>
@@ -484,7 +513,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
             <View style={styles.colLocation}>
               <Text style={styles.cellHeaderText}>LOCATION</Text>
             </View>
-            {bagSizes.map(size => (
+            {bagSizes.map((size) => (
               <View key={size} style={styles.colBagSize}>
                 <Text style={styles.cellHeaderText}>{size}</Text>
               </View>
@@ -505,7 +534,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
 
           {/* For delivery table, show receipt totals as first row */}
           {isDeliveryTable && receiptTotals && (
-            <View style={[styles.tableRow, { backgroundColor: '#F5F5F5' }]}>
+            <View style={[styles.tableRow, { backgroundColor: "#F5F5F5" }]}>
               <View style={styles.colDate}>
                 <Text style={styles.balanceText}>OPENING</Text>
               </View>
@@ -518,7 +547,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
               <View style={styles.colLocation}>
                 <Text style={styles.balanceText}>-</Text>
               </View>
-              {bagSizes.map(size => (
+              {bagSizes.map((size) => (
                 <View key={size} style={styles.colBagSize}>
                   <Text style={styles.balanceText}>{receiptTotals[size]}</Text>
                 </View>
@@ -546,10 +575,10 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
               <View style={styles.colLocation}>
                 <Text style={styles.cellText}>{entry.location}</Text>
               </View>
-              {bagSizes.map(size => (
+              {bagSizes.map((size) => (
                 <View key={size} style={styles.colBagSize}>
                   <Text style={styles.cellText}>
-                    {entry.quantities[size] || '-'}
+                    {entry.quantities[size] || "-"}
                   </Text>
                 </View>
               ))}
@@ -566,7 +595,9 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
               {/* Show Marka column only for receipt table */}
               {!isDeliveryTable && (
                 <View style={styles.colMarka}>
-                  <Text style={styles.cellText}>{`${entry.voucher}/${entry.total}`}</Text>
+                  <Text
+                    style={styles.cellText}
+                  >{`${entry.voucher}/${entry.total}`}</Text>
                 </View>
               )}
             </View>
@@ -587,7 +618,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
               <View style={styles.colLocation}>
                 <Text style={styles.balanceText}>-</Text>
               </View>
-              {bagSizes.map(size => (
+              {bagSizes.map((size) => (
                 <View key={size} style={styles.colBagSize}>
                   <Text style={styles.balanceText}>{totals[size]}</Text>
                 </View>
@@ -646,7 +677,9 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Member Since:</Text>
-              <Text style={styles.infoValue}>{formatDate(farmer.createdAt)}</Text>
+              <Text style={styles.infoValue}>
+                {formatDate(farmer.createdAt)}
+              </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Report Date:</Text>
@@ -656,36 +689,51 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({ farmer, adminInfo, or
         </View>
 
         {/* Receipt Table */}
-        {renderTable(receiptEntries, 'Receipt Details', receiptTotals)}
+        {renderTable(receiptEntries, "Receipt Details", receiptTotals)}
 
         {/* Delivery Table */}
-        {renderTable(deliveryEntries, 'Delivery Details', deliveryTotals, true, receiptTotals)}
+        {renderTable(
+          deliveryEntries,
+          "Delivery Details",
+          deliveryTotals,
+          true,
+          receiptTotals
+        )}
 
         {/* Summary Box */}
         <View style={styles.summaryContainer}>
           <Text style={styles.summaryTitle}>Account Summary</Text>
           <View style={styles.summaryTable}>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Total Receipt Transactions:</Text>
+              <Text style={styles.summaryLabel}>
+                Total Receipt Transactions:
+              </Text>
               <Text style={styles.summaryValue}>{receiptOrders.length}</Text>
             </View>
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Total Delivery Transactions:</Text>
+              <Text style={styles.summaryLabel}>
+                Total Delivery Transactions:
+              </Text>
               <Text style={styles.summaryValue}>{deliveryOrders.length}</Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Bags Received:</Text>
-              <Text style={styles.summaryValue}>{receiptEntries[receiptEntries.length - 1]?.grandTotal || 0}</Text>
+              <Text style={styles.summaryValue}>
+                {receiptEntries[receiptEntries.length - 1]?.grandTotal || 0}
+              </Text>
             </View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
-              <Text style={styles.summaryValue}>{deliveryEntries[deliveryEntries.length - 1]?.grandTotal || 0}</Text>
+              <Text style={styles.summaryValue}>
+                {deliveryEntries[deliveryEntries.length - 1]?.grandTotal || 0}
+              </Text>
             </View>
-            <View style={[styles.summaryRow, { backgroundColor: '#D0D0D0' }]}>
+            <View style={[styles.summaryRow, { backgroundColor: "#D0D0D0" }]}>
               <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
               <Text style={styles.summaryValue}>
                 {(receiptEntries[receiptEntries.length - 1]?.grandTotal || 0) -
-                 (deliveryEntries[deliveryEntries.length - 1]?.grandTotal || 0)}
+                  (deliveryEntries[deliveryEntries.length - 1]?.grandTotal ||
+                    0)}
               </Text>
             </View>
           </View>
