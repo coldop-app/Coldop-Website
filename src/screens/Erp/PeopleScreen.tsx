@@ -34,6 +34,7 @@ interface ApiError extends Error {
 }
 
 const getInitials = (name: string) => {
+  if (!name) return 'U';
   return name
     .split(' ')
     .map((n) => n[0])
@@ -101,20 +102,22 @@ const PeopleScreen = () => {
   // Filter
   if (searchQuery) {
     farmers = farmers.filter(farmer =>
-      farmer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      farmer.mobileNumber.includes(searchQuery) ||
-      farmer.address.toLowerCase().includes(searchQuery.toLowerCase())
+      farmer && (
+        farmer.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        farmer.mobileNumber?.includes(searchQuery) ||
+        farmer.address?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
     );
   }
 
   // Sort
-  farmers = [...farmers].sort((a, b) => {
+  farmers = [...farmers].filter(farmer => farmer != null).sort((a, b) => {
     if (sortBy === 'name') {
-      return a.name.localeCompare(b.name);
+      return (a.name || '').localeCompare(b.name || '');
     } else if (sortBy === 'farmerId') {
-      return parseInt(a.farmerId) - parseInt(b.farmerId);
+      return parseInt(a.farmerId || '0') - parseInt(b.farmerId || '0');
     } else {
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
     }
   });
 
@@ -276,65 +279,69 @@ const PeopleScreen = () => {
               </div>
             </div>
           ) : (
-            farmers.map((farmer) => (
-              <div
-                key={farmer._id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 cursor-pointer hover:shadow-md transition-all duration-200"
-                onClick={() => navigate(`/erp/people/${farmer._id}`, {
-                  state: {
-                    farmer: {
-                      _id: farmer._id,
-                      name: farmer.name,
-                      address: farmer.address,
-                      mobileNumber: farmer.mobileNumber,
-                      farmerId: farmer.farmerId,
-                      createdAt: farmer.createdAt,
-                      imageUrl: farmer.imageUrl
-                    }
-                  }
-                })}
-              >
-                <div className="flex items-start gap-4 sm:gap-6">
-                  {/* Avatar */}
-                  <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary overflow-hidden border-2 border-white shadow-sm">
-                    {farmer.imageUrl ? (
-                      <img src={farmer.imageUrl} alt={farmer.name} className="w-full h-full object-cover" />
-                    ) : (
-                      getInitials(farmer.name)
-                    )}
-                  </div>
+            farmers.map((farmer) => {
+              if (!farmer) return null;
 
-                  {/* Info */}
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{farmer.name}</h3>
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <rect x="3" y="4" width="18" height="16" rx="2" />
-                          <path d="M8 8h8M8 12h8M8 16h4" />
-                        </svg>
-                        <span>Account Number: {farmer.farmerId}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Phone size={16} className="text-gray-400" />
-                        <span>{farmer.mobileNumber}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <MapPin size={16} className="text-gray-400" />
-                        <span>{farmer.address}</span>
+              return (
+                <div
+                  key={farmer._id}
+                  className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 sm:p-6 cursor-pointer hover:shadow-md transition-all duration-200"
+                  onClick={() => navigate(`/erp/people/${farmer._id}`, {
+                    state: {
+                      farmer: {
+                        _id: farmer._id,
+                        name: farmer.name,
+                        address: farmer.address,
+                        mobileNumber: farmer.mobileNumber,
+                        farmerId: farmer.farmerId,
+                        createdAt: farmer.createdAt,
+                        imageUrl: farmer.imageUrl
+                      }
+                    }
+                  })}
+                >
+                  <div className="flex items-start gap-4 sm:gap-6">
+                    {/* Avatar */}
+                    <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-primary/10 flex items-center justify-center text-lg font-bold text-primary overflow-hidden border-2 border-white shadow-sm">
+                      {farmer.imageUrl ? (
+                        <img src={farmer.imageUrl} alt={farmer.name || 'Farmer'} className="w-full h-full object-cover" />
+                      ) : (
+                        getInitials(farmer.name || 'Unknown')
+                      )}
+                    </div>
+
+                    {/* Info */}
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">{farmer.name || 'Unknown'}</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <svg className="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="4" width="18" height="16" rx="2" />
+                            <path d="M8 8h8M8 12h8M8 16h4" />
+                          </svg>
+                          <span>Account Number: {farmer.farmerId || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Phone size={16} className="text-gray-400" />
+                          <span>{farmer.mobileNumber || 'N/A'}</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <MapPin size={16} className="text-gray-400" />
+                          <span>{farmer.address || 'N/A'}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Arrow indicator */}
-                  <div className="hidden sm:flex items-center self-center">
-                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-                    </svg>
+                    {/* Arrow indicator */}
+                    <div className="hidden sm:flex items-center self-center">
+                      <svg className="w-5 h-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                      </svg>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
