@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, useEffect, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { UseMutationResult } from "@tanstack/react-query";
@@ -9,13 +9,7 @@ import { useTranslation } from "react-i18next";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
 import debounce from "lodash/debounce";
 
 // Custom scrollbar styles
@@ -94,6 +88,12 @@ interface FormData {
   farmerName: string;
   farmerId: string;
   variety: string;
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: string;
+  approxWeight: string;
   remarks: string;
 }
 
@@ -108,9 +108,9 @@ interface OrderBagSize {
   location: string;
 }
 
-interface Voucher {
+interface GatePass {
   type: string;
-  voucherNumber: number;
+  gatePassNumber: number;
 }
 
 interface OrderDetail {
@@ -121,11 +121,24 @@ interface OrderDetail {
 
 interface IncomingOrder {
   _id: string;
-  voucher: Voucher;
+  gatePass: GatePass;
+  coldStorageId: string;
+  farmerId: string;
+  generation: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: boolean;
+  approxWeight: string;
+  bagType: string;
   dateOfSubmission: string;
   remarks: string;
+  currentStockAtThatTime: number;
   orderDetails: OrderDetail[];
   fulfilled: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+  rouging: string;
 }
 
 interface IncomingOrdersResponse {
@@ -203,8 +216,16 @@ const sortBagSizes = (adminPreferences: string[] | undefined) => {
 const OutgoingOrderFormContent = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const location = useLocation();
-  const farmer = location.state?.farmer as Farmer | undefined;
+  // Pre-selected farmer data
+  const farmer = useMemo<Farmer>(
+    () => ({
+      _id: "68d8b55df99e71019a8661f2",
+      name: "Bhatti Agritech",
+      address: "Jalandhar",
+      mobileNumber: "9914365651",
+    }),
+    []
+  );
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
 
   // Get receipt number for outgoing order
@@ -218,6 +239,12 @@ const OutgoingOrderFormContent = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
   const [availableVarieties, setAvailableVarieties] = useState<string[]>([]);
+  const [availableGenerations, setAvailableGenerations] = useState<string[]>([]);
+  const [availableRouging, setAvailableRouging] = useState<string[]>([]);
+  const [availableTuberTypes, setAvailableTuberTypes] = useState<string[]>([]);
+  const [availableGraders, setAvailableGraders] = useState<string[]>([]);
+  const [availableWeighedStatus, setAvailableWeighedStatus] = useState<string[]>([]);
+  const [availableApproxWeights, setAvailableApproxWeights] = useState<string[]>([]);
   const [selectedQuantities, setSelectedQuantities] = useState<BagSizeSelection[]>([]);
   const [inputQuantity, setInputQuantity] = useState<string>('');
   const [activeBox, setActiveBox] = useState<{
@@ -227,9 +254,15 @@ const OutgoingOrderFormContent = () => {
   } | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
-    farmerName: farmer?.name || "",
-    farmerId: farmer?._id || "",
+    farmerName: farmer.name,
+    farmerId: farmer._id,
     variety: "",
+    generation: "",
+    rouging: "",
+    tuberType: "",
+    grader: "",
+    weighedStatus: "true",
+    approxWeight: "",
     remarks: ""
   });
 
@@ -240,42 +273,80 @@ const OutgoingOrderFormContent = () => {
     enabled: !!formData.farmerId && !!adminInfo?.token
   });
 
-  // Update available varieties when orders change
+  // Update available options when orders change
   useEffect(() => {
     if (farmerIncomingOrders?.data) {
       const varieties = new Set<string>();
+      const generations = new Set<string>();
+      const rouging = new Set<string>();
+      const tuberTypes = new Set<string>();
+      const graders = new Set<string>();
+      const weighedStatus = new Set<string>();
+      const approxWeights = new Set<string>();
+
       farmerIncomingOrders.data.forEach((order) => {
+        // Add variety from order details
         order.orderDetails.forEach((detail) => {
           varieties.add(detail.variety);
         });
+
+        // Add other fields from order level
+        if (order.generation) generations.add(order.generation);
+        if (order.rouging) rouging.add(order.rouging);
+        if (order.tuberType) tuberTypes.add(order.tuberType);
+        if (order.grader) graders.add(order.grader);
+        if (order.approxWeight) approxWeights.add(order.approxWeight);
+
+        // Add weighed status options
+        weighedStatus.add(order.weighedStatus ? "true" : "false");
       });
+
       setAvailableVarieties(Array.from(varieties));
+      setAvailableGenerations(Array.from(generations));
+      setAvailableRouging(Array.from(rouging));
+      setAvailableTuberTypes(Array.from(tuberTypes));
+      setAvailableGraders(Array.from(graders));
+      setAvailableWeighedStatus(Array.from(weighedStatus));
+      setAvailableApproxWeights(Array.from(approxWeights));
     }
   }, [farmerIncomingOrders?.data]);
 
-  // Update the filteredOrders useMemo
+  // Update the filteredOrders useMemo - now shows all orders initially
   const filteredOrders = React.useMemo(() => {
-    if (!farmerIncomingOrders?.data || !formData.variety) return [];
+    if (!farmerIncomingOrders?.data) return [];
 
-    return farmerIncomingOrders.data.filter((order) =>
-      order.orderDetails.some(detail => detail.variety === formData.variety)
-    );
-  }, [farmerIncomingOrders?.data, formData.variety]);
+    return farmerIncomingOrders.data.filter((order) => {
+      // Filter by variety if selected
+      const hasVariety = !formData.variety || order.orderDetails.some(detail => detail.variety === formData.variety);
 
-  // Get available bag sizes from the first order's details
+      // Filter by other fields if they are selected
+      const hasGeneration = !formData.generation || order.generation === formData.generation;
+      const hasRouging = !formData.rouging || order.rouging === formData.rouging;
+      const hasTuberType = !formData.tuberType || order.tuberType === formData.tuberType;
+      const hasGrader = !formData.grader || order.grader === formData.grader;
+      const hasWeighedStatus = !formData.weighedStatus || (order.weighedStatus ? "true" : "false") === formData.weighedStatus;
+      const hasApproxWeight = !formData.approxWeight || order.approxWeight === formData.approxWeight;
+
+      return hasVariety && hasGeneration && hasRouging && hasTuberType && hasGrader && hasWeighedStatus && hasApproxWeight;
+    });
+  }, [farmerIncomingOrders?.data, formData.variety, formData.generation, formData.rouging, formData.tuberType, formData.grader, formData.weighedStatus, formData.approxWeight]);
+
+  // Get available bag sizes from all orders
   const availableBagSizes = React.useMemo(() => {
-    if (!filteredOrders.length) return adminInfo?.preferences?.bagSizes || [];
+    if (!farmerIncomingOrders?.data?.length) return adminInfo?.preferences?.bagSizes || [];
 
-    // Get unique bag sizes from the first order
+    // Get unique bag sizes from all orders
     const bagSizes = new Set<string>();
-    filteredOrders[0].orderDetails.forEach(detail => {
-      detail.bagSizes.forEach(bagSize => {
-        bagSizes.add(bagSize.size);
+    farmerIncomingOrders.data.forEach(order => {
+      order.orderDetails.forEach(detail => {
+        detail.bagSizes.forEach(bagSize => {
+          bagSizes.add(bagSize.size);
+        });
       });
     });
 
     return Array.from(bagSizes);
-  }, [filteredOrders, adminInfo?.preferences?.bagSizes]);
+  }, [farmerIncomingOrders?.data, adminInfo?.preferences?.bagSizes]);
 
   // Add a new useMemo for sorted bag sizes
   const sortedBagSizes = useMemo(() => {
@@ -290,12 +361,13 @@ const OutgoingOrderFormContent = () => {
   });
 
   // Create a debounced search function
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
-      if (query.length >= 2) {
-        refetch();
-      }
-    }, 300),
+  const debouncedSearch = useMemo(
+    () =>
+      debounce((query: string) => {
+        if (query.length >= 2) {
+          refetch();
+        }
+      }, 300),
     [refetch]
   );
 
@@ -313,6 +385,44 @@ const OutgoingOrderFormContent = () => {
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
+  // Function to clear all filters
+  const clearAllFilters = () => {
+    setFormData(prev => ({
+      ...prev,
+      variety: "",
+      generation: "",
+      rouging: "",
+      tuberType: "",
+      grader: "",
+      weighedStatus: "true",
+      approxWeight: ""
+    }));
+  };
+
+  // Function to clear individual filter
+  const clearFilter = (field: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: field === 'weighedStatus' ? 'true' : ''
+    }));
+  };
+
+  // Check if any filters are active
+  const hasActiveFilters = formData.variety || formData.generation || formData.rouging ||
+                          formData.tuberType || formData.grader ||
+                          (formData.weighedStatus && formData.weighedStatus !== "true") || formData.approxWeight;
+
+  // Count active filters
+  const activeFiltersCount = [
+    formData.variety,
+    formData.generation,
+    formData.rouging,
+    formData.tuberType,
+    formData.grader,
+    (formData.weighedStatus && formData.weighedStatus !== "true") ? formData.weighedStatus : null,
+    formData.approxWeight
+  ].filter(Boolean).length;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -417,7 +527,7 @@ const OutgoingOrderFormContent = () => {
         detail.bagSizes.forEach(bagSize => {
           if (bagSize.quantity.currentQuantity > 0) {
             newSelectedQuantities.push({
-              receiptNumber: order.voucher.voucherNumber,
+              receiptNumber: order.gatePass.gatePassNumber,
               bagSize: bagSize.size,
               selectedQuantity: bagSize.quantity.currentQuantity,
               maxQuantity: bagSize.quantity.currentQuantity
@@ -451,7 +561,7 @@ const OutgoingOrderFormContent = () => {
     // Check if all quantities for this voucher are already selected
     const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
     const totalAvailableQuantitiesForVoucher = filteredOrders
-      .filter(order => order.voucher.voucherNumber === voucherNumber)
+      .filter(order => order.gatePass.gatePassNumber === voucherNumber)
       .reduce((total, order) => {
         order.orderDetails.forEach(detail => {
           detail.bagSizes.forEach(bagSize => {
@@ -470,7 +580,7 @@ const OutgoingOrderFormContent = () => {
     }
 
     // Select all available quantities for this voucher
-    const order = filteredOrders.find(o => o.voucher.voucherNumber === voucherNumber);
+    const order = filteredOrders.find(o => o.gatePass.gatePassNumber === voucherNumber);
     if (!order) return;
 
     const newSelections: BagSizeSelection[] = [];
@@ -498,7 +608,7 @@ const OutgoingOrderFormContent = () => {
   const isVoucherSelected = (voucherNumber: number) => {
     const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
     const totalAvailableQuantitiesForVoucher = filteredOrders
-      .filter(order => order.voucher.voucherNumber === voucherNumber)
+      .filter(order => order.gatePass.gatePassNumber === voucherNumber)
       .reduce((total, order) => {
         order.orderDetails.forEach(detail => {
           detail.bagSizes.forEach(bagSize => {
@@ -540,11 +650,11 @@ const OutgoingOrderFormContent = () => {
 
     // Find the order IDs from filtered orders
     const orderDetails = filteredOrders.reduce((acc, order) => {
-      if (groupedByReceipt[order.voucher.voucherNumber]) {
+      if (groupedByReceipt[order.gatePass.gatePassNumber]) {
         acc.push({
           orderId: order._id,
           variety: formData.variety,
-          bagUpdates: groupedByReceipt[order.voucher.voucherNumber].bagUpdates
+          bagUpdates: groupedByReceipt[order.gatePass.gatePassNumber].bagUpdates
         });
       }
       return acc;
@@ -716,50 +826,363 @@ const OutgoingOrderFormContent = () => {
 
                 {/* Variety Selection */}
                 <div className="border border-green-200 rounded-lg p-2 sm:p-3 bg-green-50/50">
-                  <h3 className="text-sm sm:text-base font-medium mb-1 sm:mb-1.5">{t('outgoingOrder.variety.title')}</h3>
+                  <div className="flex items-center justify-between mb-1 sm:mb-1.5">
+                    <h3 className="text-sm sm:text-base font-medium">{t('outgoingOrder.variety.title')}</h3>
+                    {hasActiveFilters && (
+                      <button
+                        type="button"
+                        onClick={clearAllFilters}
+                        className="text-xs px-2 py-1 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md transition-colors"
+                      >
+                        Clear Filters
+                      </button>
+                    )}
+                  </div>
                   <p className="text-xs text-muted-foreground mb-2 sm:mb-3">
-                                          {availableVarieties.length > 0
-                        ? t('outgoingOrder.variety.description')
-                        : t('outgoingOrder.variety.noVarieties')}
+                    {availableVarieties.length > 0
+                      ? "Filter by variety (optional) - Select a variety to filter orders, or leave empty to show all varieties"
+                      : t('outgoingOrder.variety.noVarieties')}
                   </p>
 
                   <div className="relative">
-                    <Select
+                    <CustomSelect
                       value={formData.variety}
-                      onValueChange={(value) => updateFormData('variety', value)}
-                      disabled={isLoadingIncomingOrders || availableVarieties.length === 0}
-                    >
-                      <SelectTrigger className="w-full bg-background text-sm p-2 sm:p-2.5">
-                        {isLoadingIncomingOrders ? (
-                          <div className="flex items-center gap-2">
-                            <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
-                            <span>{t('outgoingOrder.variety.loading')}</span>
-                          </div>
-                        ) : (
-                                                      <SelectValue placeholder={t('outgoingOrder.variety.selectPlaceholder')} />
-                        )}
-                      </SelectTrigger>
-                      <SelectContent>
-                        {availableVarieties.map((variety: string) => (
-                          <SelectItem key={variety} value={variety} className="text-sm">
-                            {variety}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      onChange={(value) => updateFormData('variety', value)}
+                      placeholder="Select Variety"
+                      options={availableVarieties.map((variety: string) => ({
+                        value: variety,
+                        label: variety,
+                      }))}
+                    />
+                    {formData.variety && (
+                      <button
+                        type="button"
+                        onClick={() => clearFilter('variety')}
+                        className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Additional Details */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                  {/* Generation */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Generation <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <CustomSelect
+                        value={formData.generation}
+                        onChange={(value) => updateFormData('generation', value)}
+                        placeholder="Select Generation"
+                        options={availableGenerations.map((gen: string) => ({
+                          value: gen,
+                          label: gen,
+                        }))}
+                      />
+                      {formData.generation && (
+                        <button
+                          type="button"
+                          onClick={() => clearFilter('generation')}
+                          className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Rouging */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Rouging <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <CustomSelect
+                        value={formData.rouging}
+                        onChange={(value) => updateFormData('rouging', value)}
+                        placeholder="Select Rouging"
+                        options={availableRouging.map((rough: string) => ({
+                          value: rough,
+                          label: rough,
+                        }))}
+                      />
+                      {formData.rouging && (
+                        <button
+                          type="button"
+                          onClick={() => clearFilter('rouging')}
+                          className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Tuber Type */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Tuber Type <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <CustomSelect
+                        value={formData.tuberType}
+                        onChange={(value) => updateFormData('tuberType', value)}
+                        placeholder="Select Tuber Type"
+                        options={availableTuberTypes.map((type: string) => ({
+                          value: type,
+                          label: type,
+                        }))}
+                      />
+                      {formData.tuberType && (
+                        <button
+                          type="button"
+                          onClick={() => clearFilter('tuberType')}
+                          className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Grader */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Grader <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <CustomSelect
+                        value={formData.grader}
+                        onChange={(value) => updateFormData('grader', value)}
+                        placeholder="Select Grade"
+                        options={availableGraders.map((grade: string) => ({
+                          value: grade,
+                          label: grade,
+                        }))}
+                      />
+                      {formData.grader && (
+                        <button
+                          type="button"
+                          onClick={() => clearFilter('grader')}
+                          className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Weighed Status */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Weighed Status <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <CustomSelect
+                        value={formData.weighedStatus}
+                        onChange={(value) => updateFormData('weighedStatus', value)}
+                        placeholder="Select Status"
+                        options={availableWeighedStatus.map((status: string) => ({
+                          value: status,
+                          label: status === "true" ? "Weighed" : "Not Weighed",
+                        }))}
+                      />
+                      {formData.weighedStatus && formData.weighedStatus !== "true" && (
+                        <button
+                          type="button"
+                          onClick={() => clearFilter('weighedStatus')}
+                          className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Approximate Weight */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Approximate Weight (kg) <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <CustomSelect
+                        value={formData.approxWeight}
+                        onChange={(value) => updateFormData('approxWeight', value)}
+                        placeholder="Select Weight"
+                        options={availableApproxWeights.map((weight: string) => ({
+                          value: weight,
+                          label: weight,
+                        }))}
+                      />
+                      {formData.approxWeight && (
+                        <button
+                          type="button"
+                          onClick={() => clearFilter('approxWeight')}
+                          className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
 
                 {formData.farmerId && (
                   <div className="space-y-3">
+                    {/* Filter Status */}
+                    {hasActiveFilters && (
+                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium text-blue-800">
+                              Filters Applied ({activeFiltersCount})
+                            </span>
+                            <div className="flex flex-wrap gap-1">
+                              {formData.variety && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  Variety: {formData.variety}
+                                  <button
+                                    type="button"
+                                    onClick={() => clearFilter('variety')}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              )}
+                              {formData.generation && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  Generation: {formData.generation}
+                                  <button
+                                    type="button"
+                                    onClick={() => clearFilter('generation')}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              )}
+                              {formData.rouging && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  Rouging: {formData.rouging}
+                                  <button
+                                    type="button"
+                                    onClick={() => clearFilter('rouging')}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              )}
+                              {formData.tuberType && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  Tuber Type: {formData.tuberType}
+                                  <button
+                                    type="button"
+                                    onClick={() => clearFilter('tuberType')}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              )}
+                              {formData.grader && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  Grader: {formData.grader}
+                                  <button
+                                    type="button"
+                                    onClick={() => clearFilter('grader')}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              )}
+                              {formData.weighedStatus && formData.weighedStatus !== "true" && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  Status: {formData.weighedStatus === "true" ? "Weighed" : "Not Weighed"}
+                                  <button
+                                    type="button"
+                                    onClick={() => clearFilter('weighedStatus')}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              )}
+                              {formData.approxWeight && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  Weight: {formData.approxWeight}
+                                  <button
+                                    type="button"
+                                    onClick={() => clearFilter('approxWeight')}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={clearAllFilters}
+                            className="text-xs px-2 py-1 text-blue-600 hover:text-blue-700 hover:bg-blue-100 rounded-md transition-colors"
+                          >
+                            Clear All
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     {/* Orders Table */}
                     {isLoadingIncomingOrders ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                         <span className="text-sm">{t('outgoingOrder.orders.loading')}</span>
                       </div>
-                    ) : filteredOrders.length > 0 ? (
+                    ) : (filteredOrders.length > 0 || !hasActiveFilters) ? (
                       <>
+                        {/* Orders Count */}
+                        <div className="text-sm text-gray-600 mb-3">
+                          {hasActiveFilters
+                            ? `Showing ${filteredOrders.length} order${filteredOrders.length !== 1 ? 's' : ''} matching your filters`
+                            : `Showing all ${farmerIncomingOrders?.data?.length || 0} order${(farmerIncomingOrders?.data?.length || 0) !== 1 ? 's' : ''}`
+                          }
+                        </div>
+
                         {/* Select/Deselect All Button */}
                         <div className="mb-4">
                           <button
@@ -807,14 +1230,14 @@ const OutgoingOrderFormContent = () => {
                                       <td className="p-2.5 border-b text-center">
                                         <input
                                           type="checkbox"
-                                          checked={isVoucherSelected(order.voucher.voucherNumber)}
-                                          onChange={() => handleSelectVoucher(order.voucher.voucherNumber)}
+                                          checked={isVoucherSelected(order.gatePass.gatePassNumber)}
+                                          onChange={() => handleSelectVoucher(order.gatePass.gatePassNumber)}
                                           className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
                                         />
                                       </td>
                                       <td className="p-2.5 border-b">
                                         <div className="flex flex-col gap-1">
-                                          <div className="font-medium text-base">#{order.voucher.voucherNumber}</div>
+                                          <div className="font-medium text-base">#{order.gatePass.gatePassNumber}</div>
                                           {order.orderDetails[0]?.location && (
                                             <div className="text-xs text-gray-500">
                                               {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
@@ -838,7 +1261,7 @@ const OutgoingOrderFormContent = () => {
                                         )?.bagSizes.find(b => b.size === size)?.location;
 
                                         const isSelected = selectedQuantities.some(
-                                          sq => sq.receiptNumber === order.voucher.voucherNumber &&
+                                          sq => sq.receiptNumber === order.gatePass.gatePassNumber &&
                                                sq.bagSize === size
                                         );
 
@@ -848,7 +1271,7 @@ const OutgoingOrderFormContent = () => {
                                               <button
                                                 type="button"
                                                 onClick={(e) => handleBoxClick(
-                                                  order.voucher.voucherNumber,
+                                                  order.gatePass.gatePassNumber,
                                                   size,
                                                   totalQuantities.current,
                                                   e
@@ -883,12 +1306,12 @@ const OutgoingOrderFormContent = () => {
                                                 </div>
 
                                                 {selectedQuantities.some(sq =>
-                                                  sq.receiptNumber === order.voucher.voucherNumber &&
+                                                  sq.receiptNumber === order.gatePass.gatePassNumber &&
                                                   sq.bagSize === size
                                                 ) && (
                                                   <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center text-white text-[10px] font-medium shadow-sm px-1 border border-white">
                                                     {selectedQuantities.find(sq =>
-                                                      sq.receiptNumber === order.voucher.voucherNumber &&
+                                                      sq.receiptNumber === order.gatePass.gatePassNumber &&
                                                       sq.bagSize === size
                                                     )?.selectedQuantity}
                                                   </div>
@@ -912,7 +1335,7 @@ const OutgoingOrderFormContent = () => {
                             <div key={order._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                               <div className="p-3 bg-gray-50 border-b border-gray-200">
                                 <div className="flex flex-col gap-1">
-                                  <div className="font-medium">#{order.voucher.voucherNumber}</div>
+                                  <div className="font-medium">#{order.gatePass.gatePassNumber}</div>
                                   {order.orderDetails[0]?.location && (
                                     <div className="text-xs text-gray-500 mt-0.5">
                                       {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
@@ -920,14 +1343,14 @@ const OutgoingOrderFormContent = () => {
                                   )}
                                   <button
                                     type="button"
-                                    onClick={() => handleSelectVoucher(order.voucher.voucherNumber)}
+                                    onClick={() => handleSelectVoucher(order.gatePass.gatePassNumber)}
                                     className={`text-xs px-2 py-1 rounded-md w-fit transition-colors ${
-                                      isVoucherSelected(order.voucher.voucherNumber)
+                                      isVoucherSelected(order.gatePass.gatePassNumber)
                                         ? "bg-primary text-white hover:bg-primary/90"
                                         : "text-primary border border-primary hover:bg-primary/5"
                                     }`}
                                   >
-                                    {isVoucherSelected(order.voucher.voucherNumber) ? "Deselect Voucher" : "Select Voucher"}
+                                    {isVoucherSelected(order.gatePass.gatePassNumber) ? "Deselect Voucher" : "Select Voucher"}
                                   </button>
                                 </div>
                               </div>
@@ -949,7 +1372,7 @@ const OutgoingOrderFormContent = () => {
                                     )?.bagSizes.find(b => b.size === size)?.location;
 
                                     const isSelected = selectedQuantities.some(
-                                      sq => sq.receiptNumber === order.voucher.voucherNumber &&
+                                      sq => sq.receiptNumber === order.gatePass.gatePassNumber &&
                                            sq.bagSize === size
                                     );
 
@@ -959,7 +1382,7 @@ const OutgoingOrderFormContent = () => {
                                         <button
                                           type="button"
                                           onClick={(e) => handleBoxClick(
-                                            order.voucher.voucherNumber,
+                                            order.gatePass.gatePassNumber,
                                             size,
                                             totalQuantities.current,
                                             e
@@ -994,12 +1417,12 @@ const OutgoingOrderFormContent = () => {
                                           </div>
 
                                           {selectedQuantities.some(sq =>
-                                            sq.receiptNumber === order.voucher.voucherNumber &&
+                                            sq.receiptNumber === order.gatePass.gatePassNumber &&
                                             sq.bagSize === size
                                           ) && (
                                             <div className="absolute -top-2 -right-2 min-w-[22px] h-[22px] bg-primary rounded-full flex items-center justify-center text-white text-xs font-medium shadow-sm px-1 border-2 border-white">
                                               {selectedQuantities.find(sq =>
-                                                sq.receiptNumber === order.voucher.voucherNumber &&
+                                                sq.receiptNumber === order.gatePass.gatePassNumber &&
                                                 sq.bagSize === size
                                               )?.selectedQuantity}
                                             </div>
@@ -1016,9 +1439,9 @@ const OutgoingOrderFormContent = () => {
                       </>
                     ) : (
                       <p className="text-sm text-gray-500">
-                        {formData.variety
-                          ? `${t('outgoingOrder.orders.noOrders')} ${formData.variety}`
-                          : t('outgoingOrder.orders.selectVariety')}
+                        {hasActiveFilters
+                          ? "No orders match the selected filters. Try adjusting your filter criteria."
+                          : "No orders available for this farmer."}
                       </p>
                     )}
 
@@ -1027,20 +1450,47 @@ const OutgoingOrderFormContent = () => {
                       <div className="mt-4 p-3 sm:p-4 bg-gray-50 rounded-lg">
                         <h4 className="font-medium mb-2 text-sm sm:text-base">{t('outgoingOrder.selectedQuantities.title')}</h4>
                         <div className="space-y-2">
-                          {selectedQuantities.map((sq, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                              <span className="text-xs sm:text-sm">
-                                {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}: {sq.selectedQuantity} {t('outgoingOrder.selectedQuantities.bags')}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handleQuantityRemove(sq.receiptNumber, sq.bagSize)}
-                                className="text-red-500 hover:text-red-700"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
+                          {selectedQuantities.map((sq, index) => {
+                            // Find the order and get the specific location for this bag size
+                            const order = filteredOrders.find(o => o.gatePass.gatePassNumber === sq.receiptNumber);
+                            let location = '';
+
+                            if (order) {
+                              // Find the specific bag size location within the order
+                              for (const detail of order.orderDetails) {
+                                const bagSize = detail.bagSizes.find(b => b.size === sq.bagSize);
+                                if (bagSize && bagSize.location) {
+                                  location = bagSize.location;
+                                  break;
+                                }
+                              }
+                            }
+
+                            return (
+                              <div key={index} className="flex flex-col gap-1">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs sm:text-sm">
+                                      {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}: {sq.selectedQuantity} {t('outgoingOrder.selectedQuantities.bags')}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleQuantityRemove(sq.receiptNumber, sq.bagSize)}
+                                      className="text-red-500 hover:text-red-700"
+                                    >
+                                      ×
+                                    </button>
+                                  </div>
+                                </div>
+                                {location && (
+                                  <div className="text-xs text-gray-500 flex items-center gap-1">
+                                    <span>📍</span>
+                                    <span>{location}</span>
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
                       </div>
                     )}
@@ -1051,14 +1501,18 @@ const OutgoingOrderFormContent = () => {
                   <button
                     type="button"
                     onClick={() => {
-                          if (!formData.farmerName.trim()) {
-      toast.error(t('outgoingOrder.errors.enterFarmerName'));
-      return;
-    }
-    if (!formData.variety) {
-      toast.error(t('outgoingOrder.errors.selectVariety'));
-      return;
-    }
+                      if (!formData.farmerName.trim()) {
+                        toast.error(t('outgoingOrder.errors.enterFarmerName'));
+                        return;
+                      }
+                      if (filteredOrders.length === 0 && hasActiveFilters) {
+                        toast.error("No orders match the selected filters. Please adjust your filter criteria or clear filters to see all orders.");
+                        return;
+                      }
+                      if (filteredOrders.length === 0) {
+                        toast.error("No orders available for this farmer.");
+                        return;
+                      }
                       setCurrentStep(2);
                     }}
                     className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -1082,9 +1536,20 @@ const OutgoingOrderFormContent = () => {
                     <h4 className="font-medium mb-3">{t('outgoingOrder.selectedQuantities.title')}</h4>
                     <div className="space-y-2">
                       {selectedQuantities.map((sq, index) => {
-                        // Find the order and its location
-                        const order = filteredOrders.find(o => o.voucher.voucherNumber === sq.receiptNumber);
-                        const location = order?.orderDetails[0]?.location;
+                        // Find the order and get the specific location for this bag size
+                        const order = filteredOrders.find(o => o.gatePass.gatePassNumber === sq.receiptNumber);
+                        let location = '';
+
+                        if (order) {
+                          // Find the specific bag size location within the order
+                          for (const detail of order.orderDetails) {
+                            const bagSize = detail.bagSizes.find(b => b.size === sq.bagSize);
+                            if (bagSize && bagSize.location) {
+                              location = bagSize.location;
+                              break;
+                            }
+                          }
+                        }
 
                         return (
                           <div key={index} className="flex flex-col gap-1">

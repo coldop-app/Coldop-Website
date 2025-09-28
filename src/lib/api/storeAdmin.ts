@@ -49,6 +49,18 @@ interface SearchByVarietyParams {
   storeAdminId: string;
 }
 
+interface FilterIncomingOrdersParams {
+  variety?: string;
+  generation?: string;
+  rouging?: string;
+  tuberType?: string;
+  grader?: string;
+  weighedStatus?: boolean;
+  bagType?: string;
+  page?: number;
+  limit?: number;
+}
+
 export interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string;
@@ -424,6 +436,23 @@ export const storeAdminApi = {
     const response = await axios.get(
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders/incoming`,
       {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  filterFarmerIncomingOrders: async (
+    farmerId: string,
+    params: FilterIncomingOrdersParams,
+    token: string
+  ) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/incoming-orders/filter`,
+      {
+        params,
         headers: {
           Authorization: `Bearer ${token}`,
         },
