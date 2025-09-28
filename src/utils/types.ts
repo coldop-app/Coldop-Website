@@ -95,7 +95,7 @@ export interface Order {
   farmerId: Farmer;
   gatePass: Voucher;
   generation: string;
-  roughing: string;
+  rouging: string;
   tuberType: string;
   grader: string;
   weighedStatus: boolean;

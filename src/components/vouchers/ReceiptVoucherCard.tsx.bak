@@ -126,7 +126,7 @@ Date: ${order.dateOfSubmission}
 Party: ${order.farmerId.name} (${order.farmerId.farmerId})
 Variety: ${order.orderDetails[0]?.variety || "N/A"}
 Generation: ${order.generation}
-Roughing: ${order.roughing}
+Rouging: ${order.rouging}
 Tuber Type: ${order.tuberType}
 Grader: ${order.grader}
 Bag Type: ${order.bagType}
@@ -426,10 +426,10 @@ ${order.orderDetails
                 </div>
                 <div>
                   <span className="text-xs text-gray-500 block mb-1">
-                    Roughing
+                    Rouging
                   </span>
                   <p className="text-sm font-medium text-gray-900">
-                    {order.roughing}
+                    {order.rouging}
                   </p>
                 </div>
                 <div>

@@ -5,7 +5,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
-import { storeAdminApi } from "@/lib/api/storeAdmin";
+import { storeAdminApi, CreateOrderPayload } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
 import Loader from "@/components/common/Loader/Loader";
@@ -85,7 +85,7 @@ interface FormData {
   farmerId: string;
   quantities: BagQuantities;
   generation: string;
-  roughing: string;
+  rouging: string;
   tuberType: string;
   grader: string;
   weighedStatus: string;
@@ -102,30 +102,7 @@ interface FormData {
   variety: string;
 }
 
-interface CreateOrderPayload {
-  coldStorageId: string;
-  farmerId: string;
-  dateOfSubmission: string;
-  remarks: string;
-  generation: string;
-  roughing: string;
-  tuberType: string;
-  grader: string;
-  weighedStatus: boolean;
-  approxWeight: string;
-  bagType: string;
-  orderDetails: {
-    variety: string;
-    bagSizes: {
-      size: string;
-      quantity: {
-        initialQuantity: number;
-        currentQuantity: number;
-      };
-      location: string; // Each bag size now has its own location
-    }[];
-  }[];
-}
+// Using the CreateOrderPayload interface from the API file
 
 interface ApiError extends Error {
   response?: {
@@ -176,7 +153,7 @@ const IncomingOrderFormContent = () => {
     dateOfSubmission: new Date().toISOString().split("T")[0],
     variety: "",
     generation: "",
-    roughing: "",
+    rouging: "",
     tuberType: "",
     grader: "",
     weighedStatus: "true",
@@ -314,8 +291,8 @@ const IncomingOrderFormContent = () => {
       toast.error("Please select generation");
       return;
     }
-    if (!formData.roughing) {
-      toast.error("Please select roughing");
+    if (!formData.rouging) {
+      toast.error("Please select rouging");
       return;
     }
     if (!formData.tuberType) {
@@ -404,7 +381,7 @@ const IncomingOrderFormContent = () => {
         dateOfSubmission: new Date().toISOString().split("T")[0],
         variety: "",
         generation: "",
-        roughing: "",
+        rouging: "",
         tuberType: "",
         grader: "",
         weighedStatus: "true",
@@ -509,7 +486,7 @@ const IncomingOrderFormContent = () => {
       dateOfSubmission: formData.dateOfSubmission,
       remarks: formData.remarks,
       generation: formData.generation,
-      roughing: formData.roughing,
+      rouging: formData.rouging,
       tuberType: formData.tuberType,
       grader: formData.grader,
       weighedStatus: formData.weighedStatus === "true",
@@ -936,7 +913,7 @@ const IncomingOrderFormContent = () => {
                     onChange={(value) => updateFormData("generation", value)}
                     placeholder="Select Generation"
                     options={
-                      bhattiData?.data.generation.map((gen: string) => ({
+                      bhattiData?.data?.generation?.map((gen: string) => ({
                         value: gen,
                         label: gen,
                       })) || []
@@ -944,15 +921,15 @@ const IncomingOrderFormContent = () => {
                   />
                 </div>
 
-                {/* Roughing */}
+                {/* Rouging */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">Roughing</label>
+                  <label className="block text-sm font-medium">Rouging</label>
                   <CustomSelect
-                    value={formData.roughing}
-                    onChange={(value) => updateFormData("roughing", value)}
-                    placeholder="Select Roughing"
+                    value={formData.rouging}
+                    onChange={(value) => updateFormData("rouging", value)}
+                    placeholder="Select Rouging"
                     options={
-                      bhattiData?.data.Roughing.map((rough: string) => ({
+                      bhattiData?.data?.rouging?.map((rough: string) => ({
                         value: rough,
                         label: rough,
                       })) || []
@@ -984,7 +961,7 @@ const IncomingOrderFormContent = () => {
                     onChange={(value) => updateFormData("grader", value)}
                     placeholder="Select Grade"
                     options={
-                      bhattiData?.data.grader.map((grade: string) => ({
+                      bhattiData?.data?.grader?.map((grade: string) => ({
                         value: grade,
                         label: grade,
                       })) || []

@@ -49,13 +49,13 @@ interface SearchByVarietyParams {
   storeAdminId: string;
 }
 
-interface CreateOrderPayload {
+export interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string;
   dateOfSubmission: string;
   remarks: string;
   generation: string;
-  roughing: string;
+  rouging: string;
   tuberType: string;
   grader: string;
   weighedStatus: boolean;
@@ -189,7 +189,7 @@ interface BhattiDataResponse {
   data: {
     grader: string[];
     generation: string[];
-    Roughing: string[];
+    rouging: string[];
   };
 }
 
