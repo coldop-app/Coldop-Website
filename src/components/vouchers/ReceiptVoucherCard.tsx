@@ -469,105 +469,101 @@ ${order.orderDetails
             {sortedOrderDetails.map(
               (detail: SortedOrderDetail, index: number) => (
                 <div key={index} className="space-y-4">
-                  {/* Mobile View - Stacked Layout */}
-                  <div className="block sm:hidden space-y-3">
-                    {/* Quantity Section */}
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-gray-900">
-                        Quantity
-                      </h4>
-                      {detail.sortedBagSizes.map((bagSize, idx) => {
-                        const current = bagSize.quantity?.currentQuantity || 0;
-                        const initial = bagSize.quantity?.initialQuantity || 0;
-                        const bagName = bagSize.size;
-
-                        return (
-                          <div key={idx} className="bg-gray-50 rounded-lg p-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-900">
-                                {bagName}
-                              </span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {current}/{initial}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {/* Total Row for Mobile */}
-                      <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-semibold text-gray-900">
-                            Total
-                          </span>
-                          <span className="text-sm font-semibold text-primary">
-                            {detail.sortedBagSizes.reduce(
-                              (sum: number, bag) =>
-                                sum + (bag.quantity?.currentQuantity || 0),
-                              0
-                            )}
-                            /
-                            {detail.sortedBagSizes.reduce(
-                              (sum: number, bag) =>
-                                sum + (bag.quantity?.initialQuantity || 0),
-                              0
-                            )}
-                          </span>
-                        </div>
+                  {/* Mobile View - Single Table Layout */}
+                  <div className="block sm:hidden">
+                    <div className="overflow-x-auto">
+                      <div className="min-w-full">
+                        <table className="w-full text-sm border-collapse">
+                          <thead>
+                            <tr className="bg-gray-50">
+                              <th className="text-left py-2 px-2 font-medium text-gray-900 border-b border-gray-200 text-xs">
+                                Size
+                              </th>
+                              <th className="text-center py-2 px-2 font-medium text-gray-900 border-b border-gray-200 text-xs">
+                                Qty
+                              </th>
+                              <th className="text-center py-2 px-2 font-medium text-gray-900 border-b border-gray-200 text-xs">
+                                Location
+                              </th>
+                              <th className="text-center py-2 px-2 font-medium text-gray-900 border-b border-gray-200 text-xs">
+                                Marka
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {detail.sortedBagSizes.map((bagSize, idx) => (
+                              <tr key={idx} className="border-b border-gray-100">
+                                <td className="py-2 px-2 text-left font-medium text-gray-900 text-xs">
+                                  {formatBagSizeName(bagSize.size)}
+                                </td>
+                                <td className="py-2 px-2 text-center text-xs">
+                                  {(() => {
+                                    const qty = bagSize.quantity;
+                                    return qty && qty.initialQuantity ? (
+                                      <span className="font-medium text-gray-900">
+                                        {qty.currentQuantity || 0}/
+                                        {qty.initialQuantity}
+                                      </span>
+                                    ) : (
+                                      "-"
+                                    );
+                                  })()}
+                                </td>
+                                <td className="py-2 px-2 text-center text-xs">
+                                  <span className="font-medium text-gray-900">
+                                    {(bagSize as BagSizeWithLocation)
+                                      .location || "-"}
+                                  </span>
+                                </td>
+                                <td className="py-2 px-2 text-center text-xs">
+                                  {(() => {
+                                    const qty = bagSize.quantity;
+                                    return qty && qty.initialQuantity ? (
+                                      <span className="font-medium text-gray-900">
+                                        {order.gatePass?.gatePassNumber || "N/A"}/
+                                        {qty.initialQuantity}
+                                      </span>
+                                    ) : (
+                                      "-"
+                                    );
+                                  })()}
+                                </td>
+                              </tr>
+                            ))}
+                            {/* Total Row */}
+                            <tr className="border-b border-gray-100 bg-primary/5">
+                              <td className="py-2 px-2 text-left font-semibold text-gray-900 text-xs">
+                                Total
+                              </td>
+                              <td className="py-2 px-2 text-center text-xs">
+                                <span className="font-semibold text-primary">
+                                  {detail.sortedBagSizes.reduce(
+                                    (sum: number, bag) =>
+                                      sum + (bag.quantity?.currentQuantity || 0),
+                                    0
+                                  )}
+                                  /
+                                  {detail.sortedBagSizes.reduce(
+                                    (sum: number, bag) =>
+                                      sum + (bag.quantity?.initialQuantity || 0),
+                                    0
+                                  )}
+                                </span>
+                              </td>
+                              <td className="py-2 px-2 text-center text-xs">
+                                <span className="font-medium text-gray-500">
+                                  -
+                                </span>
+                              </td>
+                              <td className="py-2 px-2 text-center text-xs">
+                                <span className="font-medium text-gray-500">
+                                  -
+                                </span>
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
                       </div>
-                    </div>
-
-                    {/* Location Section */}
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-gray-900">
-                        Location
-                      </h4>
-                      {detail.sortedBagSizes.map((bagSize, idx) => {
-                        const bagName = bagSize.size;
-                        const location =
-                          (bagSize as BagSizeWithLocation).location || "N/A";
-
-                        return (
-                          <div key={idx} className="bg-gray-50 rounded-lg p-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-900">
-                                {bagName}
-                              </span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {location}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Marka Section */}
-                    <div className="space-y-2">
-                      <h4 className="text-sm font-medium text-gray-900">
-                        Marka
-                      </h4>
-                      {detail.sortedBagSizes.map((bagSize, idx) => {
-                        const bagName = bagSize.size;
-                        const initial = bagSize.quantity?.initialQuantity || 0;
-                        const marka =
-                          initial > 0
-                            ? `${order.gatePass?.gatePassNumber || "N/A"}/${initial}`
-                            : "N/A";
-
-                        return (
-                          <div key={idx} className="bg-gray-50 rounded-lg p-3">
-                            <div className="flex justify-between items-center">
-                              <span className="text-sm font-medium text-gray-900">
-                                {bagName}
-                              </span>
-                              <span className="text-sm font-medium text-gray-900">
-                                {marka}
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
                     </div>
                   </div>
 
