@@ -97,9 +97,16 @@ interface OutgoingOrderDetail {
   bagUpdates: BagUpdate[];
 }
 
-interface CreateOutgoingOrderPayload {
-  orders: OutgoingOrderDetail[];
+export interface CreateOutgoingOrderPayload {
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: boolean;
+  approxWeight: string;
+  bagType: string;
   remarks: string;
+  orders: OutgoingOrderDetail[];
 }
 
 interface CreateFarmerPayload {

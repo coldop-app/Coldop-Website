@@ -7,6 +7,7 @@ import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
+import type { CreateOutgoingOrderPayload } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
 import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
@@ -94,6 +95,7 @@ interface FormData {
   grader: string;
   weighedStatus: string;
   approxWeight: string;
+  bagType: string;
   remarks: string;
 }
 
@@ -153,17 +155,6 @@ interface BagSizeSelection {
   maxQuantity: number;
 }
 
-interface CreateOutgoingOrderPayload {
-  orders: {
-    orderId: string;
-    variety: string;
-    bagUpdates: {
-      size: string;
-      quantityToRemove: number;
-    }[];
-  }[];
-  remarks: string;
-}
 
 interface ApiError {
   response?: {
@@ -263,6 +254,7 @@ const OutgoingOrderFormContent = () => {
     grader: "",
     weighedStatus: "true",
     approxWeight: "",
+    bagType: "jute",
     remarks: ""
   });
 
@@ -661,8 +653,15 @@ const OutgoingOrderFormContent = () => {
     }, [] as { orderId: string; variety: string; bagUpdates: { size: string; quantityToRemove: number }[] }[]);
 
     return {
-      orders: orderDetails,
-      remarks: formData.remarks
+      generation: formData.generation,
+      rouging: formData.rouging,
+      tuberType: formData.tuberType,
+      grader: formData.grader,
+      weighedStatus: formData.weighedStatus === "true",
+      approxWeight: formData.approxWeight,
+      bagType: formData.bagType,
+      remarks: formData.remarks,
+      orders: orderDetails
     };
   };
 
@@ -1041,6 +1040,26 @@ const OutgoingOrderFormContent = () => {
                           </svg>
                         </button>
                       )}
+                    </div>
+                  </div>
+
+                  {/* Bag Type */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Bag Type <span className="text-gray-400 text-xs">(Optional)</span>
+                    </label>
+                    <div className="relative">
+                      <CustomSelect
+                        value={formData.bagType}
+                        onChange={(value) => updateFormData('bagType', value)}
+                        placeholder="Select Bag Type"
+                        options={[
+                          { value: "jute", label: "Jute" },
+                          { value: "plastic", label: "Plastic" },
+                          { value: "paper", label: "Paper" },
+                          { value: "cloth", label: "Cloth" }
+                        ]}
+                      />
                     </div>
                   </div>
                 </div>
