@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Package, Boxes, TrendingUp, MapPin, User } from 'lucide-react';
+import { Package, Boxes, TrendingUp, MapPin, User, BarChart3 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -307,10 +308,22 @@ const ColdStorageSummaryScreen = () => {
         {/* Stock Summary Tabs */}
         <Card className="bg-white shadow-sm">
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Stock Summary</CardTitle>
-            <p className="text-xs sm:text-sm text-gray-600">
-              View stock quantities by current inventory, initial quantities, or outgoing quantities.
-            </p>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Stock Summary</CardTitle>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  View stock quantities by current inventory, initial quantities, or outgoing quantities.
+                </p>
+              </div>
+              <Link
+                to="/erp/custom-analytics"
+                className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 group"
+                title="Custom Analytics"
+              >
+                <BarChart3 className="w-4 h-4 transition-transform duration-200 group-hover:scale-110" />
+                <span className="hidden sm:inline">Custom Analytics</span>
+              </Link>
+            </div>
           </CardHeader>
           <CardContent className="p-0">
             {/* Tabs */}

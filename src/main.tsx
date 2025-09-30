@@ -31,6 +31,7 @@ const DaybookScreen = lazy(() => import("./screens/Erp/DaybookScreen.tsx"));
 const PeopleScreen = lazy(() => import("./screens/Erp/PeopleScreen.tsx"));
 const FarmerProfileScreen = lazy(() => import("./screens/Erp/FarmerProfileScreen.tsx"));
 const ColdStorageSummaryScreen = lazy(() => import("./screens/Erp/ColdStorageSummaryScreen.tsx"));
+const CustomAnalyticsScreen = lazy(() => import("./screens/Erp/CustomAnalyticsScreen.tsx"));
 const VarietyBreakdownScreen = lazy(() => import("./screens/Erp/VarietyBreakdownScreen.tsx"));
 const SettingsScreen = lazy(() => import("./screens/Erp/SettingsScreen.tsx"));
 const ProfileSettingsScreen = lazy(() => import("./screens/Erp/ProfileSettingsScreen.tsx"));
@@ -126,6 +127,11 @@ const router = createBrowserRouter(
           <Route path="analytics" element={
             <Suspense fallback={<EnhancedLoadingFallback />}>
               <ColdStorageSummaryScreen />
+            </Suspense>
+          } />
+          <Route path="custom-analytics" element={
+            <Suspense fallback={<EnhancedLoadingFallback />}>
+              <CustomAnalyticsScreen />
             </Suspense>
           } />
           <Route path="variety-breakdown" element={
