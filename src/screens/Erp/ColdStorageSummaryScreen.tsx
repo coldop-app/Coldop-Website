@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
@@ -12,16 +13,7 @@ import { StoreAdmin } from '@/utils/types';
 import StockTrendChart from '@/components/charts/StockTrendChart';
 import VarietyDistributionChart from '@/components/charts/VarietyDistributionChart';
 import TopFarmersChart from '@/components/charts/TopFarmersChart';
-import StockSummaryTable from '@/components/common/StockSummaryTable';
-
-interface StockSummary {
-  variety: string;
-  sizes: {
-    size: string;
-    initialQuantity: number;
-    currentQuantity: number;
-  }[];
-}
+import StockSummaryTable, { StockSummary as StockSummaryType, TabType } from '@/components/common/StockSummaryTable';
 
 interface StockTrendItem {
   month: string;
@@ -30,7 +22,7 @@ interface StockTrendItem {
 
 interface StockSummaryResponse {
   status: string;
-  stockSummary: StockSummary[];
+  stockSummary: StockSummaryType[];
   stockTrend: StockTrendItem[];
 }
 
@@ -39,13 +31,24 @@ interface StockSummaryResponse {
 
 
 
-const calculateVarietyTotal = (sizes: StockSummary['sizes']) => {
-  return sizes.reduce((acc, size) => acc + size.currentQuantity, 0);
+const calculateVarietyTotal = (sizes: StockSummaryType['sizes'], tabType: TabType = 'current') => {
+  return sizes.reduce((acc: number, size: StockSummaryType['sizes'][0]) => {
+    switch (tabType) {
+      case 'current':
+        return acc + size.currentQuantity;
+      case 'initial':
+        return acc + size.initialQuantity;
+      case 'outgoing':
+        return acc + (size.quantityRemoved || 0);
+      default:
+        return acc + size.currentQuantity;
+    }
+  }, 0);
 };
 
-const calculateTotalBags = (stockSummary: StockSummary[]) => {
+const calculateTotalBags = (stockSummary: StockSummaryType[], tabType: TabType = 'current') => {
   return stockSummary.reduce((total, variety) => {
-    return total + variety.sizes.reduce((sum, size) => sum + size.currentQuantity, 0);
+    return total + calculateVarietyTotal(variety.sizes, tabType);
   }, 0);
 };
 
@@ -61,6 +64,7 @@ const getInitials = (name: string) => {
 const ColdStorageSummaryScreen = () => {
   const { t } = useTranslation();
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
+  const [activeTab, setActiveTab] = useState<TabType>('current');
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
     queryKey: ['coldStorageSummary', adminInfo?.token],
@@ -77,16 +81,21 @@ const ColdStorageSummaryScreen = () => {
   const stockResponse = stockData as StockSummaryResponse;
   const stockSummary = stockResponse?.stockSummary || [];
   const stockTrend = stockResponse?.stockTrend || [];
-  const totalBags = calculateTotalBags(stockSummary);
+  const totalBags = calculateTotalBags(stockSummary, activeTab);
   const capacity = adminInfo?.coldStorageDetails?.capacity || 0;
   const utilizationPercentage = capacity > 0 ? (totalBags / capacity) * 100 : 0;
+
+  // Calculate totals for each tab
+  const currentTotal = calculateTotalBags(stockSummary, 'current');
+  const initialTotal = calculateTotalBags(stockSummary, 'initial');
+  const outgoingTotal = calculateTotalBags(stockSummary, 'outgoing');
 
   // Prepare data for variety distribution chart (top 5 varieties + others)
   const varietyDistributionData = stockSummary
     .map(variety => ({
       variety: variety.variety,
-      quantity: calculateVarietyTotal(variety.sizes),
-      percentage: (calculateVarietyTotal(variety.sizes) / totalBags) * 100
+      quantity: calculateVarietyTotal(variety.sizes, activeTab),
+      percentage: (calculateVarietyTotal(variety.sizes, activeTab) / totalBags) * 100
     }))
     .sort((a, b) => b.quantity - a.quantity);
 
@@ -188,11 +197,17 @@ const ColdStorageSummaryScreen = () => {
                       <Package className="w-4 h-4 sm:w-5 sm:h-5 text-blue-500" />
                     </div>
                     <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                      {t('coldStorageSummary.totalInventory')}
+                      {activeTab === 'current' ? t('coldStorageSummary.totalInventory') :
+                       activeTab === 'initial' ? 'Total Initial Stock' :
+                       'Total Outgoing Stock'}
                     </p>
                   </div>
                   <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{totalBags}</h3>
-                  <p className="text-xs sm:text-sm text-gray-500">{t('coldStorageSummary.totalBagsStored')}</p>
+                  <p className="text-xs sm:text-sm text-gray-500">
+                    {activeTab === 'current' ? t('coldStorageSummary.totalBagsStored') :
+                     activeTab === 'initial' ? 'Initial bags received' :
+                     'Bags removed/outgoing'}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -201,10 +216,10 @@ const ColdStorageSummaryScreen = () => {
           {stockSummary.length > 0 && (() => {
             // Find the variety with the highest total bags
             const topVariety = [...stockSummary].sort((a, b) =>
-              calculateVarietyTotal(b.sizes) - calculateVarietyTotal(a.sizes)
+              calculateVarietyTotal(b.sizes, activeTab) - calculateVarietyTotal(a.sizes, activeTab)
             )[0];
 
-            const topVarietyTotal = calculateVarietyTotal(topVariety.sizes);
+            const topVarietyTotal = calculateVarietyTotal(topVariety.sizes, activeTab);
             const topVarietyPercentage = (topVarietyTotal / totalBags) * 100;
 
             return (
@@ -289,13 +304,66 @@ const ColdStorageSummaryScreen = () => {
           )}
         </div>
 
-        {/* Stock Summary Table */}
-        <StockSummaryTable stockSummary={stockSummary} />
+        {/* Stock Summary Tabs */}
+        <Card className="bg-white shadow-sm">
+          <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
+            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Stock Summary</CardTitle>
+            <p className="text-xs sm:text-sm text-gray-600">
+              View stock quantities by current inventory, initial quantities, or outgoing quantities.
+            </p>
+          </CardHeader>
+          <CardContent className="p-0">
+            {/* Tabs */}
+            <div className="border-b border-gray-200">
+              <nav className="flex space-x-8 px-4 sm:px-6" aria-label="Tabs">
+                <button
+                  onClick={() => setActiveTab('current')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'current'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Current ({currentTotal})
+                </button>
+                <button
+                  onClick={() => setActiveTab('initial')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'initial'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Initial ({initialTotal})
+                </button>
+                <button
+                  onClick={() => setActiveTab('outgoing')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'outgoing'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Outgoing ({outgoingTotal})
+                </button>
+              </nav>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-0">
+              <StockSummaryTable stockSummary={stockSummary} tabType={activeTab} />
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Capacity Utilization */}
         <Card className="bg-white shadow-sm">
           <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{t('coldStorageSummary.capacityUtilization')}</CardTitle>
+            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+              {activeTab === 'current' ? t('coldStorageSummary.capacityUtilization') :
+               activeTab === 'initial' ? 'Initial Stock Overview' :
+               'Outgoing Stock Overview'}
+            </CardTitle>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <div className="space-y-4">
@@ -326,12 +394,24 @@ const ColdStorageSummaryScreen = () => {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
                 <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
-                  <div className="text-xl sm:text-2xl font-bold text-gray-900">{capacity - totalBags}</div>
-                  <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.availableSpace')}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-gray-900">
+                    {activeTab === 'current' ? capacity - totalBags :
+                     activeTab === 'initial' ? capacity - totalBags :
+                     totalBags}
+                  </div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    {activeTab === 'current' ? t('coldStorageSummary.availableSpace') :
+                     activeTab === 'initial' ? 'Remaining Capacity' :
+                     'Total Outgoing'}
+                  </div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-blue-600">{totalBags}</div>
-                  <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.currentlyStored')}</div>
+                  <div className="text-xs sm:text-sm text-gray-600">
+                    {activeTab === 'current' ? t('coldStorageSummary.currentlyStored') :
+                     activeTab === 'initial' ? 'Initial Stock' :
+                     'Outgoing Stock'}
+                  </div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-green-600">{capacity}</div>

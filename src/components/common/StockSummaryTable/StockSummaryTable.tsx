@@ -11,27 +11,42 @@ interface StockSummary {
     size: string;
     initialQuantity: number;
     currentQuantity: number;
+    quantityRemoved?: number;
   }[];
 }
 
+type TabType = 'current' | 'initial' | 'outgoing';
+
 interface StockSummaryTableProps {
   stockSummary: StockSummary[];
+  tabType?: TabType;
 }
 
-const calculateVarietyTotal = (variety: StockSummary, allBagSizes: string[]) => {
+const calculateVarietyTotal = (variety: StockSummary, allBagSizes: string[], tabType: TabType = 'current') => {
   return allBagSizes.reduce((acc, sizeName) => {
     const sizeData = variety.sizes.find(s => s.size === sizeName);
-    return acc + (sizeData ? sizeData.currentQuantity : 0);
+    if (!sizeData) return acc;
+
+    switch (tabType) {
+      case 'current':
+        return acc + sizeData.currentQuantity;
+      case 'initial':
+        return acc + sizeData.initialQuantity;
+      case 'outgoing':
+        return acc + (sizeData.quantityRemoved || 0);
+      default:
+        return acc + sizeData.currentQuantity;
+    }
   }, 0);
 };
 
-const calculateTotalBags = (stockSummary: StockSummary[], allBagSizes: string[]) => {
+const calculateTotalBags = (stockSummary: StockSummary[], allBagSizes: string[], tabType: TabType = 'current') => {
   return stockSummary.reduce((total, variety) => {
-    return total + calculateVarietyTotal(variety, allBagSizes);
+    return total + calculateVarietyTotal(variety, allBagSizes, tabType);
   }, 0);
 };
 
-const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
+const StockSummaryTable = ({ stockSummary, tabType = 'current' }: StockSummaryTableProps) => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
   const navigate = useNavigate();
 
@@ -51,7 +66,18 @@ const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
   // Helper function to get quantity for a specific bag size and variety
   const getQuantityForSize = (variety: StockSummary, sizeName: string) => {
     const sizeData = variety.sizes.find(s => s.size === sizeName);
-    return sizeData ? sizeData.currentQuantity : 0;
+    if (!sizeData) return 0;
+
+    switch (tabType) {
+      case 'current':
+        return sizeData.currentQuantity;
+      case 'initial':
+        return sizeData.initialQuantity;
+      case 'outgoing':
+        return sizeData.quantityRemoved || 0;
+      default:
+        return sizeData.currentQuantity;
+    }
   };
 
   // Helper function to calculate total for a specific bag size across all varieties
@@ -76,14 +102,40 @@ const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
     return [...stockSummary].sort((a, b) => a.variety.localeCompare(b.variety));
   }, [stockSummary]);
 
-  const totalBags = calculateTotalBags(stockSummary, allBagSizes);
+  const totalBags = calculateTotalBags(stockSummary, allBagSizes, tabType);
+
+  const getTabTitle = () => {
+    switch (tabType) {
+      case 'current':
+        return 'Current Stock';
+      case 'initial':
+        return 'Initial Quantities';
+      case 'outgoing':
+        return 'Outgoing Quantities';
+      default:
+        return 'Stock Summary';
+    }
+  };
+
+  const getTabDescription = () => {
+    switch (tabType) {
+      case 'current':
+        return 'Current inventory quantities by variety and size. Click on any cell with quantity to view detailed breakdown.';
+      case 'initial':
+        return 'Initial quantities received by variety and size. Click on any cell with quantity to view detailed breakdown.';
+      case 'outgoing':
+        return 'Quantities removed/outgoing by variety and size. Click on any cell with quantity to view detailed breakdown.';
+      default:
+        return 'Distribution of potato varieties by size category. Click on any cell with quantity to view detailed breakdown.';
+    }
+  };
 
   return (
     <Card className="bg-white shadow-sm">
       <CardHeader className="bg-gray-50 border-b px-4 sm:px-6 py-3 sm:py-4">
-        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Stock Summary</CardTitle>
+        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">{getTabTitle()}</CardTitle>
         <p className="text-xs sm:text-sm text-gray-600">
-          Distribution of potato varieties by size category. Click on any cell with quantity to view detailed breakdown.
+          {getTabDescription()}
         </p>
       </CardHeader>
       <CardContent className="p-0">
@@ -132,22 +184,22 @@ const StockSummaryTable = ({ stockSummary }: StockSummaryTableProps) => {
                     ))}
                     <td
                       className={`px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm ${
-                        calculateVarietyTotal(variety, allBagSizes) > 0
+                        calculateVarietyTotal(variety, allBagSizes, tabType) > 0
                           ? 'cursor-pointer hover:bg-blue-100 transition-colors relative group'
                           : ''
                       }`}
                       onClick={() => {
-                        const total = calculateVarietyTotal(variety, allBagSizes);
+                        const total = calculateVarietyTotal(variety, allBagSizes, tabType);
                         if (total > 0) {
                           navigate('/erp/variety-breakdown', {
                             state: { variety: variety.variety, bagSize: 'All Sizes' }
                           });
                         }
                       }}
-                      title={calculateVarietyTotal(variety, allBagSizes) > 0 ? `Click to view all sizes for ${variety.variety}` : ''}
+                      title={calculateVarietyTotal(variety, allBagSizes, tabType) > 0 ? `Click to view all sizes for ${variety.variety}` : ''}
                     >
-                      {calculateVarietyTotal(variety, allBagSizes)}
-                      {calculateVarietyTotal(variety, allBagSizes) > 0 && (
+                      {calculateVarietyTotal(variety, allBagSizes, tabType)}
+                      {calculateVarietyTotal(variety, allBagSizes, tabType) > 0 && (
                         <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none" />
                       )}
                     </td>
