@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { Loader2, Filter, X, Eye } from "lucide-react";
 import { RootState } from "@/store";
-import { StoreAdmin } from "@/utils/types";
+import { StoreAdmin, CustomAnalyticsData } from "@/utils/types";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import TopBar from '@/components/common/Topbar/Topbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,26 +23,6 @@ import {
   EyeOff
 } from "lucide-react";
 
-// Predefined bag size categories
-const BAG_SIZE_CATEGORIES = [
-  { value: "below-25", label: "Below 25mm" },
-  { value: "25-30", label: "25-30mm" },
-  { value: "30-35", label: "30-35mm" },
-  { value: "35-40", label: "35-40mm" },
-  { value: "40-45", label: "40-45mm" },
-  { value: "45-50", label: "45-50mm" },
-  { value: "50-55", label: "50-55mm" },
-  { value: "55-60", label: "55-60mm" },
-  { value: "60-65", label: "60-65mm" },
-  { value: "65-70", label: "65-70mm" },
-  { value: "70-75", label: "70-75mm" },
-  { value: "75-80", label: "75-80mm" },
-  { value: "80-85", label: "80-85mm" },
-  { value: "85-90", label: "85-90mm" },
-  { value: "90-95", label: "90-95mm" },
-  { value: "95-100", label: "95-100mm" },
-  { value: "above-100", label: "Above 100mm" }
-];
 
 interface FilterData {
   variety: string;
@@ -53,59 +33,11 @@ interface FilterData {
   weighedStatus: string;
   bagType: string;
   bagSizeCategory: string;
-  farmerId: string;
   dateFrom: string;
   dateTo: string;
 }
 
-interface OrderDetail {
-  variety: string;
-  bagSizes: Array<{
-    size: string;
-    quantity: {
-      initialQuantity: number;
-      currentQuantity: number;
-    };
-  }>;
-}
 
-interface Order {
-  _id: string;
-  generation: string;
-  rouging: string;
-  tuberType: string;
-  grader: string;
-  weighedStatus: boolean;
-  bagType: string;
-  farmerId: string;
-  createdAt: string;
-  orderDetails: OrderDetail[];
-}
-
-interface CustomAnalyticsData {
-  stockSummary: Array<{
-    variety: string;
-    sizes: Array<{
-      size: string;
-      initialQuantity: number;
-      currentQuantity: number;
-    }>;
-  }>;
-  totals: {
-    totalBags: number;
-    totalCurrentBags: number;
-    totalRemovedBags: number;
-  };
-  filters: {
-    variety: string;
-    generation: string;
-    rouging: string;
-    tuberType: string;
-    grader: string;
-    weighedStatus: string;
-    bagType: string;
-  };
-}
 
 const CustomAnalyticsScreen = () => {
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
@@ -119,19 +51,26 @@ const CustomAnalyticsScreen = () => {
     weighedStatus: "",
     bagType: "",
     bagSizeCategory: "",
-    farmerId: "",
     dateFrom: "",
     dateTo: ""
   });
 
-  const [availableOptions, setAvailableOptions] = useState({
-    varieties: [] as string[],
-    generations: [] as string[],
-    rouging: [] as string[],
-    tuberTypes: [] as string[],
-    graders: [] as string[],
-    bagTypes: [] as string[],
-  });
+  // Hardcoded options for dropdowns
+  const availableOptions = {
+    varieties: ["Himalini", "B101", "Jyoti"],
+    generations: ["CF", "option2"],
+    rouging: ["R1", "R2"],
+    tuberTypes: ["Marketable", "Cut"],
+    graders: ["Jandu", "option2"],
+    bagTypes: ["jute", "leno"],
+    weighedStatus: [
+      { value: 'true', label: 'Weighed' },
+      { value: 'false', label: 'Not Weighed' }
+    ]
+  };
+
+  // Get bag sizes from adminInfo preferences
+  const bagSizeOptions = adminInfo?.preferences?.bagSizes || [];
 
   const [analyticsData, setAnalyticsData] = useState<CustomAnalyticsData | null>(null);
   const [showVouchers, setShowVouchers] = useState(false);
@@ -141,12 +80,6 @@ const CustomAnalyticsScreen = () => {
   const [chartType, setChartType] = useState<'pie' | 'bar'>('pie');
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Fetch initial data to populate filter options
-  const { data: initialData, isLoading: isLoadingInitialData, error: initialDataError } = useQuery({
-    queryKey: ['analyticsInitialData', adminInfo?.token],
-    queryFn: () => storeAdminApi.filterOrders({}, adminInfo?.token || ''),
-    enabled: !!adminInfo?.token
-  });
 
   // Fetch orders only when showVouchers is true
   const { data: ordersData, isLoading: isLoadingOrders, error: ordersError } = useQuery({
@@ -186,40 +119,6 @@ const CustomAnalyticsScreen = () => {
     retry: false // Don't retry on 404 errors
   });
 
-  // Update available options when initial data loads
-  useEffect(() => {
-    if (initialData?.data) {
-      const varieties = new Set<string>();
-      const generations = new Set<string>();
-      const rouging = new Set<string>();
-      const tuberTypes = new Set<string>();
-      const graders = new Set<string>();
-      const bagTypes = new Set<string>();
-
-      initialData.data.forEach((order) => {
-        // Add variety from order details
-        order.orderDetails.forEach((detail) => {
-          varieties.add(detail.variety);
-        });
-
-        // Add other fields from order level
-        if (order.generation) generations.add(order.generation);
-        if (order.rouging) rouging.add(order.rouging);
-        if (order.tuberType) tuberTypes.add(order.tuberType);
-        if (order.grader) graders.add(order.grader);
-        if (order.bagType) bagTypes.add(order.bagType);
-      });
-
-      setAvailableOptions({
-        varieties: Array.from(varieties).sort(),
-        generations: Array.from(generations).sort(),
-        rouging: Array.from(rouging).sort(),
-        tuberTypes: Array.from(tuberTypes).sort(),
-        graders: Array.from(graders).sort(),
-        bagTypes: Array.from(bagTypes).sort(),
-      });
-    }
-  }, [initialData?.data]);
 
   const updateFilterData = (field: keyof FilterData, value: string) => {
     setFilterData(prev => ({ ...prev, [field]: value }));
@@ -235,7 +134,6 @@ const CustomAnalyticsScreen = () => {
       weighedStatus: "",
       bagType: "",
       bagSizeCategory: "",
-      farmerId: "",
       dateFrom: "",
       dateTo: ""
     });
@@ -273,7 +171,7 @@ const CustomAnalyticsScreen = () => {
       });
 
       const response = await storeAdminApi.customAnalytics(params, adminInfo.token);
-      setAnalyticsData(response.data);
+      setAnalyticsData(response.data as CustomAnalyticsData);
       setShowVouchers(false); // Reset vouchers view when new analytics search is done
     } catch (error: unknown) {
       console.error('Error fetching analytics data:', error);
@@ -315,174 +213,8 @@ const CustomAnalyticsScreen = () => {
     [key: string]: string | number;
   }
 
-  const createDistributionData = (map: Map<string, number>): DistributionData[] => {
-    const total = Array.from(map.values()).reduce((sum, value) => sum + value, 0);
-
-    return Array.from(map.entries())
-      .map(([name, value], index) => ({
-        name,
-        value,
-        percentage: total > 0 ? (value / total) * 100 : 0,
-        color: COLORS[index % COLORS.length]
-      }))
-      .sort((a, b) => b.value - a.value);
-  };
 
 
-  const processGenerationDistribution = (data: Order[]): DistributionData[] => {
-    const generationMap = new Map<string, number>();
-
-    data.forEach(order => {
-      if (order.generation) {
-        const current = generationMap.get(order.generation) || 0;
-        const totalBags = order.orderDetails.reduce((sum: number, detail: OrderDetail) =>
-          sum + detail.bagSizes.reduce((sizeSum: number, size) =>
-            sizeSum + size.quantity.initialQuantity, 0
-          ), 0
-        );
-        generationMap.set(order.generation, current + totalBags);
-      }
-    });
-
-    return createDistributionData(generationMap);
-  };
-
-  const processRougingDistribution = (data: Order[]): DistributionData[] => {
-    const rougingMap = new Map<string, number>();
-
-    data.forEach(order => {
-      if (order.rouging) {
-        const current = rougingMap.get(order.rouging) || 0;
-        const totalBags = order.orderDetails.reduce((sum: number, detail: OrderDetail) =>
-          sum + detail.bagSizes.reduce((sizeSum: number, size) =>
-            sizeSum + size.quantity.initialQuantity, 0
-          ), 0
-        );
-        rougingMap.set(order.rouging, current + totalBags);
-      }
-    });
-
-    return createDistributionData(rougingMap);
-  };
-
-  const processTuberTypeDistribution = (data: Order[]): DistributionData[] => {
-    const tuberTypeMap = new Map<string, number>();
-
-    data.forEach(order => {
-      if (order.tuberType) {
-        const current = tuberTypeMap.get(order.tuberType) || 0;
-        const totalBags = order.orderDetails.reduce((sum: number, detail: OrderDetail) =>
-          sum + detail.bagSizes.reduce((sizeSum: number, size) =>
-            sizeSum + size.quantity.initialQuantity, 0
-          ), 0
-        );
-        tuberTypeMap.set(order.tuberType, current + totalBags);
-      }
-    });
-
-    return createDistributionData(tuberTypeMap);
-  };
-
-  const processGraderDistribution = (data: Order[]): DistributionData[] => {
-    const graderMap = new Map<string, number>();
-
-    data.forEach(order => {
-      if (order.grader) {
-        const current = graderMap.get(order.grader) || 0;
-        const totalBags = order.orderDetails.reduce((sum: number, detail: OrderDetail) =>
-          sum + detail.bagSizes.reduce((sizeSum: number, size) =>
-            sizeSum + size.quantity.initialQuantity, 0
-          ), 0
-        );
-        graderMap.set(order.grader, current + totalBags);
-      }
-    });
-
-    return createDistributionData(graderMap);
-  };
-
-  const processWeighedStatusDistribution = (data: Order[]): DistributionData[] => {
-    const statusMap = new Map<string, number>();
-
-    data.forEach(order => {
-      const status = order.weighedStatus ? 'Weighed' : 'Not Weighed';
-      const current = statusMap.get(status) || 0;
-      const totalBags = order.orderDetails.reduce((sum: number, detail: OrderDetail) =>
-        sum + detail.bagSizes.reduce((sizeSum: number, size) =>
-          sizeSum + size.quantity.initialQuantity, 0
-        ), 0
-      );
-      statusMap.set(status, current + totalBags);
-    });
-
-    return createDistributionData(statusMap);
-  };
-
-  const processBagTypeDistribution = (data: Order[]): DistributionData[] => {
-    const bagTypeMap = new Map<string, number>();
-
-    data.forEach(order => {
-      if (order.bagType) {
-        const current = bagTypeMap.get(order.bagType) || 0;
-        const totalBags = order.orderDetails.reduce((sum: number, detail: OrderDetail) =>
-          sum + detail.bagSizes.reduce((sizeSum: number, size) =>
-            sizeSum + size.quantity.initialQuantity, 0
-          ), 0
-        );
-        bagTypeMap.set(order.bagType, current + totalBags);
-      }
-    });
-
-    return createDistributionData(bagTypeMap);
-  };
-
-  const processBagSizeCategoryDistribution = (data: Order[]): DistributionData[] => {
-    const bagSizeCategoryMap = new Map<string, number>();
-
-    data.forEach(order => {
-      order.orderDetails.forEach(detail => {
-        detail.bagSizes.forEach(bagSize => {
-          // Map bag size to category based on the size value
-          const category = getBagSizeCategory(bagSize.size);
-          if (category) {
-            const current = bagSizeCategoryMap.get(category) || 0;
-            bagSizeCategoryMap.set(category, current + bagSize.quantity.initialQuantity);
-          }
-        });
-      });
-    });
-
-    return createDistributionData(bagSizeCategoryMap);
-  };
-
-  // Helper function to map bag size to category
-  const getBagSizeCategory = (size: string): string | null => {
-    // Extract numeric value from size string (assuming format like "25mm", "30-35mm", etc.)
-    const numericMatch = size.match(/(\d+)/);
-    if (!numericMatch) return null;
-
-    const numericValue = parseInt(numericMatch[1]);
-
-    if (numericValue < 25) return "Below 25mm";
-    if (numericValue >= 25 && numericValue < 30) return "25-30mm";
-    if (numericValue >= 30 && numericValue < 35) return "30-35mm";
-    if (numericValue >= 35 && numericValue < 40) return "35-40mm";
-    if (numericValue >= 40 && numericValue < 45) return "40-45mm";
-    if (numericValue >= 45 && numericValue < 50) return "45-50mm";
-    if (numericValue >= 50 && numericValue < 55) return "50-55mm";
-    if (numericValue >= 55 && numericValue < 60) return "55-60mm";
-    if (numericValue >= 60 && numericValue < 65) return "60-65mm";
-    if (numericValue >= 65 && numericValue < 70) return "65-70mm";
-    if (numericValue >= 70 && numericValue < 75) return "70-75mm";
-    if (numericValue >= 75 && numericValue < 80) return "75-80mm";
-    if (numericValue >= 80 && numericValue < 85) return "80-85mm";
-    if (numericValue >= 85 && numericValue < 90) return "85-90mm";
-    if (numericValue >= 90 && numericValue < 95) return "90-95mm";
-    if (numericValue >= 95 && numericValue < 100) return "95-100mm";
-    if (numericValue >= 100) return "Above 100mm";
-
-    return null;
-  };
 
 
   // Process data for charts from analytics data
@@ -500,38 +232,33 @@ const CustomAnalyticsScreen = () => {
       };
     }).sort((a, b) => b.value - a.value);
 
-    // Create mock data for other distributions based on filters
-    const mockOrders = analyticsData.stockSummary.map((variety, index) => ({
-      _id: `mock-${index}`,
-      generation: analyticsData.filters.generation || '',
-      rouging: analyticsData.filters.rouging || '',
-      tuberType: analyticsData.filters.tuberType || '',
-      grader: analyticsData.filters.grader || '',
-      weighedStatus: analyticsData.filters.weighedStatus === 'true',
-      bagType: analyticsData.filters.bagType || '',
-      farmerId: '',
-      createdAt: new Date().toISOString(),
-      orderDetails: [{
-        variety: variety.variety,
-        bagSizes: variety.sizes.map(size => ({
-          size: size.size,
-          quantity: {
-            initialQuantity: size.initialQuantity,
-            currentQuantity: size.currentQuantity
-          }
+    // Use distributions data from API response
+    const convertDistributionToChartData = (distribution: Record<string, number>, total: number): DistributionData[] => {
+      return Object.entries(distribution)
+        .map(([name, value], index) => ({
+          name,
+          value,
+          percentage: total > 0 ? (value / total) * 100 : 0,
+          color: COLORS[index % COLORS.length]
         }))
-      }]
-    }));
+        .sort((a, b) => b.value - a.value);
+    };
 
     return {
       variety: varietyData,
-      generation: processGenerationDistribution(mockOrders),
-      rouging: processRougingDistribution(mockOrders),
-      tuberType: processTuberTypeDistribution(mockOrders),
-      grader: processGraderDistribution(mockOrders),
-      weighedStatus: processWeighedStatusDistribution(mockOrders),
-      bagType: processBagTypeDistribution(mockOrders),
-      bagSizeCategory: processBagSizeCategoryDistribution(mockOrders),
+      generation: convertDistributionToChartData(analyticsData.distributions.generationDistribution, analyticsData.totals.totalBags),
+      rouging: convertDistributionToChartData(analyticsData.distributions.rougingDistribution, analyticsData.totals.totalBags),
+      tuberType: convertDistributionToChartData(analyticsData.distributions.tuberTypeDistribution, analyticsData.totals.totalBags),
+      grader: convertDistributionToChartData(analyticsData.distributions.graderDistribution, analyticsData.totals.totalBags),
+      weighedStatus: convertDistributionToChartData(
+        {
+          'Weighed': analyticsData.totals.totalCurrentBags,
+          'Not Weighed': analyticsData.totals.totalBags - analyticsData.totals.totalCurrentBags
+        },
+        analyticsData.totals.totalBags
+      ),
+      bagType: convertDistributionToChartData(analyticsData.distributions.bagTypeDistribution, analyticsData.totals.totalBags),
+      bagSizeCategory: convertDistributionToChartData(analyticsData.distributions.bagSizeDistribution, analyticsData.totals.totalBags),
       totalBags: analyticsData.totals.totalBags
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -569,28 +296,6 @@ const CustomAnalyticsScreen = () => {
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
             <div className="space-y-4">
-              {/* Loading State for Filter Options */}
-              {isLoadingInitialData && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="flex items-center">
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">
-                      Loading filter options...
-                    </span>
-                  </div>
-                </div>
-              )}
-
-              {/* Error State for Initial Data */}
-              {initialDataError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <div className="flex items-center">
-                    <div className="text-red-600 text-sm font-medium">
-                      Failed to load filter options. Please refresh the page.
-                    </div>
-                  </div>
-                </div>
-              )}
 
               {/* Filter Status */}
               {hasActiveFilters && (
@@ -752,10 +457,7 @@ const CustomAnalyticsScreen = () => {
                       value={filterData.weighedStatus}
                       onChange={(value) => updateFilterData('weighedStatus', value)}
                       placeholder="Select Status"
-                      options={[
-                        { value: 'true', label: 'Weighed' },
-                        { value: 'false', label: 'Not Weighed' }
-                      ]}
+                      options={availableOptions.weighedStatus}
                     />
                     {filterData.weighedStatus && (
                       <button
@@ -806,7 +508,10 @@ const CustomAnalyticsScreen = () => {
                       value={filterData.bagSizeCategory}
                       onChange={(value) => updateFilterData('bagSizeCategory', value)}
                       placeholder="Select Size Category"
-                      options={BAG_SIZE_CATEGORIES}
+                      options={bagSizeOptions.map(size => ({
+                        value: size,
+                        label: size
+                      }))}
                     />
                     {filterData.bagSizeCategory && (
                       <button
@@ -818,20 +523,6 @@ const CustomAnalyticsScreen = () => {
                       </button>
                     )}
                   </div>
-                </div>
-
-                {/* Farmer ID */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Farmer ID
-                  </label>
-                  <input
-                    type="text"
-                    value={filterData.farmerId}
-                    onChange={(e) => updateFilterData('farmerId', e.target.value)}
-                    placeholder="Enter Farmer ID"
-                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
-                  />
                 </div>
 
                 {/* Date From */}
@@ -1171,15 +862,15 @@ const CustomAnalyticsScreen = () => {
                         <div className="text-xs text-gray-600">Total Bags</div>
                       </div>
                       <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">{processedData.variety.length}</div>
+                        <div className="text-2xl font-bold text-green-600">{analyticsData.orderCounts.totalOrders}</div>
+                        <div className="text-xs text-gray-600">Total Orders</div>
+                      </div>
+                      <div className="text-center p-3 bg-white rounded-lg">
+                        <div className="text-2xl font-bold text-purple-600">{analyticsData.distributions.summary.uniqueVarieties}</div>
                         <div className="text-xs text-gray-600">Varieties</div>
                       </div>
                       <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">{processedData.generation.length}</div>
-                        <div className="text-xs text-gray-600">Generations</div>
-                      </div>
-                      <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-orange-600">{processedData.grader.length}</div>
+                        <div className="text-2xl font-bold text-orange-600">{analyticsData.distributions.summary.uniqueGraders}</div>
                         <div className="text-xs text-gray-600">Graders</div>
                       </div>
                     </div>
@@ -1222,7 +913,7 @@ const CustomAnalyticsScreen = () => {
                             <td className="px-4 py-4 text-sm text-gray-900">{size.size}</td>
                             <td className="px-4 py-4 text-sm text-gray-900">{size.initialQuantity}</td>
                             <td className="px-4 py-4 text-sm text-gray-900">{size.currentQuantity}</td>
-                            <td className="px-4 py-4 text-sm text-gray-900">{size.initialQuantity - size.currentQuantity}</td>
+                            <td className="px-4 py-4 text-sm text-gray-900">{size.quantityRemoved}</td>
                           </tr>
                         ))
                       )}
