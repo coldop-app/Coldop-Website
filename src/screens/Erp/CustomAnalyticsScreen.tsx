@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { Loader2, Filter, X, Eye } from "lucide-react";
 import { RootState } from "@/store";
-import { StoreAdmin, CustomAnalyticsData } from "@/utils/types";
+import { StoreAdmin } from "@/utils/types";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import TopBar from '@/components/common/Topbar/Topbar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,114 @@ interface FilterData {
 
 
 
+interface CustomAnalyticsData {
+  stockSummary: Array<{
+    variety: string;
+    sizes: Array<{
+      size: string;
+      initialQuantity: number;
+      currentQuantity: number;
+      quantityRemoved: number;
+    }>;
+  }>;
+  totals: {
+    totalBags: number;
+    totalCurrentBags: number;
+    totalRemovedBags: number;
+  };
+  orderCounts: {
+    totalIncomingOrders: number;
+    totalOutgoingOrders: number;
+    totalOrders: number;
+  };
+  distributions: {
+    varietyDistribution: Record<string, number>;
+    generationDistribution: Record<string, number>;
+    rougingDistribution: Record<string, number>;
+    graderDistribution: Record<string, number>;
+    bagSizeDistribution: Record<string, number>;
+    tuberTypeDistribution: Record<string, number>;
+    bagTypeDistribution: Record<string, number>;
+    weighedStatusDistribution: Record<string, number>;
+    varietyAnalysis: {
+      byGeneration: Record<string, Record<string, number>>;
+      byRouging: Record<string, Record<string, number>>;
+      byGrader: Record<string, Record<string, number>>;
+    };
+    generationAnalysis: {
+      byVariety: Record<string, Record<string, number>>;
+      byRouging: Record<string, Record<string, number>>;
+      byGrader: Record<string, Record<string, number>>;
+    };
+    rougingAnalysis: {
+      byVariety: Record<string, Record<string, number>>;
+      byGeneration: Record<string, Record<string, number>>;
+      byGrader: Record<string, Record<string, number>>;
+    };
+    graderAnalysis: {
+      byVariety: Record<string, Record<string, number>>;
+      byGeneration: Record<string, Record<string, number>>;
+      byRouging: Record<string, Record<string, number>>;
+    };
+    bagSizeAnalysis: {
+      byVariety: Record<string, Record<string, number>>;
+      byGeneration: Record<string, Record<string, number>>;
+      byRouging: Record<string, Record<string, number>>;
+      byGrader: Record<string, Record<string, number>>;
+    };
+    tuberTypeAnalysis: {
+      byVariety: Record<string, Record<string, number>>;
+      byGeneration: Record<string, Record<string, number>>;
+      byRouging: Record<string, Record<string, number>>;
+      byGrader: Record<string, Record<string, number>>;
+    };
+    bagTypeAnalysis: {
+      byVariety: Record<string, Record<string, number>>;
+      byGeneration: Record<string, Record<string, number>>;
+      byRouging: Record<string, Record<string, number>>;
+      byGrader: Record<string, Record<string, number>>;
+    };
+    weighedStatusAnalysis: {
+      byVariety: Record<string, Record<string, number>>;
+      byGeneration: Record<string, Record<string, number>>;
+      byRouging: Record<string, Record<string, number>>;
+      byGrader: Record<string, Record<string, number>>;
+      byBagType: Record<string, Record<string, number>>;
+      byTuberType: Record<string, Record<string, number>>;
+    };
+    summary: {
+      totalOrders: number;
+      totalOutgoingOrders: number;
+      uniqueVarieties: number;
+      uniqueGenerations: number;
+      uniqueRougings: number;
+      uniqueGraders: number;
+      uniqueBagSizes: number;
+      uniqueTuberTypes: number;
+      uniqueBagTypes: number;
+      weighedStatusCounts: {
+        weighed: number;
+        unweighed: number;
+      };
+    };
+  };
+  filters: {
+    variety?: string;
+    generation?: string;
+    rouging?: string;
+    tuberType?: string;
+    grader?: string;
+    weighedStatus?: string;
+    bagType?: string;
+  };
+}
+
+// Data processing functions for charts
+const COLORS = [
+  "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
+  "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6b7280"
+];
+
 const CustomAnalyticsScreen = () => {
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
 
@@ -64,8 +172,8 @@ const CustomAnalyticsScreen = () => {
     graders: ["Jandu", "option2"],
     bagTypes: ["jute", "leno"],
     weighedStatus: [
-      { value: 'true', label: 'Weighed' },
-      { value: 'false', label: 'Not Weighed' }
+      { value: 'weighed', label: 'Weighed' },
+      { value: 'unweighed', label: 'Not Weighed' }
     ]
   };
 
@@ -91,7 +199,7 @@ const CustomAnalyticsScreen = () => {
       Object.entries(filterData).forEach(([key, value]) => {
         if (value && value.trim() !== '') {
           if (key === 'weighedStatus') {
-            params[key] = value === 'true';
+            params[key] = value === 'weighed';
           } else if (key === 'bagSizeCategory') {
             params[key] = value;
           } else {
@@ -162,7 +270,7 @@ const CustomAnalyticsScreen = () => {
       Object.entries(filterData).forEach(([key, value]) => {
         if (value && value.trim() !== '') {
           if (key === 'weighedStatus') {
-            params[key] = value === 'true';
+            params[key] = value === 'weighed';
           } else if (key === 'variety' || key === 'generation' || key === 'rouging' ||
                      key === 'tuberType' || key === 'grader' || key === 'bagType' || key === 'bagSizeCategory') {
             params[key] = value;
@@ -171,7 +279,7 @@ const CustomAnalyticsScreen = () => {
       });
 
       const response = await storeAdminApi.customAnalytics(params, adminInfo.token);
-      setAnalyticsData(response.data as CustomAnalyticsData);
+      setAnalyticsData(response.data);
       setShowVouchers(false); // Reset vouchers view when new analytics search is done
     } catch (error: unknown) {
       console.error('Error fetching analytics data:', error);
@@ -199,12 +307,6 @@ const CustomAnalyticsScreen = () => {
 
   const orders = ordersData?.data || [];
 
-  // Data processing functions for charts
-  const COLORS = [
-    "#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6",
-    "#06b6d4", "#84cc16", "#f97316", "#ec4899", "#6b7280"
-  ];
-
   interface DistributionData {
     name: string;
     value: number;
@@ -221,47 +323,31 @@ const CustomAnalyticsScreen = () => {
   const processedData = useMemo(() => {
     if (!analyticsData || !analyticsData.stockSummary || analyticsData.stockSummary.length === 0) return null;
 
-    // Process variety distribution directly from analytics data
-    const varietyData = analyticsData.stockSummary.map(variety => {
-      const totalBags = variety.sizes.reduce((sum, size) => sum + size.initialQuantity, 0);
-      return {
-        name: variety.variety,
-        value: totalBags,
-        percentage: (totalBags / analyticsData.totals.totalBags) * 100,
-        color: COLORS[analyticsData.stockSummary.indexOf(variety) % COLORS.length]
-      };
-    }).sort((a, b) => b.value - a.value);
+    const { distributions, totals } = analyticsData;
 
-    // Use distributions data from API response
-    const convertDistributionToChartData = (distribution: Record<string, number>, total: number): DistributionData[] => {
+    // Helper function to convert distribution objects to chart data
+    const convertDistributionToChartData = (distribution: Record<string, number>, totalBags: number): DistributionData[] => {
       return Object.entries(distribution)
         .map(([name, value], index) => ({
           name,
           value,
-          percentage: total > 0 ? (value / total) * 100 : 0,
+          percentage: totalBags > 0 ? (value / totalBags) * 100 : 0,
           color: COLORS[index % COLORS.length]
         }))
         .sort((a, b) => b.value - a.value);
     };
 
     return {
-      variety: varietyData,
-      generation: convertDistributionToChartData(analyticsData.distributions.generationDistribution, analyticsData.totals.totalBags),
-      rouging: convertDistributionToChartData(analyticsData.distributions.rougingDistribution, analyticsData.totals.totalBags),
-      tuberType: convertDistributionToChartData(analyticsData.distributions.tuberTypeDistribution, analyticsData.totals.totalBags),
-      grader: convertDistributionToChartData(analyticsData.distributions.graderDistribution, analyticsData.totals.totalBags),
-      weighedStatus: convertDistributionToChartData(
-        {
-          'Weighed': analyticsData.totals.totalCurrentBags,
-          'Not Weighed': analyticsData.totals.totalBags - analyticsData.totals.totalCurrentBags
-        },
-        analyticsData.totals.totalBags
-      ),
-      bagType: convertDistributionToChartData(analyticsData.distributions.bagTypeDistribution, analyticsData.totals.totalBags),
-      bagSizeCategory: convertDistributionToChartData(analyticsData.distributions.bagSizeDistribution, analyticsData.totals.totalBags),
-      totalBags: analyticsData.totals.totalBags
+      variety: convertDistributionToChartData(distributions.varietyDistribution, totals.totalBags),
+      generation: convertDistributionToChartData(distributions.generationDistribution, totals.totalBags),
+      rouging: convertDistributionToChartData(distributions.rougingDistribution, totals.totalBags),
+      tuberType: convertDistributionToChartData(distributions.tuberTypeDistribution, totals.totalBags),
+      grader: convertDistributionToChartData(distributions.graderDistribution, totals.totalBags),
+      bagType: convertDistributionToChartData(distributions.bagTypeDistribution, totals.totalBags),
+      bagSizeCategory: convertDistributionToChartData(distributions.bagSizeDistribution, totals.totalBags),
+      weighedStatus: convertDistributionToChartData(distributions.weighedStatusDistribution, totals.totalBags),
+      totalBags: totals.totalBags
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analyticsData]);
 
   return (
@@ -591,7 +677,7 @@ const CustomAnalyticsScreen = () => {
         {analyticsData && (
           <>
             {/* Analytics Summary Cards */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-6">
               <Card className="bg-gray-50/50 border border-gray-100 rounded-xl hover:shadow-sm transition-all duration-200">
                 <CardContent className="p-4 sm:p-5 lg:p-6">
                   <div className="flex items-center justify-between">
@@ -667,7 +753,7 @@ const CustomAnalyticsScreen = () => {
                           Varieties
                         </p>
                       </div>
-                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{analyticsData.stockSummary.length}</h3>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{analyticsData.distributions.summary.uniqueVarieties}</h3>
                       <p className="text-xs sm:text-sm text-gray-500">
                         Different varieties
                       </p>
@@ -675,35 +761,76 @@ const CustomAnalyticsScreen = () => {
                   </div>
                 </CardContent>
               </Card>
+
+              <Card className="bg-gray-50/50 border border-gray-100 rounded-xl hover:shadow-sm transition-all duration-200">
+                <CardContent className="p-4 sm:p-5 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                        <div className="p-1.5 sm:p-2 bg-orange-50 rounded-lg flex-shrink-0">
+                          <Users className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
+                        </div>
+                        <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
+                          Total Orders
+                        </p>
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{analyticsData.orderCounts.totalOrders}</h3>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Incoming: {analyticsData.orderCounts.totalIncomingOrders}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gray-50/50 border border-gray-100 rounded-xl hover:shadow-sm transition-all duration-200">
+                <CardContent className="p-4 sm:p-5 lg:p-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                        <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg flex-shrink-0">
+                          <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 text-indigo-500" />
+                        </div>
+                        <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
+                          Weighed Status
+                        </p>
+                      </div>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{analyticsData.distributions.summary.weighedStatusCounts.weighed}</h3>
+                      <p className="text-xs sm:text-sm text-gray-500">
+                        Weighed: {analyticsData.distributions.summary.weighedStatusCounts.weighed} | Unweighed: {analyticsData.distributions.summary.weighedStatusCounts.unweighed}
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
-            {/* Simple Variety Distribution Chart */}
-            {analyticsData && analyticsData.stockSummary && analyticsData.stockSummary.length > 0 && (
+            {/* Bag Type Distribution Chart */}
+            {analyticsData && analyticsData.distributions.bagTypeDistribution && Object.keys(analyticsData.distributions.bagTypeDistribution).length > 0 && (
               <Card className="bg-white shadow-sm">
                 <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
                   <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                    Variety Distribution
+                    Bag Type Distribution
                   </CardTitle>
                   <p className="text-xs sm:text-sm text-gray-600">
-                    Distribution of potato varieties in your filtered data
+                    Distribution of bag types (jute vs leno) in your filtered data
                   </p>
                 </CardHeader>
                 <CardContent className="p-4 sm:p-6">
                   <div className="space-y-4">
-                    {analyticsData.stockSummary.map((variety, index) => {
-                      const totalBags = variety.sizes.reduce((sum, size) => sum + size.initialQuantity, 0);
-                      const percentage = (totalBags / analyticsData.totals.totalBags) * 100;
+                    {Object.entries(analyticsData.distributions.bagTypeDistribution).map(([bagType, count], index) => {
+                      const percentage = (count / analyticsData.totals.totalBags) * 100;
                       return (
-                        <div key={variety.variety} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div key={bagType} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                           <div className="flex items-center gap-3">
                             <div
                               className="w-4 h-4 rounded-full flex-shrink-0"
                               style={{ backgroundColor: COLORS[index % COLORS.length] }}
                             />
-                            <span className="font-medium text-gray-900">{variety.variety}</span>
+                            <span className="font-medium text-gray-900 capitalize">{bagType}</span>
                           </div>
                           <div className="text-right">
-                            <div className="text-sm font-bold text-gray-900">{totalBags} bags</div>
+                            <div className="text-sm font-bold text-gray-900">{count} bags</div>
                             <div className="text-xs text-gray-500">{percentage.toFixed(1)}%</div>
                           </div>
                         </div>
@@ -765,9 +892,9 @@ const CustomAnalyticsScreen = () => {
                     <TabsContent value="overview" className="space-y-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         <AnalyticsDistributionChart
-                          data={processedData.variety}
-                          title="Variety Distribution"
-                          description="Distribution of different potato varieties"
+                          data={processedData.bagType}
+                          title="Bag Type Distribution"
+                          description="Distribution of bag types (jute vs leno)"
                           type={chartType}
                           icon={<Package className="h-5 w-5 text-blue-500" />}
                           totalValue={processedData.totalBags}
@@ -858,16 +985,16 @@ const CustomAnalyticsScreen = () => {
                   <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">{processedData.totalBags}</div>
+                        <div className="text-2xl font-bold text-blue-600">{analyticsData.totals.totalBags}</div>
                         <div className="text-xs text-gray-600">Total Bags</div>
                       </div>
                       <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">{analyticsData.orderCounts.totalOrders}</div>
-                        <div className="text-xs text-gray-600">Total Orders</div>
+                        <div className="text-2xl font-bold text-green-600">{analyticsData.distributions.summary.uniqueVarieties}</div>
+                        <div className="text-xs text-gray-600">Varieties</div>
                       </div>
                       <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">{analyticsData.distributions.summary.uniqueVarieties}</div>
-                        <div className="text-xs text-gray-600">Varieties</div>
+                        <div className="text-2xl font-bold text-purple-600">{analyticsData.distributions.summary.uniqueGenerations}</div>
+                        <div className="text-xs text-gray-600">Generations</div>
                       </div>
                       <div className="text-center p-3 bg-white rounded-lg">
                         <div className="text-2xl font-bold text-orange-600">{analyticsData.distributions.summary.uniqueGraders}</div>

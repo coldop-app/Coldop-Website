@@ -298,6 +298,7 @@ interface SizeData {
   size: string;
   initialQuantity: number;
   currentQuantity: number;
+  quantityRemoved: number;
 }
 
 interface StockSummary {
@@ -311,14 +312,92 @@ interface CustomAnalyticsTotals {
   totalRemovedBags: number;
 }
 
+interface OrderCounts {
+  totalIncomingOrders: number;
+  totalOutgoingOrders: number;
+  totalOrders: number;
+}
+
+interface Distributions {
+  varietyDistribution: Record<string, number>;
+  generationDistribution: Record<string, number>;
+  rougingDistribution: Record<string, number>;
+  graderDistribution: Record<string, number>;
+  bagSizeDistribution: Record<string, number>;
+  tuberTypeDistribution: Record<string, number>;
+  bagTypeDistribution: Record<string, number>;
+  weighedStatusDistribution: Record<string, number>;
+  varietyAnalysis: {
+    byGeneration: Record<string, Record<string, number>>;
+    byRouging: Record<string, Record<string, number>>;
+    byGrader: Record<string, Record<string, number>>;
+  };
+  generationAnalysis: {
+    byVariety: Record<string, Record<string, number>>;
+    byRouging: Record<string, Record<string, number>>;
+    byGrader: Record<string, Record<string, number>>;
+  };
+  rougingAnalysis: {
+    byVariety: Record<string, Record<string, number>>;
+    byGeneration: Record<string, Record<string, number>>;
+    byGrader: Record<string, Record<string, number>>;
+  };
+  graderAnalysis: {
+    byVariety: Record<string, Record<string, number>>;
+    byGeneration: Record<string, Record<string, number>>;
+    byRouging: Record<string, Record<string, number>>;
+  };
+  bagSizeAnalysis: {
+    byVariety: Record<string, Record<string, number>>;
+    byGeneration: Record<string, Record<string, number>>;
+    byRouging: Record<string, Record<string, number>>;
+    byGrader: Record<string, Record<string, number>>;
+  };
+  tuberTypeAnalysis: {
+    byVariety: Record<string, Record<string, number>>;
+    byGeneration: Record<string, Record<string, number>>;
+    byRouging: Record<string, Record<string, number>>;
+    byGrader: Record<string, Record<string, number>>;
+  };
+  bagTypeAnalysis: {
+    byVariety: Record<string, Record<string, number>>;
+    byGeneration: Record<string, Record<string, number>>;
+    byRouging: Record<string, Record<string, number>>;
+    byGrader: Record<string, Record<string, number>>;
+  };
+  weighedStatusAnalysis: {
+    byVariety: Record<string, Record<string, number>>;
+    byGeneration: Record<string, Record<string, number>>;
+    byRouging: Record<string, Record<string, number>>;
+    byGrader: Record<string, Record<string, number>>;
+    byBagType: Record<string, Record<string, number>>;
+    byTuberType: Record<string, Record<string, number>>;
+  };
+  summary: {
+    totalOrders: number;
+    totalOutgoingOrders: number;
+    uniqueVarieties: number;
+    uniqueGenerations: number;
+    uniqueRougings: number;
+    uniqueGraders: number;
+    uniqueBagSizes: number;
+    uniqueTuberTypes: number;
+    uniqueBagTypes: number;
+    weighedStatusCounts: {
+      weighed: number;
+      unweighed: number;
+    };
+  };
+}
+
 interface CustomAnalyticsFilters {
-  variety: string;
-  generation: string;
-  rouging: string;
-  tuberType: string;
-  grader: string;
-  weighedStatus: string;
-  bagType: string;
+  variety?: string;
+  generation?: string;
+  rouging?: string;
+  tuberType?: string;
+  grader?: string;
+  weighedStatus?: string;
+  bagType?: string;
 }
 
 interface CustomAnalyticsResponse {
@@ -327,6 +406,8 @@ interface CustomAnalyticsResponse {
   data: {
     stockSummary: StockSummary[];
     totals: CustomAnalyticsTotals;
+    orderCounts: OrderCounts;
+    distributions: Distributions;
     filters: CustomAnalyticsFilters;
   };
 }
