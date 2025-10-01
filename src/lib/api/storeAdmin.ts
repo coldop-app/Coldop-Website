@@ -61,6 +61,78 @@ interface FilterIncomingOrdersParams {
   limit?: number;
 }
 
+interface FilterOrdersParams {
+  variety?: string;
+  generation?: string;
+  rouging?: string;
+  tuberType?: string;
+  grader?: string;
+  weighedStatus?: boolean;
+  bagType?: string;
+  fulfilled?: boolean;
+  farmerId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  page?: number;
+  limit?: number;
+}
+
+interface GatePass {
+  type: "RECEIPT" | "DELIVERY";
+  gatePassNumber: number;
+}
+
+interface BagQuantity {
+  initialQuantity: number;
+  currentQuantity: number;
+}
+
+interface BagSize {
+  size: string;
+  quantity: BagQuantity;
+  location: string;
+}
+
+interface OrderDetail {
+  variety: string;
+  bagSizes: BagSize[];
+}
+
+interface FarmerInfo {
+  _id: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+}
+
+interface FilteredOrder {
+  _id: string;
+  coldStorageId: string;
+  farmerId: string;
+  gatePass: GatePass;
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: boolean;
+  approxWeight: string;
+  bagType: string;
+  dateOfSubmission: string;
+  fulfilled: boolean;
+  remarks: string;
+  currentStockAtThatTime: number;
+  orderDetails: OrderDetail[];
+  createdAt: string;
+  updatedAt: string;
+  farmerInfo: FarmerInfo;
+}
+
+interface FilterOrdersResponse {
+  status: string;
+  message: string;
+  data: FilteredOrder[];
+}
+
 export interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string;
@@ -209,6 +281,53 @@ interface BhattiDataResponse {
     grader: string[];
     generation: string[];
     rouging: string[];
+  };
+}
+
+interface CustomAnalyticsParams {
+  variety?: string;
+  grader?: string;
+  generation?: string;
+  rouging?: string;
+  tuberType?: string;
+  weighedStatus?: boolean;
+  bagType?: string;
+}
+
+interface SizeData {
+  size: string;
+  initialQuantity: number;
+  currentQuantity: number;
+}
+
+interface StockSummary {
+  variety: string;
+  sizes: SizeData[];
+}
+
+interface CustomAnalyticsTotals {
+  totalBags: number;
+  totalCurrentBags: number;
+  totalRemovedBags: number;
+}
+
+interface CustomAnalyticsFilters {
+  variety: string;
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: string;
+  bagType: string;
+}
+
+interface CustomAnalyticsResponse {
+  status: string;
+  message: string;
+  data: {
+    stockSummary: StockSummary[];
+    totals: CustomAnalyticsTotals;
+    filters: CustomAnalyticsFilters;
   };
 }
 
@@ -468,6 +587,23 @@ export const storeAdminApi = {
     return response.data;
   },
 
+  filterOrders: async (
+    params: FilterOrdersParams,
+    token: string
+  ): Promise<FilterOrdersResponse> => {
+    const response = await axios.get<FilterOrdersResponse>(
+      `${BASE_URL}/api/store-admin/orders/filter`,
+      {
+        params,
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
   quickRegister: async (
     credentials: QuickRegisterCredentials,
     token?: string
@@ -648,6 +784,23 @@ export const storeAdminApi = {
     const response = await axios.get<BhattiDataResponse>(
       `${BASE_URL}/api/store-admin/bhatti-data`,
       {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  customAnalytics: async (
+    params: CustomAnalyticsParams,
+    token: string
+  ): Promise<CustomAnalyticsResponse> => {
+    const response = await axios.get<CustomAnalyticsResponse>(
+      `${BASE_URL}/api/store-admin/orders/custom-analytics`,
+      {
+        params,
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
