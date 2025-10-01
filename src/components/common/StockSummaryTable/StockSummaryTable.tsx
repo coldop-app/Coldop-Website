@@ -5,7 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { StoreAdmin } from '@/utils/types';
 
-interface StockSummary {
+export interface StockSummary {
   variety: string;
   sizes: {
     size: string;
@@ -15,9 +15,9 @@ interface StockSummary {
   }[];
 }
 
-type TabType = 'current' | 'initial' | 'outgoing';
+export type TabType = 'current' | 'initial' | 'outgoing';
 
-interface StockSummaryTableProps {
+export interface StockSummaryTableProps {
   stockSummary: StockSummary[];
   tabType?: TabType;
 }
