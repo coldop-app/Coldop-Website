@@ -284,6 +284,22 @@ const IncomingOrderFormContent = () => {
     return "";
   };
 
+  // Helper function to get location string for API (returns empty string if not complete)
+  const getLocationForAPI = (bagType: string): string => {
+    const location = formData.bagLocations[bagType];
+    if (!location) return "";
+
+    const { chamber, floor, row } = location;
+
+    // Only return combined location if all fields are filled
+    if (chamber && floor && row) {
+      return `${chamber}-${floor}-${row}`;
+    }
+
+    // Return empty string if any field is missing
+    return "";
+  };
+
   const calculateTotal = () => {
     return Object.values(formData.quantities).reduce(
       (sum, quantity) => sum + (parseInt(quantity) || 0),
@@ -477,22 +493,13 @@ const IncomingOrderFormContent = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validate step 2 - check that all bag sizes with quantities have complete locations
+    // Get bag sizes with quantities (location validation removed)
     const bagSizesWithQuantities =
       adminInfo?.preferences?.bagSizes?.filter((bagSize) => {
         const fieldName = getBagSizeFieldName(bagSize);
         const quantity = parseInt(formData.quantities[fieldName] || "0");
         return quantity > 0;
       }) || [];
-
-    for (const bagSize of bagSizesWithQuantities) {
-      const fieldName = getBagSizeFieldName(bagSize);
-      const location = formData.bagLocations[fieldName];
-      if (!location || !location.chamber || !location.floor || !location.row) {
-        toast.error(t("incomingOrder.errors.enterLocationForAllBags"));
-        return;
-      }
-    }
 
     // Prepare order data according to API structure
     const orderData: CreateOrderPayload = {
@@ -522,7 +529,7 @@ const IncomingOrderFormContent = () => {
                   formData.quantities[fieldName] || "0"
                 ),
               },
-              location: getCombinedLocation(fieldName),
+              location: getLocationForAPI(fieldName),
             };
           }),
         },
@@ -1149,10 +1156,10 @@ const IncomingOrderFormContent = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h3 className="text-lg font-bold mb-2">
-                      Enter Address (CH R FL)
+                      Enter Address (CH R FL) <span className="text-sm font-normal text-muted-foreground">(Optional)</span>
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      This will be used as a reference in outgoing.
+                      This will be used as a reference in outgoing. Leave empty if not needed.
                     </p>
                   </div>
                   {findFirstCompleteLocation() && (

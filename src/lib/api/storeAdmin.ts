@@ -220,16 +220,22 @@ interface UpdateProfilePayload {
 interface UpdateIncomingOrderPayload {
   remarks: string;
   dateOfSubmission: string;
-  fulfilled: boolean;
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: boolean;
+  approxWeight: string;
+  bagType: string;
   orderDetails: {
     variety: string;
-    location: string;
     bagSizes: {
       size: string;
       quantity: {
         initialQuantity: number;
         currentQuantity: number;
       };
+      location: string;
     }[];
   }[];
 }

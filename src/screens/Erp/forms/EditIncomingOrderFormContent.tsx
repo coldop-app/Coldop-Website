@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -9,13 +9,9 @@ import { storeAdminApi } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin, Order } from "@/utils/types";
 import Loader from "@/components/common/Loader/Loader";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import VarietySelector from "@/components/common/VarietySelector/VarietySelector";
+import { cn } from "@/lib/utils";
+import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -79,15 +75,35 @@ interface FormData {
   farmerName: string;
   farmerId: string;
   quantities: BagQuantities;
-  mainLocation: string;
+  bagLocations: { [key: string]: BagLocation };
   remarks: string;
   variety: string;
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: string;
+  approxWeight: string;
+  bagType: "jute" | "leno";
+  dateOfSubmission: string;
+}
+
+interface BagLocation {
+  chamber: string;
+  floor: string;
+  row: string;
 }
 
 interface UpdateIncomingOrderPayload {
   remarks: string;
   dateOfSubmission: string;
-  fulfilled: boolean;
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: boolean;
+  approxWeight: string;
+  bagType: string;
   orderDetails: {
     variety: string;
     bagSizes: {
@@ -96,8 +112,8 @@ interface UpdateIncomingOrderPayload {
         initialQuantity: number;
         currentQuantity: number;
       };
+      location: string;
     }[];
-    location: string;
   }[];
 }
 
@@ -115,6 +131,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
   const [formData, setFormData] = useState<FormData>(() => {
     const orderDetail = order.orderDetails[0]; // Assuming single order detail for now
     const quantities: BagQuantities = {};
+    const bagLocations: { [key: string]: BagLocation } = {};
 
     console.log('Order details:', orderDetail);
     console.log('Bag sizes from order:', orderDetail.bagSizes);
@@ -129,6 +146,22 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                          normalizedSize.slice(1).replace(/\b\w/g, c => c.toUpperCase());
         console.log('Field name:', fieldName, 'Current quantity:', bag.quantity.currentQuantity);
         quantities[fieldName] = bag.quantity.currentQuantity.toString();
+
+        // Parse location if it exists
+        if (bag.location) {
+          const locationParts = bag.location.split('-');
+          bagLocations[fieldName] = {
+            chamber: locationParts[0] || "",
+            floor: locationParts[1] || "",
+            row: locationParts[2] || ""
+          };
+        } else {
+          bagLocations[fieldName] = {
+            chamber: "",
+            floor: "",
+            row: ""
+          };
+        }
       }
     });
 
@@ -138,9 +171,17 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
       farmerName: order.farmerId.name,
       farmerId: order.farmerId._id,
       quantities,
-      mainLocation: orderDetail.location || "",
+      bagLocations,
       remarks: order.remarks || "",
-      variety: orderDetail.variety
+      variety: orderDetail.variety,
+      generation: order.generation || "",
+      rouging: order.rouging || "",
+      tuberType: order.tuberType || "",
+      grader: order.grader || "",
+      weighedStatus: order.weighedStatus ? "true" : "false",
+      approxWeight: order.approxWeight || "",
+      bagType: order.bagType || "jute",
+      dateOfSubmission: order.dateOfSubmission || new Date().toISOString().split("T")[0]
     };
   });
 
@@ -148,6 +189,13 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
   const { data: varietiesData, isLoading: isLoadingVarieties } = useQuery({
     queryKey: ['varieties'],
     queryFn: () => storeAdminApi.getVarieties(adminInfo?.token || ''),
+    enabled: !!adminInfo?.token,
+  });
+
+  // Query for Bhatti data
+  const { data: bhattiData } = useQuery({
+    queryKey: ["bhattiData"],
+    queryFn: () => storeAdminApi.getBhattiData(adminInfo?.token || ""),
     enabled: !!adminInfo?.token,
   });
 
@@ -166,18 +214,86 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
     }));
   };
 
+  const updateLocation = (
+    bagType: string,
+    field: keyof BagLocation,
+    value: string
+  ) => {
+    setFormData(prev => ({
+      ...prev,
+      bagLocations: {
+        ...prev.bagLocations,
+        [bagType]: {
+          ...prev.bagLocations[bagType],
+          [field]: value,
+        },
+      },
+    }));
+  };
+
+  const getCombinedLocation = (bagType: string): string => {
+    const location = formData.bagLocations[bagType];
+    if (!location) return "";
+
+    const { chamber, floor, row } = location;
+
+    // Show partial preview as user types
+    if (chamber && !floor && !row) return `${chamber}-`;
+    if (chamber && floor && !row) return `${chamber}-${floor}-`;
+    if (chamber && floor && row) return `${chamber}-${floor}-${row}`;
+
+    return "";
+  };
+
+  // Helper function to get location string for API (returns empty string if not complete)
+  const getLocationForAPI = (bagType: string): string => {
+    const location = formData.bagLocations[bagType];
+    if (!location) return "";
+
+    const { chamber, floor, row } = location;
+
+    // Only return combined location if all fields are filled
+    if (chamber && floor && row) {
+      return `${chamber}-${floor}-${row}`;
+    }
+
+    // Return empty string if any field is missing
+    return "";
+  };
+
   const calculateTotal = () => {
     return Object.values(formData.quantities)
       .reduce((sum, quantity) => sum + (parseInt(quantity) || 0), 0);
   };
 
   const nextStep = () => {
+    // Validate step 1
     if (!formData.variety) {
-      toast.error(t('editIncomingOrder.errors.selectVariety'));
+      toast.error(t("incomingOrder.errors.selectVariety"));
+      return;
+    }
+    if (!formData.generation) {
+      toast.error("Please select generation");
+      return;
+    }
+    if (!formData.rouging) {
+      toast.error("Please select rouging");
+      return;
+    }
+    if (!formData.tuberType) {
+      toast.error("Please select tuber type");
+      return;
+    }
+    if (!formData.grader) {
+      toast.error("Please select grade");
+      return;
+    }
+    if (!formData.approxWeight) {
+      toast.error("Please enter approximate weight");
       return;
     }
     if (calculateTotal() === 0) {
-      toast.error(t('editIncomingOrder.errors.enterQuantity'));
+      toast.error(t("incomingOrder.errors.enterQuantity"));
       return;
     }
     setCurrentStep(2);
@@ -196,8 +312,14 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
 
       const payload: UpdateIncomingOrderPayload = {
         remarks: formData.remarks,
-        dateOfSubmission: order.dateOfSubmission || new Date().toISOString(),  // Provide default value
-        fulfilled: order.fulfilled || false,
+        dateOfSubmission: formData.dateOfSubmission,
+        generation: formData.generation,
+        rouging: formData.rouging,
+        tuberType: formData.tuberType,
+        grader: formData.grader,
+        weighedStatus: formData.weighedStatus === "true",
+        approxWeight: formData.approxWeight,
+        bagType: formData.bagType,
         orderDetails: [{
           variety: formData.variety,
           bagSizes: adminInfo.preferences?.bagSizes?.map(bagSize => {
@@ -208,10 +330,10 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
               quantity: {
                 initialQuantity: currentQuantity, // Set initial quantity to the same as current
                 currentQuantity: currentQuantity
-              }
+              },
+              location: getLocationForAPI(fieldName)
             };
-          }).filter(bagSize => bagSize.quantity.currentQuantity > 0) || [],
-          location: formData.mainLocation
+          }).filter(bagSize => bagSize.quantity.currentQuantity > 0) || []
         }]
       };
 
@@ -238,46 +360,62 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.mainLocation.trim()) {
-      toast.error(t('editIncomingOrder.errors.enterLocation'));
-      return;
-    }
-
     updateOrderMutation.mutate();
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
-      <h1 className="text-2xl font-bold text-center mb-6">{t('editIncomingOrder.title')}</h1>
+    <div className="w-full max-w-2xl mx-auto p-3 sm:p-6 bg-background rounded-lg shadow-lg border border-border">
+      <div className="text-center mb-4 sm:mb-6">
+        <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">
+          {t("editIncomingOrder.title")}
+        </h1>
+      </div>
 
       {/* Progress indicator */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center justify-center">
-          <div className="w-[90%] max-w-md">
+          <div className="w-[95%] sm:w-[90%] max-w-md">
             <div className="relative flex justify-between">
-              <div className="absolute h-0.5 bg-muted top-5 left-10 w-[calc(100%-80px)]"></div>
+              {/* Line background */}
+              <div className="absolute h-0.5 bg-muted top-4 sm:top-5 left-8 sm:left-10 w-[calc(100%-64px)] sm:w-[calc(100%-80px)]"></div>
+
+              {/* Line active */}
               <div
                 className={`absolute h-0.5 top-5 left-10 w-[calc(100%-80px)] transition-colors duration-500 ease-in-out ${
-                  currentStep >= 2 ? 'bg-primary' : 'bg-muted'
+                  currentStep >= 2 ? "bg-primary" : "bg-muted"
                 }`}
               ></div>
 
+              {/* Step 1 */}
               <div className="relative flex flex-col items-center">
-                <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
-                  currentStep >= 1 ? 'bg-primary text-secondary' : 'bg-muted text-muted-foreground'
-                }`}>
+                <div
+                  className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
+                    currentStep >= 1
+                      ? "bg-primary text-secondary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   1
                 </div>
-                <span className="text-xs mt-2 text-center">{t('incomingOrder.steps.quantities')}</span>
+                <span className="text-xs mt-2 text-center">
+                  {t("incomingOrder.steps.quantities")}
+                </span>
               </div>
 
+              {/* Step 2 */}
               <div className="relative flex flex-col items-center">
-                <div className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
-                  currentStep >= 2 ? 'bg-primary text-secondary' : 'bg-muted text-muted-foreground'
-                }`}>
+                <div
+                  className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center ${
+                    currentStep >= 2
+                      ? "bg-primary text-secondary"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
                   2
                 </div>
-                <span className="text-xs mt-2 text-center">{t('incomingOrder.steps.details')}</span>
+                <span className="text-xs mt-2 text-center">
+                  {t("incomingOrder.steps.details")}
+                </span>
               </div>
             </div>
           </div>
@@ -298,50 +436,199 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
               </div>
 
               {/* Variety Selection */}
-              <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-medium mb-2">{t('incomingOrder.variety.title')}</h3>
-                <div className="relative">
-                  <Select
-                    value={formData.variety}
-                    onValueChange={(value) => updateFormData('variety', value)}
-                    disabled={isLoadingVarieties}
-                  >
-                    <SelectTrigger className="w-full bg-background">
-                      {isLoadingVarieties ? (
-                        <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span>{t('incomingOrder.variety.loading')}</span>
-                        </div>
-                      ) : (
-                        <SelectValue placeholder={t('incomingOrder.variety.selectPlaceholder')} />
-                      )}
-                    </SelectTrigger>
-                    <SelectContent>
-                      {varietiesData?.varieties?.map((variety: string) => (
-                        <SelectItem key={variety} value={variety}>
-                          {variety}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              <VarietySelector
+                value={formData.variety}
+                onValueChange={(value) => updateFormData("variety", value)}
+                token={adminInfo?.token || ""}
+              />
+
+              {/* Additional Details */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {/* Generation */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Generation
+                  </label>
+                  <CustomSelect
+                    value={formData.generation}
+                    onChange={(value) => updateFormData("generation", value)}
+                    placeholder="Select Generation"
+                    options={
+                      bhattiData?.data?.generation?.map((gen: string) => ({
+                        value: gen,
+                        label: gen,
+                      })) || []
+                    }
+                  />
+                </div>
+
+                {/* Rouging */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Rouging</label>
+                  <CustomSelect
+                    value={formData.rouging}
+                    onChange={(value) => updateFormData("rouging", value)}
+                    placeholder="Select Rouging"
+                    options={
+                      bhattiData?.data?.rouging?.map((rough: string) => ({
+                        value: rough,
+                        label: rough,
+                      })) || []
+                    }
+                  />
+                </div>
+
+                {/* Tuber Type */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Tuber Type
+                  </label>
+                  <CustomSelect
+                    value={formData.tuberType}
+                    onChange={(value) => updateFormData("tuberType", value)}
+                    placeholder="Select Tuber Type"
+                    options={[
+                      { value: "Marketable", label: "Marketable" },
+                      { value: "Cut", label: "Cut" },
+                    ]}
+                  />
+                </div>
+
+                {/* Grader */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Grader</label>
+                  <CustomSelect
+                    value={formData.grader}
+                    onChange={(value) => updateFormData("grader", value)}
+                    placeholder="Select Grade"
+                    options={
+                      bhattiData?.data?.grader?.map((grade: string) => ({
+                        value: grade,
+                        label: grade,
+                      })) || []
+                    }
+                  />
+                </div>
+
+                {/* Weighed Status */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Weighed Status
+                  </label>
+                  <CustomSelect
+                    value={formData.weighedStatus ? "true" : "false"}
+                    onChange={(value) =>
+                      updateFormData("weighedStatus", value === "true")
+                    }
+                    placeholder="Select Status"
+                    options={[
+                      { value: "true", label: "Weighed" },
+                      { value: "false", label: "Not Weighed" },
+                    ]}
+                  />
+                </div>
+
+                {/* Approximate Weight */}
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">
+                    Approximate Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    value={formData.approxWeight}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      if (value === "" || parseInt(value) >= 0) {
+                        updateFormData("approxWeight", value);
+                      }
+                    }}
+                    placeholder="Enter weight in kg"
+                    className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
+                  />
+                </div>
+              </div>
+
+              {/* Bag Type */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium mb-2">
+                  Bag Type
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="bagType"
+                      value="jute"
+                      checked={formData.bagType === "jute"}
+                      onChange={(e) =>
+                        updateFormData("bagType", e.target.value)
+                      }
+                      className="w-4 h-4 text-primary border-border focus:ring-primary"
+                    />
+                    <span>Jute</span>
+                  </label>
+                  <label className="flex items-center space-x-2">
+                    <input
+                      type="radio"
+                      name="bagType"
+                      value="leno"
+                      checked={formData.bagType === "leno"}
+                      onChange={(e) =>
+                        updateFormData("bagType", e.target.value)
+                      }
+                      className="w-4 h-4 text-primary border-border focus:ring-primary"
+                    />
+                    <span>Leno</span>
+                  </label>
                 </div>
               </div>
 
               {/* Quantities Section */}
-              <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-medium mb-2">{t('incomingOrder.quantities.title')}</h3>
+              <div
+                className={cn(
+                  "border rounded-lg p-3 sm:p-4",
+                  formData.variety
+                    ? "border-green-200 bg-green-50/50"
+                    : "border-muted bg-muted/5 opacity-75"
+                )}
+              >
+                <h3 className="text-lg font-medium mb-2">
+                  {t("incomingOrder.quantities.title")}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {formData.variety
+                    ? t("incomingOrder.quantities.description")
+                    : t("incomingOrder.quantities.selectVarietyFirst")}
+                </p>
+
                 <div className="space-y-4">
                   {adminInfo?.preferences?.bagSizes?.map((bagSize) => {
                     const fieldName = getBagSizeFieldName(bagSize);
+
                     return (
-                      <div key={bagSize} className="flex items-center justify-between">
-                        <label className="text-sm font-medium">{formatBagSizeLabel(bagSize)}</label>
+                      <div
+                        key={bagSize}
+                        className="flex items-center justify-between"
+                      >
+                        <label className="text-sm font-medium">
+                          {formatBagSizeLabel(bagSize)}
+                        </label>
                         <input
                           type="text"
+                          autoComplete="off"
+                          name={fieldName}
                           value={formData.quantities[fieldName] || ""}
-                          onChange={(e) => updateQuantity(fieldName, e.target.value)}
+                          onChange={(e) =>
+                            updateQuantity(fieldName, e.target.value)
+                          }
                           placeholder="-"
-                          className="w-32 p-2 border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition"
+                          disabled={!formData.variety}
+                          className={cn(
+                            "w-32 p-2 border rounded-md bg-background text-center transition",
+                            formData.variety
+                              ? "focus:ring-2 focus:ring-primary focus:border-primary"
+                              : "cursor-not-allowed"
+                          )}
                         />
                       </div>
                     );
@@ -350,8 +637,17 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                   <hr className="border-gray-300" />
 
                   <div className="flex items-center justify-between font-semibold">
-                    <label className="text-sm">{t('incomingOrder.quantities.total')}</label>
-                    <span className="text-lg">{calculateTotal()}</span>
+                    <label className="text-sm">
+                      {t("incomingOrder.quantities.total")}
+                    </label>
+                    <span
+                      className={cn(
+                        "text-lg",
+                        !formData.variety && "text-muted-foreground"
+                      )}
+                    >
+                      {calculateTotal()}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -360,9 +656,9 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                 <button
                   type="button"
                   onClick={nextStep}
-                  className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  className="font-custom w-full sm:w-auto inline-block cursor-pointer rounded-lg bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
-                  {t('editIncomingOrder.continue')}
+                  {t("incomingOrder.buttons.continue")}
                 </button>
               </div>
             </div>
@@ -373,55 +669,149 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
         <AnimatedFormStep isVisible={currentStep === 2}>
           {currentStep === 2 && (
             <div className="space-y-6">
+              {/* Location Section */}
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-medium mb-2">{t('incomingOrder.location.title')}</h3>
-
-                <div className="space-y-4">
+                <div className="flex justify-between items-start mb-4">
                   <div>
-                    <label className="block text-sm font-medium mb-2">{t('incomingOrder.location.mainLabel')}</label>
-                    <input
-                      type="text"
-                      value={formData.mainLocation}
-                      onChange={(e) => updateFormData('mainLocation', e.target.value)}
-                      placeholder={t('incomingOrder.location.placeholder')}
-                      className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition"
-                      required
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium mb-2">{t('incomingOrder.remarks.label')}</label>
-                    <textarea
-                      value={formData.remarks}
-                      onChange={(e) => updateFormData('remarks', e.target.value)}
-                      placeholder={t('incomingOrder.remarks.placeholder')}
-                      className="w-full p-3 border border-border rounded-md bg-background h-32 resize-none focus:ring-2 focus:ring-primary focus:border-primary transition"
-                      rows={4}
-                    />
+                    <h3 className="text-lg font-bold mb-2">
+                      Enter Address (CH R FL) <span className="text-sm font-normal text-muted-foreground">(Optional)</span>
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      This will be used as a reference in outgoing. Leave empty if not needed.
+                    </p>
                   </div>
                 </div>
+
+                <div className="space-y-6">
+                  {adminInfo?.preferences?.bagSizes?.map((bagSize) => {
+                    const fieldName = getBagSizeFieldName(bagSize);
+                    const quantity = parseInt(
+                      formData.quantities[fieldName] || "0"
+                    );
+
+                    // Only show location inputs for bag sizes with quantities > 0
+                    if (quantity === 0) return null;
+
+                    return (
+                      <div key={bagSize} className="space-y-3">
+                        <h4 className="text-base font-bold">
+                          {formatBagSizeLabel(bagSize)} - {quantity} bags
+                        </h4>
+
+                        <div className="grid grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Chamber
+                            </label>
+                            <input
+                              type="text"
+                              value={
+                                formData.bagLocations[fieldName]?.chamber || ""
+                              }
+                              onChange={(e) =>
+                                updateLocation(
+                                  fieldName,
+                                  "chamber",
+                                  e.target.value
+                                )
+                              }
+                              data-bag-type={fieldName}
+                              data-field="chamber"
+                              className="w-full p-3 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Floor
+                            </label>
+                            <input
+                              type="text"
+                              value={
+                                formData.bagLocations[fieldName]?.floor || ""
+                              }
+                              onChange={(e) =>
+                                updateLocation(
+                                  fieldName,
+                                  "floor",
+                                  e.target.value
+                                )
+                              }
+                              data-bag-type={fieldName}
+                              data-field="floor"
+                              className="w-full p-3 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-600 mb-1">
+                              Row
+                            </label>
+                            <input
+                              type="text"
+                              value={
+                                formData.bagLocations[fieldName]?.row || ""
+                              }
+                              onChange={(e) =>
+                                updateLocation(fieldName, "row", e.target.value)
+                              }
+                              data-bag-type={fieldName}
+                              data-field="row"
+                              className="w-full p-3 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="mt-2">
+                          <span className="text-sm font-medium text-gray-600">
+                            Combined Location:{" "}
+                          </span>
+                          <span className="text-sm font-medium text-gray-800">
+                            {getCombinedLocation(fieldName) ||
+                              "Enter all fields"}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Remarks Section */}
+              <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+                <h3 className="text-lg font-bold mb-2">Remarks</h3>
+                <textarea
+                  id="remarks-textarea"
+                  value={formData.remarks}
+                  onChange={(e) => updateFormData("remarks", e.target.value)}
+                  placeholder="Enter any additional remarks..."
+                  className="w-full p-3 border border-border rounded-md bg-background h-32 resize-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+                  rows={4}
+                />
               </div>
 
               <div className="pt-4 flex gap-4">
                 <button
                   type="button"
                   onClick={prevStep}
-                  className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-3 text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                  className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                  style={{ minWidth: 0 }}
                 >
-                  {t('editIncomingOrder.back')}
+                  {t("incomingOrder.buttons.back")}
                 </button>
                 <button
                   type="submit"
                   disabled={updateOrderMutation.isPending}
-                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition"
+                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
+                  style={{ minWidth: 0 }}
                 >
                   {updateOrderMutation.isPending ? (
                     <div className="flex items-center justify-center">
                       <Loader size="sm" className="mr-2" />
-                      <span>{t('editIncomingOrder.updating')}</span>
+                      <span>{t("incomingOrder.buttons.creating")}</span>
                     </div>
                   ) : (
-                    t('editIncomingOrder.update')
+                    t("incomingOrder.buttons.create")
                   )}
                 </button>
               </div>
