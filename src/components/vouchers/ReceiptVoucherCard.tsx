@@ -180,6 +180,37 @@ ${order.orderDetails
       try {
         console.log("Starting PDF generation for Receipt Voucher...");
 
+        // Log the complete order data being sent to PDF
+        console.log("=== ORDER DATA SENT TO PDF ===");
+        console.log("Order:", JSON.stringify(order, null, 2));
+        console.log("Order Details:", order.orderDetails);
+        console.log("Farmer Info:", order.farmerId);
+        console.log("Gate Pass:", order.gatePass);
+        console.log("Order Properties:", {
+          dateOfSubmission: order.dateOfSubmission,
+          generation: order.generation,
+          rouging: order.rouging,
+          tuberType: order.tuberType,
+          grader: order.grader,
+          bagType: order.bagType,
+          weighedStatus: order.weighedStatus,
+          approxWeight: order.approxWeight,
+          currentStockAtThatTime: order.currentStockAtThatTime,
+          remarks: order.remarks,
+          createdAt: order.createdAt
+        });
+
+        // Log the admin info being sent to PDF
+        console.log("=== ADMIN INFO SENT TO PDF ===");
+        console.log("Admin Info:", JSON.stringify(adminInfo, null, 2));
+        console.log("Cold Storage Details:", adminInfo.coldStorageDetails);
+        console.log("Admin Properties:", {
+          name: adminInfo.name,
+          mobileNumber: adminInfo.mobileNumber,
+          imageUrl: adminInfo.imageUrl,
+          preferences: adminInfo.preferences
+        });
+
         const pdfDoc = <OrderVoucherPDF order={order} adminInfo={adminInfo} />;
         const pdfBlob = await pdf(pdfDoc).toBlob();
         console.log("PDF blob generated, size:", pdfBlob.size, "bytes");
