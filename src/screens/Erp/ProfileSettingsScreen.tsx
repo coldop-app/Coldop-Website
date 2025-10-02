@@ -13,10 +13,11 @@ import {
   Phone,
   GripVertical,
 } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
 import {
   Card,
   CardContent,
@@ -52,9 +53,15 @@ interface UpdateProfilePayload {
   imageUrl: string;
   preferences: {
     bagSizes: string[];
+    defaults?: {
+      generation?: string;
+      rouging?: string;
+      tuberType?: string;
+      grader?: string;
+    };
   };
   isMobile: boolean;
-  password: string;
+  password?: string;
 }
 
 // Add helper function to extract public ID from Cloudinary URL
@@ -113,6 +120,12 @@ const ProfileSettingsScreen = () => {
     capacity: "",
     imageUrl: "",
     bagSizes: [] as string[], // Initialize as empty array
+    defaults: {
+      generation: "",
+      rouging: "",
+      tuberType: "",
+      grader: "",
+    },
   });
 
   // Image handling states
@@ -127,6 +140,13 @@ const ProfileSettingsScreen = () => {
   // Add drag and drop states
   const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  // Query for Bhatti data to get dropdown options
+  const { data: bhattiData } = useQuery({
+    queryKey: ["bhattiData"],
+    queryFn: () => storeAdminApi.getBhattiData(adminInfo?.token || ""),
+    enabled: !!adminInfo?.token,
+  });
 
   // Add touch reordering states
   const [touchStartY, setTouchStartY] = useState<number | null>(null);
@@ -369,6 +389,12 @@ const ProfileSettingsScreen = () => {
         bagSizes:
           adminInfo.preferences?.bagSizes?.map((size) => size.toLowerCase()) ||
           [],
+        defaults: {
+          generation: adminInfo.preferences?.defaults?.generation || "",
+          rouging: adminInfo.preferences?.defaults?.rouging || "",
+          tuberType: adminInfo.preferences?.defaults?.tuberType || "",
+          grader: adminInfo.preferences?.defaults?.grader || "",
+        },
       });
       if (adminInfo.imageUrl) {
         setImagePreview(adminInfo.imageUrl);
@@ -695,6 +721,8 @@ const ProfileSettingsScreen = () => {
               size.toLowerCase()
             ) || []
           ) ||
+        JSON.stringify(formData.defaults) !==
+          JSON.stringify(adminInfo.preferences?.defaults || {}) ||
         password !== "" ||
         confirmPassword !== "";
 
@@ -767,6 +795,7 @@ const ProfileSettingsScreen = () => {
       imageUrl: formData.imageUrl,
       preferences: {
         bagSizes: formData.bagSizes,
+        defaults: formData.defaults,
       },
       isMobile: false as const,
     };
@@ -775,7 +804,7 @@ const ProfileSettingsScreen = () => {
     const payload: UpdateProfilePayload =
       showPasswordFields && password
         ? { ...basePayload, password }
-        : (basePayload as UpdateProfilePayload); // Type assertion since password is optional in UpdateProfilePayload
+        : basePayload;
 
     await updateProfile(payload);
     setHasUnsavedChanges(false); // Reset unsaved changes after successful update
@@ -1383,6 +1412,98 @@ const ProfileSettingsScreen = () => {
                   <Plus size={18} />
                   <span className="hidden sm:inline">Add</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Default Values Section */}
+            <div className="space-y-4 pt-6">
+              <h3 className="text-lg font-semibold">Default Values for Incoming Orders</h3>
+              <p className="text-sm text-muted-foreground">
+                Set default values that will be pre-selected when creating new incoming orders.
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {/* Generation Default */}
+                <div className="space-y-2">
+                  <Label htmlFor="defaultGeneration">Default Generation</Label>
+                  <CustomSelect
+                    value={formData.defaults.generation}
+                    onChange={(value: string) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        defaults: { ...prev.defaults, generation: value },
+                      }))
+                    }
+                    placeholder="Select Default Generation"
+                    options={
+                      bhattiData?.data?.generation?.map((gen: string) => ({
+                        value: gen,
+                        label: gen,
+                      })) || []
+                    }
+                  />
+                </div>
+
+                {/* Rouging Default */}
+                <div className="space-y-2">
+                  <Label htmlFor="defaultRouging">Default Rouging</Label>
+                  <CustomSelect
+                    value={formData.defaults.rouging}
+                    onChange={(value: string) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        defaults: { ...prev.defaults, rouging: value },
+                      }))
+                    }
+                    placeholder="Select Default Rouging"
+                    options={
+                      bhattiData?.data?.rouging?.map((rough: string) => ({
+                        value: rough,
+                        label: rough,
+                      })) || []
+                    }
+                  />
+                </div>
+
+                {/* Tuber Type Default */}
+                <div className="space-y-2">
+                  <Label htmlFor="defaultTuberType">Default Tuber Type</Label>
+                  <CustomSelect
+                    value={formData.defaults.tuberType}
+                    onChange={(value: string) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        defaults: { ...prev.defaults, tuberType: value },
+                      }))
+                    }
+                    placeholder="Select Default Tuber Type"
+                    options={[
+                      { value: "Marketable", label: "Marketable" },
+                      { value: "Cut", label: "Cut" },
+                    ]}
+                  />
+                </div>
+
+                {/* Grader Default */}
+                <div className="space-y-2">
+                  <Label htmlFor="defaultGrader">Default Grader</Label>
+                  <CustomSelect
+                    value={formData.defaults.grader}
+                    onChange={(value: string) =>
+                      setFormData((prev) => ({
+                        ...prev,
+                        defaults: { ...prev.defaults, grader: value },
+                      }))
+                    }
+                    placeholder="Select Default Grader"
+                    options={
+                      bhattiData?.data?.grader?.map((grade: string) => ({
+                        value: grade,
+                        label: grade,
+                      })) || []
+                    }
+                  />
+                </div>
               </div>
             </div>
 

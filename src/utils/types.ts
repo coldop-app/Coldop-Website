@@ -17,6 +17,12 @@ export interface ColdStorageDetails {
 
 export interface Preferences {
   bagSizes: string[];
+  defaults?: {
+    generation?: string;
+    rouging?: string;
+    tuberType?: string;
+    grader?: string;
+  };
 }
 
 export interface StoreAdmin {

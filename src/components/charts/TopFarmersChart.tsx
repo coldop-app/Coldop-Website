@@ -105,7 +105,11 @@ const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartPro
               <h5 className="font-medium text-gray-900 mb-2 text-sm">{t('coldStorageSummary.storageShare')}</h5>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {((topFarmersData.data[0].totalBags / totalBags) * 100).toFixed(1)}%
+                  {(() => {
+                    // Calculate percentage based on current bags: farmer's current bags / total current bags in cold storage * 100
+                    const percentage = totalBags > 0 ? (topFarmersData.data[0].totalBags / totalBags) * 100 : 0;
+                    return Math.min(percentage, 100).toFixed(1); // Cap at 100% to prevent overflow
+                  })()}%
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.ofTotalInventory')}</div>
               </div>

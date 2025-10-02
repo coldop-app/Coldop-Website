@@ -805,41 +805,6 @@ const CustomAnalyticsScreen = () => {
               </Card>
             </div>
 
-            {/* Bag Type Distribution Chart */}
-            {analyticsData && analyticsData.distributions.bagTypeDistribution && Object.keys(analyticsData.distributions.bagTypeDistribution).length > 0 && (
-              <Card className="bg-white shadow-sm">
-                <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-                  <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                    Bag Type Distribution
-                  </CardTitle>
-                  <p className="text-xs sm:text-sm text-gray-600">
-                    Distribution of bag types (jute vs leno) in your filtered data
-                  </p>
-                </CardHeader>
-                <CardContent className="p-4 sm:p-6">
-                  <div className="space-y-4">
-                    {Object.entries(analyticsData.distributions.bagTypeDistribution).map(([bagType, count], index) => {
-                      const percentage = (count / analyticsData.totals.totalBags) * 100;
-                      return (
-                        <div key={bagType} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div
-                              className="w-4 h-4 rounded-full flex-shrink-0"
-                              style={{ backgroundColor: COLORS[index % COLORS.length] }}
-                            />
-                            <span className="font-medium text-gray-900 capitalize">{bagType}</span>
-                          </div>
-                          <div className="text-right">
-                            <div className="text-sm font-bold text-gray-900">{count} bags</div>
-                            <div className="text-xs text-gray-500">{percentage.toFixed(1)}%</div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
 
             {/* Analytics Visualization Section */}
             {processedData && processedData.totalBags > 0 && (

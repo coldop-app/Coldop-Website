@@ -444,7 +444,7 @@ const ColdStorageSummaryScreen = () => {
           <TopFarmersChart
             data={topFarmersChartData}
             topFarmersData={topFarmersData}
-            totalBags={totalBags}
+            totalBags={currentTotal}
           />
         </div>
       </div>

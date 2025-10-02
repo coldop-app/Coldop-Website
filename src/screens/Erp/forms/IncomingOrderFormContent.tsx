@@ -212,6 +212,20 @@ const IncomingOrderFormContent = () => {
     }
   }, [adminInfo?.preferences?.bagSizes]);
 
+  // Initialize form with default values from admin preferences
+  useEffect(() => {
+    if (adminInfo?.preferences?.defaults) {
+      const defaults = adminInfo.preferences.defaults;
+      setFormData((prev) => ({
+        ...prev,
+        generation: defaults.generation || "",
+        rouging: defaults.rouging || "",
+        tuberType: defaults.tuberType || "",
+        grader: defaults.grader || "",
+      }));
+    }
+  }, [adminInfo?.preferences?.defaults]);
+
   // Add useEffect to update form when farmer changes
   useEffect(() => {
     if (farmer) {
@@ -370,7 +384,8 @@ const IncomingOrderFormContent = () => {
     },
     onSuccess: () => {
       toast.success(t("incomingOrder.success.orderCreated"));
-      // Reset form
+      // Reset form but preserve defaults
+      const defaults = adminInfo?.preferences?.defaults || {};
       setFormData({
         farmerName: "",
         farmerId: "",
@@ -380,10 +395,10 @@ const IncomingOrderFormContent = () => {
         voucherNumber: 0,
         dateOfSubmission: new Date().toISOString().split("T")[0],
         variety: "",
-        generation: "",
-        rouging: "",
-        tuberType: "",
-        grader: "",
+        generation: defaults.generation || "",
+        rouging: defaults.rouging || "",
+        tuberType: defaults.tuberType || "",
+        grader: defaults.grader || "",
         weighedStatus: "true",
         approxWeight: "",
         bagType: "jute",

@@ -30,6 +30,12 @@ interface SignupCredentials {
   isMobile: boolean;
   preferences: {
     bagSizes: string[];
+    defaults?: {
+      generation?: string;
+      rouging?: string;
+      tuberType?: string;
+      grader?: string;
+    };
   };
 }
 
@@ -200,6 +206,12 @@ interface UpdateProfilePayload {
   imageUrl: string;
   preferences: {
     bagSizes: string[];
+    defaults?: {
+      generation?: string;
+      rouging?: string;
+      tuberType?: string;
+      grader?: string;
+    };
   };
   isMobile: boolean;
   password?: string | undefined;
