@@ -1,6 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, KeyboardEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Loader2 } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -84,7 +83,7 @@ interface FormData {
   grader: string;
   weighedStatus: string;
   approxWeight: string;
-  bagType: "jute" | "leno";
+  bagType: string;
   dateOfSubmission: string;
 }
 
@@ -186,7 +185,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
   });
 
   // Fetch varieties
-  const { data: varietiesData, isLoading: isLoadingVarieties } = useQuery({
+  useQuery({
     queryKey: ['varieties'],
     queryFn: () => storeAdminApi.getVarieties(adminInfo?.token || ''),
     enabled: !!adminInfo?.token,
@@ -264,6 +263,94 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
   const calculateTotal = () => {
     return Object.values(formData.quantities)
       .reduce((sum, quantity) => sum + (parseInt(quantity) || 0), 0);
+  };
+
+  // Add this new function to handle enter key press for quantity inputs
+  const handleKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    currentBagSize: string
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const bagSizes = adminInfo?.preferences?.bagSizes || [];
+      const currentIndex = bagSizes.indexOf(currentBagSize);
+      const nextIndex = currentIndex + 1;
+
+      // If there's a next bag size, focus its input
+      if (nextIndex < bagSizes.length) {
+        const nextFieldName = getBagSizeFieldName(bagSizes[nextIndex]);
+        const nextInput = document.querySelector(
+          `input[name="${nextFieldName}"]`
+        ) as HTMLInputElement;
+        if (nextInput) {
+          nextInput.focus();
+        }
+      }
+    }
+  };
+
+  // Handle Enter key navigation for location fields
+  const handleLocationKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    bagType: string,
+    currentField: keyof BagLocation
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+
+      const fieldOrder: (keyof BagLocation)[] = ["chamber", "floor", "row"];
+      const currentIndex = fieldOrder.indexOf(currentField);
+      const nextIndex = currentIndex + 1;
+
+      // If there's a next field in the same bag type, focus it
+      if (nextIndex < fieldOrder.length) {
+        const nextField = fieldOrder[nextIndex];
+        const nextInput = document.querySelector(
+          `input[data-bag-type="${bagType}"][data-field="${nextField}"]`
+        ) as HTMLInputElement;
+        if (nextInput) {
+          nextInput.focus();
+        }
+      } else {
+        // If this is the last field (row), check if there are more bag types with quantities
+        const bagSizes = adminInfo?.preferences?.bagSizes || [];
+        const currentBagIndex = bagSizes.findIndex((bagSize) => {
+          const fieldName = getBagSizeFieldName(bagSize);
+          return fieldName === bagType;
+        });
+
+        if (currentBagIndex !== -1) {
+          // Find the next bag type that has quantities > 0
+          let nextBagIndex = currentBagIndex + 1;
+          while (nextBagIndex < bagSizes.length) {
+            const nextBagFieldName = getBagSizeFieldName(
+              bagSizes[nextBagIndex]
+            );
+            const quantity = parseInt(
+              formData.quantities[nextBagFieldName] || "0"
+            );
+            if (quantity > 0) {
+              const nextBagChamberInput = document.querySelector(
+                `input[data-bag-type="${nextBagFieldName}"][data-field="chamber"]`
+              ) as HTMLInputElement;
+              if (nextBagChamberInput) {
+                nextBagChamberInput.focus();
+                return;
+              }
+            }
+            nextBagIndex++;
+          }
+
+          // If no more bag types with quantities, focus the remarks field
+          const remarksTextarea = document.getElementById(
+            "remarks-textarea"
+          ) as HTMLTextAreaElement;
+          if (remarksTextarea) {
+            remarksTextarea.focus();
+          }
+        }
+      }
+    }
   };
 
   const nextStep = () => {
@@ -518,7 +605,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                   <CustomSelect
                     value={formData.weighedStatus ? "true" : "false"}
                     onChange={(value) =>
-                      updateFormData("weighedStatus", value === "true")
+                      updateFormData("weighedStatus", value)
                     }
                     placeholder="Select Status"
                     options={[
@@ -621,6 +708,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                           onChange={(e) =>
                             updateQuantity(fieldName, e.target.value)
                           }
+                          onKeyDown={(e) => handleKeyDown(e, bagSize)}
                           placeholder="-"
                           disabled={!formData.variety}
                           className={cn(
@@ -715,6 +803,9 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                                   e.target.value
                                 )
                               }
+                              onKeyDown={(e) =>
+                                handleLocationKeyDown(e, fieldName, "chamber")
+                              }
                               data-bag-type={fieldName}
                               data-field="chamber"
                               className="w-full p-3 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
@@ -737,6 +828,9 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                                   e.target.value
                                 )
                               }
+                              onKeyDown={(e) =>
+                                handleLocationKeyDown(e, fieldName, "floor")
+                              }
                               data-bag-type={fieldName}
                               data-field="floor"
                               className="w-full p-3 border border-border rounded-md bg-background text-center focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
@@ -754,6 +848,9 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                               }
                               onChange={(e) =>
                                 updateLocation(fieldName, "row", e.target.value)
+                              }
+                              onKeyDown={(e) =>
+                                handleLocationKeyDown(e, fieldName, "row")
                               }
                               data-bag-type={fieldName}
                               data-field="row"
@@ -808,10 +905,10 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                   {updateOrderMutation.isPending ? (
                     <div className="flex items-center justify-center">
                       <Loader size="sm" className="mr-2" />
-                      <span>{t("incomingOrder.buttons.creating")}</span>
+                      <span>Updating...</span>
                     </div>
                   ) : (
-                    t("incomingOrder.buttons.create")
+                    "Edit Order"
                   )}
                 </button>
               </div>
