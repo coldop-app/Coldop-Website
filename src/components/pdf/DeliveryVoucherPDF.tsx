@@ -9,9 +9,8 @@ import {
 } from "@react-pdf/renderer";
 import { Order, StoreAdmin } from "@/utils/types";
 import coldopLogo from "/coldop-logo.png";
-import DeliveryVoucherPDF from "./DeliveryVoucherPDF";
 
-interface OrderVoucherPDFProps {
+interface DeliveryVoucherPDFProps {
   order: Order;
   adminInfo: StoreAdmin;
 }
@@ -25,7 +24,7 @@ const styles = StyleSheet.create({
     fontSize: 8,
   },
 
-  // Header Section - reduced size like FarmerReportPDF
+  // Header Section
   header: {
     marginBottom: 10,
     borderBottomWidth: 2,
@@ -72,7 +71,6 @@ const styles = StyleSheet.create({
     marginBottom: 3,
     color: "#000",
   },
-  // Header Coldop Branding
   headerColdopBranding: {
     flexDirection: "row",
     justifyContent: "center",
@@ -102,7 +100,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: "bold",
     textAlign: "right",
-    color: "#000",
+    color: "#FF0000", // Red for Delivery
     marginBottom: 4,
     textDecoration: "underline",
   },
@@ -113,7 +111,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
 
-  // Info Section - updated to match FarmerReportPDF layout
+  // Info Section
   infoSection: {
     marginBottom: 10,
     flexDirection: "row",
@@ -140,7 +138,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
 
-  // Table Section - updated to match FarmerReportPDF style
+  // Table Section
   tableContainer: {
     marginTop: 10,
     marginBottom: 10,
@@ -164,7 +162,7 @@ const styles = StyleSheet.create({
     minHeight: 16,
   },
 
-  // Table Columns - updated to match FarmerReportPDF
+  // Table Columns
   colChamber: {
     width: "6%",
     borderRightWidth: 0.5,
@@ -194,20 +192,27 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   colBagSize: {
-    width: "7%",
+    width: "6%",
     borderRightWidth: 0.5,
     borderRightColor: "#666",
     paddingHorizontal: 2,
     justifyContent: "center",
   },
   colTotal: {
-    width: "10%",
+    width: "8%",
+    borderRightWidth: 0.5,
+    borderRightColor: "#666",
     paddingHorizontal: 2,
     justifyContent: "center",
     backgroundColor: "#F5F5F5",
   },
+  colIncomingVoucher: {
+    width: "12%",
+    paddingHorizontal: 2,
+    justifyContent: "center",
+  },
 
-  // Table Text Styles - updated to match FarmerReportPDF
+  // Table Text Styles
   tableHeaderText: {
     fontSize: 7,
     fontWeight: "bold",
@@ -226,7 +231,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
 
-  // Bottom Section - simplified for half page
+  // Bottom Section
   bottomSection: {
     flexDirection: "row",
     marginTop: 10,
@@ -268,7 +273,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
 
-  // Remarks Section - simplified
+  // Remarks Section
   remarksSection: {
     marginTop: 6,
     padding: 5,
@@ -287,7 +292,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
 
-  // Signature - simplified
+  // Signature
   signatureContainer: {
     alignItems: "center",
     justifyContent: "flex-start",
@@ -308,28 +313,7 @@ const styles = StyleSheet.create({
     color: "#000",
   },
 
-  // Coldop Branding - added to first half of page
-  coldopBranding: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-    paddingVertical: 4,
-  },
-  coldopBrandingLogo: {
-    width: 18,
-    height: 18,
-    marginRight: 6,
-    opacity: 0.8,
-  },
-  coldopBrandingText: {
-    fontSize: 8,
-    color: "#666",
-    fontStyle: "italic",
-    fontWeight: "500",
-  },
-
-  // Footer - simplified
+  // Footer
   footer: {
     position: "absolute",
     bottom: 16,
@@ -355,46 +339,29 @@ const styles = StyleSheet.create({
   },
 });
 
-const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
+const DeliveryVoucherPDF: React.FC<DeliveryVoucherPDFProps> = ({
   order,
   adminInfo,
 }) => {
-  const isReceipt = order.gatePass?.type === "RECEIPT";
-
   // Get all bag sizes from admin preferences
   const allBagSizes = React.useMemo(() => {
     return adminInfo?.preferences?.bagSizes || [];
   }, [adminInfo?.preferences?.bagSizes]);
 
-  // Use separate component for delivery vouchers
-  if (!isReceipt) {
-    return <DeliveryVoucherPDF order={order} adminInfo={adminInfo} />;
-  }
-
-  // Calculate total bags
+  // Calculate total bags (quantity removed for delivery)
   const calculateTotalBags = () => {
     return order.orderDetails.reduce((total, detail) => {
-      if (isReceipt) {
-        return (
-          total +
-          detail.bagSizes.reduce(
-            (sum, bag) => sum + (bag.quantity?.initialQuantity || 0),
-            0
-          )
-        );
-      } else {
-        return (
-          total +
-          detail.bagSizes.reduce(
-            (sum, bag) => sum + (bag.quantityRemoved || 0),
-            0
-          )
-        );
-      }
+      return (
+        total +
+        detail.bagSizes.reduce(
+          (sum, bag) => sum + (bag.quantityRemoved || 0),
+          0
+        )
+      );
     }, 0);
   };
 
-  // Convert number to words (basic implementation)
+  // Convert number to words
   const numberToWords = (num: number): string => {
     const ones = [
       "",
@@ -447,7 +414,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
         (num % 100 ? " " + numberToWords(num % 100) : "")
       );
 
-    return num.toString(); // For numbers > 999, just return the number
+    return num.toString();
   };
 
   // Define types for table rows
@@ -466,6 +433,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
     variety: string;
     bagSizes: TableBagSize[];
     location: LocationDetails;
+    incomingVoucher?: string;
   }
 
   // Parse location string into chamber, floor, and row
@@ -474,10 +442,8 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
       return { chamber: "", floor: "", row: "" };
     }
 
-    // Expected format: "2-1-C" or "2-1-A" etc.
     const parts = location.trim().split("-");
 
-    // Handle different possible formats
     if (parts.length >= 3) {
       return {
         chamber: parts[0] || "",
@@ -485,14 +451,12 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
         row: parts[2] || "",
       };
     } else if (parts.length === 2) {
-      // If only 2 parts, assume it's chamber-floor
       return {
         chamber: parts[0] || "",
         floor: parts[1] || "",
         row: "",
       };
     } else if (parts.length === 1) {
-      // If only 1 part, assume it's chamber
       return {
         chamber: parts[0] || "",
         floor: "",
@@ -503,28 +467,21 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
     return { chamber: "", floor: "", row: "" };
   };
 
-  // Get bag sizes that have quantities across all rows
+  // Get bag sizes that actually have values
   const getUsedBagSizes = () => {
     const usedSizes = new Set<string>();
 
     order.orderDetails.forEach((detail) => {
       detail.bagSizes.forEach((bag) => {
-        const quantity = isReceipt
-          ? bag.quantity?.initialQuantity || 0
-          : bag.quantityRemoved || 0;
-
+        const quantity = bag.quantityRemoved || 0;
         if (quantity > 0) {
           usedSizes.add(bag.size);
         }
       });
     });
 
-    // Return bag sizes in the order they appear in admin preferences, but only those that are used
-    return allBagSizes.filter(size =>
-      Array.from(usedSizes).some(usedSize =>
-        usedSize.toLowerCase().replace(/[-\s]/g, "") === size.toLowerCase().replace(/[-\s]/g, "")
-      )
-    );
+    // Return sizes in the order they appear in admin preferences, but only if they have values
+    return allBagSizes.filter(size => usedSizes.has(size));
   };
 
   // Create table rows from order details
@@ -537,12 +494,9 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
       const bagsByLocation = new Map<string, { size: string; quantity: number }[]>();
 
       detail.bagSizes.forEach((bag) => {
-        const quantity = isReceipt
-          ? bag.quantity?.initialQuantity || 0
-          : bag.quantityRemoved || 0;
+        const quantity = bag.quantityRemoved || 0;
 
         if (quantity > 0) {
-          // Get location for this bag
           const locationString = bag.location || detail.location || "-";
 
           if (!bagsByLocation.has(locationString)) {
@@ -556,13 +510,12 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
         }
       });
 
-      // Create rows for each location, prioritizing bag sizes according to admin preferences order
+      // Create rows for each location
       bagsByLocation.forEach((bags, location) => {
         const locationDetails = parseLocation(location);
 
         // Create bag sizes array with quantities filled according to used bag sizes order
         const bagSizesWithQuantities = usedBagSizes.map((preferredSize) => {
-          // Find if this preferred size has a quantity in the current location
           const matchingBag = bags.find(bag =>
             bag.size.toLowerCase().replace(/[-\s]/g, "") === preferredSize.toLowerCase().replace(/[-\s]/g, "")
           );
@@ -573,50 +526,27 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           };
         });
 
-        // Only add row if there are actual quantities (not all "-")
+        // Only add row if there are actual quantities
         const hasQuantities = bagSizesWithQuantities.some(bag => bag.quantity !== "-");
         if (hasQuantities) {
           rows.push({
             variety: detail.variety,
             bagSizes: bagSizesWithQuantities,
             location: locationDetails,
+            incomingVoucher: detail.incomingOrder?.gatePass?.gatePassNumber?.toString() || "-",
           });
         }
       });
     });
 
-    // Sort rows based on the priority of bag sizes they contain
-    rows.sort((a, b) => {
-      // Find the highest priority bag size (lowest index) that has a quantity for each row
-      let aPriority = usedBagSizes.length;
-      let bPriority = usedBagSizes.length;
-
-      for (let i = 0; i < usedBagSizes.length; i++) {
-        if (a.bagSizes[i].quantity !== "-" && a.bagSizes[i].quantity !== 0) {
-          aPriority = i;
-          break;
-        }
-      }
-
-      for (let i = 0; i < usedBagSizes.length; i++) {
-        if (b.bagSizes[i].quantity !== "-" && b.bagSizes[i].quantity !== 0) {
-          bPriority = i;
-          break;
-        }
-      }
-
-      // Lower priority index means higher priority (should come first)
-      return aPriority - bPriority;
-    });
-
     return rows;
   };
 
-  const usedBagSizes = getUsedBagSizes();
   const tableRows = createTableRows();
   const totalBags = calculateTotalBags();
+  const usedBagSizes = getUsedBagSizes();
 
-  // Calculate row totals (excluding "-" values)
+  // Calculate row totals
   const calculateRowTotal = (bagSizes: TableBagSize[]) => {
     return bagSizes.reduce((sum, bag) => {
       const qty = bag.quantity;
@@ -628,10 +558,8 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   const calculateColumnTotals = () => {
     const columnTotals = new Map<string, number>();
 
-    // Initialize totals for used bag sizes only
     usedBagSizes.forEach((size) => columnTotals.set(size, 0));
 
-    // Sum up quantities for each column
     tableRows.forEach((row) => {
       row.bagSizes.forEach((bag) => {
         const qty = bag.quantity;
@@ -646,33 +574,14 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
     return columnTotals;
   };
 
-  // Get column totals for the marka row
   const columnTotals = calculateColumnTotals();
 
-  console.log("=== PDF COMPONENT RECEIVED DATA ===");
-  console.log("Order received in PDF:", JSON.stringify(order, null, 2));
-  console.log("Admin Info received in PDF:", JSON.stringify(adminInfo, null, 2));
-  console.log("Order Details:", order.orderDetails);
-  console.log("Farmer Info:", order.farmerId);
-  console.log("Gate Pass Info:", order.gatePass);
-  console.log("Is Receipt:", isReceipt);
-  console.log("All Bag Sizes from Admin:", allBagSizes);
-  console.log("Table Rows Created:", tableRows);
-  console.log("Total Bags Calculated:", totalBags);
+  console.log("=== DELIVERY VOUCHER PDF DATA ===");
+  console.log("Order:", JSON.stringify(order, null, 2));
+  console.log("Admin Info:", JSON.stringify(adminInfo, null, 2));
+  console.log("Table Rows:", tableRows);
+  console.log("Total Bags:", totalBags);
   console.log("Column Totals:", columnTotals);
-
-  // Log the additional order properties now being displayed in PDF
-  console.log("=== ADDITIONAL ORDER PROPERTIES IN PDF ===");
-  console.log("Generation:", order.generation);
-  console.log("Rouging:", order.rouging);
-  console.log("Tuber Type:", order.tuberType);
-  console.log("Grader:", order.grader);
-  console.log("Bag Type:", order.bagType);
-  console.log("Weighed Status:", order.weighedStatus);
-  console.log("Approx Weight:", order.approxWeight);
-  console.log("Current Stock at That Time:", order.currentStockAtThatTime);
-  console.log("Date of Submission:", order.dateOfSubmission);
-  console.log("Remarks:", order.remarks);
 
   return (
     <Document>
@@ -702,7 +611,6 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
               <Text style={styles.companyAddress}>
                 {adminInfo.coldStorageDetails.coldStorageAddress}
               </Text>
-              {/* Coldop Branding below address */}
               <View style={styles.headerColdopBranding}>
                 <Image style={styles.headerColdopLogo} src={coldopLogo} />
                 <Text style={styles.headerColdopText}>Powered by Coldop</Text>
@@ -711,15 +619,8 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
 
             {/* Voucher Type and Manager Info */}
             <View style={styles.voucherTypeSection}>
-              <Text
-                style={[
-                  styles.voucherType,
-                  {
-                    color: isReceipt ? "#008000" : "#FF0000" // Green for Receipt, Red for Delivery
-                  }
-                ]}
-              >
-                {isReceipt ? "R VOUCHER" : "D VOUCHER"}
+              <Text style={styles.voucherType}>
+                D VOUCHER
               </Text>
               <Text style={styles.managerInfo}>
                 Manager{"\n"}
@@ -755,50 +656,36 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
               </Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Generation:</Text>
-              <Text style={styles.infoValue}>{order.generation || "N/A"}</Text>
+              <Text style={styles.infoLabel}>Variety:</Text>
+              <Text style={styles.infoValue}>{order.orderDetails[0]?.variety || "N/A"}</Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Rouging:</Text>
-              <Text style={styles.infoValue}>{order.rouging || "N/A"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Tuber Type:</Text>
-              <Text style={styles.infoValue}>{order.tuberType || "N/A"}</Text>
+              <Text style={styles.infoLabel}>Lot No:</Text>
+              <Text style={styles.infoValue}>
+                {order.gatePass?.gatePassNumber || "N/A"}/{totalBags}
+              </Text>
             </View>
           </View>
           <View style={styles.infoRight}>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Receipt Voucher No:</Text>
+              <Text style={styles.infoLabel}>Delivery Voucher No:</Text>
               <Text style={styles.infoValue}>
                 {order.gatePass?.gatePassNumber || "N/A"}
               </Text>
             </View>
             <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Dated:</Text>
+              <Text style={styles.infoLabel}>Date of Extraction:</Text>
               <Text style={styles.infoValue}>
-                {order.dateOfSubmission || "N/A"}
+                {order.dateOfExtraction || "N/A"}
               </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Grader:</Text>
-              <Text style={styles.infoValue}>{order.grader || "N/A"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Bag Type:</Text>
-              <Text style={styles.infoValue}>{order.bagType || "N/A"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Weighed:</Text>
-              <Text style={styles.infoValue}>{order.weighedStatus ? "Yes" : "No"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Approx Weight:</Text>
-              <Text style={styles.infoValue}>{order.approxWeight || "N/A"}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Current Stock:</Text>
               <Text style={styles.infoValue}>{order.currentStockAtThatTime || "N/A"}</Text>
+            </View>
+            <View style={styles.infoRow}>
+              <Text style={styles.infoLabel}>Total Outgoing:</Text>
+              <Text style={styles.infoValue}>{totalBags}</Text>
             </View>
           </View>
         </View>
@@ -827,6 +714,9 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
               ))}
               <View style={styles.colTotal}>
                 <Text style={styles.tableHeaderText}>TOTAL</Text>
+              </View>
+              <View style={styles.colIncomingVoucher}>
+                <Text style={styles.tableHeaderText}>R. VOUCHER</Text>
               </View>
             </View>
 
@@ -865,6 +755,11 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
                     {calculateRowTotal(row.bagSizes)}
                   </Text>
                 </View>
+                <View style={styles.colIncomingVoucher}>
+                  <Text style={styles.tableCellText}>
+                    {row.incomingVoucher || "-"}
+                  </Text>
+                </View>
               </View>
             ))}
 
@@ -898,6 +793,9 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
                     0
                   )}
                 </Text>
+              </View>
+              <View style={styles.colIncomingVoucher}>
+                <Text style={styles.tableCellTextBold}>-</Text>
               </View>
             </View>
           </View>
@@ -944,4 +842,4 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   );
 };
 
-export default OrderVoucherPDF;
+export default DeliveryVoucherPDF;
