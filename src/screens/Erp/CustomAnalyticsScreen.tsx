@@ -165,7 +165,7 @@ const CustomAnalyticsScreen = () => {
 
   // Hardcoded options for dropdowns
   const availableOptions = {
-    varieties: ["Himalini", "B101", "Jyoti"],
+    varieties: ["Himalini", "B101", "K. Jyoti"],
     generations: ["CF", "option2"],
     rouging: ["R1", "R2"],
     tuberTypes: ["Marketable", "Cut"],
