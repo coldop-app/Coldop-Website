@@ -498,9 +498,11 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     // Sort entries by voucher number
     entries.sort((a, b) => a.voucher - b.voucher);
 
-    // For receipt entries, grandTotal should be the same as total (no running total)
+    // For receipt entries, calculate cumulative grand total
+    let cumulativeTotal = 0;
     entries.forEach((entry) => {
-      entry.grandTotal = entry.total;
+      cumulativeTotal += entry.total;
+      entry.grandTotal = cumulativeTotal;
     });
 
     return entries;
@@ -588,11 +590,11 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     // Sort entries by voucher number
     entries.sort((a, b) => a.voucher - b.voucher);
 
-    // Calculate running grand total after sorting
-    let total = 0;
+    // For delivery entries, grandTotal represents cumulative deliveries
+    let cumulativeTotal = 0;
     entries.forEach((entry) => {
-      total += entry.total;
-      entry.grandTotal = total;
+      cumulativeTotal += entry.total;
+      entry.grandTotal = cumulativeTotal;
     });
 
     return entries;
@@ -781,7 +783,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
               ))}
               <View style={styles.colTotal}>
                 <Text style={styles.balanceText}>
-                  {entries[entries.length - 1]?.grandTotal || 0}
+                  {entries.reduce((sum, entry) => sum + entry.total, 0)}
                 </Text>
               </View>
               <View style={styles.colGrandTotal}>
