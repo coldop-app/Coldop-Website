@@ -187,6 +187,7 @@ const CustomAnalyticsScreen = () => {
   const [showCharts, setShowCharts] = useState(true);
   const [chartType, setChartType] = useState<'pie' | 'bar'>('pie');
   const [activeTab, setActiveTab] = useState("overview");
+  const [stockType, setStockType] = useState<'current' | 'initial'>('current');
 
 
   // Fetch orders only when showVouchers is true
@@ -337,70 +338,78 @@ const CustomAnalyticsScreen = () => {
         .sort((a, b) => b.value - a.value);
     };
 
+    // Calculate total bags based on stock type
+    const totalBags = stockType === 'current' ? totals.totalCurrentBags : totals.totalBags;
+
     return {
-      variety: convertDistributionToChartData(distributions.varietyDistribution, totals.totalBags),
-      generation: convertDistributionToChartData(distributions.generationDistribution, totals.totalBags),
-      rouging: convertDistributionToChartData(distributions.rougingDistribution, totals.totalBags),
-      tuberType: convertDistributionToChartData(distributions.tuberTypeDistribution, totals.totalBags),
-      grader: convertDistributionToChartData(distributions.graderDistribution, totals.totalBags),
-      bagType: convertDistributionToChartData(distributions.bagTypeDistribution, totals.totalBags),
-      bagSizeCategory: convertDistributionToChartData(distributions.bagSizeDistribution, totals.totalBags),
-      weighedStatus: convertDistributionToChartData(distributions.weighedStatusDistribution, totals.totalBags),
-      totalBags: totals.totalBags
+      variety: convertDistributionToChartData(distributions.varietyDistribution, totalBags),
+      generation: convertDistributionToChartData(distributions.generationDistribution, totalBags),
+      rouging: convertDistributionToChartData(distributions.rougingDistribution, totalBags),
+      tuberType: convertDistributionToChartData(distributions.tuberTypeDistribution, totalBags),
+      grader: convertDistributionToChartData(distributions.graderDistribution, totalBags),
+      bagType: convertDistributionToChartData(distributions.bagTypeDistribution, totalBags),
+      bagSizeCategory: convertDistributionToChartData(distributions.bagSizeDistribution, totalBags),
+      weighedStatus: convertDistributionToChartData(distributions.weighedStatusDistribution, totalBags),
+      totalBags: totalBags
     };
-  }, [analyticsData]);
+  }, [analyticsData, stockType]);
 
   return (
     <>
       <TopBar title="Custom Analytics" isSidebarOpen={false} setIsSidebarOpen={() => {}} />
       <div className="p-3 sm:p-4 md:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6 pb-20">
         {/* Filter Section */}
-        <Card className="bg-white shadow-sm">
-          <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                  Filter Orders
-                </CardTitle>
+        <Card className="bg-white border border-gray-100 shadow-sm">
+          <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-blue-50 rounded-lg flex-shrink-0">
+                  <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                    Filter Analytics Data
+                  </CardTitle>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                    Apply filters to customize your analytics view
+                  </p>
+                </div>
               </div>
               {hasActiveFilters && (
                 <Button
                   onClick={clearAllFilters}
                   variant="outline"
                   size="sm"
-                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="text-red-600 hover:text-red-700 hover:bg-red-50 border-red-200 self-start sm:self-auto"
                 >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear All
+                  <X className="h-4 w-4 mr-1.5" />
+                  Clear All ({activeFiltersCount})
                 </Button>
               )}
             </div>
-            <p className="text-xs sm:text-sm text-gray-600">
-              Filter orders by various criteria to analyze your data
-            </p>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
-            <div className="space-y-4">
+            <div className="space-y-4 sm:space-y-5">
 
               {/* Filter Status */}
               {hasActiveFilters && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-blue-800">
-                        Filters Applied ({activeFiltersCount})
-                      </span>
+                <div className="bg-blue-50/50 border border-blue-200 rounded-lg p-3 sm:p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="p-1 bg-blue-100 rounded">
+                      <Filter className="h-3.5 w-3.5 text-blue-600" />
                     </div>
+                    <span className="text-sm font-medium text-blue-800">
+                      {activeFiltersCount} {activeFiltersCount === 1 ? 'Filter' : 'Filters'} Active
+                    </span>
                   </div>
                 </div>
               )}
 
               {/* Filter Fields */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
                 {/* Variety */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Variety
                   </label>
                   <div className="relative">
@@ -427,7 +436,7 @@ const CustomAnalyticsScreen = () => {
 
                 {/* Generation */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Generation
                   </label>
                   <div className="relative">
@@ -454,7 +463,7 @@ const CustomAnalyticsScreen = () => {
 
                 {/* Rouging */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Rouging
                   </label>
                   <div className="relative">
@@ -481,7 +490,7 @@ const CustomAnalyticsScreen = () => {
 
                 {/* Tuber Type */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Tuber Type
                   </label>
                   <div className="relative">
@@ -508,7 +517,7 @@ const CustomAnalyticsScreen = () => {
 
                 {/* Grader */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Grader
                   </label>
                   <div className="relative">
@@ -535,7 +544,7 @@ const CustomAnalyticsScreen = () => {
 
                 {/* Weighed Status */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Weighed Status
                   </label>
                   <div className="relative">
@@ -559,7 +568,7 @@ const CustomAnalyticsScreen = () => {
 
                 {/* Bag Type */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Bag Type
                   </label>
                   <div className="relative">
@@ -586,7 +595,7 @@ const CustomAnalyticsScreen = () => {
 
                 {/* Bag Size Category */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Bag Size Category
                   </label>
                   <div className="relative">
@@ -613,53 +622,59 @@ const CustomAnalyticsScreen = () => {
 
                 {/* Date From */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Date From
                   </label>
                   <input
                     type="date"
                     value={filterData.dateFrom}
                     onChange={(e) => updateFilterData('dateFrom', e.target.value)}
-                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                   />
                 </div>
 
                 {/* Date To */}
                 <div className="space-y-2">
-                  <label className="block text-sm font-medium">
+                  <label className="block text-sm font-medium text-gray-700">
                     Date To
                   </label>
                   <input
                     type="date"
                     value={filterData.dateTo}
                     onChange={(e) => updateFilterData('dateTo', e.target.value)}
-                    className="w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-primary"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                   />
                 </div>
               </div>
 
               {/* Error Message */}
               {analyticsError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                  <div className="flex items-center">
-                    <div className="text-red-600 text-sm font-medium">
-                      {analyticsError}
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 sm:p-4">
+                  <div className="flex items-start gap-3">
+                    <div className="flex-shrink-0 p-1 bg-red-100 rounded">
+                      <X className="h-4 w-4 text-red-600" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-800">
+                        {analyticsError}
+                      </p>
                     </div>
                   </div>
                 </div>
               )}
 
               {/* Search Button */}
-              <div className="flex justify-end pt-4">
+              <div className="flex justify-end pt-2">
                 <Button
                   onClick={handleAnalyticsSearch}
                   disabled={isLoadingAnalytics}
-                  className="bg-primary hover:bg-primary/90 text-white px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  size="lg"
                 >
                   {isLoadingAnalytics ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Getting Analytics...
+                      Analyzing Data...
                     </>
                   ) : (
                     <>
@@ -690,9 +705,11 @@ const CustomAnalyticsScreen = () => {
                           Total Bags
                         </p>
                       </div>
-                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{analyticsData.totals.totalBags}</h3>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                        {stockType === 'current' ? analyticsData.totals.totalCurrentBags : analyticsData.totals.totalBags}
+                      </h3>
                       <p className="text-xs sm:text-sm text-gray-500">
-                        Initial bags received
+                        {stockType === 'current' ? 'Currently in storage' : 'Initial bags received'}
                       </p>
                     </div>
                   </div>
@@ -708,12 +725,14 @@ const CustomAnalyticsScreen = () => {
                           <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
                         </div>
                         <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                          Current Stock
+                          {stockType === 'current' ? 'Removed Stock' : 'Current Stock'}
                         </p>
                       </div>
-                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{analyticsData.totals.totalCurrentBags}</h3>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                        {stockType === 'current' ? analyticsData.totals.totalRemovedBags : analyticsData.totals.totalCurrentBags}
+                      </h3>
                       <p className="text-xs sm:text-sm text-gray-500">
-                        Currently in storage
+                        {stockType === 'current' ? 'Bags taken out' : 'Currently in storage'}
                       </p>
                     </div>
                   </div>
@@ -729,12 +748,14 @@ const CustomAnalyticsScreen = () => {
                           <Package className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
                         </div>
                         <p className="text-xs sm:text-sm font-medium text-gray-600 uppercase tracking-wide truncate">
-                          Removed Bags
+                          {stockType === 'current' ? 'Initial Stock' : 'Removed Bags'}
                         </p>
                       </div>
-                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{analyticsData.totals.totalRemovedBags}</h3>
+                      <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">
+                        {stockType === 'current' ? analyticsData.totals.totalBags : analyticsData.totals.totalRemovedBags}
+                      </h3>
                       <p className="text-xs sm:text-sm text-gray-500">
-                        Bags taken out
+                        {stockType === 'current' ? 'Initial bags received' : 'Bags taken out'}
                       </p>
                     </div>
                   </div>
@@ -805,40 +826,79 @@ const CustomAnalyticsScreen = () => {
               </Card>
             </div>
 
+            {/* Stock Type Tabs */}
+            <Card className="bg-white border border-gray-100 shadow-sm">
+              <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-green-50 rounded-lg flex-shrink-0">
+                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                      Stock Data View
+                    </CardTitle>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                      Toggle between current and initial stock data for analysis
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 sm:px-6 py-4 sm:py-5">
+                <Tabs value={stockType} onValueChange={(value) => setStockType(value as 'current' | 'initial')} className="w-full">
+                  <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1">
+                    <TabsTrigger value="current" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                      <TrendingUp className="h-4 w-4" />
+                      <span className="hidden sm:inline">Current Stock</span>
+                      <span className="sm:hidden">Current</span>
+                    </TabsTrigger>
+                    <TabsTrigger value="initial" className="flex items-center gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                      <Package className="h-4 w-4" />
+                      <span className="hidden sm:inline">Initial Stock</span>
+                      <span className="sm:hidden">Initial</span>
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </CardContent>
+            </Card>
 
             {/* Analytics Visualization Section */}
             {processedData && processedData.totalBags > 0 && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* Header Controls */}
-                <Card className="bg-white shadow-sm">
+                <Card className="bg-white border border-gray-100 shadow-sm">
                   <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                          Data Distribution Analysis
-                        </CardTitle>
-                        <p className="text-xs sm:text-sm text-gray-600">
-                          Visual breakdown of your data across different parameters
-                        </p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+                      <div className="flex items-center gap-2 sm:gap-3">
+                        <div className="p-1.5 sm:p-2 bg-purple-50 rounded-lg flex-shrink-0">
+                          <PieChartIcon className="h-4 w-4 sm:h-5 sm:w-5 text-purple-500" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                            Data Distribution Analysis
+                          </CardTitle>
+                          <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                            Visual breakdown across different parameters
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 self-start sm:self-auto">
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setChartType(chartType === 'pie' ? 'bar' : 'pie')}
-                          className="flex items-center gap-1"
+                          className="flex items-center gap-1.5 hover:bg-gray-50 transition-colors"
                         >
                           {chartType === 'pie' ? <BarChart3 className="h-4 w-4" /> : <PieChartIcon className="h-4 w-4" />}
-                          {chartType === 'pie' ? 'Bar Chart' : 'Pie Chart'}
+                          <span className="hidden sm:inline">{chartType === 'pie' ? 'Bar Chart' : 'Pie Chart'}</span>
                         </Button>
                         <Button
                           variant="outline"
                           size="sm"
                           onClick={() => setShowCharts(!showCharts)}
-                          className="flex items-center gap-1"
+                          className="flex items-center gap-1.5 hover:bg-gray-50 transition-colors"
                         >
                           {showCharts ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          {showCharts ? 'Hide Charts' : 'Show Charts'}
+                          <span className="hidden sm:inline">{showCharts ? 'Hide' : 'Show'}</span>
                         </Button>
                       </div>
                     </div>
@@ -846,13 +906,25 @@ const CustomAnalyticsScreen = () => {
                 </Card>
 
                 {showCharts && (
-                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                    <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4">
-                      <TabsTrigger value="overview">Overview</TabsTrigger>
-                      <TabsTrigger value="variety">Variety</TabsTrigger>
-                      <TabsTrigger value="quality">Quality</TabsTrigger>
-                      <TabsTrigger value="status">Status</TabsTrigger>
-                    </TabsList>
+                  <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 sm:space-y-5">
+                    <Card className="bg-white border border-gray-100 shadow-sm">
+                      <CardContent className="p-2">
+                        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 bg-gray-100 p-1">
+                          <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            Overview
+                          </TabsTrigger>
+                          <TabsTrigger value="variety" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            Variety
+                          </TabsTrigger>
+                          <TabsTrigger value="quality" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            Quality
+                          </TabsTrigger>
+                          <TabsTrigger value="status" className="data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                            Status
+                          </TabsTrigger>
+                        </TabsList>
+                      </CardContent>
+                    </Card>
 
                     <TabsContent value="overview" className="space-y-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -941,29 +1013,38 @@ const CustomAnalyticsScreen = () => {
                 )}
 
                 {/* Summary Statistics */}
-                <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-                  <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-                    <CardTitle className="text-lg sm:text-xl font-bold text-blue-900">
-                      Analysis Summary
-                    </CardTitle>
+                <Card className="bg-gradient-to-br from-blue-50/50 via-indigo-50/50 to-purple-50/50 border border-blue-200/50 shadow-sm">
+                  <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-blue-200/30">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <div className="p-1.5 sm:p-2 bg-blue-100 rounded-lg flex-shrink-0">
+                        <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
+                      </div>
+                      <CardTitle className="text-lg sm:text-xl font-bold text-blue-900">
+                        Quick Summary
+                      </CardTitle>
+                    </div>
                   </CardHeader>
-                  <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-blue-600">{analyticsData.totals.totalBags}</div>
-                        <div className="text-xs text-gray-600">Total Bags</div>
+                  <CardContent className="px-4 sm:px-6 py-4 sm:py-6">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+                      <div className="text-center p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm">
+                        <div className="text-xl sm:text-2xl font-bold text-blue-600 mb-1">
+                          {stockType === 'current' ? analyticsData.totals.totalCurrentBags : analyticsData.totals.totalBags}
+                        </div>
+                        <div className="text-xs sm:text-sm text-gray-600 font-medium">
+                          {stockType === 'current' ? 'Current Bags' : 'Total Bags'}
+                        </div>
                       </div>
-                      <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-green-600">{analyticsData.distributions.summary.uniqueVarieties}</div>
-                        <div className="text-xs text-gray-600">Varieties</div>
+                      <div className="text-center p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm">
+                        <div className="text-xl sm:text-2xl font-bold text-green-600 mb-1">{analyticsData.distributions.summary.uniqueVarieties}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 font-medium">Varieties</div>
                       </div>
-                      <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-purple-600">{analyticsData.distributions.summary.uniqueGenerations}</div>
-                        <div className="text-xs text-gray-600">Generations</div>
+                      <div className="text-center p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm">
+                        <div className="text-xl sm:text-2xl font-bold text-purple-600 mb-1">{analyticsData.distributions.summary.uniqueGenerations}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 font-medium">Generations</div>
                       </div>
-                      <div className="text-center p-3 bg-white rounded-lg">
-                        <div className="text-2xl font-bold text-orange-600">{analyticsData.distributions.summary.uniqueGraders}</div>
-                        <div className="text-xs text-gray-600">Graders</div>
+                      <div className="text-center p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm">
+                        <div className="text-xl sm:text-2xl font-bold text-orange-600 mb-1">{analyticsData.distributions.summary.uniqueGraders}</div>
+                        <div className="text-xs sm:text-sm text-gray-600 font-medium">Graders</div>
                       </div>
                     </div>
                   </CardContent>
@@ -972,57 +1053,93 @@ const CustomAnalyticsScreen = () => {
             )}
 
             {/* Stock Summary Table */}
-            <Card className="bg-white shadow-sm">
-              <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-                <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                  Stock Summary by Variety
-                </CardTitle>
-                <p className="text-xs sm:text-sm text-gray-600">
-                  Detailed breakdown of stock quantities by variety and size
-                </p>
+            <Card className="bg-white border border-gray-100 shadow-sm">
+              <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg flex-shrink-0">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                      Stock Summary by Variety
+                    </CardTitle>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                      Detailed breakdown of {stockType === 'current' ? 'current' : 'initial'} stock quantities by variety and size
+                    </p>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Variety</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Initial Qty</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Current Qty</th>
-                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Removed</th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
-                      {analyticsData.stockSummary.map((variety, varietyIndex) =>
-                        variety.sizes.map((size, sizeIndex) => (
-                          <tr key={`${varietyIndex}-${sizeIndex}`} className={sizeIndex === 0 ? "bg-gray-50" : ""}>
-                            {sizeIndex === 0 && (
-                              <td rowSpan={variety.sizes.length} className="px-4 py-4 text-sm font-medium text-gray-900 align-top">
-                                {variety.variety}
-                              </td>
-                            )}
-                            <td className="px-4 py-4 text-sm text-gray-900">{size.size}</td>
-                            <td className="px-4 py-4 text-sm text-gray-900">{size.initialQuantity}</td>
-                            <td className="px-4 py-4 text-sm text-gray-900">{size.currentQuantity}</td>
-                            <td className="px-4 py-4 text-sm text-gray-900">{size.quantityRemoved}</td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                <Tabs defaultValue={analyticsData.stockSummary[0]?.variety || "all"} className="w-full">
+                  <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50/50">
+                    <TabsList className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 bg-transparent">
+                      {analyticsData.stockSummary.map((variety) => (
+                        <TabsTrigger
+                          key={variety.variety}
+                          value={variety.variety}
+                          className="flex items-center gap-2 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm"
+                        >
+                          <Package className="h-3 w-3 sm:h-4 sm:w-4" />
+                          {variety.variety}
+                        </TabsTrigger>
+                      ))}
+                    </TabsList>
+                  </div>
+
+                  {analyticsData.stockSummary.map((variety) => (
+                    <TabsContent key={variety.variety} value={variety.variety} className="p-0">
+                      <div className="overflow-x-auto">
+                        <table className="w-full">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
+                              <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}>
+                                Initial Qty
+                              </th>
+                              <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${stockType === 'current' ? 'text-green-600 bg-green-50' : 'text-gray-500'}`}>
+                                Current Qty
+                              </th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Removed</th>
+                            </tr>
+                          </thead>
+                          <tbody className="bg-white divide-y divide-gray-200">
+                            {variety.sizes.map((size, sizeIndex) => (
+                              <tr key={`${variety.variety}-${sizeIndex}`} className={sizeIndex % 2 === 0 ? "bg-gray-50" : "bg-white"}>
+                                <td className="px-4 py-4 text-sm font-medium text-gray-900">{size.size}</td>
+                                <td className={`px-4 py-4 text-sm font-medium ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-900'}`}>
+                                  {size.initialQuantity}
+                                </td>
+                                <td className={`px-4 py-4 text-sm font-medium ${stockType === 'current' ? 'text-green-600 bg-green-50' : 'text-gray-900'}`}>
+                                  {size.currentQuantity}
+                                </td>
+                                <td className="px-4 py-4 text-sm text-gray-900">{size.quantityRemoved}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
               </CardContent>
             </Card>
 
             {/* View Vouchers Button */}
-            <Card className="bg-white shadow-sm">
-              <CardContent className="p-4 sm:p-6">
-                <div className="text-center">
+            <Card className="bg-gradient-to-br from-gray-50 to-blue-50/30 border border-gray-100 shadow-sm">
+              <CardContent className="p-4 sm:p-6 text-center">
+                <div className="max-w-md mx-auto space-y-3">
+                  <div className="flex items-center justify-center gap-2 text-gray-700">
+                    <Package className="h-5 w-5 text-primary" />
+                    <h3 className="text-sm font-semibold">View Detailed Orders</h3>
+                  </div>
+                  <p className="text-xs sm:text-sm text-gray-600">
+                    View all order vouchers matching your current filter criteria
+                  </p>
                   <Button
                     onClick={handleViewVouchers}
                     disabled={isLoadingOrders}
-                    className="bg-primary hover:bg-primary/90 text-white px-8 py-3"
+                    className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                    size="lg"
                   >
                     {isLoadingOrders ? (
                       <>
@@ -1036,9 +1153,6 @@ const CustomAnalyticsScreen = () => {
                       </>
                     )}
                   </Button>
-                  <p className="text-xs sm:text-sm text-gray-500 mt-2">
-                    Click to view all vouchers matching the current filter criteria
-                  </p>
                 </div>
               </CardContent>
             </Card>
@@ -1047,61 +1161,83 @@ const CustomAnalyticsScreen = () => {
 
         {/* Vouchers Section */}
         {showVouchers && (
-        <Card className="bg-white shadow-sm">
-          <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
-            <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
-                Related Vouchers
-            </CardTitle>
-            <p className="text-xs sm:text-sm text-gray-600">
-                {isLoadingOrders
-                  ? "Loading vouchers..."
-                  : `Found ${orders.length} voucher${orders.length !== 1 ? 's' : ''}`
-              }
-            </p>
+        <Card className="bg-white border border-gray-100 shadow-sm">
+          <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 sm:gap-3">
+                <div className="p-1.5 sm:p-2 bg-green-50 rounded-lg flex-shrink-0">
+                  <Package className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+                </div>
+                <div>
+                  <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">
+                    Related Order Vouchers
+                  </CardTitle>
+                  <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                    {isLoadingOrders
+                      ? "Loading vouchers..."
+                      : `Found ${orders.length} voucher${orders.length !== 1 ? 's' : ''} matching your filters`
+                    }
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={() => setShowVouchers(false)}
+                variant="outline"
+                size="sm"
+                className="hover:bg-gray-50"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="p-4 sm:p-6">
               {isLoadingOrders ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="ml-2 text-gray-600">Loading vouchers...</span>
+              <div className="flex flex-col items-center justify-center py-12 sm:py-16">
+                <Loader2 className="h-10 w-10 sm:h-12 sm:w-12 animate-spin text-primary mb-4" />
+                <p className="text-sm sm:text-base text-gray-600 font-medium">Loading vouchers...</p>
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">Please wait while we fetch your data</p>
               </div>
             ) : ordersError ? (
-              <div className="text-center py-12">
-                <div className="mb-4">
-                  <Package className="h-12 w-12 text-red-300 mx-auto mb-3" />
-                  <div className="text-lg font-medium text-red-600 mb-2">No orders found</div>
-                  <p className="text-sm text-red-500 max-w-md mx-auto">
+              <div className="text-center py-12 sm:py-16">
+                <div className="mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-red-50 mb-4">
+                    <Package className="h-8 w-8 sm:h-10 sm:w-10 text-red-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">No Orders Found</h3>
+                  <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto mb-6">
                     {ordersError.message || 'No orders match your current filter criteria. Try changing your filters.'}
                   </p>
+                  <Button
+                    onClick={clearAllFilters}
+                    variant="outline"
+                    size="default"
+                    className="text-primary hover:text-primary hover:bg-primary/5 border-primary/30"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear All Filters
+                  </Button>
                 </div>
-                <Button
-                  onClick={clearAllFilters}
-                  variant="outline"
-                  size="sm"
-                  className="text-primary hover:text-primary/80 hover:bg-primary/5"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear All Filters
-                </Button>
               </div>
             ) : orders.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="mb-4">
-                  <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <div className="text-lg font-medium text-gray-500 mb-2">No vouchers found</div>
-                  <p className="text-sm text-gray-400 max-w-md mx-auto">
+              <div className="text-center py-12 sm:py-16">
+                <div className="mb-6">
+                  <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-50 mb-4">
+                    <Package className="h-8 w-8 sm:h-10 sm:w-10 text-gray-300" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2">No Vouchers Found</h3>
+                  <p className="text-sm sm:text-base text-gray-600 max-w-md mx-auto mb-6">
                     No vouchers match your current filter criteria. Try adjusting your filters or clear all filters to see all vouchers.
                   </p>
+                  <Button
+                    onClick={clearAllFilters}
+                    variant="outline"
+                    size="default"
+                    className="text-primary hover:text-primary hover:bg-primary/5 border-primary/30"
+                  >
+                    <X className="h-4 w-4 mr-2" />
+                    Clear All Filters
+                  </Button>
                 </div>
-                <Button
-                  onClick={clearAllFilters}
-                  variant="outline"
-                  size="sm"
-                  className="text-primary hover:text-primary/80 hover:bg-primary/5"
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Clear All Filters
-                </Button>
               </div>
             ) : (
               <div className="space-y-4">
