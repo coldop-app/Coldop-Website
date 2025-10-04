@@ -92,7 +92,7 @@ const StockSummaryTable = ({ stockSummary, tabType = 'current' }: StockSummaryTa
     const quantity = getQuantityForSize(variety, bagSize);
     if (quantity > 0) {
       navigate('/erp/variety-breakdown', {
-        state: { variety: variety.variety, bagSize }
+        state: { variety: variety.variety, bagSize, initialTabType: tabType }
       });
     }
   };
@@ -192,7 +192,7 @@ const StockSummaryTable = ({ stockSummary, tabType = 'current' }: StockSummaryTa
                         const total = calculateVarietyTotal(variety, allBagSizes, tabType);
                         if (total > 0) {
                           navigate('/erp/variety-breakdown', {
-                            state: { variety: variety.variety, bagSize: 'All Sizes' }
+                            state: { variety: variety.variety, bagSize: 'All Sizes', initialTabType: tabType }
                           });
                         }
                       }}

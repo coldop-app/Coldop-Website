@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -47,7 +47,7 @@ interface AnimatedFormStepProps {
   children: React.ReactNode;
 }
 
-const AnimatedFormStep = ({ isVisible, children }: AnimatedFormStepProps) => {
+const AnimatedFormStep = memo(({ isVisible, children }: AnimatedFormStepProps) => {
   const [opacity, setOpacity] = useState(0);
   const [transform, setTransform] = useState("translateY(15px)");
 
@@ -76,7 +76,7 @@ const AnimatedFormStep = ({ isVisible, children }: AnimatedFormStepProps) => {
       {children}
     </div>
   );
-};
+});
 
 interface Farmer {
   _id: string;
@@ -434,33 +434,27 @@ const OutgoingOrderFormContent = () => {
     setShowDropdown(false);
   };
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const dropdown = document.getElementById('farmer-search-dropdown');
-      const input = document.getElementById('farmer-search-input');
-      if (dropdown && input && !dropdown.contains(event.target as Node) && !input.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  // Handle box click
-  const handleBoxClick = (receiptNumber: number, bagSize: string, maxQuantity: number, e: React.MouseEvent) => {
+  // Handle box click - memoized for performance
+  const handleBoxClick = useCallback((receiptNumber: number, bagSize: string, maxQuantity: number, e: React.MouseEvent) => {
     e.preventDefault(); // Prevent form submission
     setActiveBox({ receiptNumber, bagSize, maxQuantity });
     setInputQuantity('');
-  };
 
-  // Handle quantity submission
-  const handleQuantitySubmit = (e: React.MouseEvent) => {
+    // Auto-focus the input field after modal opens
+    setTimeout(() => {
+      const inputElement = document.getElementById('quantity-input') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }, 100);
+  }, []);
+
+  // Handle quantity submission - memoized for performance
+  const handleQuantitySubmit = useCallback((e: React.MouseEvent) => {
     e.preventDefault(); // Prevent any form submission
-    if (activeBox && inputQuantity) {
-      const quantity = Number(inputQuantity);
-      if (quantity > 0 && quantity <= activeBox.maxQuantity) {
+    if (activeBox && inputQuantity && inputQuantity.trim() !== '') {
+      const quantity = parseInt(inputQuantity, 10); // Ensure it's an integer
+      if (!isNaN(quantity) && quantity > 0 && quantity <= activeBox.maxQuantity) {
         setSelectedQuantities(prev => {
           const existing = prev.find(
             item => item.receiptNumber === activeBox.receiptNumber && item.bagSize === activeBox.bagSize
@@ -483,17 +477,65 @@ const OutgoingOrderFormContent = () => {
         setInputQuantity('');
       }
     }
-  };
+  }, [activeBox, inputQuantity]);
 
-  // Handle quantity removal
-  const handleQuantityRemove = (receiptNumber: number, bagSize: string) => {
+  // Handle quantity removal - memoized for performance
+  const handleQuantityRemove = useCallback((receiptNumber: number, bagSize: string) => {
     setSelectedQuantities(prev =>
       prev.filter(item => !(item.receiptNumber === receiptNumber && item.bagSize === bagSize))
     );
-  };
+  }, []);
 
-  // Add handleSelectAll function after handleQuantityRemove
-  const handleSelectAll = () => {
+  // Memoized close modal handler
+  const handleCloseModal = useCallback(() => {
+    setActiveBox(null);
+    setInputQuantity('');
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const dropdown = document.getElementById('farmer-search-dropdown');
+      const input = document.getElementById('farmer-search-input');
+      if (dropdown && input && !dropdown.contains(event.target as Node) && !input.contains(event.target as Node)) {
+        setShowDropdown(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Handle escape key for modal
+  useEffect(() => {
+    const handleEscapeKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && activeBox) {
+        handleCloseModal();
+      }
+    };
+
+    if (activeBox) {
+      document.addEventListener('keydown', handleEscapeKey);
+      return () => document.removeEventListener('keydown', handleEscapeKey);
+    }
+  }, [activeBox, handleCloseModal]);
+
+  // Auto-focus input when modal opens
+  useEffect(() => {
+    if (activeBox) {
+      const timer = setTimeout(() => {
+        const inputElement = document.getElementById('quantity-input') as HTMLInputElement;
+        if (inputElement) {
+          inputElement.focus();
+          inputElement.select(); // Select all text for easy replacement
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeBox]);
+
+  // Add handleSelectAll function after handleQuantityRemove - memoized for performance
+  const handleSelectAll = useCallback(() => {
     // If we have selections matching all available quantities, deselect all
     const totalAvailableQuantities = filteredOrders.reduce((total, order) => {
       order.orderDetails.forEach(detail => {
@@ -530,7 +572,7 @@ const OutgoingOrderFormContent = () => {
     });
 
     setSelectedQuantities(newSelectedQuantities);
-  };
+  }, [filteredOrders, selectedQuantities.length]);
 
   // Add isAllSelected computation
   const isAllSelected = useMemo(() => {
@@ -548,8 +590,8 @@ const OutgoingOrderFormContent = () => {
     return selectedQuantities.length === totalAvailableQuantities && totalAvailableQuantities > 0;
   }, [selectedQuantities, filteredOrders]);
 
-  // Add handleSelectVoucher function after handleSelectAll
-  const handleSelectVoucher = (voucherNumber: number) => {
+  // Add handleSelectVoucher function after handleSelectAll - memoized for performance
+  const handleSelectVoucher = useCallback((voucherNumber: number) => {
     // Check if all quantities for this voucher are already selected
     const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
     const totalAvailableQuantitiesForVoucher = filteredOrders
@@ -594,10 +636,10 @@ const OutgoingOrderFormContent = () => {
       ...prev.filter(sq => sq.receiptNumber !== voucherNumber),
       ...newSelections
     ]);
-  };
+  }, [filteredOrders, selectedQuantities]);
 
-  // Add isVoucherSelected function after handleSelectVoucher
-  const isVoucherSelected = (voucherNumber: number) => {
+  // Add isVoucherSelected function after handleSelectVoucher - memoized for performance
+  const isVoucherSelected = useCallback((voucherNumber: number) => {
     const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
     const totalAvailableQuantitiesForVoucher = filteredOrders
       .filter(order => order.gatePass.gatePassNumber === voucherNumber)
@@ -613,16 +655,75 @@ const OutgoingOrderFormContent = () => {
       }, 0);
 
     return voucherSelections.length === totalAvailableQuantitiesForVoucher && totalAvailableQuantitiesForVoucher > 0;
-  };
+  }, [filteredOrders, selectedQuantities]);
 
-  // Get box color based on quantities
-  const getBoxColor = (currentQuantity: number, initialQuantity: number, isSelected: boolean) => {
+  // Get box color based on quantities - memoized for performance
+  const getBoxColor = useCallback((currentQuantity: number, initialQuantity: number, isSelected: boolean) => {
     if (isSelected) return 'border-green-500 bg-green-50';
     if (currentQuantity === 0 && initialQuantity === 0) return 'border-gray-200 bg-gray-50';
     if (currentQuantity < 20 && currentQuantity > 0) return 'border-red-400';
     if (currentQuantity < initialQuantity) return 'border-yellow-400';
     return 'border-gray-200 hover:border-primary';
-  };
+  }, []);
+
+  // Memoized Bag Size Box Component for better performance
+  const BagSizeBox = memo(({
+    order,
+    size,
+    totalQuantities,
+    bagSizeLocation,
+    isSelected,
+    onBoxClick
+  }: {
+    order: IncomingOrder;
+    size: string;
+    totalQuantities: { current: number; initial: number };
+    bagSizeLocation?: string;
+    isSelected: boolean;
+    onBoxClick: (e: React.MouseEvent) => void;
+  }) => (
+    <button
+      type="button"
+      onClick={onBoxClick}
+      className={`
+        relative w-16 h-16 rounded-lg border-2
+        ${getBoxColor(
+          totalQuantities.current,
+          totalQuantities.initial,
+          isSelected
+        )}
+        transition-all duration-200 transform hover:scale-105
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+        flex flex-col items-center justify-center
+      `}
+      disabled={totalQuantities.current === 0}
+    >
+      {/* Location at the top */}
+      <div className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
+        <span>📍</span>
+        <span className="truncate max-w-[50px]">
+          {bagSizeLocation || ''}
+        </span>
+      </div>
+
+      {/* Quantity in the middle */}
+      <div className="text-xs font-medium">
+        {totalQuantities.current}
+      </div>
+      <div className="text-xs text-gray-500">
+        /{totalQuantities.initial}
+      </div>
+
+      {isSelected && (
+        <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center text-white text-[10px] font-medium shadow-sm px-1 border border-white">
+          {selectedQuantities.find(sq =>
+            sq.receiptNumber === order.gatePass.gatePassNumber &&
+            sq.bagSize === size
+          )?.selectedQuantity}
+        </div>
+      )}
+    </button>
+  ));
 
   // Update the generateOutgoingOrderRequestBody function
   const generateOutgoingOrderRequestBody = () => {
@@ -635,22 +736,24 @@ const OutgoingOrderFormContent = () => {
       }
       acc[sq.receiptNumber].bagUpdates.push({
         size: sq.bagSize,  // Use the size exactly as is
-        quantityToRemove: sq.selectedQuantity
+        quantityToRemove: parseInt(sq.selectedQuantity.toString(), 10) // Ensure it's an integer
       });
       return acc;
     }, {} as Record<number, { bagUpdates: { size: string; quantityToRemove: number }[] }>);
 
-    // Find the order IDs from filtered orders
-    const orderDetails = filteredOrders.reduce((acc, order) => {
-      if (groupedByReceipt[order.gatePass.gatePassNumber]) {
-        acc.push({
+    // Find the order IDs from filtered orders and create proper order structure
+    const orders = filteredOrders
+      .filter(order => groupedByReceipt[order.gatePass.gatePassNumber])
+      .map(order => {
+        // Get the variety from the order details (use the first variety found)
+        const variety = order.orderDetails[0]?.variety || formData.variety;
+
+        return {
           orderId: order._id,
-          variety: formData.variety,
+          variety: variety,
           bagUpdates: groupedByReceipt[order.gatePass.gatePassNumber].bagUpdates
-        });
-      }
-      return acc;
-    }, [] as { orderId: string; variety: string; bagUpdates: { size: string; quantityToRemove: number }[] }[]);
+        };
+      });
 
     return {
       generation: formData.generation,
@@ -661,7 +764,7 @@ const OutgoingOrderFormContent = () => {
       approxWeight: formData.approxWeight,
       bagType: formData.bagType,
       remarks: formData.remarks,
-      orders: orderDetails
+      orders: orders
     };
   };
 
@@ -1287,55 +1390,19 @@ const OutgoingOrderFormContent = () => {
                                         return (
                                           <td key={size} className="p-2 border-b text-center">
                                             <div className="flex flex-col items-center justify-center">
-                                              <button
-                                                type="button"
-                                                onClick={(e) => handleBoxClick(
+                                              <BagSizeBox
+                                                order={order}
+                                                size={size}
+                                                totalQuantities={totalQuantities}
+                                                bagSizeLocation={bagSizeLocation}
+                                                isSelected={isSelected}
+                                                onBoxClick={(e) => handleBoxClick(
                                                   order.gatePass.gatePassNumber,
                                                   size,
                                                   totalQuantities.current,
                                                   e
                                                 )}
-                                                className={`
-                                                  relative w-16 h-16 rounded-lg border-2
-                                                  ${getBoxColor(
-                                                    totalQuantities.current,
-                                                    totalQuantities.initial,
-                                                    isSelected
-                                                  )}
-                                                  transition-all duration-200 transform hover:scale-105
-                                                  disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
-                                                  flex flex-col items-center justify-center
-                                                `}
-                                                disabled={totalQuantities.current === 0}
-                                              >
-                                                {/* Location at the top */}
-                                                <div className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
-                                                  <span>📍</span>
-                                                  <span className="truncate max-w-[50px]">
-                                                    {bagSizeLocation || ''}
-                                                  </span>
-                                                </div>
-
-                                                {/* Quantity in the middle */}
-                                                <div className="text-xs font-medium">
-                                                  {totalQuantities.current}
-                                                </div>
-                                                <div className="text-xs text-gray-500">
-                                                  /{totalQuantities.initial}
-                                                </div>
-
-                                                {selectedQuantities.some(sq =>
-                                                  sq.receiptNumber === order.gatePass.gatePassNumber &&
-                                                  sq.bagSize === size
-                                                ) && (
-                                                  <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center text-white text-[10px] font-medium shadow-sm px-1 border border-white">
-                                                    {selectedQuantities.find(sq =>
-                                                      sq.receiptNumber === order.gatePass.gatePassNumber &&
-                                                      sq.bagSize === size
-                                                    )?.selectedQuantity}
-                                                  </div>
-                                                )}
-                                              </button>
+                                              />
                                             </div>
                                           </td>
                                         );
@@ -1398,55 +1465,19 @@ const OutgoingOrderFormContent = () => {
                                     return (
                                       <div key={size} className="flex flex-col items-center">
                                         <div className="text-xs font-medium mb-1">{size}</div>
-                                        <button
-                                          type="button"
-                                          onClick={(e) => handleBoxClick(
+                                        <BagSizeBox
+                                          order={order}
+                                          size={size}
+                                          totalQuantities={totalQuantities}
+                                          bagSizeLocation={bagSizeLocation}
+                                          isSelected={isSelected}
+                                          onBoxClick={(e) => handleBoxClick(
                                             order.gatePass.gatePassNumber,
                                             size,
                                             totalQuantities.current,
                                             e
                                           )}
-                                          className={`
-                                            relative w-16 h-16 rounded-lg border-2
-                                            ${getBoxColor(
-                                              totalQuantities.current,
-                                              totalQuantities.initial,
-                                              isSelected
-                                            )}
-                                            transition-all duration-200 active:scale-95
-                                            disabled:opacity-50 disabled:cursor-not-allowed
-                                            flex flex-col items-center justify-center
-                                          `}
-                                          disabled={totalQuantities.current === 0}
-                                        >
-                                          {/* Location at the top */}
-                                          <div className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
-                                            <span>📍</span>
-                                            <span className="truncate max-w-[50px]">
-                                              {bagSizeLocation || ''}
-                                            </span>
-                                          </div>
-
-                                          {/* Quantity in the middle */}
-                                          <div className="text-sm font-medium">
-                                            {totalQuantities.current}
-                                          </div>
-                                          <div className="text-xs text-gray-500">
-                                            /{totalQuantities.initial}
-                                          </div>
-
-                                          {selectedQuantities.some(sq =>
-                                            sq.receiptNumber === order.gatePass.gatePassNumber &&
-                                            sq.bagSize === size
-                                          ) && (
-                                            <div className="absolute -top-2 -right-2 min-w-[22px] h-[22px] bg-primary rounded-full flex items-center justify-center text-white text-xs font-medium shadow-sm px-1 border-2 border-white">
-                                              {selectedQuantities.find(sq =>
-                                                sq.receiptNumber === order.gatePass.gatePassNumber &&
-                                                sq.bagSize === size
-                                              )?.selectedQuantity}
-                                            </div>
-                                          )}
-                                        </button>
+                                        />
                                       </div>
                                     );
                                   })}
@@ -1618,6 +1649,26 @@ const OutgoingOrderFormContent = () => {
                       onClick={() => {
                         const requestBody = generateOutgoingOrderRequestBody();
                         console.log('Outgoing Order Request Body:', JSON.stringify(requestBody, null, 2));
+                        console.log('Orders array length:', requestBody.orders.length);
+                        console.log('First order structure:', requestBody.orders[0]);
+
+                        // Validate the request body structure
+                        if (requestBody.orders.length === 0) {
+                          toast.error('No orders selected. Please select quantities first.');
+                          return;
+                        }
+
+                        // Check if all orders have required fields
+                        const invalidOrders = requestBody.orders.filter(order =>
+                          !order.orderId || !order.variety || !order.bagUpdates || order.bagUpdates.length === 0
+                        );
+
+                        if (invalidOrders.length > 0) {
+                          console.error('Invalid orders found:', invalidOrders);
+                          toast.error('Some selected orders are missing required information.');
+                          return;
+                        }
+
                         createOrderMutation.mutate(requestBody);
                       }}
                       disabled={createOrderMutation.isPending || selectedQuantities.length === 0}
@@ -1642,14 +1693,20 @@ const OutgoingOrderFormContent = () => {
 
       {/* Quantity Input Modal */}
       {activeBox && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 sm:p-6 max-w-sm w-full mx-4">
+        <div
+          className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50"
+          onClick={handleCloseModal}
+        >
+          <div
+            className="bg-white rounded-lg p-4 sm:p-6 max-w-sm w-full mx-4 shadow-2xl border border-gray-200"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="flex justify-between items-center mb-3 sm:mb-4">
               <h3 className="text-base sm:text-lg font-medium">{t('outgoingOrder.quantityModal.title')}</h3>
               <button
                 type="button"
-                onClick={() => setActiveBox(null)}
-                className="text-gray-400 hover:text-gray-500"
+                onClick={handleCloseModal}
+                className="text-gray-400 hover:text-gray-500 transition-colors"
               >
                 ×
               </button>
@@ -1660,22 +1717,65 @@ const OutgoingOrderFormContent = () => {
                   {t('outgoingOrder.quantityModal.currentAvailable')} : {activeBox.maxQuantity}
                 </div>
                 <div className="flex items-center gap-3 sm:gap-4">
-                                      <label className="text-sm sm:text-base text-gray-700 font-medium whitespace-nowrap">
-                      {t('outgoingOrder.quantityModal.enterQty')} :
-                    </label>
+                  <label className="text-sm sm:text-base text-gray-700 font-medium whitespace-nowrap">
+                    {t('outgoingOrder.quantityModal.enterQty')} :
+                  </label>
                   <input
-                    type="number"
+                    id="quantity-input"
+                    type="text"
                     value={inputQuantity}
                     onChange={(e) => {
                       const value = e.target.value;
-                      if (value === '' || (Number(value) >= 0 && Number(value) <= activeBox.maxQuantity)) {
-                        setInputQuantity(value);
+                      // Only allow numbers and empty string
+                      if (value === '' || /^\d+$/.test(value)) {
+                        const numValue = Number(value);
+                        // Only allow values between 1 and maxQuantity, or empty string
+                        if (value === '' || (numValue >= 1 && numValue <= activeBox.maxQuantity)) {
+                          setInputQuantity(value);
+                        }
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      // Handle Enter key to submit
+                      if (e.keyCode === 13) {
+                        e.preventDefault();
+                        // Create a synthetic mouse event for the submit handler
+                        const syntheticEvent = {
+                          preventDefault: () => {},
+                        } as React.MouseEvent;
+                        handleQuantitySubmit(syntheticEvent);
+                        return;
+                      }
+
+                      // Allow: backspace, delete, tab, escape, home, end, left, right, up, down
+                      if ([8, 9, 27, 46, 35, 36, 37, 38, 39, 40].indexOf(e.keyCode) !== -1 ||
+                          // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                          (e.keyCode === 65 && e.ctrlKey === true) ||
+                          (e.keyCode === 67 && e.ctrlKey === true) ||
+                          (e.keyCode === 86 && e.ctrlKey === true) ||
+                          (e.keyCode === 88 && e.ctrlKey === true)) {
+                        return;
+                      }
+                      // Only allow numeric keys (0-9) on both regular and numpad
+                      if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+                        e.preventDefault();
+                      }
+                    }}
+                    onPaste={(e) => {
+                      // Prevent pasting non-numeric content
+                      e.preventDefault();
+                      const paste = (e.clipboardData || (window as Window & { clipboardData?: DataTransfer }).clipboardData).getData('text');
+                      const numericPaste = paste.replace(/[^0-9]/g, '');
+                      if (numericPaste) {
+                        const numValue = parseInt(numericPaste, 10);
+                        if (numValue >= 1 && numValue <= activeBox.maxQuantity) {
+                          setInputQuantity(numericPaste);
+                        }
                       }
                     }}
                     className="flex-1 p-2 sm:p-2.5 text-sm sm:text-base rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                                          placeholder={t('outgoingOrder.quantityModal.placeholder')}
-                    min="1"
-                    max={activeBox.maxQuantity}
+                    placeholder={t('outgoingOrder.quantityModal.placeholder')}
+                    autoComplete="off"
                   />
                 </div>
               </div>

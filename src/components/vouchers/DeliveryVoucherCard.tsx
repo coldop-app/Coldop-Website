@@ -406,58 +406,53 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50">
-                      {sortBagSizes(
-                        Array.from(
-                          new Set(
-                            order.orderDetails.flatMap((d) =>
-                              d.bagSizes.map((b) => b.size)
-                            )
-                          )
-                        )
-                      ).map((bagSize, idx) => (
-                        <th
-                          key={idx}
-                          className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200"
-                        >
-                          {bagSize}
-                        </th>
-                      ))}
+                      <th className="text-left py-3 px-4 font-medium text-gray-900 border-b border-gray-200">
+                        Bag Type
+                      </th>
                       <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200">
-                        Total
+                        Quantity
                       </th>
                     </tr>
                   </thead>
-                  <tbody>
-                    <tr>
-                      {sortBagSizes(
-                        Array.from(
-                          new Set(
-                            order.orderDetails.flatMap((d) =>
-                              d.bagSizes.map((b) => b.size)
-                            )
+                  <tbody className="divide-y divide-gray-100">
+                    {sortBagSizes(
+                      Array.from(
+                        new Set(
+                          order.orderDetails.flatMap((d) =>
+                            d.bagSizes.map((b) => b.size)
                           )
                         )
-                      ).map((bagSize, idx) => {
-                        const totalRemoved = order.orderDetails.reduce(
-                          (total, detail) =>
-                            total +
-                            detail.bagSizes
-                              .filter((bag) => bag.size === bagSize)
-                              .reduce(
-                                (sum, bag) => sum + (bag.quantityRemoved || 0),
-                                0
-                              ),
-                          0
-                        );
+                      )
+                    ).map((bagSize, idx) => {
+                      const totalRemoved = order.orderDetails.reduce(
+                        (total, detail) =>
+                          total +
+                          detail.bagSizes
+                            .filter((bag) => bag.size === bagSize)
+                            .reduce(
+                              (sum, bag) => sum + (bag.quantityRemoved || 0),
+                              0
+                            ),
+                        0
+                      );
 
-                        return (
-                          <td key={idx} className="py-3 px-3 text-center">
+                      return (
+                        <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="py-3 px-4 font-medium text-gray-900">
+                            {bagSize}
+                          </td>
+                          <td className="py-3 px-3 text-center">
                             <span className="font-medium text-red-600">
                               {totalRemoved}
                             </span>
                           </td>
-                        );
-                      })}
+                        </tr>
+                      );
+                    })}
+                    <tr className="bg-gray-50 font-medium">
+                      <td className="py-3 px-4 text-gray-900">
+                        Total
+                      </td>
                       <td className="py-3 px-3 text-center">
                         <span className="font-medium text-red-600">
                           {calculateLotNo()}
