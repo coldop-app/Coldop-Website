@@ -103,7 +103,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#E8E8E8",
     borderBottomWidth: 1,
     borderBottomColor: "#000",
-    paddingVertical: 3,
+    paddingVertical: 6,
+    minHeight: 24,
   },
   tableRow: {
     flexDirection: "row",
@@ -157,7 +158,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   colBagSize: {
-    width: "6%",
+    width: "7%",
     borderRightWidth: 0.5,
     borderRightColor: "#666",
     paddingHorizontal: 2,
@@ -193,6 +194,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     color: "#000",
+    lineHeight: 1.2,
   },
   cellText: {
     fontSize: 7,
@@ -365,6 +367,14 @@ const formatDate = (date: string | Date | undefined): string => {
   } catch {
     return "-";
   }
+};
+
+// Function to clean up bag size headings by removing "mm" and fixing overflow issues
+const cleanBagSizeHeading = (size: string): string => {
+  return size
+    .replace(/mm/g, "") // Remove "mm"
+    .replace(/Be-low/g, "Below") // Fix "Be-low" to "Below"
+    .trim();
 };
 
 const getOrderDate = (order: Order): string | undefined => {
@@ -639,7 +649,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
               <Text style={styles.cellHeaderText}>DATE</Text>
             </View>
             <View style={styles.colVoucher}>
-              <Text style={styles.cellHeaderText}>VOUCHER</Text>
+              <Text style={styles.cellHeaderText}>G. Pass</Text>
             </View>
             <View style={styles.colVariety}>
               <Text style={styles.cellHeaderText}>VARIETY</Text>
@@ -655,7 +665,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
             </View>
             {bagSizes.map((size) => (
               <View key={size} style={styles.colBagSize}>
-                <Text style={styles.cellHeaderText}>{size}</Text>
+                <Text style={styles.cellHeaderText}>{cleanBagSizeHeading(size)}</Text>
               </View>
             ))}
             <View style={styles.colTotal}>
