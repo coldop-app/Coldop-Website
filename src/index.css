@@ -137,23 +137,47 @@
     overflow-x: hidden;
     -webkit-text-size-adjust: 100%;
     -webkit-tap-highlight-color: transparent;
+    /* Prevent zoom and improve app-like behavior */
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
   }
-  
+
   /* Ensure images don't overflow their containers */
   img {
     max-width: 100%;
     height: auto;
   }
-  
+
   /* Better button and link tap targets on mobile */
   button, a {
     min-height: 44px;
     min-width: 44px;
   }
-  
+
   /* Improve form elements on mobile */
   input, select, textarea {
     font-size: 16px; /* Prevents zoom on focus in iOS */
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  /* Allow text selection in form elements and content areas */
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  /* Prevent double-tap zoom on buttons and links */
+  button, a, [role="button"] {
+    touch-action: manipulation;
   }
 }
 
