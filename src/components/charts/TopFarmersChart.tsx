@@ -59,7 +59,7 @@ const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartPro
                 width={50}
               />
               <Tooltip
-                formatter={(value) => [`${formatNumber(value)} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalBags')]}
+                formatter={(value) => [`${formatNumber(Array.isArray(value) ? value[0] : value)} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalBags')]}
                 contentStyle={{
                   backgroundColor: '#fff',
                   border: '1px solid #e5e7eb',

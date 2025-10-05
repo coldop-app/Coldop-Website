@@ -76,7 +76,7 @@ const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
               </Pie>
               <Tooltip
                 formatter={(value) => [
-                  `${formatNumber(value)} ${t("coldStorageSummary.bags")}`,
+                  `${formatNumber(Array.isArray(value) ? value[0] : value)} ${t("coldStorageSummary.bags")}`,
                   t("coldStorageSummary.quantity"),
                 ]}
                 contentStyle={{

@@ -51,7 +51,7 @@ const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
                 width={50}
               />
               <Tooltip
-                formatter={(value) => [`${formatNumber(value)} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalStock')]}
+                formatter={(value) => [`${formatNumber(Array.isArray(value) ? value[0] : value)} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalStock')]}
                 labelFormatter={(label) => `${t('coldStorageSummary.month')}: ${label}`}
                 contentStyle={{
                   backgroundColor: '#fff',

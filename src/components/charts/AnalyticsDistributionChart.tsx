@@ -62,7 +62,7 @@ const AnalyticsDistributionChart = ({
             </Pie>
             <Tooltip
               formatter={(value) => [
-                `${formatNumber(value)} bags`,
+                `${formatNumber(Array.isArray(value) ? value[0] : value)} bags`,
                 "Quantity",
               ]}
               contentStyle={{
@@ -103,7 +103,7 @@ const AnalyticsDistributionChart = ({
               width={50}
             />
             <Tooltip
-              formatter={(value) => [`${formatNumber(value)} bags`, "Quantity"]}
+              formatter={(value) => [`${formatNumber(Array.isArray(value) ? value[0] : value)} bags`, "Quantity"]}
               contentStyle={{
                 backgroundColor: "#fff",
                 border: "1px solid #e5e7eb",
