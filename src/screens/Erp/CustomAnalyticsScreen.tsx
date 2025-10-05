@@ -669,18 +669,20 @@ const CustomAnalyticsScreen = () => {
                 <Button
                   onClick={handleAnalyticsSearch}
                   disabled={isLoadingAnalytics}
-                  className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                  className="bg-primary hover:bg-primary/90 text-white px-4 sm:px-6 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-fit"
                   size="lg"
                 >
                   {isLoadingAnalytics ? (
                     <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Analyzing Data...
+                      <Loader2 className="h-4 w-4 mr-1.5 sm:mr-2 animate-spin flex-shrink-0" />
+                      <span className="hidden sm:inline">Analyzing Data...</span>
+                      <span className="sm:hidden">Analyzing...</span>
                     </>
                   ) : (
                     <>
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Get Analytics
+                      <BarChart3 className="h-4 w-4 mr-1.5 sm:mr-2 flex-shrink-0" />
+                      <span className="hidden sm:inline">Get Analytics</span>
+                      <span className="sm:hidden">Analytics</span>
                     </>
                   )}
                 </Button>
