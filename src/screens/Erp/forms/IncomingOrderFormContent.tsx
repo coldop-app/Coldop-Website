@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, KeyboardEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { Plus, Loader2, X } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
@@ -121,7 +120,6 @@ interface Farmer {
 
 const IncomingOrderFormContent = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   // Pre-selected farmer data
   const farmer = useMemo<Farmer>(
     () => ({
@@ -420,8 +418,8 @@ const IncomingOrderFormContent = () => {
         bagType: "jute",
       });
       setCurrentStep(1);
-      // Navigate back or to orders list
-      navigate("/erp/daybook");
+      // Force hard refresh to ensure scroll to top
+      window.location.href = "/erp/daybook";
     },
     onError: (error: unknown) => {
       console.error("Error creating order:", error);

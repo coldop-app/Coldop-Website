@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback, memo } from "react";
-import { useNavigate } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import type { UseMutationResult } from "@tanstack/react-query";
@@ -206,7 +205,6 @@ const sortBagSizes = (adminPreferences: string[] | undefined) => {
 
 const OutgoingOrderFormContent = () => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   // Pre-selected farmer data
   const farmer = useMemo<Farmer>(
     () => ({
@@ -778,7 +776,8 @@ const OutgoingOrderFormContent = () => {
       ),
     onSuccess: () => {
       toast.success(t('outgoingOrder.success.orderCreated'));
-      navigate('/erp/daybook'); // Navigate to daybook after success
+      // Force hard refresh to ensure scroll to top
+      window.location.href = '/erp/daybook';
     },
     onError: (error) => {
       toast.error(error.response?.data?.message || t('outgoingOrder.errors.failedToCreate'));

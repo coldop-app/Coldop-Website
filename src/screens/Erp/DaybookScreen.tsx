@@ -16,6 +16,7 @@ import DeliveryVoucherCard from "@/components/vouchers/DeliveryVoucherCard";
 import ReceiptVoucherCard from "@/components/vouchers/ReceiptVoucherCard";
 import { Order } from "@/utils/types";
 import { useTranslation } from "react-i18next";
+import ScrollToTop from "@/components/common/ScrollToTop/ScrollToTop";
 
 interface PaginationMeta {
   currentPage: number;
@@ -272,6 +273,7 @@ const DaybookScreen = () => {
   if (isLoading && !orders.length) {
     return (
       <>
+        <ScrollToTop />
         <TopBar
           title={t("daybook.title")}
           isSidebarOpen={false}
@@ -289,6 +291,7 @@ const DaybookScreen = () => {
   if (error) {
     return (
       <>
+        <ScrollToTop />
         <TopBar
           title={t("daybook.title")}
           isSidebarOpen={false}
@@ -303,6 +306,7 @@ const DaybookScreen = () => {
 
   return (
     <>
+      <ScrollToTop />
       <TopBar
         title={t("daybook.title")}
         isSidebarOpen={false}

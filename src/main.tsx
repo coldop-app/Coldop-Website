@@ -21,6 +21,7 @@ import IncomingOrderForm from "./screens/Erp/IncomingOrderForm.tsx";
 import OutgoingOrderForm from "./screens/Erp/OutgoingOrderForm.tsx";
 import EditIncomingOrderForm from "./screens/Erp/EditIncomingOrderForm.tsx";
 import EnhancedLoadingFallback from "./components/common/Shimmer/EnhancedLoadingFallback.tsx";
+import ScrollToTop from "./components/common/ScrollToTop/ScrollToTop.tsx";
 
 // Lazy load components
 const HomeScreen = lazy(() => import("./screens/HomeScreen/HomeScreen.tsx"));
@@ -111,6 +112,7 @@ const router = createBrowserRouter(
         <Route path="erp" element={<ERPLayout />}>
           <Route path="daybook" element={
             <Suspense fallback={<EnhancedLoadingFallback />}>
+              <ScrollToTop />
               <DaybookScreen />
             </Suspense>
           } />

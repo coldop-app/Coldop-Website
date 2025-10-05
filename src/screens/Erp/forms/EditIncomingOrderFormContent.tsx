@@ -1,5 +1,4 @@
 import React, { useState, useEffect, KeyboardEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -122,7 +121,6 @@ interface EditIncomingOrderFormContentProps {
 
 const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentProps) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
   const [currentStep, setCurrentStep] = useState(1);
 
@@ -432,7 +430,8 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
     },
     onSuccess: () => {
       toast.success(t('editIncomingOrder.success.orderUpdated'));
-      navigate('/erp/daybook');
+      // Force hard refresh to ensure scroll to top
+      window.location.href = '/erp/daybook';
     },
     onError: (error: unknown) => {
       console.error("Error updating order:", error);
