@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { RootState } from '@/store';
 import { StoreAdmin } from '@/utils/types';
+import { formatNumber } from '@/lib/utils';
 
 export interface StockSummary {
   variety: string;
@@ -176,7 +177,7 @@ const StockSummaryTable = ({ stockSummary, tabType = 'current' }: StockSummaryTa
                         onClick={() => handleCellClick(variety, size)}
                         title={getQuantityForSize(variety, size) > 0 ? `Click to view ${variety.variety} - ${size} breakdown` : ''}
                       >
-                        {getQuantityForSize(variety, size)}
+                        {formatNumber(getQuantityForSize(variety, size))}
                         {getQuantityForSize(variety, size) > 0 && (
                           <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none" />
                         )}
@@ -198,7 +199,7 @@ const StockSummaryTable = ({ stockSummary, tabType = 'current' }: StockSummaryTa
                       }}
                       title={calculateVarietyTotal(variety, allBagSizes, tabType) > 0 ? `Click to view all sizes for ${variety.variety}` : ''}
                     >
-                      {calculateVarietyTotal(variety, allBagSizes, tabType)}
+                      {formatNumber(calculateVarietyTotal(variety, allBagSizes, tabType))}
                       {calculateVarietyTotal(variety, allBagSizes, tabType) > 0 && (
                         <div className="absolute inset-0 bg-blue-500 opacity-0 group-hover:opacity-5 transition-opacity pointer-events-none" />
                       )}
@@ -212,11 +213,11 @@ const StockSummaryTable = ({ stockSummary, tabType = 'current' }: StockSummaryTa
                   </td>
                   {allBagSizes.map(size => (
                     <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-900 border-r text-xs sm:text-sm">
-                      {getTotalForSize(size)}
+                      {formatNumber(getTotalForSize(size))}
                     </td>
                   ))}
                   <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-blue-600 bg-blue-100 text-xs sm:text-sm">
-                    {totalBags}
+                    {formatNumber(totalBags)}
                   </td>
                 </tr>
               </tbody>

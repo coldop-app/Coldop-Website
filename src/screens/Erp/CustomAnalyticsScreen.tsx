@@ -22,6 +22,7 @@ import {
   Settings,
   EyeOff
 } from "lucide-react";
+import { formatNumber } from '@/lib/utils';
 
 
 interface FilterData {
@@ -706,7 +707,7 @@ const CustomAnalyticsScreen = () => {
                         </p>
                       </div>
                       <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
-                        {stockType === 'current' ? analyticsData.totals.totalCurrentBags : analyticsData.totals.totalBags}
+                        {formatNumber(stockType === 'current' ? analyticsData.totals.totalCurrentBags : analyticsData.totals.totalBags)}
                       </h3>
                       <p className="text-xs text-gray-500 leading-tight">
                         {stockType === 'current' ? 'Currently in storage' : 'Initial bags received'}
@@ -729,7 +730,7 @@ const CustomAnalyticsScreen = () => {
                         </p>
                       </div>
                       <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
-                        {stockType === 'current' ? analyticsData.totals.totalRemovedBags : analyticsData.totals.totalCurrentBags}
+                        {formatNumber(stockType === 'current' ? analyticsData.totals.totalRemovedBags : analyticsData.totals.totalCurrentBags)}
                       </h3>
                       <p className="text-xs text-gray-500 leading-tight">
                         {stockType === 'current' ? 'Bags taken out' : 'Currently in storage'}
@@ -752,7 +753,7 @@ const CustomAnalyticsScreen = () => {
                         </p>
                       </div>
                       <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">
-                        {stockType === 'current' ? analyticsData.totals.totalBags : analyticsData.totals.totalRemovedBags}
+                        {formatNumber(stockType === 'current' ? analyticsData.totals.totalBags : analyticsData.totals.totalRemovedBags)}
                       </h3>
                       <p className="text-xs text-gray-500 leading-tight">
                         {stockType === 'current' ? 'Initial bags received' : 'Bags taken out'}
@@ -774,7 +775,7 @@ const CustomAnalyticsScreen = () => {
                           Varieties
                         </p>
                       </div>
-                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{analyticsData.distributions.summary.uniqueVarieties}</h3>
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{formatNumber(analyticsData.distributions.summary.uniqueVarieties)}</h3>
                       <p className="text-xs text-gray-500 leading-tight">
                         Different varieties
                       </p>
@@ -795,9 +796,9 @@ const CustomAnalyticsScreen = () => {
                           Total Orders
                         </p>
                       </div>
-                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{analyticsData.orderCounts.totalOrders}</h3>
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{formatNumber(analyticsData.orderCounts.totalOrders)}</h3>
                       <p className="text-xs text-gray-500 leading-tight">
-                        Incoming: {analyticsData.orderCounts.totalIncomingOrders}
+                        Incoming: {formatNumber(analyticsData.orderCounts.totalIncomingOrders)}
                       </p>
                     </div>
                   </div>
@@ -816,9 +817,9 @@ const CustomAnalyticsScreen = () => {
                           Weighed Status
                         </p>
                       </div>
-                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{analyticsData.distributions.summary.weighedStatusCounts.weighed}</h3>
+                      <h3 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 mb-1">{formatNumber(analyticsData.distributions.summary.weighedStatusCounts.weighed)}</h3>
                       <p className="text-xs text-gray-500 leading-tight">
-                        Weighed: {analyticsData.distributions.summary.weighedStatusCounts.weighed} | Unweighed: {analyticsData.distributions.summary.weighedStatusCounts.unweighed}
+                        Weighed: {formatNumber(analyticsData.distributions.summary.weighedStatusCounts.weighed)} | Unweighed: {formatNumber(analyticsData.distributions.summary.weighedStatusCounts.unweighed)}
                       </p>
                     </div>
                   </div>
@@ -1046,22 +1047,22 @@ const CustomAnalyticsScreen = () => {
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
                       <div className="text-center p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm">
                         <div className="text-xl sm:text-2xl font-bold text-blue-600 mb-1">
-                          {stockType === 'current' ? analyticsData.totals.totalCurrentBags : analyticsData.totals.totalBags}
+                          {formatNumber(stockType === 'current' ? analyticsData.totals.totalCurrentBags : analyticsData.totals.totalBags)}
                         </div>
                         <div className="text-xs sm:text-sm text-gray-600 font-medium">
                           {stockType === 'current' ? 'Current Bags' : 'Total Bags'}
                         </div>
                       </div>
                       <div className="text-center p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm">
-                        <div className="text-xl sm:text-2xl font-bold text-green-600 mb-1">{analyticsData.distributions.summary.uniqueVarieties}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-green-600 mb-1">{formatNumber(analyticsData.distributions.summary.uniqueVarieties)}</div>
                         <div className="text-xs sm:text-sm text-gray-600 font-medium">Varieties</div>
                       </div>
                       <div className="text-center p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm">
-                        <div className="text-xl sm:text-2xl font-bold text-purple-600 mb-1">{analyticsData.distributions.summary.uniqueGenerations}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-purple-600 mb-1">{formatNumber(analyticsData.distributions.summary.uniqueGenerations)}</div>
                         <div className="text-xs sm:text-sm text-gray-600 font-medium">Generations</div>
                       </div>
                       <div className="text-center p-3 sm:p-4 bg-white/70 backdrop-blur-sm rounded-lg border border-white/50 shadow-sm">
-                        <div className="text-xl sm:text-2xl font-bold text-orange-600 mb-1">{analyticsData.distributions.summary.uniqueGraders}</div>
+                        <div className="text-xl sm:text-2xl font-bold text-orange-600 mb-1">{formatNumber(analyticsData.distributions.summary.uniqueGraders)}</div>
                         <div className="text-xs sm:text-sm text-gray-600 font-medium">Graders</div>
                       </div>
                     </div>
@@ -1121,15 +1122,15 @@ const CustomAnalyticsScreen = () => {
                                   </div>
                                   <div className="grid grid-cols-3 gap-3">
                                     <div className={`text-center p-2 rounded-lg ${stockType === 'initial' ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-700'}`}>
-                                      <div className="text-lg font-bold">{size.initialQuantity}</div>
+                                      <div className="text-lg font-bold">{formatNumber(size.initialQuantity)}</div>
                                       <div className="text-xs">Initial</div>
                                     </div>
                                     <div className={`text-center p-2 rounded-lg ${stockType === 'current' ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-700'}`}>
-                                      <div className="text-lg font-bold">{size.currentQuantity}</div>
+                                      <div className="text-lg font-bold">{formatNumber(size.currentQuantity)}</div>
                                       <div className="text-xs">Current</div>
                                     </div>
                                     <div className="text-center p-2 rounded-lg bg-gray-50 text-gray-700">
-                                      <div className="text-lg font-bold">{size.quantityRemoved}</div>
+                                      <div className="text-lg font-bold">{formatNumber(size.quantityRemoved)}</div>
                                       <div className="text-xs">Removed</div>
                                     </div>
                                   </div>
@@ -1158,12 +1159,12 @@ const CustomAnalyticsScreen = () => {
                                   <tr key={`${variety.variety}-${sizeIndex}`} className={sizeIndex % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                                     <td className="px-4 py-4 text-sm font-medium text-gray-900">{size.size}</td>
                                     <td className={`px-4 py-4 text-sm font-medium ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-900'}`}>
-                                      {size.initialQuantity}
+                                      {formatNumber(size.initialQuantity)}
                                     </td>
                                     <td className={`px-4 py-4 text-sm font-medium ${stockType === 'current' ? 'text-green-600 bg-green-50' : 'text-gray-900'}`}>
-                                      {size.currentQuantity}
+                                      {formatNumber(size.currentQuantity)}
                                     </td>
-                                    <td className="px-4 py-4 text-sm text-gray-900">{size.quantityRemoved}</td>
+                                    <td className="px-4 py-4 text-sm text-gray-900">{formatNumber(size.quantityRemoved)}</td>
                                   </tr>
                                 ))}
                               </tbody>

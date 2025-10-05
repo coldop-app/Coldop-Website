@@ -1,5 +1,6 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatNumber } from '@/lib/utils';
 
 interface DistributionData {
   name: string;
@@ -61,7 +62,7 @@ const AnalyticsDistributionChart = ({
             </Pie>
             <Tooltip
               formatter={(value) => [
-                `${value} bags`,
+                `${formatNumber(value)} bags`,
                 "Quantity",
               ]}
               contentStyle={{
@@ -98,11 +99,11 @@ const AnalyticsDistributionChart = ({
             <YAxis
               tick={{ fontSize: 10 }}
               domain={[0, 'dataMax']}
-              tickFormatter={(value) => `${value}`}
+              tickFormatter={(value) => formatNumber(value)}
               width={50}
             />
             <Tooltip
-              formatter={(value) => [`${value} bags`, "Quantity"]}
+              formatter={(value) => [`${formatNumber(value)} bags`, "Quantity"]}
               contentStyle={{
                 backgroundColor: "#fff",
                 border: "1px solid #e5e7eb",
@@ -167,7 +168,7 @@ const AnalyticsDistributionChart = ({
                 </div>
                 <div className="text-right">
                   <span className="text-xs sm:text-sm text-gray-900 font-medium">
-                    {item.value} bags
+                    {formatNumber(item.value)} bags
                   </span>
                   <span className="text-xs text-gray-500 ml-2">
                     ({item.percentage.toFixed(1)}%)
@@ -188,7 +189,7 @@ const AnalyticsDistributionChart = ({
               </div>
               <div className="text-right">
                 <span className="text-xs sm:text-sm text-gray-900 font-medium">
-                  {othersTotal} bags
+                  {formatNumber(othersTotal)} bags
                 </span>
                 <span className="text-xs text-gray-500 ml-2">
                   ({othersPercentage.toFixed(1)}%)
@@ -209,7 +210,7 @@ const AnalyticsDistributionChart = ({
               </div>
               <div>
                 <span className="text-blue-700 font-medium">Total Bags:</span>
-                <span className="text-blue-900 ml-1">{totalValue}</span>
+                <span className="text-blue-900 ml-1">{formatNumber(totalValue)}</span>
               </div>
               <div>
                 <span className="text-blue-700 font-medium">Top Item:</span>

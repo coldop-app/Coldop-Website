@@ -1,6 +1,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from 'react-i18next';
+import { formatNumber } from '@/lib/utils';
 
 interface StockTrendItem {
   month: string;
@@ -46,11 +47,11 @@ const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
               <YAxis
                 tick={{ fontSize: 10 }}
                 domain={[0, 'dataMax']}
-                tickFormatter={(value) => `${value}`}
+                tickFormatter={(value) => formatNumber(value)}
                 width={50}
               />
               <Tooltip
-                formatter={(value) => [`${value} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalStock')]}
+                formatter={(value) => [`${formatNumber(value)} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalStock')]}
                 labelFormatter={(label) => `${t('coldStorageSummary.month')}: ${label}`}
                 contentStyle={{
                   backgroundColor: '#fff',
@@ -74,11 +75,11 @@ const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
         <div className="mt-4 sm:mt-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">{currentStock}</div>
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-blue-600">{formatNumber(currentStock)}</div>
               <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.currentStock')}</div>
             </div>
             <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{maxStock}</div>
+              <div className="text-lg sm:text-xl lg:text-2xl font-bold text-green-600">{formatNumber(maxStock)}</div>
               <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.peakStock')}</div>
             </div>
           </div>

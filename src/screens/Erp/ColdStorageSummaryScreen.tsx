@@ -15,6 +15,7 @@ import StockTrendChart from '@/components/charts/StockTrendChart';
 import VarietyDistributionChart from '@/components/charts/VarietyDistributionChart';
 import TopFarmersChart from '@/components/charts/TopFarmersChart';
 import StockSummaryTable, { StockSummary as StockSummaryType, TabType } from '@/components/common/StockSummaryTable';
+import { formatNumber } from '@/lib/utils';
 
 interface StockTrendItem {
   month: string;
@@ -203,7 +204,7 @@ const ColdStorageSummaryScreen = () => {
                        'Total Outgoing Stock'}
                     </p>
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{totalBags}</h3>
+                  <h3 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1">{formatNumber(totalBags)}</h3>
                   <p className="text-xs sm:text-sm text-gray-500">
                     {activeTab === 'current' ? t('coldStorageSummary.totalBagsStored') :
                      activeTab === 'initial' ? 'Initial bags received' :
@@ -238,7 +239,7 @@ const ColdStorageSummaryScreen = () => {
                       </div>
                       <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1 truncate">{topVariety.variety}</h3>
                       <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                        {topVarietyTotal} {t('coldStorageSummary.bagsStored')}
+                        {formatNumber(topVarietyTotal)} {t('coldStorageSummary.bagsStored')}
                       </p>
                       <p className="text-xs text-purple-600 font-medium">
                         {topVarietyPercentage.toFixed(1)}% {t('coldStorageSummary.ofTotalInventory')}
@@ -265,7 +266,7 @@ const ColdStorageSummaryScreen = () => {
                     </div>
                     <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-1">{finalVarietyDistribution[1].variety}</h3>
                     <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                      {finalVarietyDistribution[1].quantity} {t('coldStorageSummary.bags')}
+                      {formatNumber(finalVarietyDistribution[1].quantity)} {t('coldStorageSummary.bags')}
                     </p>
                     <p className="text-xs text-pink-600 font-medium">
                       {finalVarietyDistribution[1].percentage.toFixed(1)}% {t('coldStorageSummary.ofAllVarieties')}
@@ -293,7 +294,7 @@ const ColdStorageSummaryScreen = () => {
                       {topFarmersData.data[0].farmerName}
                     </h3>
                     <p className="text-xs sm:text-sm text-gray-500 mb-1">
-                      {topFarmersData.data[0].totalBags} {t('coldStorageSummary.bagsStored')}
+                      {formatNumber(topFarmersData.data[0].totalBags)} {t('coldStorageSummary.bagsStored')}
                     </p>
                     <p className="text-xs text-green-600 font-medium truncate">
                       {t('coldStorageSummary.specializesIn')} {Object.entries(topFarmersData.data[0].bagSummary)[0]?.[0]} ({Object.entries(topFarmersData.data[0].bagSummary)[0]?.[1]} {t('coldStorageSummary.bags')})
@@ -337,7 +338,7 @@ const ColdStorageSummaryScreen = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  Current ({currentTotal})
+                  Current ({formatNumber(currentTotal)})
                 </button>
                 <button
                   onClick={() => setActiveTab('initial')}
@@ -347,7 +348,7 @@ const ColdStorageSummaryScreen = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  Initial ({initialTotal})
+                  Initial ({formatNumber(initialTotal)})
                 </button>
                 <button
                   onClick={() => setActiveTab('outgoing')}
@@ -357,7 +358,7 @@ const ColdStorageSummaryScreen = () => {
                       : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                   }`}
                 >
-                  Outgoing ({outgoingTotal})
+                  Outgoing ({formatNumber(outgoingTotal)})
                 </button>
               </nav>
             </div>
@@ -383,7 +384,7 @@ const ColdStorageSummaryScreen = () => {
               <div className="flex items-center justify-between text-xs sm:text-sm">
                 <span className="text-gray-600">0%</span>
                 <span className="font-medium text-gray-900 text-center">
-                  {totalBags} / {capacity} bags ({utilizationPercentage.toFixed(1)}%)
+                  {formatNumber(totalBags)} / {formatNumber(capacity)} bags ({utilizationPercentage.toFixed(1)}%)
                 </span>
                 <span className="text-gray-600">100%</span>
               </div>
@@ -408,9 +409,9 @@ const ColdStorageSummaryScreen = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4 mt-4 sm:mt-6">
                 <div className="text-center p-3 sm:p-4 bg-gray-50 rounded-lg">
                   <div className="text-xl sm:text-2xl font-bold text-gray-900">
-                    {activeTab === 'current' ? capacity - totalBags :
+                    {formatNumber(activeTab === 'current' ? capacity - totalBags :
                      activeTab === 'initial' ? capacity - totalBags :
-                     totalBags}
+                     totalBags)}
                   </div>
                   <div className="text-xs sm:text-sm text-gray-600">
                     {activeTab === 'current' ? t('coldStorageSummary.availableSpace') :
@@ -419,7 +420,7 @@ const ColdStorageSummaryScreen = () => {
                   </div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-blue-50 rounded-lg">
-                  <div className="text-xl sm:text-2xl font-bold text-blue-600">{totalBags}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-blue-600">{formatNumber(totalBags)}</div>
                   <div className="text-xs sm:text-sm text-gray-600">
                     {activeTab === 'current' ? t('coldStorageSummary.currentlyStored') :
                      activeTab === 'initial' ? 'Initial Stock' :
@@ -427,7 +428,7 @@ const ColdStorageSummaryScreen = () => {
                   </div>
                 </div>
                 <div className="text-center p-3 sm:p-4 bg-green-50 rounded-lg">
-                  <div className="text-xl sm:text-2xl font-bold text-green-600">{capacity}</div>
+                  <div className="text-xl sm:text-2xl font-bold text-green-600">{formatNumber(capacity)}</div>
                   <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.totalCapacity')}</div>
                 </div>
               </div>

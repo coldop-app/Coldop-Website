@@ -1,6 +1,7 @@
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
+import { formatNumber } from '@/lib/utils';
 
 interface VarietyDistributionItem {
   variety: string;
@@ -75,7 +76,7 @@ const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
               </Pie>
               <Tooltip
                 formatter={(value) => [
-                  `${value} ${t("coldStorageSummary.bags")}`,
+                  `${formatNumber(value)} ${t("coldStorageSummary.bags")}`,
                   t("coldStorageSummary.quantity"),
                 ]}
                 contentStyle={{
@@ -108,7 +109,7 @@ const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
                   </span>
                 </div>
                 <span className="text-xs sm:text-sm text-gray-600 whitespace-nowrap ml-2">
-                  {item.quantity} {t("coldStorageSummary.bags")} (
+                  {formatNumber(item.quantity)} {t("coldStorageSummary.bags")} (
                   {item.percentage.toFixed(1)}%)
                 </span>
               </div>

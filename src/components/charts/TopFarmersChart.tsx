@@ -1,6 +1,7 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslation } from 'react-i18next';
+import { formatNumber } from '@/lib/utils';
 
 interface TopFarmerItem {
   name: string;
@@ -54,11 +55,11 @@ const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartPro
               <YAxis
                 tick={{ fontSize: 10 }}
                 domain={[0, 'dataMax']}
-                tickFormatter={(value) => `${value}`}
+                tickFormatter={(value) => formatNumber(value)}
                 width={50}
               />
               <Tooltip
-                formatter={(value) => [`${value} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalBags')]}
+                formatter={(value) => [`${formatNumber(value)} ${t('coldStorageSummary.bags')}`, t('coldStorageSummary.totalBags')]}
                 contentStyle={{
                   backgroundColor: '#fff',
                   border: '1px solid #e5e7eb',
@@ -87,7 +88,7 @@ const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartPro
                   </p>
                 </div>
                 <p className="text-sm sm:text-lg font-bold text-blue-600 ml-2 whitespace-nowrap">
-                  {topFarmersData.data[0].totalBags} {t('coldStorageSummary.bags')}
+                  {formatNumber(topFarmersData.data[0].totalBags)} {t('coldStorageSummary.bags')}
                 </p>
               </div>
               {topFarmersData.data[1] && (
