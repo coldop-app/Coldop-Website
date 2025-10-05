@@ -669,21 +669,19 @@ const CustomAnalyticsScreen = () => {
                 <Button
                   onClick={handleAnalyticsSearch}
                   disabled={isLoadingAnalytics}
-                  className="bg-primary hover:bg-primary/90 text-white px-4 sm:px-6 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 min-w-fit"
+                  className="bg-primary hover:bg-primary/90 text-white px-3 sm:px-6 py-2.5 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 whitespace-nowrap"
                   size="lg"
                 >
                   {isLoadingAnalytics ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-1.5 sm:mr-2 animate-spin flex-shrink-0" />
-                      <span className="hidden sm:inline">Analyzing Data...</span>
-                      <span className="sm:hidden">Analyzing...</span>
-                    </>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+                      <span className="text-sm sm:text-base">Analyzing...</span>
+                    </div>
                   ) : (
-                    <>
-                      <BarChart3 className="h-4 w-4 mr-1.5 sm:mr-2 flex-shrink-0" />
-                      <span className="hidden sm:inline">Get Analytics</span>
-                      <span className="sm:hidden">Analytics</span>
-                    </>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
+                      <BarChart3 className="h-4 w-4 flex-shrink-0" />
+                      <span className="text-sm sm:text-base">Analytics</span>
+                    </div>
                   )}
                 </Button>
               </div>
@@ -1123,13 +1121,13 @@ const CustomAnalyticsScreen = () => {
                                     <div className="text-xs text-gray-500">Size</div>
                                   </div>
                                   <div className="grid grid-cols-3 gap-3">
-                                    <div className={`text-center p-2 rounded-lg ${stockType === 'initial' ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-700'}`}>
-                                      <div className="text-lg font-bold">{formatNumber(size.initialQuantity)}</div>
-                                      <div className="text-xs">Initial</div>
-                                    </div>
                                     <div className={`text-center p-2 rounded-lg ${stockType === 'current' ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-700'}`}>
                                       <div className="text-lg font-bold">{formatNumber(size.currentQuantity)}</div>
                                       <div className="text-xs">Current</div>
+                                    </div>
+                                    <div className={`text-center p-2 rounded-lg ${stockType === 'initial' ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-700'}`}>
+                                      <div className="text-lg font-bold">{formatNumber(size.initialQuantity)}</div>
+                                      <div className="text-xs">Initial</div>
                                     </div>
                                     <div className="text-center p-2 rounded-lg bg-gray-50 text-gray-700">
                                       <div className="text-lg font-bold">{formatNumber(size.quantityRemoved)}</div>
@@ -1147,11 +1145,11 @@ const CustomAnalyticsScreen = () => {
                               <thead className="bg-gray-50">
                                 <tr>
                                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}>
-                                    Initial Qty
-                                  </th>
                                   <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${stockType === 'current' ? 'text-green-600 bg-green-50' : 'text-gray-500'}`}>
                                     Current Qty
+                                  </th>
+                                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}>
+                                    Initial Qty
                                   </th>
                                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Removed</th>
                                 </tr>
@@ -1160,11 +1158,11 @@ const CustomAnalyticsScreen = () => {
                                 {variety.sizes.map((size, sizeIndex) => (
                                   <tr key={`${variety.variety}-${sizeIndex}`} className={sizeIndex % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                                     <td className="px-4 py-4 text-sm font-medium text-gray-900">{size.size}</td>
-                                    <td className={`px-4 py-4 text-sm font-medium ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-900'}`}>
-                                      {formatNumber(size.initialQuantity)}
-                                    </td>
                                     <td className={`px-4 py-4 text-sm font-medium ${stockType === 'current' ? 'text-green-600 bg-green-50' : 'text-gray-900'}`}>
                                       {formatNumber(size.currentQuantity)}
+                                    </td>
+                                    <td className={`px-4 py-4 text-sm font-medium ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-900'}`}>
+                                      {formatNumber(size.initialQuantity)}
                                     </td>
                                     <td className="px-4 py-4 text-sm text-gray-900">{formatNumber(size.quantityRemoved)}</td>
                                   </tr>

@@ -321,22 +321,26 @@ const OutgoingOrderFormContent = () => {
     });
   }, [farmerIncomingOrders?.data, formData.variety, formData.generation, formData.rouging, formData.tuberType, formData.grader, formData.weighedStatus, formData.approxWeight]);
 
-  // Get available bag sizes from all orders
-  const availableBagSizes = React.useMemo(() => {
-    if (!farmerIncomingOrders?.data?.length) return adminInfo?.preferences?.bagSizes || [];
 
-    // Get unique bag sizes from all orders
-    const bagSizes = new Set<string>();
-    farmerIncomingOrders.data.forEach(order => {
+  // Get active bag sizes (columns with at least one cell that has quantities)
+  const activeBagSizes = React.useMemo(() => {
+    if (!filteredOrders?.length) return [];
+
+    const activeSizes = new Set<string>();
+
+    filteredOrders.forEach(order => {
       order.orderDetails.forEach(detail => {
         detail.bagSizes.forEach(bagSize => {
-          bagSizes.add(bagSize.size);
+          // Only include bag sizes that have current quantity > 0
+          if (bagSize.quantity.currentQuantity > 0) {
+            activeSizes.add(bagSize.size);
+          }
         });
       });
     });
 
-    return Array.from(bagSizes);
-  }, [farmerIncomingOrders?.data, adminInfo?.preferences?.bagSizes]);
+    return Array.from(activeSizes);
+  }, [filteredOrders]);
 
   // Add a new useMemo for sorted bag sizes
   const sortedBagSizes = useMemo(() => {
@@ -657,11 +661,11 @@ const OutgoingOrderFormContent = () => {
 
   // Get box color based on quantities - memoized for performance
   const getBoxColor = useCallback((currentQuantity: number, initialQuantity: number, isSelected: boolean) => {
-    if (isSelected) return 'border-green-500 bg-green-50';
-    if (currentQuantity === 0 && initialQuantity === 0) return 'border-gray-200 bg-gray-50';
-    if (currentQuantity < 20 && currentQuantity > 0) return 'border-red-400';
-    if (currentQuantity < initialQuantity) return 'border-yellow-400';
-    return 'border-gray-200 hover:border-primary';
+    if (isSelected) return 'border-emerald-500 bg-gradient-to-br from-emerald-50 to-emerald-100 shadow-lg shadow-emerald-200/50';
+    if (currentQuantity === 0 && initialQuantity === 0) return 'border-gray-200 bg-gradient-to-br from-gray-200 to-gray-300 cursor-not-allowed opacity-60';
+    if (currentQuantity < 20 && currentQuantity > 0) return 'border-red-400 bg-gradient-to-br from-red-50 to-red-100 shadow-md shadow-red-200/30';
+    if (currentQuantity < initialQuantity) return 'border-amber-400 bg-gradient-to-br from-amber-50 to-amber-100 shadow-md shadow-amber-200/30';
+    return 'border-gray-200 bg-gradient-to-br from-white to-gray-50 hover:border-primary hover:shadow-md hover:shadow-primary/20 hover:from-primary/5 hover:to-primary/10';
   }, []);
 
   // Memoized Bag Size Box Component for better performance
@@ -684,36 +688,43 @@ const OutgoingOrderFormContent = () => {
       type="button"
       onClick={onBoxClick}
       className={`
-        relative w-16 h-16 rounded-lg border-2
+        relative w-16 h-16 rounded-xl border-2
         ${getBoxColor(
           totalQuantities.current,
           totalQuantities.initial,
           isSelected
         )}
-        transition-all duration-200 transform hover:scale-105
-        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100
+        transition-all duration-300 ease-out transform hover:scale-105 hover:-translate-y-1
+        disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:translate-y-0
         flex flex-col items-center justify-center
+        backdrop-blur-sm
+        group
       `}
       disabled={totalQuantities.current === 0}
     >
-      {/* Location at the top */}
-      <div className="text-[10px] text-gray-600 mb-1 flex items-center gap-1">
-        <span>📍</span>
-        <span className="truncate max-w-[50px]">
-          {bagSizeLocation || ''}
-        </span>
-      </div>
+      {/* Only show content if cell has quantities */}
+      {totalQuantities.current > 0 || totalQuantities.initial > 0 ? (
+        <>
+          {/* Location at the top */}
+          <div className="text-[10px] text-gray-600 mb-1 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
+            <span className="text-[8px]">📍</span>
+            <span className="truncate max-w-[50px] font-medium">
+              {bagSizeLocation || ''}
+            </span>
+          </div>
 
-      {/* Quantity in the middle */}
-      <div className="text-xs font-medium">
-        {totalQuantities.current}
-      </div>
-      <div className="text-xs text-gray-500">
-        /{totalQuantities.initial}
-      </div>
+          {/* Quantity in the middle */}
+          <div className="text-xs font-bold text-gray-800 group-hover:text-gray-900 transition-colors duration-200">
+            {totalQuantities.current}
+          </div>
+          <div className="text-[10px] text-gray-500 font-medium">
+            /{totalQuantities.initial}
+          </div>
+        </>
+      ) : null}
 
       {isSelected && (
-        <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-primary rounded-full flex items-center justify-center text-white text-[10px] font-medium shadow-sm px-1 border border-white">
+        <div className="absolute -top-1.5 -right-1.5 min-w-[20px] h-[20px] bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold shadow-lg shadow-emerald-500/50 px-1 border-2 border-white animate-pulse">
           {selectedQuantities.find(sq =>
             sq.receiptNumber === order.gatePass.gatePassNumber &&
             sq.bagSize === size
@@ -1335,7 +1346,7 @@ const OutgoingOrderFormContent = () => {
                                       />
                                     </th>
                                     <th className="p-2.5 text-left border-b font-medium text-sm text-gray-600 w-28">{t('outgoingOrder.orders.receiptVoucher')}</th>
-                                    {sortedBagSizes(availableBagSizes).map(size => (
+                                    {sortedBagSizes(activeBagSizes).map(size => (
                                       <th key={size} className="p-2.5 text-center border-b font-medium text-sm text-gray-600 w-[calc((100%-160px)/5)]">
                                         {size}
                                       </th>
@@ -1366,7 +1377,7 @@ const OutgoingOrderFormContent = () => {
                                           )}
                                         </div>
                                       </td>
-                                      {availableBagSizes.map(size => {
+                                      {activeBagSizes.map(size => {
                                         const totalQuantities = order.orderDetails.reduce((acc, detail) => {
                                           const bagSize = detail.bagSizes.find(b => b.size === size);
                                           if (bagSize) {
@@ -1441,7 +1452,7 @@ const OutgoingOrderFormContent = () => {
                               </div>
                               <div className="p-3">
                                 <div className="grid grid-cols-3 gap-2">
-                                  {availableBagSizes.map(size => {
+                                  {activeBagSizes.map(size => {
                                     const totalQuantities = order.orderDetails.reduce((acc, detail) => {
                                       const bagSize = detail.bagSizes.find(b => b.size === size);
                                       if (bagSize) {

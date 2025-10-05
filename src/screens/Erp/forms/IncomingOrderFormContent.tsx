@@ -331,8 +331,8 @@ const IncomingOrderFormContent = () => {
       toast.error("Please select grade");
       return;
     }
-    if (!formData.approxWeight) {
-      toast.error("Please enter approximate weight");
+    if (!formData.approxWeight || parseFloat(formData.approxWeight) <= 0) {
+      toast.error("Please enter a valid approximate weight");
       return;
     }
     if (calculateTotal() === 0) {
@@ -1013,11 +1013,12 @@ const IncomingOrderFormContent = () => {
                     Approximate Weight (kg)
                   </label>
                   <input
-                    type="number"
+                    type="text"
                     value={formData.approxWeight}
                     onChange={(e) => {
                       const value = e.target.value;
-                      if (value === "" || parseInt(value) >= 0) {
+                      // Only allow numbers and decimal point
+                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
                         updateFormData("approxWeight", value);
                       }
                     }}
