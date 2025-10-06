@@ -619,307 +619,353 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
   };
 
   const receiptTotals = calculateBagSizeTotals(receiptEntries);
-  const deliveryTotals = calculateBagSizeTotals(deliveryEntries);
 
-  const renderTable = (
-    entries: LedgerEntry[],
-    title: string,
-    totals: { [key: string]: number },
-    isDeliveryTable: boolean = false,
-    receiptTotals?: { [key: string]: number }
-  ) => {
-    const initialGrandTotal =
-      isDeliveryTable && receiptEntries.length > 0
-        ? receiptEntries.reduce((sum, entry) => sum + entry.total, 0)
-        : 0;
+  // Helper function to render table header
+  const renderTableHeader = (isDeliveryTable: boolean = false) => (
+    <View style={styles.tableHeader}>
+      <View style={styles.colDate}>
+        <Text style={styles.cellHeaderText}>DATE</Text>
+      </View>
+      <View style={styles.colVoucher}>
+        <Text style={styles.cellHeaderText}>VOUCHER</Text>
+      </View>
+      <View style={styles.colVariety}>
+        <Text style={styles.cellHeaderText}>VARIETY</Text>
+      </View>
+      <View style={styles.colChamber}>
+        <Text style={styles.cellHeaderText}>CH</Text>
+      </View>
+      <View style={styles.colFloor}>
+        <Text style={styles.cellHeaderText}>FL</Text>
+      </View>
+      <View style={styles.colRow}>
+        <Text style={styles.cellHeaderText}>ROW</Text>
+      </View>
+      {bagSizes.map((size) => (
+        <View key={size} style={styles.colBagSize}>
+          <Text style={styles.cellHeaderText}>{size}</Text>
+        </View>
+      ))}
+      <View style={styles.colTotal}>
+        <Text style={styles.cellHeaderText}>TOTAL</Text>
+      </View>
+      <View style={styles.colGrandTotal}>
+        <Text style={styles.cellHeaderText}>G.TOTAL</Text>
+      </View>
+      {/* Show Remarks column only for receipt table */}
+      {!isDeliveryTable && (
+        <View style={styles.colRemarks}>
+          <Text style={styles.cellHeaderText}>REMARKS</Text>
+        </View>
+      )}
+    </View>
+  );
 
-    return (
-      <View style={styles.ledgerContainer}>
-        <Text style={styles.ledgerTitle}>{title}</Text>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <View style={styles.colDate}>
-              <Text style={styles.cellHeaderText}>DATE</Text>
-            </View>
-            <View style={styles.colVoucher}>
-              <Text style={styles.cellHeaderText}>VOUCHER</Text>
-            </View>
-            <View style={styles.colVariety}>
-              <Text style={styles.cellHeaderText}>VARIETY</Text>
-            </View>
-            <View style={styles.colChamber}>
-              <Text style={styles.cellHeaderText}>CH</Text>
-            </View>
-            <View style={styles.colFloor}>
-              <Text style={styles.cellHeaderText}>FL</Text>
-            </View>
-            <View style={styles.colRow}>
-              <Text style={styles.cellHeaderText}>ROW</Text>
-            </View>
-            {bagSizes.map((size) => (
-              <View key={size} style={styles.colBagSize}>
-                <Text style={styles.cellHeaderText}>{size}</Text>
-              </View>
-            ))}
-            <View style={styles.colTotal}>
-              <Text style={styles.cellHeaderText}>TOTAL</Text>
-            </View>
-            <View style={styles.colGrandTotal}>
-              <Text style={styles.cellHeaderText}>G.TOTAL</Text>
-            </View>
-            {/* Show Remarks column only for receipt table */}
-            {!isDeliveryTable && (
-              <View style={styles.colRemarks}>
-                <Text style={styles.cellHeaderText}>REMARKS</Text>
-              </View>
-            )}
-          </View>
+  // Helper function to render opening balance row for delivery table
+  const renderOpeningBalanceRow = (initialGrandTotal: number, receiptTotals: { [key: string]: number }) => (
+    <View style={[styles.tableRow, { backgroundColor: "#F5F5F5" }]}>
+      <View style={styles.colDate}>
+        <Text style={styles.balanceText}>OPENING</Text>
+      </View>
+      <View style={styles.colVoucher}>
+        <Text style={styles.balanceText}>BALANCE</Text>
+      </View>
+      <View style={styles.colVariety}>
+        <Text style={styles.balanceText}>-</Text>
+      </View>
+      <View style={styles.colChamber}>
+        <Text style={styles.balanceText}>-</Text>
+      </View>
+      <View style={styles.colFloor}>
+        <Text style={styles.balanceText}>-</Text>
+      </View>
+      <View style={styles.colRow}>
+        <Text style={styles.balanceText}>-</Text>
+      </View>
+      {bagSizes.map((size) => (
+        <View key={size} style={styles.colBagSize}>
+          <Text style={styles.balanceText}>{receiptTotals[size] || 0}</Text>
+        </View>
+      ))}
+      <View style={styles.colTotal}>
+        <Text style={styles.balanceText}>{initialGrandTotal}</Text>
+      </View>
+      <View style={styles.colGrandTotal}>
+        <Text style={styles.balanceText}>{initialGrandTotal}</Text>
+      </View>
+    </View>
+  );
 
-          {/* For delivery table, show receipt totals as first row */}
-          {isDeliveryTable && receiptTotals && (
-            <View style={[styles.tableRow, { backgroundColor: "#F5F5F5" }]}>
-              <View style={styles.colDate}>
-                <Text style={styles.balanceText}>OPENING</Text>
-              </View>
-              <View style={styles.colVoucher}>
-                <Text style={styles.balanceText}>BALANCE</Text>
-              </View>
-              <View style={styles.colVariety}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colChamber}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colFloor}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colRow}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              {bagSizes.map((size) => (
-                <View key={size} style={styles.colBagSize}>
-                  <Text style={styles.balanceText}>{receiptTotals[size] || 0}</Text>
-                </View>
-              ))}
-              <View style={styles.colTotal}>
-                <Text style={styles.balanceText}>{initialGrandTotal}</Text>
-              </View>
-              <View style={styles.colGrandTotal}>
-                <Text style={styles.balanceText}>{initialGrandTotal}</Text>
-              </View>
-            </View>
-          )}
 
-          {entries.map((entry, index) => (
-            <View key={index} style={styles.tableRow}>
-              <View style={styles.colDate}>
-                <Text style={styles.cellText}>{formatDate(entry.date)}</Text>
-              </View>
-              <View style={styles.colVoucher}>
-                <Text style={styles.cellText}>{entry.voucher}</Text>
-              </View>
-              <View style={styles.colVariety}>
-                <Text style={styles.cellTextLeft}>{entry.variety}</Text>
-              </View>
-              <View style={styles.colChamber}>
-                <Text style={styles.cellText}>{entry.location.chamber}</Text>
-              </View>
-              <View style={styles.colFloor}>
-                <Text style={styles.cellText}>{entry.location.floor}</Text>
-              </View>
-              <View style={styles.colRow}>
-                <Text style={styles.cellText}>{entry.location.row}</Text>
-              </View>
-              {bagSizes.map((size) => (
-                <View key={size} style={styles.colBagSize}>
-                  <Text style={styles.cellText}>
-                    {entry.quantities[size] || "-"}
-                  </Text>
-                </View>
-              ))}
-              <View style={styles.colTotal}>
-                <Text style={styles.balanceText}>{entry.total}</Text>
-              </View>
-              <View style={styles.colGrandTotal}>
-                <Text style={styles.balanceText}>
-                  {isDeliveryTable
-                    ? initialGrandTotal - entry.grandTotal
-                    : entry.grandTotal}
-                </Text>
-              </View>
-              {/* Show Remarks column only for receipt table */}
-              {!isDeliveryTable && (
-                <View style={styles.colRemarks}>
-                  <Text style={styles.cellText}>
-                    {receiptOrders.find(
-                      (o) => o.voucher.voucherNumber === entry.voucher
-                    )?.remarks || "-"}
-                  </Text>
-                </View>
-              )}
-            </View>
-          ))}
+  // Helper function to render a single table row
+  const renderTableRow = (entry: LedgerEntry, index: number, isDeliveryTable: boolean, initialGrandTotal: number) => (
+    <View key={index} style={styles.tableRow}>
+      <View style={styles.colDate}>
+        <Text style={styles.cellText}>{formatDate(entry.date)}</Text>
+      </View>
+      <View style={styles.colVoucher}>
+        <Text style={styles.cellText}>{entry.voucher}</Text>
+      </View>
+      <View style={styles.colVariety}>
+        <Text style={styles.cellTextLeft}>{entry.variety}</Text>
+      </View>
+      <View style={styles.colChamber}>
+        <Text style={styles.cellText}>{entry.location.chamber}</Text>
+      </View>
+      <View style={styles.colFloor}>
+        <Text style={styles.cellText}>{entry.location.floor}</Text>
+      </View>
+      <View style={styles.colRow}>
+        <Text style={styles.cellText}>{entry.location.row}</Text>
+      </View>
+      {bagSizes.map((size) => (
+        <View key={size} style={styles.colBagSize}>
+          <Text style={styles.cellText}>
+            {entry.quantities[size] || "-"}
+          </Text>
+        </View>
+      ))}
+      <View style={styles.colTotal}>
+        <Text style={styles.balanceText}>{entry.total}</Text>
+      </View>
+      <View style={styles.colGrandTotal}>
+        <Text style={styles.balanceText}>
+          {isDeliveryTable
+            ? initialGrandTotal - entry.grandTotal
+            : entry.grandTotal}
+        </Text>
+      </View>
+      {/* Show Remarks column only for receipt table */}
+      {!isDeliveryTable && (
+        <View style={styles.colRemarks}>
+          <Text style={styles.cellText}>
+            {receiptOrders.find(
+              (o) => o.voucher.voucherNumber === entry.voucher
+            )?.remarks || "-"}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
 
-          {/* Show total row only for receipt table */}
-          {!isDeliveryTable && (
-            <View style={[styles.tableRow, styles.totalRow]}>
-              <View style={styles.colDate}>
-                <Text style={styles.balanceText}>TOTAL</Text>
-              </View>
-              <View style={styles.colVoucher}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colVariety}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colChamber}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colFloor}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colRow}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              {bagSizes.map((size) => (
-                <View key={size} style={styles.colBagSize}>
-                  <Text style={styles.balanceText}>{totals[size]}</Text>
-                </View>
-              ))}
-              <View style={styles.colTotal}>
-                <Text style={styles.balanceText}>
-                  {entries.reduce((sum, entry) => sum + entry.total, 0)}
-                </Text>
-              </View>
-              <View style={styles.colGrandTotal}>
-                <Text style={styles.balanceText}>
-                  {entries.length > 0 ? entries[entries.length - 1].grandTotal : 0}
-                </Text>
-              </View>
-              <View style={styles.colRemarks}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-            </View>
-          )}
+  // Function to split entries into pages based on available space
+  const splitEntriesIntoPages = (entries: LedgerEntry[]) => {
+    const pages: LedgerEntry[][] = [];
+    const entriesPerPage = 25; // Approximate number of entries that can fit on one page
+
+    for (let i = 0; i < entries.length; i += entriesPerPage) {
+      pages.push(entries.slice(i, i + entriesPerPage));
+    }
+
+    return pages;
+  };
+
+
+  // Helper function to render header section
+  const renderHeader = () => (
+    <View style={styles.header}>
+      <View style={styles.logoSection}>
+        {adminInfo.imageUrl ? (
+          <Image style={styles.logo} src={adminInfo.imageUrl} />
+        ) : (
+          <View style={[styles.logo, { backgroundColor: "#f0f0f0" }]} />
+        )}
+      </View>
+      <Text style={styles.companyName}>
+        {adminInfo.coldStorageDetails.coldStorageName.toUpperCase()}
+      </Text>
+      <Text style={styles.reportTitle}>FARMER ACCOUNT LEDGER</Text>
+    </View>
+  );
+
+  // Helper function to render farmer information section
+  const renderFarmerInfo = () => (
+    <View style={styles.farmerInfoSection}>
+      <View style={styles.farmerInfoLeft}>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>A/c No.:</Text>
+          <Text style={styles.infoValue}>{farmer.farmerId}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Name:</Text>
+          <Text style={styles.infoValue}>{farmer.name.toUpperCase()}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Address:</Text>
+          <Text style={styles.infoValue}>{farmer.address}</Text>
         </View>
       </View>
-    );
-  };
+      <View style={styles.farmerInfoRight}>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Mobile:</Text>
+          <Text style={styles.infoValue}>{farmer.mobileNumber}</Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Member Since:</Text>
+          <Text style={styles.infoValue}>
+            {formatDate(farmer.createdAt)}
+          </Text>
+        </View>
+        <View style={styles.infoRow}>
+          <Text style={styles.infoLabel}>Report Date:</Text>
+          <Text style={styles.infoValue}>{formatDate(new Date())}</Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Helper function to render summary section
+  const renderSummary = () => (
+    <View style={styles.summaryContainer}>
+      <Text style={styles.summaryTitle}>Account Summary</Text>
+      <View style={styles.summaryTable}>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>
+            Total Receipt Transactions:
+          </Text>
+          <Text style={styles.summaryValue}>{receiptOrders.length}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>
+            Total Delivery Transactions:
+          </Text>
+          <Text style={styles.summaryValue}>{deliveryOrders.length}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Bags Received:</Text>
+          <Text style={styles.summaryValue}>
+            {receiptEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
+          <Text style={styles.summaryValue}>
+            {deliveryEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+        <View style={[styles.summaryRow, { backgroundColor: "#D0D0D0" }]}>
+          <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
+          <Text style={styles.summaryValue}>
+            {receiptEntries.reduce((sum, entry) => sum + entry.total, 0) -
+              deliveryEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Helper function to render footer
+  const renderFooter = (pageNumber: number) => (
+    <>
+      <View style={styles.footer}>
+        <View style={styles.footerLeft}>
+          <Text style={styles.footerText}>
+            Authorized Signature: ____________________
+          </Text>
+        </View>
+        <View style={styles.footerCenter}>
+          <Image style={styles.logo} src={coldopLogo} />
+          <Text style={styles.poweredBy}>Powered by Coldop</Text>
+        </View>
+        <View style={styles.footerRight}>
+          <Text style={styles.footerText}>
+            Date: {formatDate(new Date())}
+          </Text>
+        </View>
+      </View>
+      <Text style={styles.pageNumber}>Page {pageNumber}</Text>
+    </>
+  );
+
+  // Split entries into pages
+  const receiptPages = splitEntriesIntoPages(receiptEntries);
+  const deliveryPages = splitEntriesIntoPages(deliveryEntries);
+
+  // Calculate total pages needed
+  const totalPages = Math.max(1, receiptPages.length + deliveryPages.length + 1); // +1 for summary page
 
   return (
     <Document>
+      {/* First page with header, farmer info, and first receipt table page */}
       <Page size="A4" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.companyName}>
-            {adminInfo.coldStorageDetails.coldStorageName.toUpperCase()}
-          </Text>
-          <Text style={styles.reportTitle}>FARMER ACCOUNT LEDGER</Text>
-        </View>
+        {renderHeader()}
+        {renderFarmerInfo()}
 
-        {/* Farmer Information */}
-        <View style={styles.farmerInfoSection}>
-          <View style={styles.farmerInfoLeft}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>A/c No.:</Text>
-              <Text style={styles.infoValue}>{farmer.farmerId}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Name:</Text>
-              <Text style={styles.infoValue}>{farmer.name.toUpperCase()}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Address:</Text>
-              <Text style={styles.infoValue}>{farmer.address}</Text>
+        {/* First receipt table page */}
+        {receiptPages.length > 0 && (
+          <View style={styles.ledgerContainer}>
+            <Text style={styles.ledgerTitle}>Receipt Details</Text>
+            <View style={styles.table}>
+              {renderTableHeader(false)}
+              {receiptPages[0].map((entry, index) =>
+                renderTableRow(entry, index, false, 0)
+              )}
             </View>
           </View>
-          <View style={styles.farmerInfoRight}>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Mobile:</Text>
-              <Text style={styles.infoValue}>{farmer.mobileNumber}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Member Since:</Text>
-              <Text style={styles.infoValue}>
-                {formatDate(farmer.createdAt)}
-              </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Report Date:</Text>
-              <Text style={styles.infoValue}>{formatDate(new Date())}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Receipt Table */}
-        {renderTable(receiptEntries, "Receipt Details", receiptTotals)}
-
-        {/* Delivery Table */}
-        {renderTable(
-          deliveryEntries,
-          "Delivery Details",
-          deliveryTotals,
-          true,
-          receiptTotals
         )}
 
-        {/* Summary Box */}
-        <View style={styles.summaryContainer}>
-          <Text style={styles.summaryTitle}>Account Summary</Text>
-          <View style={styles.summaryTable}>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                Total Receipt Transactions:
-              </Text>
-              <Text style={styles.summaryValue}>{receiptOrders.length}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>
-                Total Delivery Transactions:
-              </Text>
-              <Text style={styles.summaryValue}>{deliveryOrders.length}</Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Total Bags Received:</Text>
-              <Text style={styles.summaryValue}>
-                {receiptEntries.reduce((sum, entry) => sum + entry.total, 0)}
-              </Text>
-            </View>
-            <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
-              <Text style={styles.summaryValue}>
-                {deliveryEntries.reduce((sum, entry) => sum + entry.total, 0)}
-              </Text>
-            </View>
-            <View style={[styles.summaryRow, { backgroundColor: "#D0D0D0" }]}>
-              <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
-              <Text style={styles.summaryValue}>
-                {receiptEntries.reduce((sum, entry) => sum + entry.total, 0) -
-                  deliveryEntries.reduce((sum, entry) => sum + entry.total, 0)}
-              </Text>
-            </View>
-          </View>
-        </View>
+        {renderFooter(1)}
+      </Page>
 
-        {/* Footer */}
-        <View style={styles.footer}>
-          <View style={styles.footerLeft}>
-            <Text style={styles.footerText}>
-              Authorized Signature: ____________________
-            </Text>
-          </View>
-          <View style={styles.footerCenter}>
-            <Image style={styles.logo} src={coldopLogo} />
-            <Text style={styles.poweredBy}>Powered by Coldop</Text>
-          </View>
-          <View style={styles.footerRight}>
-            <Text style={styles.footerText}>
-              Date: {formatDate(new Date())}
-            </Text>
-          </View>
-        </View>
+      {/* Additional receipt table pages */}
+      {receiptPages.slice(1).map((pageEntries, pageIndex) => (
+        <Page key={`receipt-${pageIndex + 2}`} size="A4" style={styles.page}>
+          {renderHeader()}
 
-        <Text style={styles.pageNumber}>Page 1</Text>
+          <View style={styles.ledgerContainer}>
+            <Text style={styles.ledgerTitle}>Receipt Details (continued)</Text>
+            <View style={styles.table}>
+              {renderTableHeader(false)}
+              {pageEntries.map((entry, index) =>
+                renderTableRow(entry, (pageIndex + 1) * 25 + index, false, 0)
+              )}
+            </View>
+          </View>
+
+          {renderFooter(pageIndex + 2)}
+        </Page>
+      ))}
+
+      {/* Delivery table pages */}
+      {deliveryPages.map((pageEntries, pageIndex) => (
+        <Page key={`delivery-${pageIndex + 1}`} size="A4" style={styles.page}>
+          {renderHeader()}
+
+          <View style={styles.ledgerContainer}>
+            <Text style={styles.ledgerTitle}>
+              {pageIndex === 0 ? "Delivery Details" : "Delivery Details (continued)"}
+            </Text>
+            <View style={styles.table}>
+              {renderTableHeader(true)}
+
+              {/* Show opening balance only on first delivery page */}
+              {pageIndex === 0 && receiptTotals &&
+                renderOpeningBalanceRow(
+                  receiptEntries.reduce((sum, entry) => sum + entry.total, 0),
+                  receiptTotals
+                )
+              }
+
+              {pageEntries.map((entry, index) =>
+                renderTableRow(
+                  entry,
+                  pageIndex * 25 + index,
+                  true,
+                  receiptEntries.reduce((sum, entry) => sum + entry.total, 0)
+                )
+              )}
+            </View>
+          </View>
+
+          {renderFooter(receiptPages.length + pageIndex + 1)}
+        </Page>
+      ))}
+
+      {/* Summary page */}
+      <Page size="A4" style={styles.page}>
+        {renderHeader()}
+        {renderSummary()}
+        {renderFooter(totalPages)}
       </Page>
     </Document>
   );

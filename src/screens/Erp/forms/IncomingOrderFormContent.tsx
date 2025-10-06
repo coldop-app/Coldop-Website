@@ -141,6 +141,7 @@ const IncomingOrderFormContent = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isNewFarmerModalOpen, setIsNewFarmerModalOpen] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
+  const [firstCompleteLocation, setFirstCompleteLocation] = useState<BagLocation | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
@@ -222,16 +223,26 @@ const IncomingOrderFormContent = () => {
   };
 
   const updateLocation = (bagType: string, field: keyof BagLocation, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      bagLocations: {
+    setFormData(prev => {
+      const newBagLocations = {
         ...prev.bagLocations,
         [bagType]: {
           ...prev.bagLocations[bagType],
           [field]: value
         }
+      };
+
+      // Check if this location is now complete and set as first complete location
+      const updatedLocation = newBagLocations[bagType];
+      if (updatedLocation && updatedLocation.chamber && updatedLocation.floor && updatedLocation.row && !firstCompleteLocation) {
+        setFirstCompleteLocation(updatedLocation);
       }
-    }));
+
+      return {
+        ...prev,
+        bagLocations: newBagLocations
+      };
+    });
   };
 
   const getCombinedLocation = (bagType: string): string => {
@@ -246,6 +257,30 @@ const IncomingOrderFormContent = () => {
     if (chamber && floor && row) return `${chamber}-${floor}-${row}`;
 
     return "";
+  };
+
+  const applyLocationToAll = () => {
+    if (!firstCompleteLocation) return;
+
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    const newBagLocations = { ...formData.bagLocations };
+
+    // Apply the first complete location to all bag sizes that have quantities > 0
+    bagSizes.forEach(bagSize => {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const quantity = parseInt(formData.quantities[fieldName] || "0");
+
+      if (quantity > 0) {
+        newBagLocations[fieldName] = { ...firstCompleteLocation };
+      }
+    });
+
+    setFormData(prev => ({
+      ...prev,
+      bagLocations: newBagLocations
+    }));
+
+    toast.success("Location applied to all bag sizes!");
   };
 
   const calculateTotal = () => {
@@ -797,7 +832,18 @@ const IncomingOrderFormContent = () => {
             <div className="space-y-6">
               {/* Location Section */}
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
-                <h3 className="text-lg font-bold mb-2">Enter Address (CH R FL)</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-lg font-bold">Enter Address (CH R FL)</h3>
+                  {firstCompleteLocation && (
+                    <button
+                      type="button"
+                      onClick={applyLocationToAll}
+                      className="px-4 py-2 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      Apply to All
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground mb-4">This will be used as a reference in outgoing.</p>
 
                 <div className="space-y-6">

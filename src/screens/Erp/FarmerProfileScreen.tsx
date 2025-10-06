@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Phone, MapPin, Package, Boxes, ArrowDownCircle, ArrowUpCircle, FileText } from 'lucide-react';
+import { Phone, MapPin, Package, ArrowDownCircle, ArrowUpCircle, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -51,6 +51,7 @@ interface StockSummary {
     size: string;
     initialQuantity: number;
     currentQuantity: number;
+    quantityRemoved?: number;
   }[];
 }
 
@@ -62,6 +63,7 @@ interface StockSummaryResponse {
 // Add new type definitions for filters
 type OrderType = 'all' | 'incoming' | 'outgoing';
 type SortOrder = 'latest' | 'oldest';
+type TabType = 'current' | 'initial' | 'outgoing';
 
 const getInitials = (name: string) => {
   return name
@@ -72,16 +74,27 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
-const calculateVarietyTotal = (variety: StockSummary, allBagSizes: string[]) => {
+const calculateVarietyTotal = (variety: StockSummary, allBagSizes: string[], tabType: TabType = 'current') => {
   return allBagSizes.reduce((acc, sizeName) => {
     const sizeData = variety.sizes.find(s => s.size === sizeName);
-    return acc + (sizeData ? sizeData.currentQuantity : 0);
+    if (!sizeData) return acc;
+
+    switch (tabType) {
+      case 'current':
+        return acc + sizeData.currentQuantity;
+      case 'initial':
+        return acc + sizeData.initialQuantity;
+      case 'outgoing':
+        return acc + (sizeData.quantityRemoved || 0);
+      default:
+        return acc + sizeData.currentQuantity;
+    }
   }, 0);
 };
 
-const calculateFarmerTotalBags = (stockSummary: StockSummary[], allBagSizes: string[]) => {
+const calculateFarmerTotalBags = (stockSummary: StockSummary[], allBagSizes: string[], tabType: TabType = 'current') => {
   return stockSummary.reduce((total, variety) => {
-    return total + calculateVarietyTotal(variety, allBagSizes);
+    return total + calculateVarietyTotal(variety, allBagSizes, tabType);
   }, 0);
 };
 
@@ -100,6 +113,7 @@ const FarmerProfileScreen = () => {
   // Add new state for filters
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [sortBy, setSortBy] = useState<SortOrder>('latest');
+  const [activeTab, setActiveTab] = useState<TabType>('current');
 
   // Add WebView detection function
   const isWebView = () => {
@@ -141,7 +155,9 @@ const FarmerProfileScreen = () => {
     return orders;
   }, [ordersData?.data, orderType, sortBy]);
 
-  const stockSummary = (stockData as StockSummaryResponse)?.stockSummary || [];
+  const stockSummary = useMemo(() => {
+    return (stockData as StockSummaryResponse)?.stockSummary || [];
+  }, [stockData]);
 
   // Sort bag sizes according to admin preferences using useMemo
   const sortBagSizes = useMemo(() => {
@@ -206,19 +222,35 @@ const FarmerProfileScreen = () => {
   }, [adminInfo?.preferences?.bagSizes, stockSummary]);
 
   // Helper function to get quantity for a specific bag size and variety
-  const getQuantityForSize = (variety: StockSummary, sizeName: string) => {
+  const getQuantityForSize = (variety: StockSummary, sizeName: string, tabType: TabType = 'current') => {
     const sizeData = variety.sizes.find(s => s.size === sizeName);
-    return sizeData ? sizeData.currentQuantity : 0;
+    if (!sizeData) return 0;
+
+    switch (tabType) {
+      case 'current':
+        return sizeData.currentQuantity;
+      case 'initial':
+        return sizeData.initialQuantity;
+      case 'outgoing':
+        return sizeData.quantityRemoved || 0;
+      default:
+        return sizeData.currentQuantity;
+    }
   };
 
   // Helper function to calculate total for a specific bag size across all varieties
-  const getTotalForSize = (sizeName: string) => {
+  const getTotalForSize = (sizeName: string, tabType: TabType = 'current') => {
     return sortedStockSummary.reduce((total, variety) => {
-      return total + getQuantityForSize(variety, sizeName);
+      return total + getQuantityForSize(variety, sizeName, tabType);
     }, 0);
   };
 
-  const totalBags = calculateFarmerTotalBags(sortedStockSummary, allBagSizes);
+  const totalBags = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, activeTab);
+
+  // Calculate totals for each tab
+  const currentTotal = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, 'current');
+  const initialTotal = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, 'initial');
+  const outgoingTotal = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, 'outgoing');
 
           const handleGenerateReport = async () => {
   if (!adminInfo || !farmer) {
@@ -259,9 +291,9 @@ const FarmerProfileScreen = () => {
       const reader = new FileReader();
       reader.onload = function() {
         const base64Data = (reader.result as string).split(',')[1]; // Remove data:application/pdf;base64, prefix
-        
+
         const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
-        
+
         const message: WebViewPDFMessage = {
           type: 'OPEN_PDF_NATIVE',
           title: `${farmer.name} - Farmer Report`,
@@ -271,7 +303,7 @@ const FarmerProfileScreen = () => {
 
         window.ReactNativeWebView?.postMessage(JSON.stringify(message));
         console.log('PDF data sent to React Native');
-        
+
         // Reset loading state after successful send
         setIsGeneratingPDF(false);
       };
@@ -287,7 +319,7 @@ const FarmerProfileScreen = () => {
       } else {
         // Web browser handling (existing code)
         console.log('Web browser detected, opening PDF in new tab...');
-        
+
         // Create a more reliable blob URL by ensuring proper MIME type
         const enhancedBlob = new Blob([pdfBlob], {
           type: 'application/pdf'
@@ -536,17 +568,55 @@ const FarmerProfileScreen = () => {
 
         {/* Stock Summary Section */}
         <Card>
-          <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 sm:gap-0 px-4 sm:px-6 py-4">
-            <div className="flex items-center gap-2">
-              <Package size={20} className="text-primary" />
-              <CardTitle className="text-base sm:text-lg md:text-xl">{t('farmerProfile.stockSummary')}</CardTitle>
-            </div>
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-500">
-              <Boxes size={14} className="hidden sm:block" />
-              <span>{t('farmerProfile.totalVarieties')}: {sortedStockSummary.length}</span>
+          <CardHeader className="px-4 sm:px-6 py-3 sm:py-4">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <CardTitle className="text-lg sm:text-xl font-bold text-gray-900">Stock Summary</CardTitle>
+                <p className="text-xs sm:text-sm text-gray-600">
+                  View stock quantities by current inventory, initial quantities, or outgoing quantities.
+                </p>
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-0">
+            {/* Tabs */}
+            <div className="border-b border-gray-200">
+              <nav className="flex space-x-8 px-4 sm:px-6" aria-label="Tabs">
+                <button
+                  onClick={() => setActiveTab('current')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'current'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Current ({currentTotal})
+                </button>
+                <button
+                  onClick={() => setActiveTab('initial')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'initial'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Initial ({initialTotal})
+                </button>
+                <button
+                  onClick={() => setActiveTab('outgoing')}
+                  className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                    activeTab === 'outgoing'
+                      ? 'border-blue-500 text-blue-600'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  Outgoing ({outgoingTotal})
+                </button>
+              </nav>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-0">
             {isStockLoading ? (
               <div className="p-4 sm:p-6 space-y-4">
                 <Skeleton className="h-20 sm:h-24 w-full" />
@@ -594,11 +664,11 @@ const FarmerProfileScreen = () => {
                           </td>
                           {allBagSizes.map(size => (
                             <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm">
-                              {getQuantityForSize(variety, size)}
+                              {getQuantityForSize(variety, size, activeTab)}
                             </td>
                           ))}
                           <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm">
-                            {calculateVarietyTotal(variety, allBagSizes)}
+                            {calculateVarietyTotal(variety, allBagSizes, activeTab)}
                           </td>
                         </tr>
                       ))}
@@ -609,7 +679,7 @@ const FarmerProfileScreen = () => {
                         </td>
                         {allBagSizes.map(size => (
                           <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-900 border-r text-xs sm:text-sm">
-                            {getTotalForSize(size)}
+                            {getTotalForSize(size, activeTab)}
                           </td>
                         ))}
                         <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-blue-600 bg-blue-100 text-xs sm:text-sm">
@@ -621,6 +691,7 @@ const FarmerProfileScreen = () => {
                 </div>
               </div>
             )}
+            </div>
           </CardContent>
         </Card>
 
