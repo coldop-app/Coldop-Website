@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import { Order, StoreAdmin } from '@/utils/types';
 import coldopLogo from '/coldop-logo.png';
@@ -378,6 +378,16 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
   orders,
 }) => {
   console.log("adminInfo", adminInfo);
+
+  // Memoize expensive calculations
+  const bagSizes = useMemo(() => adminInfo.preferences?.bagSizes || [], [adminInfo.preferences?.bagSizes]);
+
+  const { receiptOrders, deliveryOrders } = useMemo(() => {
+    const receipt = orders.filter((order) => order.voucher.type === "RECEIPT");
+    const delivery = orders.filter((order) => order.voucher.type === "DELIVERY");
+    return { receiptOrders: receipt, deliveryOrders: delivery };
+  }, [orders]);
+
   if (!orders || orders.length === 0) {
     return (
       <Document>
@@ -400,23 +410,15 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     );
   }
 
-  const bagSizes = adminInfo.preferences?.bagSizes || [];
-  const receiptOrders = orders.filter(
-    (order) => order.voucher.type === "RECEIPT"
-  );
-  const deliveryOrders = orders.filter(
-    (order) => order.voucher.type === "DELIVERY"
-  );
-
-  // Create receipt ledger entries with totals
-  const createReceiptEntries = () => {
+  // Memoize receipt ledger entries creation
+  const receiptEntries = useMemo(() => {
     const entries: LedgerEntry[] = [];
 
     // First create all entries
     receiptOrders.forEach((order) => {
       // Initialize quantities map for all bag sizes according to admin preferences
       const quantities: { [bagSize: string]: number } = {};
-      adminInfo.preferences?.bagSizes.forEach((size) => {
+      bagSizes.forEach((size) => {
         quantities[size] = 0;
       });
 
@@ -437,7 +439,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
         >();
 
         // Go through admin preferred bag sizes first
-        adminInfo.preferences?.bagSizes.forEach((preferredSize) => {
+        bagSizes.forEach((preferredSize) => {
           const normalizedSize = preferredSize
             .toLowerCase()
             .replace(/[-\s]/g, "");
@@ -470,7 +472,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
         bagsByLocation.forEach((bags, location) => {
           // Initialize quantities according to admin preferences
           const locationQuantities: { [bagSize: string]: number } = {};
-          adminInfo.preferences?.bagSizes.forEach((size) => {
+          bagSizes.forEach((size) => {
             locationQuantities[size] = 0;
           });
 
@@ -509,17 +511,17 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     });
 
     return entries;
-  };
+  }, [receiptOrders, bagSizes]);
 
-  // Create delivery ledger entries with totals
-  const createDeliveryEntries = () => {
+  // Memoize delivery ledger entries creation
+  const deliveryEntries = useMemo(() => {
     const entries: LedgerEntry[] = [];
 
     // First create all entries
     deliveryOrders.forEach((order) => {
       // Initialize quantities map for all bag sizes according to admin preferences
       const quantities: { [bagSize: string]: number } = {};
-      adminInfo.preferences?.bagSizes.forEach((size) => {
+      bagSizes.forEach((size) => {
         quantities[size] = 0;
       });
 
@@ -540,7 +542,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
         >();
 
         // Go through admin preferred bag sizes first
-        adminInfo.preferences?.bagSizes.forEach((preferredSize) => {
+        bagSizes.forEach((preferredSize) => {
           const normalizedSize = preferredSize
             .toLowerCase()
             .replace(/[-\s]/g, "");
@@ -562,7 +564,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
         bagsByLocation.forEach((bags, location) => {
           // Initialize quantities according to admin preferences
           const locationQuantities: { [bagSize: string]: number } = {};
-          adminInfo.preferences?.bagSizes.forEach((size) => {
+          bagSizes.forEach((size) => {
             locationQuantities[size] = 0;
           });
 
@@ -601,24 +603,19 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     });
 
     return entries;
-  };
+  }, [deliveryOrders, bagSizes]);
 
-  const receiptEntries = createReceiptEntries();
-  const deliveryEntries = createDeliveryEntries();
-
-  // Calculate totals for each bag size
-  const calculateBagSizeTotals = (entries: LedgerEntry[]) => {
+  // Memoize bag size totals calculation
+  const receiptTotals = useMemo(() => {
     const totals: { [key: string]: number } = {};
     bagSizes.forEach((size) => {
-      totals[size] = entries.reduce(
+      totals[size] = receiptEntries.reduce(
         (sum, entry) => sum + (entry.quantities[size] || 0),
         0
       );
     });
     return totals;
-  };
-
-  const receiptTotals = calculateBagSizeTotals(receiptEntries);
+  }, [receiptEntries, bagSizes]);
 
   // Helper function to render table header
   const renderTableHeader = (isDeliveryTable: boolean = false) => (
@@ -748,17 +745,19 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     </View>
   );
 
-  // Function to split entries into pages based on available space
-  const splitEntriesIntoPages = (entries: LedgerEntry[]) => {
-    const pages: LedgerEntry[][] = [];
-    const entriesPerPage = 25; // Approximate number of entries that can fit on one page
+  // Memoize page splitting function
+  const splitEntriesIntoPages = useMemo(() => {
+    return (entries: LedgerEntry[]) => {
+      const pages: LedgerEntry[][] = [];
+      const entriesPerPage = 25; // Approximate number of entries that can fit on one page
 
-    for (let i = 0; i < entries.length; i += entriesPerPage) {
-      pages.push(entries.slice(i, i + entriesPerPage));
-    }
+      for (let i = 0; i < entries.length; i += entriesPerPage) {
+        pages.push(entries.slice(i, i + entriesPerPage));
+      }
 
-    return pages;
-  };
+      return pages;
+    };
+  }, []);
 
 
   // Helper function to render header section
@@ -877,7 +876,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     </>
   );
 
-  // Split entries into pages
+  // Split entries into pages using memoized function
   const receiptPages = splitEntriesIntoPages(receiptEntries);
   const deliveryPages = splitEntriesIntoPages(deliveryEntries);
 

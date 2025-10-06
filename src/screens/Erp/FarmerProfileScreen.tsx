@@ -5,17 +5,18 @@ import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Phone, MapPin, Package, ArrowDownCircle, ArrowUpCircle, FileText } from 'lucide-react';
+import { Phone, MapPin, Package, ArrowDownCircle, ArrowUpCircle, FileText, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, memo } from 'react';
 import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
 import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
 import { Order, StoreAdmin } from '@/utils/types';
 import { pdf, PDFDownloadLink } from '@react-pdf/renderer';
 import FarmerReportPDF from '@/components/pdf/FarmerReportPDF';
+import Loader from '@/components/common/Loader/Loader';
 
 // Add WebView interfaces
 interface WebViewPDFMessage {
@@ -109,16 +110,16 @@ const FarmerProfileScreen = () => {
   const [showOrders, setShowOrders] = useState(true); // Set to true by default
   const [showPDFDownload, setShowPDFDownload] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // Loading state for PDF generation
+  const [pdfGenerationError, setPdfGenerationError] = useState<string | null>(null);
+  const [pdfGenerationProgress, setPdfGenerationProgress] = useState(0);
 
   // Add new state for filters
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [sortBy, setSortBy] = useState<SortOrder>('latest');
   const [activeTab, setActiveTab] = useState<TabType>('current');
 
-  // Add WebView detection function
-  const isWebView = () => {
-    return window.ReactNativeWebView !== undefined;
-  };
+  // Memoized PDF component to prevent unnecessary re-renders
+  const MemoizedFarmerReportPDF = memo(FarmerReportPDF);
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
     queryKey: ['farmerStock', id, adminInfo?.token],
@@ -252,73 +253,93 @@ const FarmerProfileScreen = () => {
   const initialTotal = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, 'initial');
   const outgoingTotal = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, 'outgoing');
 
-          const handleGenerateReport = async () => {
-  if (!adminInfo || !farmer) {
-    alert('Please ensure farmer and admin data is available');
-    return;
-  }
+  const handleGenerateReport = useCallback(async () => {
+    // WebView detection function
+    const isWebView = () => {
+      return window.ReactNativeWebView !== undefined;
+    };
 
-  if (!ordersData?.data) {
-    alert('Orders data is still loading. Please try again in a moment.');
-    return;
-  }
+    // Reset error state
+    setPdfGenerationError(null);
+    setPdfGenerationProgress(0);
 
-  // Set loading state for WebView
-  if (isWebView()) {
+    if (!adminInfo || !farmer) {
+      setPdfGenerationError('Please ensure farmer and admin data is available');
+      return;
+    }
+
+    if (!ordersData?.data) {
+      setPdfGenerationError('Orders data is still loading. Please try again in a moment.');
+      return;
+    }
+
+    // Set loading state
     setIsGeneratingPDF(true);
-  }
+    setPdfGenerationProgress(10);
 
-  try {
-    console.log('Starting PDF generation...');
+    try {
+      console.log('Starting PDF generation...');
 
-    const pdfDoc = <FarmerReportPDF
-      farmer={farmer}
-      adminInfo={adminInfo}
-      orders={ordersData.data}
-    />;
+      // Update progress
+      setPdfGenerationProgress(20);
 
-    console.log('PDF component created, generating blob...');
+      // Create memoized PDF component
+      const pdfDoc = <MemoizedFarmerReportPDF
+        farmer={farmer}
+        adminInfo={adminInfo}
+        orders={ordersData.data}
+      />;
 
-    // Generate PDF as blob
-    const pdfBlob = await pdf(pdfDoc).toBlob();
-    console.log('PDF blob generated, size:', pdfBlob.size, 'bytes');
+      console.log('PDF component created, generating blob...');
+      setPdfGenerationProgress(40);
 
-    // Check if running in WebView
-    if (isWebView()) {
-      console.log('WebView detected, sending PDF to React Native...');
+      // Generate PDF as blob with progress tracking
+      const pdfBlob = await pdf(pdfDoc).toBlob();
+      console.log('PDF blob generated, size:', pdfBlob.size, 'bytes');
+      setPdfGenerationProgress(70);
 
-      // Convert blob to base64
-      const reader = new FileReader();
-      reader.onload = function() {
-        const base64Data = (reader.result as string).split(',')[1]; // Remove data:application/pdf;base64, prefix
+      // Check if running in WebView
+      if (isWebView()) {
+        console.log('WebView detected, sending PDF to React Native...');
+        setPdfGenerationProgress(80);
 
-        const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+        // Convert blob to base64
+        const reader = new FileReader();
+        reader.onload = function() {
+          const base64Data = (reader.result as string).split(',')[1]; // Remove data:application/pdf;base64, prefix
 
-        const message: WebViewPDFMessage = {
-          type: 'OPEN_PDF_NATIVE',
-          title: `${farmer.name} - Farmer Report`,
-          fileName: fileName,
-          pdfData: base64Data
+          const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
+
+          const message: WebViewPDFMessage = {
+            type: 'OPEN_PDF_NATIVE',
+            title: `${farmer.name} - Farmer Report`,
+            fileName: fileName,
+            pdfData: base64Data
+          };
+
+          window.ReactNativeWebView?.postMessage(JSON.stringify(message));
+          console.log('PDF data sent to React Native');
+
+          // Complete progress and reset loading state
+          setPdfGenerationProgress(100);
+          setTimeout(() => {
+            setIsGeneratingPDF(false);
+            setPdfGenerationProgress(0);
+          }, 500);
         };
 
-        window.ReactNativeWebView?.postMessage(JSON.stringify(message));
-        console.log('PDF data sent to React Native');
+        reader.onerror = function() {
+          console.error('Error converting PDF to base64');
+          setPdfGenerationError('Error preparing PDF for native viewer. Please try again.');
+          setIsGeneratingPDF(false);
+          setPdfGenerationProgress(0);
+        };
 
-        // Reset loading state after successful send
-        setIsGeneratingPDF(false);
-      };
-
-      reader.onerror = function() {
-        console.error('Error converting PDF to base64');
-        alert('Error preparing PDF for native viewer. Please try again.');
-        // Reset loading state on error
-        setIsGeneratingPDF(false);
-      };
-
-      reader.readAsDataURL(pdfBlob);
+        reader.readAsDataURL(pdfBlob);
       } else {
-        // Web browser handling (existing code)
+        // Web browser handling
         console.log('Web browser detected, opening PDF in new tab...');
+        setPdfGenerationProgress(85);
 
         // Create a more reliable blob URL by ensuring proper MIME type
         const enhancedBlob = new Blob([pdfBlob], {
@@ -327,6 +348,7 @@ const FarmerProfileScreen = () => {
 
         const pdfUrl = URL.createObjectURL(enhancedBlob);
         console.log('PDF URL created:', pdfUrl);
+        setPdfGenerationProgress(90);
 
         // Create filename with farmer name and date for fallback download
         const fileName = `${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`;
@@ -336,6 +358,7 @@ const FarmerProfileScreen = () => {
 
         if (newWindow) {
           console.log('PDF opened in new tab successfully');
+          setPdfGenerationProgress(100);
 
           // Clean up the URL object after a delay to ensure PDF loads
           setTimeout(() => {
@@ -354,27 +377,36 @@ const FarmerProfileScreen = () => {
           downloadLink.click();
           document.body.removeChild(downloadLink);
 
-          alert('Popup was blocked. PDF has been downloaded instead.');
+          setPdfGenerationError('Popup was blocked. PDF has been downloaded instead.');
+          setPdfGenerationProgress(100);
 
           setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
         }
+
+        // Complete progress and reset loading state
+        setTimeout(() => {
+          setIsGeneratingPDF(false);
+          setPdfGenerationProgress(0);
+        }, 1000);
       }
 
-      } catch (error) {
-    console.error('Error generating PDF:', error);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      setPdfGenerationError('Failed to generate PDF. Please try again.');
 
-    // For WebView, show a simple error message
-    if (isWebView()) {
-      setIsGeneratingPDF(false); // Reset loading state on error
-      alert('Failed to generate PDF. Please try again.');
-    } else {
-      // Fallback to PDFDownloadLink on error for web browsers
-      console.log('Falling back to PDFDownloadLink method...');
-      setShowPDFDownload(true);
-      alert('PDF generation failed with the primary method. Please use the "Download Report" button that will appear.');
+      // For WebView, show a simple error message
+      if (isWebView()) {
+        setIsGeneratingPDF(false);
+        setPdfGenerationProgress(0);
+      } else {
+        // Fallback to PDFDownloadLink on error for web browsers
+        console.log('Falling back to PDFDownloadLink method...');
+        setShowPDFDownload(true);
+        setIsGeneratingPDF(false);
+        setPdfGenerationProgress(0);
+      }
     }
-  }
-  };
+  }, [adminInfo, farmer, ordersData?.data, MemoizedFarmerReportPDF]);
 
   if (!farmer) {
     return (
@@ -439,19 +471,23 @@ const FarmerProfileScreen = () => {
                     onClick={handleGenerateReport}
                     variant="outline"
                     className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
-                    disabled={isOrdersLoading || (isWebView() && isGeneratingPDF)}
+                    disabled={isOrdersLoading || isGeneratingPDF}
                   >
                     {isOrdersLoading ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
+                        <Loader size="sm" className="mr-2" />
                         <span className="hidden sm:inline">{t('farmerProfile.loading')}</span>
                         <span className="sm:hidden">Loading</span>
                       </>
-                    ) : (isWebView() && isGeneratingPDF) ? (
+                    ) : isGeneratingPDF ? (
                       <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary mr-2"></div>
-                        <span className="hidden sm:inline">Generating PDF...</span>
-                        <span className="sm:hidden">Generating...</span>
+                        <Loader size="sm" className="mr-2" />
+                        <span className="hidden sm:inline">
+                          Generating PDF... {pdfGenerationProgress > 0 && `${pdfGenerationProgress}%`}
+                        </span>
+                        <span className="sm:hidden">
+                          Generating... {pdfGenerationProgress > 0 && `${pdfGenerationProgress}%`}
+                        </span>
                       </>
                     ) : (
                       <>
@@ -464,7 +500,7 @@ const FarmerProfileScreen = () => {
                   {showPDFDownload && ordersData?.data && (
                     <PDFDownloadLink
                       document={
-                        <FarmerReportPDF
+                        <MemoizedFarmerReportPDF
                           farmer={farmer}
                           adminInfo={adminInfo!}
                           orders={ordersData.data}
@@ -476,7 +512,7 @@ const FarmerProfileScreen = () => {
                       {({ loading }) => (
                         loading ? (
                           <span className="flex items-center">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-500 mr-2"></div>
+                            <Loader size="sm" className="mr-2" />
                             <span className="hidden sm:inline">{t('farmerProfile.generating')}</span>
                             <span className="sm:hidden">{t('farmerProfile.gen')}</span>
                           </span>
@@ -491,6 +527,22 @@ const FarmerProfileScreen = () => {
                     </PDFDownloadLink>
                   )}
                 </div>
+
+                {/* Error Display */}
+                {pdfGenerationError && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                    <span className="text-sm text-red-700">{pdfGenerationError}</span>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setPdfGenerationError(null)}
+                      className="ml-auto text-red-500 hover:text-red-700 p-1 h-auto"
+                    >
+                      ×
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
