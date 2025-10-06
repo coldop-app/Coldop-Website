@@ -6,6 +6,7 @@ interface VarietyDistributionItem {
   variety: string;
   quantity: number;
   percentage: number;
+  [key: string]: string | number; // Add index signature for recharts compatibility
 }
 
 interface VarietyDistributionChartProps {
@@ -46,12 +47,13 @@ const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
                 fill="#8884d8"
                 dataKey="quantity"
                 nameKey="variety"
-                label={({ variety, percent }) => {
+                label={(props) => {
+                  const { name, percent } = props;
                   // Hide labels on smaller screens for better readability
                   if (typeof window !== 'undefined' && window.innerWidth < 640) {
                     return '';
                   }
-                  return variety && percent ? `${variety}: ${(percent * 100).toFixed(1)}%` : '';
+                  return name && typeof percent === 'number' ? `${name}: ${(percent * 100).toFixed(1)}%` : '';
                 }}
               >
                 {data.map((_, index) => (

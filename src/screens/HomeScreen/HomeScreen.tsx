@@ -23,7 +23,7 @@ const fadeInUp = {
   initial: { opacity: 0, y: 20 },
   whileInView: { opacity: 1, y: 0 },
   viewport: { once: true, margin: "-100px" },
-  transition: { duration: 0.6, ease: "easeOut" }
+  transition: { duration: 0.6, ease: [0.25, 0.46, 0.45, 0.94] as const }
 };
 
 const HomeScreen = () => {
@@ -32,16 +32,16 @@ const HomeScreen = () => {
   useEffect(() => {
     const checkWebview = () => {
       const userAgent = navigator.userAgent.toLowerCase();
-      const isWebView = 
+      const isWebView =
         userAgent.includes('webview') ||
         userAgent.includes('wv') ||
         userAgent.includes('android') && userAgent.includes('version/') ||
         userAgent.includes('iphone') && !userAgent.includes('safari') ||
         userAgent.includes('ipad') && !userAgent.includes('safari') ||
-        (window.navigator as any).standalone === true ||
+        (window.navigator as { standalone?: boolean }).standalone === true ||
         window.location.search.includes('webview=true') ||
         window.location.search.includes('app=true');
-      
+
       setIsWebview(isWebView);
     };
 
@@ -70,14 +70,14 @@ const HomeScreen = () => {
     };
   }, []);
 
- 
+
   const combinedStructuredData = [
     SEO_PAGES.HOME.structuredData,
     getOrganizationStructuredData(),
     getSoftwareApplicationStructuredData(),
   ];
 
-  
+
   if (isWebview) {
     return (
       <div>
@@ -94,7 +94,7 @@ const HomeScreen = () => {
     );
   }
 
- 
+
   return (
     <div>
       <SEO
