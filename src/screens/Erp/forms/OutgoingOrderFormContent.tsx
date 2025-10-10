@@ -10,6 +10,7 @@ import type { CreateOutgoingOrderPayload } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
 import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
+import MultiSelect from "@/components/common/MultiSelect";
 import debounce from "lodash/debounce";
 
 // Custom scrollbar styles
@@ -236,6 +237,7 @@ const OutgoingOrderFormContent = () => {
   const [availableApproxWeights, setAvailableApproxWeights] = useState<string[]>([]);
   const [selectedQuantities, setSelectedQuantities] = useState<BagSizeSelection[]>([]);
   const [inputQuantity, setInputQuantity] = useState<string>('');
+  const [selectedBagSizes, setSelectedBagSizes] = useState<string[]>([]);
   const [activeBox, setActiveBox] = useState<{
     receiptNumber: number;
     bagSize: string;
@@ -339,13 +341,41 @@ const OutgoingOrderFormContent = () => {
       });
     });
 
-    return Array.from(activeSizes);
-  }, [filteredOrders]);
+    const allActiveSizes = Array.from(activeSizes);
+
+    // If no bag sizes are selected, show all active sizes
+    if (selectedBagSizes.length === 0) {
+      return allActiveSizes;
+    }
+
+    // Filter to only show selected bag sizes
+    return allActiveSizes.filter(size => selectedBagSizes.includes(size));
+  }, [filteredOrders, selectedBagSizes]);
 
   // Add a new useMemo for sorted bag sizes
   const sortedBagSizes = useMemo(() => {
     return sortBagSizes(adminInfo?.preferences?.bagSizes);
   }, [adminInfo?.preferences?.bagSizes]);
+
+  // Get all available bag sizes for the multi-select
+  const allAvailableBagSizes = React.useMemo(() => {
+    if (!filteredOrders?.length) return [];
+
+    const allSizes = new Set<string>();
+
+    filteredOrders.forEach(order => {
+      order.orderDetails.forEach(detail => {
+        detail.bagSizes.forEach(bagSize => {
+          // Only include bag sizes that have current quantity > 0
+          if (bagSize.quantity.currentQuantity > 0) {
+            allSizes.add(bagSize.size);
+          }
+        });
+      });
+    });
+
+    return Array.from(allSizes);
+  }, [filteredOrders]);
 
   // Farmer search query
   const { data: searchResults, isLoading: isSearching, refetch } = useQuery({
@@ -392,6 +422,7 @@ const OutgoingOrderFormContent = () => {
       weighedStatus: "true",
       approxWeight: ""
     }));
+    setSelectedBagSizes([]);
   };
 
   // Function to clear individual filter
@@ -405,7 +436,8 @@ const OutgoingOrderFormContent = () => {
   // Check if any filters are active
   const hasActiveFilters = formData.variety || formData.generation || formData.rouging ||
                           formData.tuberType || formData.grader ||
-                          (formData.weighedStatus && formData.weighedStatus !== "true") || formData.approxWeight;
+                          (formData.weighedStatus && formData.weighedStatus !== "true") || formData.approxWeight ||
+                          selectedBagSizes.length > 0;
 
   // Count active filters
   const activeFiltersCount = [
@@ -415,7 +447,8 @@ const OutgoingOrderFormContent = () => {
     formData.tuberType,
     formData.grader,
     (formData.weighedStatus && formData.weighedStatus !== "true") ? formData.weighedStatus : null,
-    formData.approxWeight
+    formData.approxWeight,
+    selectedBagSizes.length > 0 ? `Bag Sizes (${selectedBagSizes.length})` : null
   ].filter(Boolean).length;
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -980,6 +1013,85 @@ const OutgoingOrderFormContent = () => {
                   </div>
                 </div>
 
+                {/* Bag Size Filter */}
+                {allAvailableBagSizes.length > 0 && (
+                  <div className="border border-gray-200 rounded-xl p-4 sm:p-5 bg-gradient-to-br from-gray-50/80 to-gray-100/80 shadow-sm">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 bg-gray-100 rounded-lg">
+                          <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <h3 className="text-sm sm:text-base font-semibold text-gray-800">Filter Bag Sizes</h3>
+                          <p className="text-xs text-gray-600 mt-0.5">
+                            {selectedBagSizes.length > 0
+                              ? `${selectedBagSizes.length} of ${allAvailableBagSizes.length} sizes selected`
+                              : `All ${allAvailableBagSizes.length} sizes available`
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      {selectedBagSizes.length > 0 && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedBagSizes([])}
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 border border-red-200 hover:border-red-300"
+                        >
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Show All
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <MultiSelect
+                        options={allAvailableBagSizes.map((size: string) => ({
+                          value: size,
+                          label: size,
+                        }))}
+                        value={selectedBagSizes}
+                        onChange={setSelectedBagSizes}
+                        placeholder="Select specific bag sizes to display..."
+                        maxDisplayItems={2}
+                        className="border-gray-200 focus-within:border-gray-400 focus-within:ring-gray-100"
+                      />
+
+                      {/* Selected sizes preview */}
+                      {selectedBagSizes.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          <span className="text-xs font-medium text-gray-600 flex items-center gap-1">
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Selected:
+                          </span>
+                          {selectedBagSizes.map((size) => (
+                            <span
+                              key={size}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-gray-100 text-gray-800 text-xs font-medium rounded-full border border-gray-200"
+                            >
+                              {size}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedBagSizes(prev => prev.filter(s => s !== size))}
+                                className="ml-1 hover:bg-gray-200 rounded-full p-0.5 transition-colors"
+                              >
+                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 {/* Additional Details */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {/* Generation */}
@@ -1286,6 +1398,20 @@ const OutgoingOrderFormContent = () => {
                                   </button>
                                 </span>
                               )}
+                              {selectedBagSizes.length > 0 && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                                  Bag Sizes: {selectedBagSizes.join(', ')}
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedBagSizes([])}
+                                    className="hover:bg-blue-200 rounded-full p-0.5 transition-colors"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              )}
                             </div>
                           </div>
                           <button
@@ -1310,8 +1436,8 @@ const OutgoingOrderFormContent = () => {
                         {/* Orders Count */}
                         <div className="text-sm text-gray-600 mb-3">
                           {hasActiveFilters
-                            ? `Showing ${filteredOrders.length} order${filteredOrders.length !== 1 ? 's' : ''} matching your filters`
-                            : `Showing all ${farmerIncomingOrders?.data?.length || 0} order${(farmerIncomingOrders?.data?.length || 0) !== 1 ? 's' : ''}`
+                            ? `Showing ${filteredOrders.length} order${filteredOrders.length !== 1 ? 's' : ''} matching your filters${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
+                            : `Showing all ${farmerIncomingOrders?.data?.length || 0} order${(farmerIncomingOrders?.data?.length || 0) !== 1 ? 's' : ''}${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
                           }
                         </div>
 

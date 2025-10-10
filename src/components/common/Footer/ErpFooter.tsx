@@ -19,7 +19,10 @@ const ErpFooter= () => {
         <div className="flex justify-around items-center h-16">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname.startsWith(item.path);
+            // Special handling for analytics to include custom-analytics
+            const isActive = item.path === "/erp/analytics"
+              ? location.pathname.startsWith("/erp/analytics") || location.pathname.startsWith("/erp/custom-analytics")
+              : location.pathname.startsWith(item.path);
 
             return (
               <Link

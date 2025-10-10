@@ -88,18 +88,24 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
   }, [adminInfo?.preferences?.bagSizes]);
 
   const sortedOrderDetails = useMemo(() => {
+    if (!order.orderDetails || order.isNullVoucher) {
+      return [];
+    }
     return order.orderDetails.map((detail) => ({
       ...detail,
       sortedBagSizes: sortBagSizes(detail.bagSizes),
     })) as SortedOrderDetail[];
-  }, [order.orderDetails, sortBagSizes]);
+  }, [order.orderDetails, sortBagSizes, order.isNullVoucher]);
 
-  const calculateLotNo = (orderDetails: OrderDetails[]) => {
-    return orderDetails[0]?.bagSizes.reduce(
+  const calculateLotNo = (orderDetails: OrderDetails[] | null) => {
+    if (!orderDetails || orderDetails.length === 0) {
+      return 0;
+    }
+    return orderDetails[0]?.bagSizes?.reduce(
       (sum: number, bagSize: BagSize) =>
         sum + (bagSize.quantity?.initialQuantity || 0),
       0
-    );
+    ) || 0;
   };
 
   const formatBagSizeName = (size: string): string => {
@@ -275,19 +281,30 @@ ${order.orderDetails
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:border-primary/10 hover:shadow-md">
+    <div className={`bg-white rounded-xl border shadow-sm overflow-hidden transition-all duration-200 hover:shadow-md ${
+      order.isNullVoucher
+        ? "border-orange-200 bg-orange-50/30 hover:border-orange-300"
+        : "border-gray-100 hover:border-primary/10"
+    }`}>
       {/* Header Section */}
       <div className="p-3 sm:p-4 lg:p-5">
         {/* Top Row - Voucher Number and Stock */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
           <div className="flex items-center gap-2">
-            <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0"></div>
+            <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+              order.isNullVoucher ? "bg-orange-500" : "bg-primary"
+            }`}></div>
             <span className="text-sm font-medium text-gray-900">
-              Receipt Voucher:{" "}
-              <span className="text-primary">
+              {order.isNullVoucher ? "NULL VOUCHER" : "Receipt Voucher"}:{" "}
+              <span className={order.isNullVoucher ? "text-orange-600" : "text-primary"}>
                 {order.gatePass?.gatePassNumber || "N/A"}
               </span>
             </span>
+            {order.isNullVoucher && (
+              <span className="px-2 py-1 text-xs font-medium bg-orange-100 text-orange-800 rounded-full">
+                Paper Tampered
+              </span>
+            )}
           </div>
           <div className="flex items-center gap-2">
             <div className="text-xs text-gray-600 bg-gray-50 px-2 py-1 rounded-md">
@@ -314,29 +331,25 @@ ${order.orderDetails
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Variety</span>
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {order.orderDetails[0]?.variety}
+                  {order.isNullVoucher ? "NULL VOUCHER" : (order.orderDetails?.[0]?.variety || "N/A")}
                 </p>
               </div>
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Lot No</span>
                 <p className="text-sm font-medium text-gray-900">
-                  {order.gatePass?.gatePassNumber || "N/A"}/
-                  {order.orderDetails[0]?.bagSizes.reduce(
-                    (sum, bag) => sum + (bag.quantity?.initialQuantity || 0),
-                    0
-                  )}
+                  {order.gatePass?.gatePassNumber || "N/A"}/{calculateLotNo(order.orderDetails)}
                 </p>
               </div>
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Party Name</span>
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {order.farmerId?.name || "N/A"}
+                  {order.isNullVoucher ? "N/A" : (order.farmerId?.name || "N/A")}
                 </p>
               </div>
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Acc No</span>
                 <p className="text-sm font-medium text-gray-900">
-                  {order.farmerId?.farmerId || "N/A"}
+                  {order.isNullVoucher ? "N/A" : (order.farmerId?.farmerId || "N/A")}
                 </p>
               </div>
             </div>
@@ -406,32 +419,63 @@ ${order.orderDetails
       {isExpanded && (
         <div className="border-t border-gray-100">
           <div className="p-3 sm:p-4 lg:p-5 space-y-6">
-            {/* Farmer Details */}
-            <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
-              <h3 className="text-sm font-medium text-gray-900 mb-4">
-                Farmer Details
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <span className="text-xs text-gray-500 block mb-1">
-                    Address
-                  </span>
-                  <p className="text-sm font-medium text-gray-900">
-                    {order.farmerId?.address || "N/A"}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-500 block mb-1">
-                    Mobile Number
-                  </span>
-                  <p className="text-sm font-medium text-gray-900">
-                    {order.farmerId?.mobileNumber || "N/A"}
-                  </p>
+            {/* Null Voucher Details */}
+            {order.isNullVoucher ? (
+              <div className="bg-orange-50/50 rounded-xl p-4 border border-orange-200">
+                <h3 className="text-sm font-medium text-orange-800 mb-4">
+                  Null Voucher Information
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-xs text-orange-600 block mb-1">
+                      Reason
+                    </span>
+                    <p className="text-sm font-medium text-orange-800">
+                      {order.remarks || "NULL VOUCHER - Paper tampered"}
+                    </p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-orange-600 block mb-1">
+                      Status
+                    </span>
+                    <p className="text-sm font-medium text-orange-800">
+                      No stock impact - Voucher number reserved
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Farmer Details */}
+                <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-900 mb-4">
+                    Farmer Details
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-xs text-gray-500 block mb-1">
+                        Address
+                      </span>
+                      <p className="text-sm font-medium text-gray-900">
+                        {order.farmerId?.address || "N/A"}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="text-xs text-gray-500 block mb-1">
+                        Mobile Number
+                      </span>
+                      <p className="text-sm font-medium text-gray-900">
+                        {order.farmerId?.mobileNumber || "N/A"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
 
-            {/* Additional Details */}
+            {/* Additional Details - Only for regular orders */}
+            {!order.isNullVoucher && (
+              <>
             <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
               <h3 className="text-sm font-medium text-gray-900 mb-4">
                 Additional Details
@@ -711,6 +755,8 @@ ${order.orderDetails
                   {order.remarks}
                 </p>
               </div>
+            )}
+              </>
             )}
           </div>
         </div>

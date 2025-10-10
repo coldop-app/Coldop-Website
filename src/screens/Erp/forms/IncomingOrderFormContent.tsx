@@ -99,6 +99,9 @@ interface FormData {
   voucherNumber: number;
   dateOfSubmission: string;
   variety: string;
+
+  // Null voucher feature
+  isNullVoucher: boolean;
 }
 
 // Using the CreateOrderPayload interface from the API file
@@ -157,6 +160,7 @@ const IncomingOrderFormContent = () => {
     weighedStatus: "true",
     approxWeight: "",
     bagType: "jute",
+    isNullVoucher: false,
   });
 
   // Farmer search query
@@ -240,13 +244,17 @@ const IncomingOrderFormContent = () => {
   };
 
   const updateQuantity = (bagType: string, value: string) => {
-    // Only allow numbers
-    const numericValue = value.replace(/\D/g, "");
+    // Allow numbers and decimal point
+    const numericValue = value.replace(/[^\d.]/g, "");
+    // Ensure only one decimal point
+    const parts = numericValue.split('.');
+    const validValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+
     setFormData((prev) => ({
       ...prev,
       quantities: {
         ...prev.quantities,
-        [bagType]: numericValue,
+        [bagType]: validValue,
       },
     }));
   };
@@ -300,13 +308,19 @@ const IncomingOrderFormContent = () => {
 
   const calculateTotal = () => {
     return Object.values(formData.quantities).reduce(
-      (sum, quantity) => sum + (parseInt(quantity) || 0),
+      (sum, quantity) => sum + (parseFloat(quantity) || 0),
       0
     );
   };
 
   const nextStep = () => {
-    // Validate step 1
+    // Skip validation for null vouchers
+    if (formData.isNullVoucher) {
+      setCurrentStep(2);
+      return;
+    }
+
+    // Validate step 1 for regular orders
     if (!formData.farmerName.trim()) {
       toast.error(t("incomingOrder.errors.enterFarmerName"));
       return;
@@ -335,7 +349,7 @@ const IncomingOrderFormContent = () => {
       toast.error("Please enter a valid approximate weight");
       return;
     }
-    if (calculateTotal() === 0) {
+    if (calculateTotal() <= 0) {
       toast.error(t("incomingOrder.errors.enterQuantity"));
       return;
     }
@@ -366,7 +380,7 @@ const IncomingOrderFormContent = () => {
 
     bagSizes.forEach((bagSize) => {
       const fieldName = getBagSizeFieldName(bagSize);
-      const quantity = parseInt(formData.quantities[fieldName] || "0");
+      const quantity = parseFloat(formData.quantities[fieldName] || "0");
 
       if (quantity > 0) {
         newLocations[fieldName] = { ...sourceLocation };
@@ -416,6 +430,7 @@ const IncomingOrderFormContent = () => {
         weighedStatus: "true",
         approxWeight: "",
         bagType: "jute",
+        isNullVoucher: false,
       });
       setCurrentStep(1);
       // Force hard refresh to ensure scroll to top
@@ -491,11 +506,24 @@ const IncomingOrderFormContent = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Handle null voucher creation
+    if (formData.isNullVoucher) {
+      const orderData: CreateOrderPayload = {
+        coldStorageId: adminInfo?._id || "",
+        farmerId: null,
+        orderDetails: null,
+        remarks: formData.remarks || "NULL VOUCHER - Paper tampered",
+        isNullVoucher: true,
+      };
+      createOrderMutation.mutate(orderData);
+      return;
+    }
+
     // Get bag sizes with quantities (location validation removed)
     const bagSizesWithQuantities =
       adminInfo?.preferences?.bagSizes?.filter((bagSize) => {
         const fieldName = getBagSizeFieldName(bagSize);
-        const quantity = parseInt(formData.quantities[fieldName] || "0");
+        const quantity = parseFloat(formData.quantities[fieldName] || "0");
         return quantity > 0;
       }) || [];
 
@@ -520,10 +548,10 @@ const IncomingOrderFormContent = () => {
             return {
               size: bagSize,
               quantity: {
-                initialQuantity: parseInt(
+                initialQuantity: parseFloat(
                   formData.quantities[fieldName] || "0"
                 ),
-                currentQuantity: parseInt(
+                currentQuantity: parseFloat(
                   formData.quantities[fieldName] || "0"
                 ),
               },
@@ -672,7 +700,7 @@ const IncomingOrderFormContent = () => {
             const nextBagFieldName = getBagSizeFieldName(
               bagSizes[nextBagIndex]
             );
-            const quantity = parseInt(
+            const quantity = parseFloat(
               formData.quantities[nextBagFieldName] || "0"
             );
             if (quantity > 0) {
@@ -713,6 +741,33 @@ const IncomingOrderFormContent = () => {
         <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">
           {t("incomingOrder.title")}
         </h1>
+
+        {/* Null Voucher Toggle */}
+        <div className="mb-4 flex items-center justify-center">
+          <label className="flex items-center space-x-2 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={formData.isNullVoucher}
+              onChange={(e) => {
+                const isNullVoucher = e.target.checked;
+                setFormData(prev => ({
+                  ...prev,
+                  isNullVoucher,
+                  // Clear farmer data when switching to null voucher
+                  farmerName: isNullVoucher ? "" : prev.farmerName,
+                  farmerId: isNullVoucher ? "" : prev.farmerId,
+                  // Clear variety and quantities when switching to null voucher
+                  variety: isNullVoucher ? "" : prev.variety,
+                  quantities: isNullVoucher ? {} : prev.quantities,
+                }));
+              }}
+              className="w-4 h-4 text-primary border-border focus:ring-primary rounded"
+            />
+            <span className="text-sm font-medium text-gray-700">
+              Create Null Voucher (Paper Tampered)
+            </span>
+          </label>
+        </div>
 
         {/* Receipt Number Display - centered with primary color highlight */}
         <div className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 border border-primary/20 rounded-full shadow-sm">
@@ -790,10 +845,54 @@ const IncomingOrderFormContent = () => {
       />
 
       <form onSubmit={handleSubmit}>
-        {/* Step 1: Farmer, Variety and Quantities */}
+        {/* Step 1: Farmer, Variety and Quantities OR Null Voucher Details */}
         <AnimatedFormStep isVisible={currentStep === 1}>
           {currentStep === 1 && (
             <div className="space-y-6">
+              {/* Null Voucher Mode */}
+              {formData.isNullVoucher ? (
+                <div className="space-y-6">
+                  {/* Null Voucher Info */}
+                  <div className="border border-orange-200 rounded-lg p-4 bg-orange-50/50">
+                    <h3 className="text-lg font-medium mb-2 text-orange-800">
+                      Null Voucher Creation
+                    </h3>
+                    <p className="text-sm text-orange-700 mb-4">
+                      This will create a placeholder voucher when physical paper vouchers get tampered or damaged.
+                      The voucher number will be assigned but no stock will be affected.
+                    </p>
+                  </div>
+
+                  {/* Remarks for Null Voucher */}
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium">
+                      Remarks (Optional)
+                    </label>
+                    <textarea
+                      value={formData.remarks}
+                      onChange={(e) => updateFormData("remarks", e.target.value)}
+                      placeholder="Enter reason for null voucher (e.g., 'Paper tampered', 'Voucher damaged')"
+                      className="w-full p-3 border border-border rounded-md bg-background h-24 resize-none focus:ring-2 focus:ring-primary focus:border-primary transition"
+                      rows={3}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      If left empty, will default to "NULL VOUCHER - Paper tampered"
+                    </p>
+                  </div>
+
+                  <div className="pt-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={nextStep}
+                      className="font-custom w-full sm:w-auto inline-block cursor-pointer rounded-lg bg-orange-600 px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-white no-underline duration-100 hover:bg-orange-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-orange-500/50"
+                    >
+                      Continue to Review
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Regular Order Mode
+                <div className="space-y-6">
               {/* Farmer Selection */}
               <div>
                 <label className="block text-sm font-medium mb-2">
@@ -1133,23 +1232,84 @@ const IncomingOrderFormContent = () => {
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end">
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  className="font-custom w-full sm:w-auto inline-block cursor-pointer rounded-lg bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
-                >
-                  {t("incomingOrder.buttons.continue")}
-                </button>
-              </div>
+                  <div className="pt-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={nextStep}
+                      className="font-custom w-full sm:w-auto inline-block cursor-pointer rounded-lg bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      {t("incomingOrder.buttons.continue")}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </AnimatedFormStep>
 
-        {/* Step 2: Location and Remarks */}
+        {/* Step 2: Location and Remarks OR Null Voucher Review */}
         <AnimatedFormStep isVisible={currentStep === 2}>
           {currentStep === 2 && (
             <div className="space-y-6">
+              {/* Null Voucher Review */}
+              {formData.isNullVoucher ? (
+                <div className="space-y-6">
+                  {/* Null Voucher Summary */}
+                  <div className="border border-orange-200 rounded-lg p-4 bg-orange-50/50">
+                    <h3 className="text-lg font-medium mb-2 text-orange-800">
+                      Null Voucher Summary
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="font-medium">Voucher Type:</span>
+                        <span className="text-orange-700">NULL VOUCHER</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">GatePass No:</span>
+                        <span className="text-orange-700">#{receiptData?.receiptNumber || "-"}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Remarks:</span>
+                        <span className="text-orange-700">
+                          {formData.remarks || "NULL VOUCHER - Paper tampered"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Stock Impact:</span>
+                        <span className="text-orange-700">No stock affected</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 flex gap-4">
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className="font-custom flex-1 cursor-pointer rounded-lg border border-orange-600 px-0 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-orange-600 bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-500/30 transition"
+                      style={{ minWidth: 0 }}
+                    >
+                      Back
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createOrderMutation.isPending}
+                      className="font-custom flex-1 cursor-pointer rounded-lg bg-orange-600 px-0 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-white hover:bg-orange-700 focus:outline-none focus:ring-2 focus:ring-orange-500/50 transition relative"
+                      style={{ minWidth: 0 }}
+                    >
+                      {createOrderMutation.isPending ? (
+                        <div className="flex items-center justify-center">
+                          <Loader size="sm" className="mr-2" />
+                          <span>Creating Null Voucher...</span>
+                        </div>
+                      ) : (
+                        "Create Null Voucher"
+                      )}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                // Regular Order Mode - Location and Remarks
+                <div className="space-y-6">
               {/* Location Section */}
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
                 <div className="flex justify-between items-start mb-4">
@@ -1178,12 +1338,12 @@ const IncomingOrderFormContent = () => {
                 <div className="space-y-6">
                   {adminInfo?.preferences?.bagSizes?.map((bagSize) => {
                     const fieldName = getBagSizeFieldName(bagSize);
-                    const quantity = parseInt(
+                    const quantity = parseFloat(
                       formData.quantities[fieldName] || "0"
                     );
 
                     // Only show location inputs for bag sizes with quantities > 0
-                    if (quantity === 0) return null;
+                    if (quantity <= 0) return null;
 
                     return (
                       <div key={bagSize} className="space-y-3">
@@ -1292,31 +1452,33 @@ const IncomingOrderFormContent = () => {
                 />
               </div>
 
-              <div className="pt-4 flex gap-4">
-                <button
-                  type="button"
-                  onClick={prevStep}
-                  className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
-                  style={{ minWidth: 0 }}
-                >
-                  {t("incomingOrder.buttons.back")}
-                </button>
-                <button
-                  type="submit"
-                  disabled={createOrderMutation.isPending}
-                  className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
-                  style={{ minWidth: 0 }}
-                >
-                  {createOrderMutation.isPending ? (
-                    <div className="flex items-center justify-center">
-                      <Loader size="sm" className="mr-2" />
-                      <span>{t("incomingOrder.buttons.creating")}</span>
-                    </div>
-                  ) : (
-                    t("incomingOrder.buttons.create")
-                  )}
-                </button>
-              </div>
+                  <div className="pt-4 flex gap-4">
+                    <button
+                      type="button"
+                      onClick={prevStep}
+                      className="font-custom flex-1 cursor-pointer rounded-lg border border-primary px-0 py-2.5 sm:py-3 text-sm sm:text-base font-medium text-primary bg-secondary hover:bg-secondary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 transition"
+                      style={{ minWidth: 0 }}
+                    >
+                      {t("incomingOrder.buttons.back")}
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={createOrderMutation.isPending}
+                      className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-2.5 sm:py-3 text-sm sm:text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
+                      style={{ minWidth: 0 }}
+                    >
+                      {createOrderMutation.isPending ? (
+                        <div className="flex items-center justify-center">
+                          <Loader size="sm" className="mr-2" />
+                          <span>{t("incomingOrder.buttons.creating")}</span>
+                        </div>
+                      ) : (
+                        t("incomingOrder.buttons.create")
+                      )}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </AnimatedFormStep>

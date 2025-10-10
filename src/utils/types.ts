@@ -98,24 +98,25 @@ export interface OrderDetails {
 export interface Order {
   _id: string;
   coldStorageId: string;
-  farmerId: Farmer;
+  farmerId: Farmer | null;
   gatePass: Voucher;
-  generation: string;
-  rouging: string;
-  tuberType: string;
-  grader: string;
-  weighedStatus: boolean;
-  approxWeight: string;
-  bagType: string;
-  dateOfSubmission?: string;
+  generation?: string | null;
+  rouging?: string | null;
+  tuberType?: string | null;
+  grader?: string | null;
+  weighedStatus?: boolean | null;
+  approxWeight?: string | null;
+  bagType?: string | null;
+  dateOfSubmission?: string | null;
   dateOfExtraction?: string;
   fulfilled?: boolean;
-  remarks: string;
+  remarks?: string | null;
   currentStockAtThatTime: number;
-  orderDetails: OrderDetails[];
+  orderDetails: OrderDetails[] | null;
   createdAt: string;
   updatedAt?: string;
   __v?: number;
+  isNullVoucher?: boolean;
 }
 
 export interface OutgoingBagSize {

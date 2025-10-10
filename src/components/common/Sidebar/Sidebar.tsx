@@ -40,7 +40,10 @@ const Sidebar = ({ className }: SidebarProps) => {
       <ScrollArea className="flex-1 px-4 py-6">
         <nav className="space-y-1.5">
           {menuItems.map((item) => {
-            const isActive = location.pathname.startsWith(item.href);
+            // Special handling for analytics to include custom-analytics
+            const isActive = item.href === "/erp/analytics"
+              ? location.pathname.startsWith("/erp/analytics") || location.pathname.startsWith("/erp/custom-analytics")
+              : location.pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
