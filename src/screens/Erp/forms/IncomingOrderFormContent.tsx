@@ -83,12 +83,13 @@ interface FormData {
   farmerName: string;
   farmerId: string;
   quantities: BagQuantities;
+  bagApproxWeights: BagQuantities; // New field for approxWeight per bag size
   generation: string;
   rouging: string;
   tuberType: string;
   grader: string;
   weighedStatus: string;
-  approxWeight: string;
+  approxWeight: string; // Keep for backward compatibility, but will be deprecated
   bagType: "jute" | "leno";
 
   // Step 2
@@ -123,22 +124,25 @@ interface Farmer {
 
 const IncomingOrderFormContent = () => {
   const { t } = useTranslation();
-  // Pre-selected farmer data
-  const farmer = useMemo<Farmer>(
-    () => ({
-      _id: "68d8b55df99e71019a8661f2",
-      name: "Bhatti Agritech",
-      address: "Jalandhar",
-      mobileNumber: "9914365651",
-    }),
-    []
-  );
   const { adminInfo } = useSelector((state: RootState) => state.auth) as {
     adminInfo: StoreAdmin | null;
   };
 
+  // Pre-selected farmer data - only show if admin mobile number is not "9877741375"
+  const farmer = useMemo<Farmer | null>(() => {
+    if (adminInfo?.mobileNumber === "9877741375") {
+      return null;
+    }
+    return {
+      _id: "68d8b55df99e71019a8661f2",
+      name: "Bhatti Agritech",
+      address: "Jalandhar",
+      mobileNumber: "9914365651",
+    };
+  }, [adminInfo?.mobileNumber]);
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [searchQuery, setSearchQuery] = useState(farmer.name);
+  const [searchQuery, setSearchQuery] = useState(farmer?.name || "");
   const [showDropdown, setShowDropdown] = useState(false);
   const [isNewFarmerModalOpen, setIsNewFarmerModalOpen] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(farmer);
@@ -148,6 +152,7 @@ const IncomingOrderFormContent = () => {
     farmerName: farmer?.name || "",
     farmerId: farmer?._id || "",
     quantities: {},
+    bagApproxWeights: {},
     bagLocations: {},
     remarks: "",
     voucherNumber: 0,
@@ -190,15 +195,17 @@ const IncomingOrderFormContent = () => {
     [refetch]
   );
 
-  // Initialize quantities and locations based on admin preferences
+  // Initialize quantities, approx weights, and locations based on admin preferences
   useEffect(() => {
     if (adminInfo?.preferences?.bagSizes) {
       const initialQuantities: BagQuantities = {};
+      const initialApproxWeights: BagQuantities = {};
       const initialLocations: { [key: string]: BagLocation } = {};
 
       adminInfo.preferences.bagSizes.forEach((bagSize) => {
         const fieldName = getBagSizeFieldName(bagSize);
         initialQuantities[fieldName] = "";
+        initialApproxWeights[fieldName] = "";
         initialLocations[fieldName] = {
           chamber: "",
           floor: "",
@@ -209,6 +216,7 @@ const IncomingOrderFormContent = () => {
       setFormData((prev) => ({
         ...prev,
         quantities: initialQuantities,
+        bagApproxWeights: initialApproxWeights,
         bagLocations: initialLocations,
       }));
     }
@@ -254,6 +262,22 @@ const IncomingOrderFormContent = () => {
       ...prev,
       quantities: {
         ...prev.quantities,
+        [bagType]: validValue,
+      },
+    }));
+  };
+
+  const updateApproxWeight = (bagType: string, value: string) => {
+    // Allow numbers and decimal point
+    const numericValue = value.replace(/[^\d.]/g, "");
+    // Ensure only one decimal point
+    const parts = numericValue.split('.');
+    const validValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+
+    setFormData((prev) => ({
+      ...prev,
+      bagApproxWeights: {
+        ...prev.bagApproxWeights,
         [bagType]: validValue,
       },
     }));
@@ -418,6 +442,7 @@ const IncomingOrderFormContent = () => {
         farmerName: "",
         farmerId: "",
         quantities: {},
+        bagApproxWeights: {},
         bagLocations: {},
         remarks: "",
         voucherNumber: 0,
@@ -527,11 +552,20 @@ const IncomingOrderFormContent = () => {
         return quantity > 0;
       }) || [];
 
+    // Convert date to DD.MM.YY format
+    const formatDateForAPI = (dateString: string) => {
+      const date = new Date(dateString);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear().toString().slice(-2);
+      return `${day}.${month}.${year}`;
+    };
+
     // Prepare order data according to API structure
     const orderData: CreateOrderPayload = {
       coldStorageId: adminInfo?._id || "",
       farmerId: formData.farmerId || "temp-farmer-id",
-      dateOfSubmission: formData.dateOfSubmission,
+      dateOfSubmission: formatDateForAPI(formData.dateOfSubmission),
       remarks: formData.remarks,
       generation: formData.generation,
       rouging: formData.rouging,
@@ -545,6 +579,7 @@ const IncomingOrderFormContent = () => {
           variety: formData.variety,
           bagSizes: bagSizesWithQuantities.map((bagSize) => {
             const fieldName = getBagSizeFieldName(bagSize);
+            const approxWeight = parseFloat(formData.bagApproxWeights[fieldName] || "0");
             return {
               size: bagSize,
               quantity: {
@@ -556,6 +591,7 @@ const IncomingOrderFormContent = () => {
                 ),
               },
               location: getLocationForAPI(fieldName),
+              approxWeight: approxWeight > 0 ? approxWeight : undefined,
             };
           }),
         },
@@ -1187,29 +1223,53 @@ const IncomingOrderFormContent = () => {
                     return (
                       <div
                         key={bagSize}
-                        className="flex items-center justify-between"
+                        className="space-y-2"
                       >
-                        <label className="text-sm font-medium">
-                          {formatBagSizeLabel(bagSize)}
-                        </label>
-                        <input
-                          type="text"
-                          autoComplete="off"
-                          name={fieldName}
-                          value={formData.quantities[fieldName] || ""}
-                          onChange={(e) =>
-                            updateQuantity(fieldName, e.target.value)
-                          }
-                          onKeyDown={(e) => handleKeyDown(e, bagSize)}
-                          placeholder="-"
-                          disabled={!formData.variety}
-                          className={cn(
-                            "w-32 p-2 border rounded-md bg-background text-center transition",
-                            formData.variety
-                              ? "focus:ring-2 focus:ring-primary focus:border-primary"
-                              : "cursor-not-allowed"
-                          )}
-                        />
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">
+                            {formatBagSizeLabel(bagSize)}
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              autoComplete="off"
+                              name={fieldName}
+                              value={formData.quantities[fieldName] || ""}
+                              onChange={(e) =>
+                                updateQuantity(fieldName, e.target.value)
+                              }
+                              onKeyDown={(e) => handleKeyDown(e, bagSize)}
+                              placeholder="Qty"
+                              disabled={!formData.variety}
+                              className={cn(
+                                "w-20 p-2 border rounded-md bg-background text-center transition text-sm",
+                                formData.variety
+                                  ? "focus:ring-2 focus:ring-primary focus:border-primary"
+                                  : "cursor-not-allowed"
+                              )}
+                            />
+                            <input
+                              type="text"
+                              autoComplete="off"
+                              name={`${fieldName}_weight`}
+                              value={formData.bagApproxWeights[fieldName] || ""}
+                              onChange={(e) =>
+                                updateApproxWeight(fieldName, e.target.value)
+                              }
+                              placeholder="Wt"
+                              disabled={!formData.variety}
+                              className={cn(
+                                "w-20 p-2 border rounded-md bg-background text-center transition text-sm",
+                                formData.variety
+                                  ? "focus:ring-2 focus:ring-primary focus:border-primary"
+                                  : "cursor-not-allowed"
+                              )}
+                            />
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 text-right">
+                          Quantity / Approx Weight (kg)
+                        </div>
                       </div>
                     );
                   })}

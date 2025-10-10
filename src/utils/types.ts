@@ -72,6 +72,7 @@ export interface BagSize {
   quantity?: BagSizeQuantity;
   quantityRemoved?: number;
   location?: string; // Location for each bag size
+  approxWeight?: number; // Approximate weight for each bag size
 }
 
 export interface IncomingBagSize {

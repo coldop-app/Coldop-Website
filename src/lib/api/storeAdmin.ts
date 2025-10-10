@@ -97,6 +97,7 @@ interface BagSize {
   size: string;
   quantity: BagQuantity;
   location: string;
+  approxWeight?: number;
 }
 
 interface OrderDetail {
@@ -160,6 +161,7 @@ export interface CreateOrderPayload {
         currentQuantity: number;
       };
       location: string;
+      approxWeight?: number;
     }[];
   }[] | null;
   isNullVoucher?: boolean;
@@ -237,6 +239,7 @@ interface UpdateIncomingOrderPayload {
         currentQuantity: number;
       };
       location: string;
+      approxWeight?: number;
     }[];
   }[];
 }

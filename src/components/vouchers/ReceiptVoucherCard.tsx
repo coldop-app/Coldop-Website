@@ -120,7 +120,7 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
     const orderSummary = `Receipt Voucher: ${order.gatePass?.gatePassNumber || "N/A"}
 Date: ${order.dateOfSubmission}
 Party: ${order.farmerId?.name || "N/A"} (${order.farmerId?.farmerId || "N/A"})
-Variety: ${order.orderDetails[0]?.variety || "N/A"}
+Variety: ${order.orderDetails?.[0]?.variety || "N/A"}
 Generation: ${order.generation}
 Rouging: ${order.rouging}
 Tuber Type: ${order.tuberType}
@@ -134,7 +134,7 @@ ${order.remarks ? `Remarks: ${order.remarks}` : ""}
 
 Stock Details:
 ${order.orderDetails
-  .map((detail) =>
+  ?.map((detail) =>
     detail.bagSizes
       .map(
         (bag) =>
@@ -144,7 +144,7 @@ ${order.orderDetails
       )
       .join("\\n")
   )
-  .join("\\n")}`;
+  .join("\\n") || "No stock details available"}`;
 
     const message: WebViewMessage = {
       type: "SHARE_CARD",
@@ -156,13 +156,13 @@ ${order.orderDetails
   };
 
   const handleEdit = () => {
-    const hasOutgoingOrders = order.orderDetails.some((detail) =>
+    const hasOutgoingOrders = order.orderDetails?.some((detail) =>
       detail.bagSizes.some(
         (bagSize) =>
           (bagSize.quantity?.initialQuantity || 0) !==
           (bagSize.quantity?.currentQuantity || 0)
       )
-    );
+    ) || false;
 
     if (hasOutgoingOrders) {
       toast.error(
@@ -558,6 +558,9 @@ ${order.orderDetails
                                 Qty
                               </th>
                               <th className="text-center py-2 px-2 font-medium text-gray-900 border-b border-gray-200 text-xs">
+                                Weight
+                              </th>
+                              <th className="text-center py-2 px-2 font-medium text-gray-900 border-b border-gray-200 text-xs">
                                 Location
                               </th>
                               <th className="text-center py-2 px-2 font-medium text-gray-900 border-b border-gray-200 text-xs">
@@ -583,6 +586,11 @@ ${order.orderDetails
                                       "-"
                                     );
                                   })()}
+                                </td>
+                                <td className="py-2 px-2 text-center text-xs">
+                                  <span className="font-medium text-gray-900">
+                                    {bagSize.approxWeight ? `${bagSize.approxWeight}kg` : "-"}
+                                  </span>
                                 </td>
                                 <td className="py-2 px-2 text-center text-xs">
                                   <span className="font-medium text-gray-900">
@@ -626,6 +634,15 @@ ${order.orderDetails
                                 </span>
                               </td>
                               <td className="py-2 px-2 text-center text-xs">
+                                <span className="font-semibold text-primary">
+                                  {detail.sortedBagSizes.reduce(
+                                    (sum: number, bag) =>
+                                      sum + (bag.approxWeight || 0),
+                                    0
+                                  ).toFixed(1)}kg
+                                </span>
+                              </td>
+                              <td className="py-2 px-2 text-center text-xs">
                                 <span className="font-medium text-gray-500">
                                   -
                                 </span>
@@ -656,6 +673,9 @@ ${order.orderDetails
                                 Quantity
                               </th>
                               <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200">
+                                Weight
+                              </th>
+                              <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200">
                                 Location
                               </th>
                               <th className="text-center py-3 px-3 font-medium text-gray-900 border-b border-gray-200">
@@ -681,6 +701,11 @@ ${order.orderDetails
                                       "-"
                                     );
                                   })()}
+                                </td>
+                                <td className="py-3 px-3 text-center">
+                                  <span className="font-medium text-gray-900">
+                                    {bagSize.approxWeight ? `${bagSize.approxWeight}kg` : "-"}
+                                  </span>
                                 </td>
                                 <td className="py-3 px-3 text-center">
                                   <span className="font-medium text-gray-900">
@@ -726,8 +751,12 @@ ${order.orderDetails
                                 </span>
                               </td>
                               <td className="py-3 px-3 text-center">
-                                <span className="font-medium text-gray-500">
-                                  -
+                                <span className="font-semibold text-primary">
+                                  {detail.sortedBagSizes.reduce(
+                                    (sum: number, bag) =>
+                                      sum + (bag.approxWeight || 0),
+                                    0
+                                  ).toFixed(1)}kg
                                 </span>
                               </td>
                               <td className="py-3 px-3 text-center">

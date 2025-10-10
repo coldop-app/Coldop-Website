@@ -206,17 +206,20 @@ const sortBagSizes = (adminPreferences: string[] | undefined) => {
 
 const OutgoingOrderFormContent = () => {
   const { t } = useTranslation();
-  // Pre-selected farmer data
-  const farmer = useMemo<Farmer>(
-    () => ({
+  const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
+
+  // Pre-selected farmer data - only show if admin mobile number is not "9877741375"
+  const farmer = useMemo<Farmer | null>(() => {
+    if (adminInfo?.mobileNumber === "9877741375") {
+      return null;
+    }
+    return {
       _id: "68d8b55df99e71019a8661f2",
       name: "Bhatti Agritech",
       address: "Jalandhar",
       mobileNumber: "9914365651",
-    }),
-    []
-  );
-  const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
+    };
+  }, [adminInfo?.mobileNumber]);
 
   // Get receipt number for outgoing order
   const { data: receiptNumberData, isLoading: isLoadingReceiptNumber } = useQuery({
@@ -245,8 +248,8 @@ const OutgoingOrderFormContent = () => {
   } | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
-    farmerName: farmer.name,
-    farmerId: farmer._id,
+    farmerName: farmer?.name || "",
+    farmerId: farmer?._id || "",
     variety: "",
     generation: "",
     rouging: "",
