@@ -428,6 +428,39 @@ const IncomingOrderFormContent = () => {
     toast.success("Location applied to all bag sizes");
   };
 
+  // Function to find the first weight value
+  const findFirstWeight = (): string | null => {
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    for (const bagSize of bagSizes) {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const weight = formData.bagApproxWeights[fieldName];
+      if (weight && parseFloat(weight) > 0) {
+        return weight;
+      }
+    }
+    return null;
+  };
+
+  // Function to apply a weight to all bag sizes
+  const applyWeightToAll = (sourceWeight: string) => {
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    const newWeights = { ...formData.bagApproxWeights };
+
+    bagSizes.forEach((bagSize) => {
+      const fieldName = getBagSizeFieldName(bagSize);
+      // Apply weight to all bag sizes, regardless of quantity
+      newWeights[fieldName] = sourceWeight;
+    });
+
+    // Force a complete state update
+    setFormData((prev) => ({
+      ...prev,
+      bagApproxWeights: { ...newWeights },
+    }));
+
+    toast.success(`Weight ${sourceWeight} applied to all bag sizes`);
+  };
+
   // Create incoming order mutation
   // Query for Bhatti data
   const { data: bhattiData } = useQuery({
@@ -1208,9 +1241,23 @@ const IncomingOrderFormContent = () => {
                     : "border-muted bg-muted/5 opacity-75"
                 )}
               >
-                <h3 className="text-lg font-medium mb-2">
-                  {t("incomingOrder.quantities.title")}
-                </h3>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg font-medium">
+                    {t("incomingOrder.quantities.title")}
+                  </h3>
+                  {findFirstWeight() && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const firstWeight = findFirstWeight();
+                        if (firstWeight) applyWeightToAll(firstWeight);
+                      }}
+                      className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      Apply First Weight to All
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground mb-4">
                   {formData.variety
                     ? t("incomingOrder.quantities.description")
@@ -1250,6 +1297,7 @@ const IncomingOrderFormContent = () => {
                               )}
                             />
                             <input
+                              key={`${fieldName}_weight_${formData.bagApproxWeights[fieldName] || ""}`}
                               type="text"
                               autoComplete="off"
                               name={`${fieldName}_weight`}
