@@ -126,15 +126,15 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
 
   // Initialize form data from order
   const [formData, setFormData] = useState<FormData>(() => {
-    const orderDetail = order.orderDetails[0]; // Assuming single order detail for now
+    const orderDetail = order.orderDetails?.[0]; // Assuming single order detail for now
     const quantities: BagQuantities = {};
     const bagLocations: { [key: string]: BagLocation } = {};
 
     console.log('Order details:', orderDetail);
-    console.log('Bag sizes from order:', orderDetail.bagSizes);
+    console.log('Bag sizes from order:', orderDetail?.bagSizes);
 
     // Convert bag sizes to the format we need
-    orderDetail.bagSizes.forEach(bag => {
+    orderDetail?.bagSizes?.forEach(bag => {
       console.log('Processing bag:', bag);
       if (bag.quantity) {
         // Convert size to the correct format (e.g., 'cut-tok' to 'cutTok')
@@ -165,12 +165,12 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
     console.log('Final quantities object:', quantities);
 
     return {
-      farmerName: order.farmerId.name,
-      farmerId: order.farmerId._id,
+      farmerName: order.farmerId?.name || "",
+      farmerId: order.farmerId?._id || "",
       quantities,
       bagLocations,
       remarks: order.remarks || "",
-      variety: orderDetail.variety,
+      variety: orderDetail?.variety || "",
       generation: order.generation || "",
       rouging: order.rouging || "",
       tuberType: order.tuberType || "",

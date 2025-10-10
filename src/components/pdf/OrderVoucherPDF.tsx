@@ -373,6 +373,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
 
   // Calculate total bags
   const calculateTotalBags = () => {
+    if (!order.orderDetails) return 0;
     return order.orderDetails.reduce((total, detail) => {
       if (isReceipt) {
         return (
@@ -507,7 +508,8 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   const getUsedBagSizes = () => {
     const usedSizes = new Set<string>();
 
-    order.orderDetails.forEach((detail) => {
+    if (order.orderDetails) {
+      order.orderDetails.forEach((detail) => {
       detail.bagSizes.forEach((bag) => {
         const quantity = isReceipt
           ? bag.quantity?.initialQuantity || 0
@@ -517,7 +519,8 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           usedSizes.add(bag.size);
         }
       });
-    });
+      });
+    }
 
     // Return bag sizes in the order they appear in admin preferences, but only those that are used
     return allBagSizes.filter(size =>
@@ -532,7 +535,8 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
     const rows: TableRow[] = [];
     const usedBagSizes = getUsedBagSizes();
 
-    order.orderDetails.forEach((detail) => {
+    if (order.orderDetails) {
+      order.orderDetails.forEach((detail) => {
       // Group bags by location and variety
       const bagsByLocation = new Map<string, { size: string; quantity: number }[]>();
 
@@ -583,7 +587,8 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           });
         }
       });
-    });
+      });
+    }
 
     // Sort rows based on the priority of bag sizes they contain
     rows.sort((a, b) => {
@@ -736,22 +741,22 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           <View style={styles.infoLeft}>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>A/c No.:</Text>
-              <Text style={styles.infoValue}>{order.farmerId.farmerId}</Text>
+              <Text style={styles.infoValue}>{order.farmerId?.farmerId || "N/A"}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Name:</Text>
-              <Text style={styles.infoValue}>{order.farmerId.name}</Text>
+              <Text style={styles.infoValue}>{order.farmerId?.name || "N/A"}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Address:</Text>
               <Text style={styles.infoValue}>
-                {order.farmerId.address || "N/A"}
+                {order.farmerId?.address || "N/A"}
               </Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Mobile:</Text>
               <Text style={styles.infoValue}>
-                {order.farmerId.mobileNumber || "N/A"}
+                {order.farmerId?.mobileNumber || "N/A"}
               </Text>
             </View>
             <View style={styles.infoRow}>
@@ -886,7 +891,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
                 <View key={index} style={styles.colBagSize}>
                   <Text style={styles.tableCellTextBold}>
                     {columnTotals.get(size)
-                      ? `${order.farmerId.farmerId}/${columnTotals.get(size)}`
+                      ? `${order.farmerId?.farmerId || "N/A"}/${columnTotals.get(size)}`
                       : ""}
                   </Text>
                 </View>

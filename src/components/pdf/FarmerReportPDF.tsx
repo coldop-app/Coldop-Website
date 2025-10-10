@@ -422,7 +422,8 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     // First create all entries
     receiptOrders.forEach((order) => {
       // Create separate entries for each unique location-variety combination
-      order.orderDetails.forEach((detail) => {
+      if (order.orderDetails) {
+        order.orderDetails.forEach((detail) => {
         // Initialize quantities map for all bag sizes according to admin preferences
         const quantities: { [bagSize: string]: number } = {};
         adminInfo.preferences?.bagSizes.forEach((size) => {
@@ -503,6 +504,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
           }
         });
       });
+    }
     });
 
     // Sort entries by voucher number
@@ -525,7 +527,8 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     // First create all entries
     deliveryOrders.forEach((order) => {
       // Create separate entries for each unique location-variety combination
-      order.orderDetails.forEach((detail) => {
+      if (order.orderDetails) {
+        order.orderDetails.forEach((detail) => {
         // Initialize quantities map for all bag sizes according to admin preferences
         const quantities: { [bagSize: string]: number } = {};
         adminInfo.preferences?.bagSizes.forEach((size) => {
@@ -595,6 +598,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
           }
         });
       });
+    }
     });
 
     // Sort entries by voucher number

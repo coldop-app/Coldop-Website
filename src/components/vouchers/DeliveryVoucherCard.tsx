@@ -101,6 +101,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
 
   // Calculate lot number (total quantity removed)
   const calculateLotNo = () => {
+    if (!order.orderDetails) return 0;
     return order.orderDetails.reduce(
       (total, detail) =>
         total +
@@ -114,6 +115,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
 
   // Sort bag sizes for detailed breakdown table
   const sortedOrderDetails = useMemo(() => {
+    if (!order.orderDetails) return [];
     return order.orderDetails.map((detail) => ({
       ...detail,
       bagSizes: sortBagSizes(detail.bagSizes.map((bag) => bag.size)).map(
@@ -291,7 +293,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Variety</span>
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {order.orderDetails[0]?.variety || "N/A"}
+                  {order.orderDetails?.[0]?.variety || "N/A"}
                 </p>
               </div>
               <div className="min-w-0">
@@ -303,13 +305,13 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Party Name</span>
                 <p className="text-sm font-medium text-gray-900 truncate">
-                  {order.farmerId.name}
+                  {order.farmerId?.name || "N/A"}
                 </p>
               </div>
               <div className="min-w-0">
                 <span className="text-xs text-gray-500 block">Acc No</span>
                 <p className="text-sm font-medium text-gray-900">
-                  {order.farmerId.farmerId}
+                  {order.farmerId?.farmerId || "N/A"}
                 </p>
               </div>
             </div>
@@ -383,7 +385,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                     Address
                   </span>
                   <p className="text-sm font-medium text-gray-900">
-                    {order.farmerId.address || "N/A"}
+                    {order.farmerId?.address || "N/A"}
                   </p>
                 </div>
                 <div>
@@ -391,7 +393,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                     Mobile Number
                   </span>
                   <p className="text-sm font-medium text-gray-900">
-                    {order.farmerId.mobileNumber || "N/A"}
+                    {order.farmerId?.mobileNumber || "N/A"}
                   </p>
                 </div>
               </div>
@@ -418,13 +420,13 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                     {sortBagSizes(
                       Array.from(
                         new Set(
-                          order.orderDetails.flatMap((d) =>
+                          order.orderDetails?.flatMap((d) =>
                             d.bagSizes.map((b) => b.size)
-                          )
+                          ) || []
                         )
                       )
                     ).map((bagSize, idx) => {
-                      const totalRemoved = order.orderDetails.reduce(
+                      const totalRemoved = order.orderDetails?.reduce(
                         (total, detail) =>
                           total +
                           detail.bagSizes
@@ -434,7 +436,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                               0
                             ),
                         0
-                      );
+                      ) || 0;
 
                       return (
                         <tr key={idx} className="hover:bg-gray-50/50 transition-colors">
