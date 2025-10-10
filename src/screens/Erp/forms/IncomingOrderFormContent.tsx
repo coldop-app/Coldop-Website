@@ -15,6 +15,7 @@ import NewFarmerModal, {
   NewFarmerFormData,
 } from "@/components/modals/NewFarmerModal";
 import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
+import { SimpleDatePicker } from "@/components/ui/simple-date-picker";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -89,7 +90,6 @@ interface FormData {
   tuberType: string;
   grader: string;
   weighedStatus: string;
-  approxWeight: string; // Keep for backward compatibility, but will be deprecated
   bagType: "jute" | "leno";
 
   // Step 2
@@ -99,6 +99,7 @@ interface FormData {
   // Additional fields for API
   voucherNumber: number;
   dateOfSubmission: string;
+  dateOfSubmissionDate: Date | undefined; // For the date picker
   variety: string;
 
   // Null voucher feature
@@ -157,13 +158,13 @@ const IncomingOrderFormContent = () => {
     remarks: "",
     voucherNumber: 0,
     dateOfSubmission: new Date().toISOString().split("T")[0],
+    dateOfSubmissionDate: new Date(),
     variety: "",
     generation: "",
     rouging: "",
     tuberType: "",
     grader: "",
     weighedStatus: "true",
-    approxWeight: "",
     bagType: "jute",
     isNullVoucher: false,
   });
@@ -249,6 +250,14 @@ const IncomingOrderFormContent = () => {
 
   const updateFormData = (field: keyof FormData, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleDateChange = (date: Date | undefined) => {
+    setFormData((prev) => ({
+      ...prev,
+      dateOfSubmissionDate: date,
+      dateOfSubmission: date ? date.toISOString().split("T")[0] : "",
+    }));
   };
 
   const updateQuantity = (bagType: string, value: string) => {
@@ -369,8 +378,8 @@ const IncomingOrderFormContent = () => {
       toast.error("Please select grade");
       return;
     }
-    if (!formData.approxWeight || parseFloat(formData.approxWeight) <= 0) {
-      toast.error("Please enter a valid approximate weight");
+    if (!formData.dateOfSubmissionDate) {
+      toast.error("Please select a submission date");
       return;
     }
     if (calculateTotal() <= 0) {
@@ -447,13 +456,13 @@ const IncomingOrderFormContent = () => {
         remarks: "",
         voucherNumber: 0,
         dateOfSubmission: new Date().toISOString().split("T")[0],
+        dateOfSubmissionDate: new Date(),
         variety: "",
         generation: defaults.generation || "",
         rouging: defaults.rouging || "",
         tuberType: defaults.tuberType || "",
         grader: defaults.grader || "",
         weighedStatus: "true",
-        approxWeight: "",
         bagType: "jute",
         isNullVoucher: false,
       });
@@ -552,12 +561,12 @@ const IncomingOrderFormContent = () => {
         return quantity > 0;
       }) || [];
 
-    // Convert date to DD.MM.YY format
+    // Convert date to DD.MM.YYYY format
     const formatDateForAPI = (dateString: string) => {
       const date = new Date(dateString);
       const day = date.getDate().toString().padStart(2, '0');
       const month = (date.getMonth() + 1).toString().padStart(2, '0');
-      const year = date.getFullYear().toString().slice(-2);
+      const year = date.getFullYear().toString();
       return `${day}.${month}.${year}`;
     };
 
@@ -565,14 +574,13 @@ const IncomingOrderFormContent = () => {
     const orderData: CreateOrderPayload = {
       coldStorageId: adminInfo?._id || "",
       farmerId: formData.farmerId || "temp-farmer-id",
-      dateOfSubmission: formatDateForAPI(formData.dateOfSubmission),
       remarks: formData.remarks,
       generation: formData.generation,
       rouging: formData.rouging,
       tuberType: formData.tuberType,
       grader: formData.grader,
+      dateOfSubmission: formatDateForAPI(formData.dateOfSubmission),
       weighedStatus: formData.weighedStatus === "true",
-      approxWeight: formData.approxWeight,
       bagType: formData.bagType,
       orderDetails: [
         {
@@ -590,8 +598,8 @@ const IncomingOrderFormContent = () => {
                   formData.quantities[fieldName] || "0"
                 ),
               },
-              location: getLocationForAPI(fieldName),
               approxWeight: approxWeight > 0 ? approxWeight : undefined,
+              location: getLocationForAPI(fieldName) || undefined,
             };
           }),
         },
@@ -1056,6 +1064,18 @@ const IncomingOrderFormContent = () => {
                 token={adminInfo?.token || ""}
               />
 
+              {/* Date of Submission */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Date of Submission
+                </label>
+                <SimpleDatePicker
+                  value={formData.dateOfSubmissionDate}
+                  onChange={handleDateChange}
+                  placeholder="Select submission date"
+                />
+              </div>
+
               {/* Additional Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {/* Generation */}
@@ -1142,25 +1162,6 @@ const IncomingOrderFormContent = () => {
                   />
                 </div>
 
-                {/* Approximate Weight */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Approximate Weight (kg)
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.approxWeight}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Only allow numbers and decimal point
-                      if (value === "" || /^\d*\.?\d*$/.test(value)) {
-                        updateFormData("approxWeight", value);
-                      }
-                    }}
-                    placeholder="Enter weight in kg"
-                    className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
               </div>
 
               {/* Bag Type */}

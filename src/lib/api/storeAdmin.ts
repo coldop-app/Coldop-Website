@@ -143,14 +143,13 @@ interface FilterOrdersResponse {
 export interface CreateOrderPayload {
   coldStorageId: string;
   farmerId: string | null;
-  dateOfSubmission?: string | null;
   remarks?: string | null;
   generation?: string | null;
   rouging?: string | null;
   tuberType?: string | null;
   grader?: string | null;
+  dateOfSubmission?: string | null;
   weighedStatus?: boolean | null;
-  approxWeight?: string | null;
   bagType?: string | null;
   orderDetails?: {
     variety: string;
@@ -160,8 +159,8 @@ export interface CreateOrderPayload {
         initialQuantity: number;
         currentQuantity: number;
       };
-      location: string;
       approxWeight?: number;
+      location?: string;
     }[];
   }[] | null;
   isNullVoucher?: boolean;
