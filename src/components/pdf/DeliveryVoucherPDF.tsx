@@ -670,12 +670,6 @@ const DeliveryVoucherPDF: React.FC<DeliveryVoucherPDFProps> = ({
               <Text style={styles.infoLabel}>Variety:</Text>
               <Text style={styles.infoValue}>{order.orderDetails?.[0]?.variety || "N/A"}</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Lot No:</Text>
-              <Text style={styles.infoValue}>
-                {order.gatePass?.gatePassNumber || "N/A"}/{totalBags}
-              </Text>
-            </View>
           </View>
           <View style={styles.infoRight}>
             <View style={styles.infoRow}>
@@ -689,10 +683,6 @@ const DeliveryVoucherPDF: React.FC<DeliveryVoucherPDFProps> = ({
               <Text style={styles.infoValue}>
                 {order.dateOfExtraction || "N/A"}
               </Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Current Stock:</Text>
-              <Text style={styles.infoValue}>{order.currentStockAtThatTime || "N/A"}</Text>
             </View>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Total Outgoing:</Text>
