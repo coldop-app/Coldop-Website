@@ -769,7 +769,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
             </View>
           ))}
 
-          {/* Show total row only for receipt table */}
+          {/* Show total row for receipt table */}
           {!isDeliveryTable && (
             <View style={[styles.tableRow, styles.totalRow]}>
               <View style={styles.colDate}>
@@ -807,6 +807,50 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
               </View>
               <View style={styles.colMarka}>
                 <Text style={styles.balanceText}>-</Text>
+              </View>
+            </View>
+          )}
+
+          {/* Show Net bags row for delivery table */}
+          {isDeliveryTable && receiptTotals && (
+            <View style={[styles.tableRow, styles.totalRow]}>
+              <View style={styles.colDate}>
+                <Text style={styles.balanceText}>NET BAGS</Text>
+              </View>
+              <View style={styles.colVoucher}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colVariety}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colChamber}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colFloor}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              <View style={styles.colRow}>
+                <Text style={styles.balanceText}>-</Text>
+              </View>
+              {bagSizes.map((size) => {
+                const netBalance = (receiptTotals[size] || 0) - (totals[size] || 0);
+                return (
+                  <View key={size} style={styles.colBagSize}>
+                    <Text style={styles.balanceText}>{netBalance}</Text>
+                  </View>
+                );
+              })}
+              <View style={styles.colTotal}>
+                <Text style={styles.balanceText}>
+                  {Object.values(receiptTotals).reduce((sum, qty) => sum + qty, 0) -
+                   Object.values(totals).reduce((sum, qty) => sum + qty, 0)}
+                </Text>
+              </View>
+              <View style={styles.colGrandTotal}>
+                <Text style={styles.balanceText}>
+                  {Object.values(receiptTotals).reduce((sum, qty) => sum + qty, 0) -
+                   Object.values(totals).reduce((sum, qty) => sum + qty, 0)}
+                </Text>
               </View>
             </View>
           )}
