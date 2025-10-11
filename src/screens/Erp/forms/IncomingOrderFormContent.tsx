@@ -346,6 +346,13 @@ const IncomingOrderFormContent = () => {
     );
   };
 
+  const calculateTotalWeight = () => {
+    return Object.values(formData.bagApproxWeights).reduce(
+      (sum, weight) => sum + (parseFloat(weight) || 0),
+      0
+    );
+  };
+
   const nextStep = () => {
     // Skip validation for null vouchers
     if (formData.isNullVoucher) {
@@ -735,6 +742,30 @@ const IncomingOrderFormContent = () => {
         ) as HTMLInputElement;
         if (nextInput) {
           nextInput.focus();
+        }
+      }
+    }
+  };
+
+  // Add this new function to handle enter key press for weight inputs
+  const handleWeightKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    currentBagSize: string
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const bagSizes = adminInfo?.preferences?.bagSizes || [];
+      const currentIndex = bagSizes.indexOf(currentBagSize);
+      const nextIndex = currentIndex + 1;
+
+      // If there's a next bag size, focus its weight input
+      if (nextIndex < bagSizes.length) {
+        const nextFieldName = getBagSizeFieldName(bagSizes[nextIndex]);
+        const nextWeightInput = document.querySelector(
+          `input[name="${nextFieldName}_weight"]`
+        ) as HTMLInputElement;
+        if (nextWeightInput) {
+          nextWeightInput.focus();
         }
       }
     }
@@ -1297,7 +1328,6 @@ const IncomingOrderFormContent = () => {
                               )}
                             />
                             <input
-                              key={`${fieldName}_weight_${formData.bagApproxWeights[fieldName] || ""}`}
                               type="text"
                               autoComplete="off"
                               name={`${fieldName}_weight`}
@@ -1305,6 +1335,7 @@ const IncomingOrderFormContent = () => {
                               onChange={(e) =>
                                 updateApproxWeight(fieldName, e.target.value)
                               }
+                              onKeyDown={(e) => handleWeightKeyDown(e, bagSize)}
                               placeholder="Wt"
                               disabled={!formData.variety}
                               className={cn(
@@ -1325,18 +1356,33 @@ const IncomingOrderFormContent = () => {
 
                   <hr className="border-gray-300" />
 
-                  <div className="flex items-center justify-between font-semibold">
-                    <label className="text-sm">
-                      {t("incomingOrder.quantities.total")}
-                    </label>
-                    <span
-                      className={cn(
-                        "text-lg",
-                        !formData.variety && "text-muted-foreground"
-                      )}
-                    >
-                      {calculateTotal()}
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between font-semibold">
+                      <label className="text-sm">
+                        {t("incomingOrder.quantities.total")}
+                      </label>
+                      <span
+                        className={cn(
+                          "text-lg",
+                          !formData.variety && "text-muted-foreground"
+                        )}
+                      >
+                        {calculateTotal()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between font-semibold">
+                      <label className="text-sm">
+                        Total Weight (kg)
+                      </label>
+                      <span
+                        className={cn(
+                          "text-lg",
+                          !formData.variety && "text-muted-foreground"
+                        )}
+                      >
+                        {calculateTotalWeight().toFixed(1)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -9,9 +9,10 @@ import OrderVoucherPDF from "../pdf/OrderVoucherPDF";
 import * as ReactDOM from "react-dom/client";
 import { toast } from "react-hot-toast";
 
-// Extended BagSize interface to include location property
+// Extended BagSize interface to include location and weight properties
 interface BagSizeWithLocation extends BagSize {
   location?: string;
+  approxWeight?: number;
 }
 
 interface SortedOrderDetail extends OrderDetails {
@@ -127,7 +128,6 @@ Tuber Type: ${order.tuberType}
 Grader: ${order.grader}
 Bag Type: ${order.bagType}
 Weighed: ${order.weighedStatus ? "Yes" : "No"}
-Approx Weight: ${order.approxWeight}
 Lot No: ${calculateLotNo(order.orderDetails)}
 Current Stock: ${order.currentStockAtThatTime}
 ${order.remarks ? `Remarks: ${order.remarks}` : ""}
@@ -200,7 +200,6 @@ ${order.orderDetails
           grader: order.grader,
           bagType: order.bagType,
           weighedStatus: order.weighedStatus,
-          approxWeight: order.approxWeight,
           currentStockAtThatTime: order.currentStockAtThatTime,
           remarks: order.remarks,
           createdAt: order.createdAt
@@ -523,14 +522,6 @@ ${order.orderDetails
                 </div>
                 <div>
                   <span className="text-xs text-gray-500 block mb-1">
-                    Approx Weight
-                  </span>
-                  <p className="text-sm font-medium text-gray-900">
-                    {order.approxWeight}
-                  </p>
-                </div>
-                <div>
-                  <span className="text-xs text-gray-500 block mb-1">
                     Weighed Status
                   </span>
                   <p className="text-sm font-medium text-gray-900">
@@ -589,7 +580,8 @@ ${order.orderDetails
                                 </td>
                                 <td className="py-2 px-2 text-center text-xs">
                                   <span className="font-medium text-gray-900">
-                                    {bagSize.approxWeight ? `${bagSize.approxWeight}kg` : "-"}
+                                    {(bagSize as BagSizeWithLocation)
+                                      .approxWeight ? `${(bagSize as BagSizeWithLocation).approxWeight} kg` : "-"}
                                   </span>
                                 </td>
                                 <td className="py-2 px-2 text-center text-xs">
@@ -637,9 +629,9 @@ ${order.orderDetails
                                 <span className="font-semibold text-primary">
                                   {detail.sortedBagSizes.reduce(
                                     (sum: number, bag) =>
-                                      sum + (bag.approxWeight || 0),
+                                      sum + ((bag as BagSizeWithLocation).approxWeight || 0),
                                     0
-                                  ).toFixed(1)}kg
+                                  ).toFixed(1)} kg
                                 </span>
                               </td>
                               <td className="py-2 px-2 text-center text-xs">
@@ -704,7 +696,8 @@ ${order.orderDetails
                                 </td>
                                 <td className="py-3 px-3 text-center">
                                   <span className="font-medium text-gray-900">
-                                    {bagSize.approxWeight ? `${bagSize.approxWeight}kg` : "-"}
+                                    {(bagSize as BagSizeWithLocation)
+                                      .approxWeight ? `${(bagSize as BagSizeWithLocation).approxWeight} kg` : "-"}
                                   </span>
                                 </td>
                                 <td className="py-3 px-3 text-center">
@@ -754,9 +747,14 @@ ${order.orderDetails
                                 <span className="font-semibold text-primary">
                                   {detail.sortedBagSizes.reduce(
                                     (sum: number, bag) =>
-                                      sum + (bag.approxWeight || 0),
+                                      sum + ((bag as BagSizeWithLocation).approxWeight || 0),
                                     0
-                                  ).toFixed(1)}kg
+                                  ).toFixed(1)} kg
+                                </span>
+                              </td>
+                              <td className="py-3 px-3 text-center">
+                                <span className="font-medium text-gray-500">
+                                  -
                                 </span>
                               </td>
                               <td className="py-3 px-3 text-center">

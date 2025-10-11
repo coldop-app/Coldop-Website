@@ -27,7 +27,7 @@ declare global {
 import { Order, StoreAdmin } from "@/utils/types";
 import { Printer } from "lucide-react";
 import { PDFViewer, pdf } from "@react-pdf/renderer";
-import OrderVoucherPDF from "../pdf/OrderVoucherPDF";
+import DeliveryVoucherPDF from "../pdf/DeliveryVoucherPDF";
 import * as ReactDOM from "react-dom/client";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
@@ -137,7 +137,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
       try {
         console.log("Starting PDF generation for Delivery Voucher...");
 
-        const pdfDoc = <OrderVoucherPDF order={order} adminInfo={adminInfo} />;
+        const pdfDoc = <DeliveryVoucherPDF order={order} adminInfo={adminInfo} />;
 
         // Generate PDF as blob
         const pdfBlob = await pdf(pdfDoc).toBlob();
@@ -201,7 +201,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
         if (root) {
           ReactDOM.createRoot(root).render(
             <PDFViewer width="100%" height="100%">
-              <OrderVoucherPDF order={order} adminInfo={adminInfo} />
+              <DeliveryVoucherPDF order={order} adminInfo={adminInfo} />
             </PDFViewer>
           );
         }

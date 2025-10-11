@@ -484,7 +484,11 @@ const DeliveryVoucherPDF: React.FC<DeliveryVoucherPDFProps> = ({
     }
 
     // Return sizes in the order they appear in admin preferences, but only if they have values
-    return allBagSizes.filter(size => usedSizes.has(size));
+    return allBagSizes.filter(size =>
+      Array.from(usedSizes).some(usedSize =>
+        usedSize.toLowerCase().replace(/[-\s]/g, "") === size.toLowerCase().replace(/[-\s]/g, "")
+      )
+    );
   };
 
   // Create table rows from order details
@@ -494,53 +498,53 @@ const DeliveryVoucherPDF: React.FC<DeliveryVoucherPDFProps> = ({
 
     if (order.orderDetails) {
       order.orderDetails.forEach((detail) => {
-      // Group bags by location and variety
-      const bagsByLocation = new Map<string, { size: string; quantity: number }[]>();
+        // Group bags by location and variety
+        const bagsByLocation = new Map<string, { size: string; quantity: number }[]>();
 
-      detail.bagSizes.forEach((bag) => {
-        const quantity = bag.quantityRemoved || 0;
+        detail.bagSizes.forEach((bag) => {
+          const quantity = bag.quantityRemoved || 0;
 
-        if (quantity > 0) {
-          const locationString = bag.location || detail.location || "-";
+          if (quantity > 0) {
+            const locationString = bag.location || detail.location || "-";
 
-          if (!bagsByLocation.has(locationString)) {
-            bagsByLocation.set(locationString, []);
+            if (!bagsByLocation.has(locationString)) {
+              bagsByLocation.set(locationString, []);
+            }
+
+            bagsByLocation.get(locationString)?.push({
+              size: bag.size,
+              quantity: quantity,
+            });
           }
-
-          bagsByLocation.get(locationString)?.push({
-            size: bag.size,
-            quantity: quantity,
-          });
-        }
-      });
-
-      // Create rows for each location
-      bagsByLocation.forEach((bags, location) => {
-        const locationDetails = parseLocation(location);
-
-        // Create bag sizes array with quantities filled according to used bag sizes order
-        const bagSizesWithQuantities = usedBagSizes.map((preferredSize) => {
-          const matchingBag = bags.find(bag =>
-            bag.size.toLowerCase().replace(/[-\s]/g, "") === preferredSize.toLowerCase().replace(/[-\s]/g, "")
-          );
-
-          return {
-            size: preferredSize,
-            quantity: matchingBag ? matchingBag.quantity : "-",
-          };
         });
 
-        // Only add row if there are actual quantities
-        const hasQuantities = bagSizesWithQuantities.some(bag => bag.quantity !== "-");
-        if (hasQuantities) {
-          rows.push({
-            variety: detail.variety,
-            bagSizes: bagSizesWithQuantities,
-            location: locationDetails,
-            incomingVoucher: detail.incomingOrder?.gatePass?.gatePassNumber?.toString() || "-",
+        // Create rows for each location
+        bagsByLocation.forEach((bags, location) => {
+          const locationDetails = parseLocation(location);
+
+          // Create bag sizes array with quantities filled according to used bag sizes order
+          const bagSizesWithQuantities = usedBagSizes.map((preferredSize) => {
+            const matchingBag = bags.find(bag =>
+              bag.size.toLowerCase().replace(/[-\s]/g, "") === preferredSize.toLowerCase().replace(/[-\s]/g, "")
+            );
+
+            return {
+              size: preferredSize,
+              quantity: matchingBag ? matchingBag.quantity : "-",
+            };
           });
-        }
-      });
+
+          // Only add row if there are actual quantities
+          const hasQuantities = bagSizesWithQuantities.some(bag => bag.quantity !== "-");
+          if (hasQuantities) {
+            rows.push({
+              variety: detail.variety,
+              bagSizes: bagSizesWithQuantities,
+              location: locationDetails,
+              incomingVoucher: detail.incomingOrder?.gatePass?.gatePassNumber?.toString() || "-",
+            });
+          }
+        });
       });
     }
 
@@ -587,6 +591,8 @@ const DeliveryVoucherPDF: React.FC<DeliveryVoucherPDFProps> = ({
   console.log("Table Rows:", tableRows);
   console.log("Total Bags:", totalBags);
   console.log("Column Totals:", columnTotals);
+  console.log("Used Bag Sizes:", usedBagSizes);
+  console.log("All Bag Sizes from Admin:", allBagSizes);
 
   return (
     <Document>

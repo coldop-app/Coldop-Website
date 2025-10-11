@@ -7,9 +7,14 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
-import { Order, StoreAdmin } from "@/utils/types";
+import { Order, StoreAdmin, BagSize } from "@/utils/types";
 import coldopLogo from "/coldop-logo.png";
 import DeliveryVoucherPDF from "./DeliveryVoucherPDF";
+
+// Extended BagSize interface to include weight property
+interface BagSizeWithLocation extends BagSize {
+  approxWeight?: number;
+}
 
 interface OrderVoucherPDFProps {
   order: Order;
@@ -164,7 +169,7 @@ const styles = StyleSheet.create({
     minHeight: 16,
   },
 
-  // Table Columns - updated to match FarmerReportPDF
+  // Table Columns - updated to show individual bag weights
   colChamber: {
     width: "6%",
     borderRightWidth: 0.5,
@@ -329,30 +334,6 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
 
-  // Footer - simplified
-  footer: {
-    position: "absolute",
-    bottom: 16,
-    left: 16,
-    right: 16,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    borderTopWidth: 1,
-    borderTopColor: "#000",
-    paddingTop: 6,
-  },
-  coldopLogo: {
-    width: 16,
-    height: 16,
-    marginRight: 4,
-    opacity: 0.85,
-  },
-  coldopText: {
-    fontSize: 6,
-    color: "#555",
-    fontStyle: "italic",
-  },
 });
 
 const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
@@ -392,6 +373,20 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           )
         );
       }
+    }, 0);
+  };
+
+  // Calculate total weight
+  const calculateTotalWeight = () => {
+    if (!order.orderDetails) return 0;
+    return order.orderDetails.reduce((total, detail) => {
+      return total + detail.bagSizes.reduce((sum, bag) => {
+        const quantity = isReceipt
+          ? bag.quantity?.initialQuantity || 0
+          : bag.quantityRemoved || 0;
+        const weight = (bag as BagSizeWithLocation).approxWeight || 0;
+        return sum + (quantity * weight);
+      }, 0);
     }, 0);
   };
 
@@ -455,6 +450,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   interface TableBagSize {
     size: string;
     quantity: number | string;
+    weight?: number;
   }
 
   interface LocationDetails {
@@ -538,7 +534,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
     if (order.orderDetails) {
       order.orderDetails.forEach((detail) => {
       // Group bags by location and variety
-      const bagsByLocation = new Map<string, { size: string; quantity: number }[]>();
+      const bagsByLocation = new Map<string, { size: string; quantity: number; weight: number }[]>();
 
       detail.bagSizes.forEach((bag) => {
         const quantity = isReceipt
@@ -556,6 +552,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           bagsByLocation.get(locationString)?.push({
             size: bag.size,
             quantity: quantity,
+            weight: (bag as BagSizeWithLocation).approxWeight || 0,
           });
         }
       });
@@ -574,6 +571,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           return {
             size: preferredSize,
             quantity: matchingBag ? matchingBag.quantity : "-",
+            weight: matchingBag ? matchingBag.weight : 0,
           };
         });
 
@@ -620,6 +618,7 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   const usedBagSizes = getUsedBagSizes();
   const tableRows = createTableRows();
   const totalBags = calculateTotalBags();
+  const totalWeight = calculateTotalWeight();
 
   // Calculate row totals (excluding "-" values)
   const calculateRowTotal = (bagSizes: TableBagSize[]) => {
@@ -674,10 +673,9 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
   console.log("Grader:", order.grader);
   console.log("Bag Type:", order.bagType);
   console.log("Weighed Status:", order.weighedStatus);
-  console.log("Approx Weight:", order.approxWeight);
-  console.log("Current Stock at That Time:", order.currentStockAtThatTime);
   console.log("Date of Submission:", order.dateOfSubmission);
   console.log("Remarks:", order.remarks);
+  console.log("Total Weight Calculated:", totalWeight);
 
   return (
     <Document>
@@ -797,14 +795,6 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
               <Text style={styles.infoLabel}>Weighed:</Text>
               <Text style={styles.infoValue}>{order.weighedStatus ? "Yes" : "No"}</Text>
             </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Approx Weight:</Text>
-              <Text style={styles.infoValue}>{order.approxWeight || "N/A"}</Text>
-            </View>
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Current Stock:</Text>
-              <Text style={styles.infoValue}>{order.currentStockAtThatTime || "N/A"}</Text>
-            </View>
           </View>
         </View>
 
@@ -862,12 +852,22 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
                   <View key={bagIndex} style={styles.colBagSize}>
                     <Text style={styles.tableCellText}>
                       {bag.quantity}
+                      {bag.weight && bag.weight > 0 && (
+                        <Text style={[styles.tableCellText, { fontSize: 6, color: "#666" }]}>
+                          {"\n"}({bag.weight.toFixed(1)}kg)
+                        </Text>
+                      )}
                     </Text>
                   </View>
                 ))}
                 <View style={styles.colTotal}>
                   <Text style={styles.tableCellTextBold}>
                     {calculateRowTotal(row.bagSizes)}
+                    {row.bagSizes.reduce((sum, bag) => sum + (bag.weight || 0), 0) > 0 && (
+                      <Text style={[styles.tableCellText, { fontSize: 6, color: "#666" }]}>
+                        {"\n"}({row.bagSizes.reduce((sum, bag) => sum + (bag.weight || 0), 0).toFixed(1)}kg)
+                      </Text>
+                    )}
                   </Text>
                 </View>
               </View>
@@ -902,6 +902,11 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
                     (sum, total) => sum + total,
                     0
                   )}
+                  {totalWeight > 0 && (
+                    <Text style={[styles.tableCellText, { fontSize: 6, color: "#666" }]}>
+                      {"\n"}({totalWeight.toFixed(1)}kg)
+                    </Text>
+                  )}
                 </Text>
               </View>
             </View>
@@ -917,6 +922,14 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
               <Text style={styles.totalBagsLabel}>Total Bags in words:</Text>
               <Text style={styles.totalBagsValue}>
                 {totalBags > 0 ? numberToWords(totalBags) : ""}
+              </Text>
+            </View>
+
+            {/* Total Weight */}
+            <View style={styles.totalBagsContainer}>
+              <Text style={styles.totalBagsLabel}>Total Weight:</Text>
+              <Text style={styles.totalBagsValue}>
+                {totalWeight > 0 ? `${totalWeight.toFixed(1)} kg` : ""}
               </Text>
             </View>
 
@@ -939,11 +952,6 @@ const OrderVoucherPDF: React.FC<OrderVoucherPDFProps> = ({
           </View>
         </View>
 
-        {/* Footer with Coldop Branding */}
-        <View style={styles.footer}>
-          <Image style={styles.coldopLogo} src={coldopLogo} />
-          <Text style={styles.coldopText}>Powered by Coldop</Text>
-        </View>
       </Page>
     </Document>
   );
