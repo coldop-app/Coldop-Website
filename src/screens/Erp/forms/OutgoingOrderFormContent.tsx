@@ -88,7 +88,7 @@ interface Farmer {
 interface FormData {
   farmerName: string;
   farmerId: string;
-  variety: string;
+  variety: string[];
   generation: string;
   rouging: string;
   tuberType: string;
@@ -250,7 +250,7 @@ const OutgoingOrderFormContent = () => {
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
     farmerId: farmer?._id || "",
-    variety: "",
+    variety: [],
     generation: "",
     rouging: "",
     tuberType: "",
@@ -311,8 +311,8 @@ const OutgoingOrderFormContent = () => {
     if (!farmerIncomingOrders?.data) return [];
 
     return farmerIncomingOrders.data.filter((order) => {
-      // Filter by variety if selected
-      const hasVariety = !formData.variety || order.orderDetails.some(detail => detail.variety === formData.variety);
+      // Filter by variety if selected (now supports multiple varieties)
+      const hasVariety = formData.variety.length === 0 || order.orderDetails.some(detail => formData.variety.includes(detail.variety));
 
       // Filter by other fields if they are selected
       const hasGeneration = !formData.generation || order.generation === formData.generation;
@@ -417,7 +417,7 @@ const OutgoingOrderFormContent = () => {
   const clearAllFilters = () => {
     setFormData(prev => ({
       ...prev,
-      variety: "",
+      variety: [],
       generation: "",
       rouging: "",
       tuberType: "",
@@ -432,19 +432,19 @@ const OutgoingOrderFormContent = () => {
   const clearFilter = (field: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: field === 'weighedStatus' ? 'true' : ''
+      [field]: field === 'weighedStatus' ? 'true' : field === 'variety' ? [] : ''
     }));
   };
 
   // Check if any filters are active
-  const hasActiveFilters = formData.variety || formData.generation || formData.rouging ||
+  const hasActiveFilters = formData.variety.length > 0 || formData.generation || formData.rouging ||
                           formData.tuberType || formData.grader ||
                           (formData.weighedStatus && formData.weighedStatus !== "true") || formData.approxWeight ||
                           selectedBagSizes.length > 0;
 
   // Count active filters
   const activeFiltersCount = [
-    formData.variety,
+    formData.variety.length > 0 ? `Varieties (${formData.variety.length})` : null,
     formData.generation,
     formData.rouging,
     formData.tuberType,
@@ -710,6 +710,7 @@ const OutgoingOrderFormContent = () => {
     size,
     totalQuantities,
     bagSizeLocation,
+    variety,
     isSelected,
     onBoxClick
   }: {
@@ -717,6 +718,7 @@ const OutgoingOrderFormContent = () => {
     size: string;
     totalQuantities: { current: number; initial: number };
     bagSizeLocation?: string;
+    variety?: string;
     isSelected: boolean;
     onBoxClick: (e: React.MouseEvent) => void;
   }) => (
@@ -724,7 +726,7 @@ const OutgoingOrderFormContent = () => {
       type="button"
       onClick={onBoxClick}
       className={`
-        relative w-16 h-16 rounded-xl border-2
+        relative w-16 h-20 rounded-xl border-2
         ${getBoxColor(
           totalQuantities.current,
           totalQuantities.initial,
@@ -741,9 +743,16 @@ const OutgoingOrderFormContent = () => {
       {/* Only show content if cell has quantities */}
       {totalQuantities.current > 0 || totalQuantities.initial > 0 ? (
         <>
-          {/* Location at the top */}
-          <div className="text-[10px] text-gray-600 mb-1 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
-            <span className="text-[8px]">📍</span>
+          {/* Variety at the top */}
+          {variety && (
+            <div className="text-[8px] text-gray-700 mb-0.5 font-semibold truncate max-w-[50px] opacity-90 group-hover:opacity-100 transition-opacity duration-200">
+              {variety}
+            </div>
+          )}
+
+          {/* Location */}
+          <div className="text-[8px] text-gray-600 mb-1 flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity duration-200">
+            <span className="text-[6px]">📍</span>
             <span className="truncate max-w-[50px] font-medium">
               {bagSizeLocation || ''}
             </span>
@@ -791,7 +800,7 @@ const OutgoingOrderFormContent = () => {
       .filter(order => groupedByReceipt[order.gatePass.gatePassNumber])
       .map(order => {
         // Get the variety from the order details (use the first variety found)
-        const variety = order.orderDetails[0]?.variety || formData.variety;
+        const variety = order.orderDetails[0]?.variety || (formData.variety.length > 0 ? formData.variety[0] : '');
 
         return {
           orderId: order._id,
@@ -992,26 +1001,46 @@ const OutgoingOrderFormContent = () => {
                       : t('outgoingOrder.variety.noVarieties')}
                   </p>
 
-                  <div className="relative">
-                    <CustomSelect
-                      value={formData.variety}
-                      onChange={(value) => updateFormData('variety', value)}
-                      placeholder="Select Variety"
+                  <div className="space-y-3">
+                    <MultiSelect
                       options={availableVarieties.map((variety: string) => ({
                         value: variety,
                         label: variety,
                       }))}
+                      value={formData.variety}
+                      onChange={(value) => setFormData(prev => ({ ...prev, variety: value }))}
+                      placeholder="Select varieties to filter orders..."
+                      maxDisplayItems={2}
+                      className="border-gray-200 focus-within:border-gray-400 focus-within:ring-gray-100"
                     />
-                    {formData.variety && (
-                      <button
-                        type="button"
-                        onClick={() => clearFilter('variety')}
-                        className="absolute right-8 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                      </button>
+
+                    {/* Selected varieties preview */}
+                    {formData.variety.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        <span className="text-xs font-medium text-gray-600 flex items-center gap-1">
+                          <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Selected:
+                        </span>
+                        {formData.variety.map((variety) => (
+                          <span
+                            key={variety}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full border border-green-200"
+                          >
+                            {variety}
+                            <button
+                              type="button"
+                              onClick={() => setFormData(prev => ({ ...prev, variety: prev.variety.filter(v => v !== variety) }))}
+                              className="ml-1 hover:bg-green-200 rounded-full p-0.5 transition-colors"
+                            >
+                              <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                              </svg>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                 </div>
@@ -1303,9 +1332,9 @@ const OutgoingOrderFormContent = () => {
                               Filters Applied ({activeFiltersCount})
                             </span>
                             <div className="flex flex-wrap gap-1">
-                              {formData.variety && (
+                              {formData.variety.length > 0 && (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                                  Variety: {formData.variety}
+                                  Varieties: {formData.variety.join(', ')}
                                   <button
                                     type="button"
                                     onClick={() => clearFilter('variety')}
@@ -1516,10 +1545,12 @@ const OutgoingOrderFormContent = () => {
                                           return acc;
                                         }, { current: 0, initial: 0 });
 
-                                        // Get location for this bag size
-                                        const bagSizeLocation = order.orderDetails.find(detail =>
+                                        // Get location and variety for this bag size
+                                        const bagSizeDetail = order.orderDetails.find(detail =>
                                           detail.bagSizes.some(b => b.size === size)
-                                        )?.bagSizes.find(b => b.size === size)?.location;
+                                        );
+                                        const bagSizeLocation = bagSizeDetail?.bagSizes.find(b => b.size === size)?.location;
+                                        const variety = bagSizeDetail?.variety;
 
                                         const isSelected = selectedQuantities.some(
                                           sq => sq.receiptNumber === order.gatePass.gatePassNumber &&
@@ -1534,6 +1565,7 @@ const OutgoingOrderFormContent = () => {
                                                 size={size}
                                                 totalQuantities={totalQuantities}
                                                 bagSizeLocation={bagSizeLocation}
+                                                variety={variety}
                                                 isSelected={isSelected}
                                                 onBoxClick={(e) => handleBoxClick(
                                                   order.gatePass.gatePassNumber,
@@ -1591,10 +1623,12 @@ const OutgoingOrderFormContent = () => {
                                       return acc;
                                     }, { current: 0, initial: 0 });
 
-                                    // Get location for this bag size
-                                    const bagSizeLocation = order.orderDetails.find(detail =>
+                                    // Get location and variety for this bag size
+                                    const bagSizeDetail = order.orderDetails.find(detail =>
                                       detail.bagSizes.some(b => b.size === size)
-                                    )?.bagSizes.find(b => b.size === size)?.location;
+                                    );
+                                    const bagSizeLocation = bagSizeDetail?.bagSizes.find(b => b.size === size)?.location;
+                                    const variety = bagSizeDetail?.variety;
 
                                     const isSelected = selectedQuantities.some(
                                       sq => sq.receiptNumber === order.gatePass.gatePassNumber &&
@@ -1609,6 +1643,7 @@ const OutgoingOrderFormContent = () => {
                                           size={size}
                                           totalQuantities={totalQuantities}
                                           bagSizeLocation={bagSizeLocation}
+                                          variety={variety}
                                           isSelected={isSelected}
                                           onBoxClick={(e) => handleBoxClick(
                                             order.gatePass.gatePassNumber,
