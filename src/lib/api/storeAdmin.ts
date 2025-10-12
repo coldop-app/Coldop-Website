@@ -227,7 +227,6 @@ interface UpdateIncomingOrderPayload {
   tuberType: string;
   grader: string;
   weighedStatus: boolean;
-  approxWeight: string;
   bagType: string;
   orderDetails: {
     variety: string;

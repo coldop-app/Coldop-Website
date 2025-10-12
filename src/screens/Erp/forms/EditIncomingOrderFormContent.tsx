@@ -10,6 +10,7 @@ import Loader from "@/components/common/Loader/Loader";
 import VarietySelector from "@/components/common/VarietySelector/VarietySelector";
 import { cn } from "@/lib/utils";
 import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
+import { SimpleDatePicker } from "@/components/ui/simple-date-picker";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -69,11 +70,38 @@ const getBagSizeFieldName = (bagSize: string): string => {
          normalized.slice(1).replace(/\b\w/g, c => c.toUpperCase());
 };
 
+// Helper function to safely parse date from API format (DD.MM.YYYY) or ISO format
+const parseDateFromAPI = (dateString: string | undefined): Date => {
+  if (!dateString) return new Date();
+
+  console.log('Parsing date from API:', dateString);
+
+  // Check if it's in DD.MM.YYYY format
+  if (dateString.includes('.')) {
+    const parts = dateString.split('.');
+    if (parts.length === 3) {
+      const day = parts[0];
+      const month = parts[1];
+      const year = parts[2];
+      // Create date using local timezone to avoid shifting
+      const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+      console.log('Parsed DD.MM.YYYY date:', date);
+      return isNaN(date.getTime()) ? new Date() : date;
+    }
+  }
+
+  // Try parsing as ISO date or other formats
+  const date = new Date(dateString);
+  console.log('Parsed ISO/other format date:', date);
+  return isNaN(date.getTime()) ? new Date() : date;
+};
+
 interface FormData {
   farmerName: string;
   farmerId: string;
   quantities: BagQuantities;
   bagLocations: { [key: string]: BagLocation };
+  bagWeights: { [key: string]: string }; // New field for bag-level weights
   remarks: string;
   variety: string;
   generation: string;
@@ -81,9 +109,9 @@ interface FormData {
   tuberType: string;
   grader: string;
   weighedStatus: string;
-  approxWeight: string;
   bagType: string;
   dateOfSubmission: string;
+  dateOfSubmissionDate: Date | undefined; // For the date picker
 }
 
 interface BagLocation {
@@ -100,7 +128,6 @@ interface UpdateIncomingOrderPayload {
   tuberType: string;
   grader: string;
   weighedStatus: boolean;
-  approxWeight: string;
   bagType: string;
   orderDetails: {
     variety: string;
@@ -111,6 +138,7 @@ interface UpdateIncomingOrderPayload {
         currentQuantity: number;
       };
       location: string;
+      approxWeight?: number;
     }[];
   }[];
 }
@@ -129,6 +157,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
     const orderDetail = order.orderDetails?.[0]; // Assuming single order detail for now
     const quantities: BagQuantities = {};
     const bagLocations: { [key: string]: BagLocation } = {};
+    const bagWeights: { [key: string]: string } = {};
 
     console.log('Order details:', orderDetail);
     console.log('Bag sizes from order:', orderDetail?.bagSizes);
@@ -159,16 +188,25 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
             row: ""
           };
         }
+
+        // Parse approxWeight if it exists
+        if (bag.approxWeight !== undefined) {
+          bagWeights[fieldName] = bag.approxWeight.toString();
+        } else {
+          bagWeights[fieldName] = "";
+        }
       }
     });
 
     console.log('Final quantities object:', quantities);
+    console.log('Final bag weights object:', bagWeights);
 
     return {
       farmerName: order.farmerId?.name || "",
       farmerId: order.farmerId?._id || "",
       quantities,
       bagLocations,
+      bagWeights,
       remarks: order.remarks || "",
       variety: orderDetail?.variety || "",
       generation: order.generation || "",
@@ -176,9 +214,9 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
       tuberType: order.tuberType || "",
       grader: order.grader || "",
       weighedStatus: order.weighedStatus ? "true" : "false",
-      approxWeight: order.approxWeight || "",
       bagType: order.bagType || "jute",
-      dateOfSubmission: order.dateOfSubmission || new Date().toISOString().split("T")[0]
+      dateOfSubmission: order.dateOfSubmission || new Date().toISOString().split("T")[0],
+      dateOfSubmissionDate: parseDateFromAPI(order.dateOfSubmission || undefined)
     };
   });
 
@@ -200,6 +238,17 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleDateChange = (date: Date | undefined) => {
+    setFormData((prev) => ({
+      ...prev,
+      dateOfSubmissionDate: date,
+      // Use local date components to avoid timezone issues
+      dateOfSubmission: date ?
+        `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}` :
+        "",
+    }));
+  };
+
   const updateQuantity = (bagType: string, value: string) => {
     const numericValue = value.replace(/\D/g, '');
     setFormData(prev => ({
@@ -207,6 +256,22 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
       quantities: {
         ...prev.quantities,
         [bagType]: numericValue
+      }
+    }));
+  };
+
+  const updateBagWeight = (bagType: string, value: string) => {
+    // Allow numbers and decimal point
+    const numericValue = value.replace(/[^\d.]/g, "");
+    // Ensure only one decimal point
+    const parts = numericValue.split('.');
+    const validValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+
+    setFormData(prev => ({
+      ...prev,
+      bagWeights: {
+        ...prev.bagWeights,
+        [bagType]: validValue
       }
     }));
   };
@@ -263,6 +328,46 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
       .reduce((sum, quantity) => sum + (parseInt(quantity) || 0), 0);
   };
 
+  const calculateTotalWeight = () => {
+    return Object.values(formData.bagWeights).reduce(
+      (sum, weight) => sum + (parseFloat(weight) || 0),
+      0
+    );
+  };
+
+  // Function to find the first weight value
+  const findFirstWeight = (): string | null => {
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    for (const bagSize of bagSizes) {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const weight = formData.bagWeights[fieldName];
+      if (weight && parseFloat(weight) > 0) {
+        return weight;
+      }
+    }
+    return null;
+  };
+
+  // Function to apply a weight to all bag sizes
+  const applyWeightToAll = (sourceWeight: string) => {
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    const newWeights = { ...formData.bagWeights };
+
+    bagSizes.forEach((bagSize) => {
+      const fieldName = getBagSizeFieldName(bagSize);
+      // Apply weight to all bag sizes, regardless of quantity
+      newWeights[fieldName] = sourceWeight;
+    });
+
+    // Force a complete state update
+    setFormData((prev) => ({
+      ...prev,
+      bagWeights: { ...newWeights },
+    }));
+
+    toast.success(`Weight ${sourceWeight} applied to all bag sizes`);
+  };
+
   // Add this new function to handle enter key press for quantity inputs
   const handleKeyDown = (
     e: KeyboardEvent<HTMLInputElement>,
@@ -282,6 +387,30 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
         ) as HTMLInputElement;
         if (nextInput) {
           nextInput.focus();
+        }
+      }
+    }
+  };
+
+  // Add this new function to handle enter key press for weight inputs
+  const handleWeightKeyDown = (
+    e: KeyboardEvent<HTMLInputElement>,
+    currentBagSize: string
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const bagSizes = adminInfo?.preferences?.bagSizes || [];
+      const currentIndex = bagSizes.indexOf(currentBagSize);
+      const nextIndex = currentIndex + 1;
+
+      // If there's a next bag size, focus its weight input
+      if (nextIndex < bagSizes.length) {
+        const nextFieldName = getBagSizeFieldName(bagSizes[nextIndex]);
+        const nextWeightInput = document.querySelector(
+          `input[name="${nextFieldName}_weight"]`
+        ) as HTMLInputElement;
+        if (nextWeightInput) {
+          nextWeightInput.focus();
         }
       }
     }
@@ -373,8 +502,8 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
       toast.error("Please select grade");
       return;
     }
-    if (!formData.approxWeight) {
-      toast.error("Please enter approximate weight");
+    if (!formData.dateOfSubmissionDate) {
+      toast.error("Please select a submission date");
       return;
     }
     if (calculateTotal() === 0) {
@@ -388,6 +517,21 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
     setCurrentStep(1);
   };
 
+  // Convert date to DD.MM.YYYY format
+  const formatDateForAPI = (dateString: string) => {
+    // Create date object and use local date components to avoid timezone issues
+    const date = new Date(dateString);
+
+    // Use local date components to avoid timezone shifting
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
+
+    const formattedDate = `${day}.${month}.${year}`;
+    console.log('Original date:', dateString, 'Parsed date object:', date, 'Formatted date:', formattedDate);
+    return formattedDate;
+  };
+
   // Update order mutation
   const updateOrderMutation = useMutation({
     mutationFn: async () => {
@@ -397,26 +541,27 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
 
       const payload: UpdateIncomingOrderPayload = {
         remarks: formData.remarks,
-        dateOfSubmission: formData.dateOfSubmission,
+        dateOfSubmission: formatDateForAPI(formData.dateOfSubmission),
         generation: formData.generation,
         rouging: formData.rouging,
         tuberType: formData.tuberType,
         grader: formData.grader,
         weighedStatus: formData.weighedStatus === "true",
-        approxWeight: formData.approxWeight,
         bagType: formData.bagType,
         orderDetails: [{
           variety: formData.variety,
           bagSizes: adminInfo.preferences?.bagSizes?.map(bagSize => {
             const fieldName = getBagSizeFieldName(bagSize);
             const currentQuantity = parseInt(formData.quantities[fieldName] || "0");
+            const approxWeight = parseFloat(formData.bagWeights[fieldName] || "0");
             return {
               size: bagSize,
               quantity: {
                 initialQuantity: currentQuantity, // Set initial quantity to the same as current
                 currentQuantity: currentQuantity
               },
-              location: getLocationForAPI(fieldName)
+              location: getLocationForAPI(fieldName),
+              approxWeight: approxWeight > 0 ? approxWeight : undefined
             };
           }).filter(bagSize => bagSize.quantity.currentQuantity > 0) || []
         }]
@@ -528,6 +673,18 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                 token={adminInfo?.token || ""}
               />
 
+              {/* Date of Submission */}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Date of Submission
+                </label>
+                <SimpleDatePicker
+                  value={formData.dateOfSubmissionDate}
+                  onChange={handleDateChange}
+                  placeholder="Select submission date"
+                />
+              </div>
+
               {/* Additional Details */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                 {/* Generation */}
@@ -614,24 +771,6 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                   />
                 </div>
 
-                {/* Approximate Weight */}
-                <div className="space-y-2">
-                  <label className="block text-sm font-medium">
-                    Approximate Weight (kg)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.approxWeight}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === "" || parseInt(value) >= 0) {
-                        updateFormData("approxWeight", value);
-                      }
-                    }}
-                    placeholder="Enter weight in kg"
-                    className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:cursor-not-allowed disabled:opacity-50"
-                  />
-                </div>
               </div>
 
               {/* Bag Type */}
@@ -678,9 +817,23 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                     : "border-muted bg-muted/5 opacity-75"
                 )}
               >
-                <h3 className="text-lg font-medium mb-2">
-                  {t("incomingOrder.quantities.title")}
-                </h3>
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg font-medium">
+                    {t("incomingOrder.quantities.title")}
+                  </h3>
+                  {findFirstWeight() && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const firstWeight = findFirstWeight();
+                        if (firstWeight) applyWeightToAll(firstWeight);
+                      }}
+                      className="px-3 py-1.5 bg-primary/10 text-primary hover:bg-primary/20 rounded-md text-sm font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50"
+                    >
+                      Apply First Weight to All
+                    </button>
+                  )}
+                </div>
                 <p className="text-sm text-muted-foreground mb-4">
                   {formData.variety
                     ? t("incomingOrder.quantities.description")
@@ -694,47 +847,87 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                     return (
                       <div
                         key={bagSize}
-                        className="flex items-center justify-between"
+                        className="space-y-2"
                       >
-                        <label className="text-sm font-medium">
-                          {formatBagSizeLabel(bagSize)}
-                        </label>
-                        <input
-                          type="text"
-                          autoComplete="off"
-                          name={fieldName}
-                          value={formData.quantities[fieldName] || ""}
-                          onChange={(e) =>
-                            updateQuantity(fieldName, e.target.value)
-                          }
-                          onKeyDown={(e) => handleKeyDown(e, bagSize)}
-                          placeholder="-"
-                          disabled={!formData.variety}
-                          className={cn(
-                            "w-32 p-2 border rounded-md bg-background text-center transition",
-                            formData.variety
-                              ? "focus:ring-2 focus:ring-primary focus:border-primary"
-                              : "cursor-not-allowed"
-                          )}
-                        />
+                        <div className="flex items-center justify-between">
+                          <label className="text-sm font-medium">
+                            {formatBagSizeLabel(bagSize)}
+                          </label>
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              autoComplete="off"
+                              name={fieldName}
+                              value={formData.quantities[fieldName] || ""}
+                              onChange={(e) =>
+                                updateQuantity(fieldName, e.target.value)
+                              }
+                              onKeyDown={(e) => handleKeyDown(e, bagSize)}
+                              placeholder="Qty"
+                              disabled={!formData.variety}
+                              className={cn(
+                                "w-20 p-2 border rounded-md bg-background text-center transition text-sm",
+                                formData.variety
+                                  ? "focus:ring-2 focus:ring-primary focus:border-primary"
+                                  : "cursor-not-allowed"
+                              )}
+                            />
+                            <input
+                              type="text"
+                              autoComplete="off"
+                              name={`${fieldName}_weight`}
+                              value={formData.bagWeights[fieldName] || ""}
+                              onChange={(e) =>
+                                updateBagWeight(fieldName, e.target.value)
+                              }
+                              onKeyDown={(e) => handleWeightKeyDown(e, bagSize)}
+                              placeholder="Wt"
+                              disabled={!formData.variety}
+                              className={cn(
+                                "w-20 p-2 border rounded-md bg-background text-center transition text-sm",
+                                formData.variety
+                                  ? "focus:ring-2 focus:ring-primary focus:border-primary"
+                                  : "cursor-not-allowed"
+                              )}
+                            />
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500 text-right">
+                          Quantity / Approx Weight (kg)
+                        </div>
                       </div>
                     );
                   })}
 
                   <hr className="border-gray-300" />
 
-                  <div className="flex items-center justify-between font-semibold">
-                    <label className="text-sm">
-                      {t("incomingOrder.quantities.total")}
-                    </label>
-                    <span
-                      className={cn(
-                        "text-lg",
-                        !formData.variety && "text-muted-foreground"
-                      )}
-                    >
-                      {calculateTotal()}
-                    </span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between font-semibold">
+                      <label className="text-sm">
+                        {t("incomingOrder.quantities.total")}
+                      </label>
+                      <span
+                        className={cn(
+                          "text-lg",
+                          !formData.variety && "text-muted-foreground"
+                        )}
+                      >
+                        {calculateTotal()}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between font-semibold">
+                      <label className="text-sm">
+                        Total Weight (kg)
+                      </label>
+                      <span
+                        className={cn(
+                          "text-lg",
+                          !formData.variety && "text-muted-foreground"
+                        )}
+                      >
+                        {calculateTotalWeight().toFixed(1)}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
