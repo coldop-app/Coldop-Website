@@ -243,9 +243,10 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
       ...prev,
       dateOfSubmissionDate: date,
       // Use local date components to avoid timezone issues
+      // If no date is selected, keep the original order date
       dateOfSubmission: date ?
         `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}` :
-        "",
+        order.dateOfSubmission || new Date().toISOString().split("T")[0],
     }));
   };
 
@@ -519,8 +520,20 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
 
   // Convert date to DD.MM.YYYY format
   const formatDateForAPI = (dateString: string) => {
+    // If no date is selected (empty string), return the original order date
+    if (!dateString || dateString.trim() === '') {
+      console.log('No date selected, using original order date:', order.dateOfSubmission);
+      return order.dateOfSubmission || new Date().toISOString().split("T")[0];
+    }
+
     // Create date object and use local date components to avoid timezone issues
     const date = new Date(dateString);
+
+    // Check if the date is valid
+    if (isNaN(date.getTime())) {
+      console.log('Invalid date, using original order date:', order.dateOfSubmission);
+      return order.dateOfSubmission || new Date().toISOString().split("T")[0];
+    }
 
     // Use local date components to avoid timezone shifting
     const day = date.getDate().toString().padStart(2, '0');
