@@ -18,8 +18,10 @@ import StockSummaryTable, { StockSummary as StockSummaryType, TabType } from '@/
 import { formatNumber } from '@/lib/utils';
 
 interface StockTrendItem {
-  month: string;
-  totalStock: number;
+  date: string;
+  currentStockAtThatTime: number;
+  type: 'incoming' | 'outgoing';
+  voucherNumber: number;
 }
 
 interface StockSummaryResponse {
