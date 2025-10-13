@@ -255,9 +255,9 @@ const OutgoingOrderFormContent = () => {
     rouging: "",
     tuberType: "",
     grader: "",
-    weighedStatus: "true",
+    weighedStatus: "",
     approxWeight: "",
-    bagType: "jute",
+    bagType: "",
     remarks: ""
   });
 
@@ -422,7 +422,7 @@ const OutgoingOrderFormContent = () => {
       rouging: "",
       tuberType: "",
       grader: "",
-      weighedStatus: "true",
+      weighedStatus: "",
       approxWeight: ""
     }));
     setSelectedBagSizes([]);
@@ -432,14 +432,14 @@ const OutgoingOrderFormContent = () => {
   const clearFilter = (field: string) => {
     setFormData(prev => ({
       ...prev,
-      [field]: field === 'weighedStatus' ? 'true' : field === 'variety' ? [] : ''
+      [field]: field === 'variety' ? [] : ''
     }));
   };
 
   // Check if any filters are active
   const hasActiveFilters = formData.variety.length > 0 || formData.generation || formData.rouging ||
                           formData.tuberType || formData.grader ||
-                          (formData.weighedStatus && formData.weighedStatus !== "true") || formData.approxWeight ||
+                          formData.weighedStatus || formData.approxWeight ||
                           selectedBagSizes.length > 0;
 
   // Count active filters
@@ -449,7 +449,7 @@ const OutgoingOrderFormContent = () => {
     formData.rouging,
     formData.tuberType,
     formData.grader,
-    (formData.weighedStatus && formData.weighedStatus !== "true") ? formData.weighedStatus : null,
+    formData.weighedStatus ? (formData.weighedStatus === "true" ? "Weighed" : "Not Weighed") : null,
     formData.approxWeight,
     selectedBagSizes.length > 0 ? `Bag Sizes (${selectedBagSizes.length})` : null
   ].filter(Boolean).length;
@@ -1402,7 +1402,7 @@ const OutgoingOrderFormContent = () => {
                                   </button>
                                 </span>
                               )}
-                              {formData.weighedStatus && formData.weighedStatus !== "true" && (
+                              {formData.weighedStatus && (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
                                   Status: {formData.weighedStatus === "true" ? "Weighed" : "Not Weighed"}
                                   <button
