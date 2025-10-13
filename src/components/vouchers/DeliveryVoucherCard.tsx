@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense, lazy } from "react";
 import { ChevronDown, ChevronUp, Share2 } from "lucide-react";
 
 interface WebViewMessage {
@@ -27,10 +27,12 @@ declare global {
 import { Order, StoreAdmin } from "@/utils/types";
 import { Printer } from "lucide-react";
 import { PDFViewer, pdf } from "@react-pdf/renderer";
-import DeliveryVoucherPDF from "../pdf/DeliveryVoucherPDF";
 import * as ReactDOM from "react-dom/client";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
+
+// Lazy load the heavy PDF component
+const DeliveryVoucherPDF = lazy(() => import("../pdf/DeliveryVoucherPDF"));
 
 interface DeliveryVoucherCardProps {
   order: Order;
@@ -219,7 +221,9 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
         if (root) {
           ReactDOM.createRoot(root).render(
             <PDFViewer width="100%" height="100%">
-              <DeliveryVoucherPDF order={order} adminInfo={adminInfo} />
+              <Suspense fallback={<div>Loading PDF...</div>}>
+                <DeliveryVoucherPDF order={order} adminInfo={adminInfo} />
+              </Suspense>
             </PDFViewer>
           );
         }

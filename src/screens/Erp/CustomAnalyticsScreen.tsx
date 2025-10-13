@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, Suspense, lazy } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { Loader2, Filter, X, Eye } from "lucide-react";
@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
 import ReceiptVoucherCard from "@/components/vouchers/ReceiptVoucherCard";
 import DeliveryVoucherCard from "@/components/vouchers/DeliveryVoucherCard";
-import AnalyticsDistributionChart from "@/components/charts/AnalyticsDistributionChart";
+
+// Lazy load heavy chart components
+const AnalyticsDistributionChart = lazy(() => import("@/components/charts/AnalyticsDistributionChart"));
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart3,
@@ -947,85 +949,101 @@ const CustomAnalyticsScreen = () => {
 
                     <TabsContent value="overview" className="space-y-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <AnalyticsDistributionChart
-                          data={processedData.bagType}
-                          title="Bag Type Distribution"
-                          description="Distribution of bag types (jute vs leno)"
-                          type={chartType}
-                          icon={<Package className="h-5 w-5 text-blue-500" />}
-                          totalValue={processedData.totalBags}
-                        />
-                        <AnalyticsDistributionChart
-                          data={processedData.generation}
-                          title="Generation Distribution"
-                          description="Distribution across different generations"
-                          type={chartType}
-                          icon={<TrendingUp className="h-5 w-5 text-green-500" />}
-                          totalValue={processedData.totalBags}
-                        />
+                        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                          <AnalyticsDistributionChart
+                            data={processedData.bagType}
+                            title="Bag Type Distribution"
+                            description="Distribution of bag types (jute vs leno)"
+                            type={chartType}
+                            icon={<Package className="h-5 w-5 text-blue-500" />}
+                            totalValue={processedData.totalBags}
+                          />
+                        </Suspense>
+                        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                          <AnalyticsDistributionChart
+                            data={processedData.generation}
+                            title="Generation Distribution"
+                            description="Distribution across different generations"
+                            type={chartType}
+                            icon={<TrendingUp className="h-5 w-5 text-green-500" />}
+                            totalValue={processedData.totalBags}
+                          />
+                        </Suspense>
                       </div>
                     </TabsContent>
 
                     <TabsContent value="variety" className="space-y-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <AnalyticsDistributionChart
-                          data={processedData.variety}
-                          title="Variety Distribution"
-                          description="Complete breakdown of potato varieties"
-                          type={chartType}
-                          icon={<Package className="h-5 w-5 text-blue-500" />}
-                          totalValue={processedData.totalBags}
-                        />
-                        <AnalyticsDistributionChart
-                          data={processedData.tuberType}
-                          title="Tuber Type Distribution"
-                          description="Distribution of different tuber types"
-                          type={chartType}
-                          icon={<BarChart3 className="h-5 w-5 text-purple-500" />}
-                          totalValue={processedData.totalBags}
-                        />
+                        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                          <AnalyticsDistributionChart
+                            data={processedData.variety}
+                            title="Variety Distribution"
+                            description="Complete breakdown of potato varieties"
+                            type={chartType}
+                            icon={<Package className="h-5 w-5 text-blue-500" />}
+                            totalValue={processedData.totalBags}
+                          />
+                        </Suspense>
+                        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                          <AnalyticsDistributionChart
+                            data={processedData.tuberType}
+                            title="Tuber Type Distribution"
+                            description="Distribution of different tuber types"
+                            type={chartType}
+                            icon={<BarChart3 className="h-5 w-5 text-purple-500" />}
+                            totalValue={processedData.totalBags}
+                          />
+                        </Suspense>
                       </div>
                     </TabsContent>
 
                     <TabsContent value="quality" className="space-y-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <AnalyticsDistributionChart
-                          data={processedData.rouging}
-                          title="Rouging Distribution"
-                          description="Distribution of rouging types"
-                          type={chartType}
-                          icon={<Settings className="h-5 w-5 text-orange-500" />}
-                          totalValue={processedData.totalBags}
-                        />
-                        <AnalyticsDistributionChart
-                          data={processedData.grader}
-                          title="Grader Distribution"
-                          description="Distribution across different graders"
-                          type={chartType}
-                          icon={<Users className="h-5 w-5 text-indigo-500" />}
-                          totalValue={processedData.totalBags}
-                        />
+                        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                          <AnalyticsDistributionChart
+                            data={processedData.rouging}
+                            title="Rouging Distribution"
+                            description="Distribution of rouging types"
+                            type={chartType}
+                            icon={<Settings className="h-5 w-5 text-orange-500" />}
+                            totalValue={processedData.totalBags}
+                          />
+                        </Suspense>
+                        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                          <AnalyticsDistributionChart
+                            data={processedData.grader}
+                            title="Grader Distribution"
+                            description="Distribution across different graders"
+                            type={chartType}
+                            icon={<Users className="h-5 w-5 text-indigo-500" />}
+                            totalValue={processedData.totalBags}
+                          />
+                        </Suspense>
                       </div>
                     </TabsContent>
 
                     <TabsContent value="status" className="space-y-4">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                        <AnalyticsDistributionChart
-                          data={processedData.weighedStatus}
-                          title="Weighing Status"
-                          description="Distribution of weighed vs unweighed items"
-                          type={chartType}
-                          icon={<BarChart3 className="h-5 w-5 text-red-500" />}
-                          totalValue={processedData.totalBags}
-                        />
-                        <AnalyticsDistributionChart
-                          data={processedData.bagSizeCategory}
-                          title="Bag Size Categories"
-                          description="Distribution of different bag size categories"
-                          type={chartType}
-                          icon={<Package className="h-5 w-5 text-green-500" />}
-                          totalValue={processedData.totalBags}
-                        />
+                        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                          <AnalyticsDistributionChart
+                            data={processedData.weighedStatus}
+                            title="Weighing Status"
+                            description="Distribution of weighed vs unweighed items"
+                            type={chartType}
+                            icon={<BarChart3 className="h-5 w-5 text-red-500" />}
+                            totalValue={processedData.totalBags}
+                          />
+                        </Suspense>
+                        <Suspense fallback={<div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+                          <AnalyticsDistributionChart
+                            data={processedData.bagSizeCategory}
+                            title="Bag Size Categories"
+                            description="Distribution of different bag size categories"
+                            type={chartType}
+                            icon={<Package className="h-5 w-5 text-green-500" />}
+                            totalValue={processedData.totalBags}
+                          />
+                        </Suspense>
                       </div>
                     </TabsContent>
                   </Tabs>

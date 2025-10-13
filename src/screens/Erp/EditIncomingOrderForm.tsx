@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, Suspense, lazy } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import TopBar from "@/components/common/Topbar/Topbar";
-import EditIncomingOrderFormContent from "./forms/EditIncomingOrderFormContent";
+import Loader from "@/components/common/Loader/Loader";
+
+// Lazy load the heavy form content component
+const EditIncomingOrderFormContent = lazy(() => import("./forms/EditIncomingOrderFormContent"));
 
 const EditIncomingOrderForm = () => {
   const { t } = useTranslation();
@@ -33,7 +36,9 @@ const EditIncomingOrderForm = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="max-w-4xl mx-auto">
-          <EditIncomingOrderFormContent order={order} />
+          <Suspense fallback={<Loader />}>
+            <EditIncomingOrderFormContent order={order} />
+          </Suspense>
         </div>
       </div>
     </div>

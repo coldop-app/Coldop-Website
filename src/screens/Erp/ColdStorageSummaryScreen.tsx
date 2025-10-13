@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, Suspense, lazy } from 'react';
 import { Link } from 'react-router-dom';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
@@ -11,10 +11,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StoreAdmin } from '@/utils/types';
-import StockTrendChart from '@/components/charts/StockTrendChart';
-import VarietyDistributionChart from '@/components/charts/VarietyDistributionChart';
-import TopFarmersChart from '@/components/charts/TopFarmersChart';
 import StockSummaryTable, { StockSummary as StockSummaryType, TabType } from '@/components/common/StockSummaryTable';
+
+// Lazy load heavy chart components
+const StockTrendChart = lazy(() => import('@/components/charts/StockTrendChart'));
+const VarietyDistributionChart = lazy(() => import('@/components/charts/VarietyDistributionChart'));
+const TopFarmersChart = lazy(() => import('@/components/charts/TopFarmersChart'));
 import { formatNumber } from '@/lib/utils';
 
 interface StockTrendItem {
@@ -439,16 +441,22 @@ const ColdStorageSummaryScreen = () => {
         </Card>
 
         {/* Stock Trend Chart */}
-        <StockTrendChart data={stockTrend} currentStock={totalBags} />
+        <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+          <StockTrendChart data={stockTrend} currentStock={totalBags} />
+        </Suspense>
 
                 {/* Charts Section */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <VarietyDistributionChart data={finalVarietyDistribution} />
-          <TopFarmersChart
-            data={topFarmersChartData}
-            topFarmersData={topFarmersData}
-            totalBags={currentTotal}
-          />
+          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <VarietyDistributionChart data={finalVarietyDistribution} />
+          </Suspense>
+          <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>}>
+            <TopFarmersChart
+              data={topFarmersChartData}
+              topFarmersData={topFarmersData}
+              totalBags={currentTotal}
+            />
+          </Suspense>
         </div>
       </div>
     </>

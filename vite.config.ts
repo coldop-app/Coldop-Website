@@ -17,35 +17,82 @@ export default defineConfig({
   build: {
     rollupOptions: {
       output: {
-        manualChunks: {
+        manualChunks: (id) => {
           // Vendor chunks for better caching
-          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
-          'redux-vendor': ['@reduxjs/toolkit', 'react-redux'],
-          'ui-vendor': [
-            '@radix-ui/react-accordion',
-            '@radix-ui/react-alert-dialog',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-label',
-            '@radix-ui/react-popover',
-            '@radix-ui/react-scroll-area',
-            '@radix-ui/react-select',
-            '@radix-ui/react-separator',
-            '@radix-ui/react-slot',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-tooltip'
-          ],
-          'form-vendor': ['react-hook-form', '@hookform/resolvers', '@tanstack/react-form', 'zod'],
-          'query-vendor': ['@tanstack/react-query'],
-          'chart-vendor': ['recharts'],
-          'pdf-vendor': ['@react-pdf/renderer'],
-          'utils-vendor': ['lodash', 'date-fns', 'axios', 'clsx', 'tailwind-merge'],
-          'i18n-vendor': ['i18next', 'react-i18next', 'i18next-browser-languagedetector'],
-          'dnd-vendor': ['@dnd-kit/core', '@dnd-kit/sortable', '@dnd-kit/utilities'],
-          'motion-vendor': ['motion', 'lucide-react']
+          if (id.includes('node_modules')) {
+            // React ecosystem
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            // Redux ecosystem
+            if (id.includes('@reduxjs') || id.includes('react-redux')) {
+              return 'redux-vendor';
+            }
+            // UI libraries
+            if (id.includes('@radix-ui')) {
+              return 'ui-vendor';
+            }
+            // Form libraries
+            if (id.includes('react-hook-form') || id.includes('@hookform') || id.includes('@tanstack/react-form') || id.includes('zod')) {
+              return 'form-vendor';
+            }
+            // Query libraries
+            if (id.includes('@tanstack/react-query')) {
+              return 'query-vendor';
+            }
+            // Chart libraries
+            if (id.includes('recharts')) {
+              return 'chart-vendor';
+            }
+            // PDF libraries
+            if (id.includes('@react-pdf')) {
+              return 'pdf-vendor';
+            }
+            // Utility libraries
+            if (id.includes('lodash') || id.includes('date-fns') || id.includes('axios') || id.includes('clsx') || id.includes('tailwind-merge')) {
+              return 'utils-vendor';
+            }
+            // i18n libraries
+            if (id.includes('i18next') || id.includes('react-i18next')) {
+              return 'i18n-vendor';
+            }
+            // DnD libraries
+            if (id.includes('@dnd-kit')) {
+              return 'dnd-vendor';
+            }
+            // Motion libraries
+            if (id.includes('motion') || id.includes('lucide-react')) {
+              return 'motion-vendor';
+            }
+            // Other vendor libraries
+            return 'vendor';
+          }
+
+          // Split large components into separate chunks
+          if (id.includes('src/screens/Erp/forms/IncomingOrderFormContent')) {
+            return 'incoming-form';
+          }
+          if (id.includes('src/screens/Erp/forms/OutgoingOrderFormContent')) {
+            return 'outgoing-form';
+          }
+          if (id.includes('src/screens/Erp/forms/EditIncomingOrderFormContent')) {
+            return 'edit-form';
+          }
+          if (id.includes('src/components/pdf/')) {
+            return 'pdf-components';
+          }
+          if (id.includes('src/components/charts/')) {
+            return 'chart-components';
+          }
+          if (id.includes('src/screens/Erp/')) {
+            return 'erp-screens';
+          }
+          if (id.includes('src/screens/')) {
+            return 'screens';
+          }
+          if (id.includes('src/components/')) {
+            return 'components';
+          }
         },
         chunkFileNames: () => {
           return `js/[name]-[hash].js`;
@@ -64,10 +111,14 @@ export default defineConfig({
     },
     // Enable source maps for better debugging
     sourcemap: true,
-    // Optimize chunk size
-    chunkSizeWarningLimit: 1000,
+    // Optimize chunk size - increased limit but with better chunking
+    chunkSizeWarningLimit: 1500,
     // Enable minification with esbuild (faster than terser)
     minify: 'esbuild',
+    // Target modern browsers for smaller bundles
+    target: 'esnext',
+    // Enable CSS code splitting
+    cssCodeSplit: true,
   },
   // Optimize dependencies
   optimizeDeps: {
