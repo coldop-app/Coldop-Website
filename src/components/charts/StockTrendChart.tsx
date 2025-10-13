@@ -53,15 +53,17 @@ const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
   const [brushRange, setBrushRange] = useState<{ startIndex: number; endIndex: number } | null>(null);
   const [groupByMonth, setGroupByMonth] = useState(false);
 
-  // Sort data by date to show chronological progression
-  const sortedData = [...data].sort((a, b) => {
-    const dateA = new Date(a.date.split('.').reverse().join('-'));
-    const dateB = new Date(b.date.split('.').reverse().join('-'));
-    return dateA.getTime() - dateB.getTime();
-  });
+  // Filter out invalid data and sort by date to show chronological progression
+  const sortedData = [...data]
+    .filter(item => item && item.date && typeof item.date === 'string' && item.date.includes('.'))
+    .sort((a, b) => {
+      const dateA = new Date(a.date.split('.').reverse().join('-'));
+      const dateB = new Date(b.date.split('.').reverse().join('-'));
+      return dateA.getTime() - dateB.getTime();
+    });
 
-  const maxStock = Math.max(...sortedData.map(item => item.currentStockAtThatTime));
-  const minStock = Math.min(...sortedData.map(item => item.currentStockAtThatTime));
+  const maxStock = sortedData.length > 0 ? Math.max(...sortedData.map(item => item.currentStockAtThatTime)) : 0;
+  const minStock = sortedData.length > 0 ? Math.min(...sortedData.map(item => item.currentStockAtThatTime)) : 0;
 
   // Calculate growth statistics
   const totalGrowth = sortedData.length > 1
@@ -73,7 +75,15 @@ const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
 
   // Helper function to format date as "8th Feb 25"
   const formatDateDisplay = (dateString: string) => {
+    if (!dateString || typeof dateString !== 'string' || !dateString.includes('.')) {
+      return 'Invalid Date';
+    }
+
     const [day, month, year] = dateString.split('.');
+
+    if (!day || !month || !year) {
+      return 'Invalid Date';
+    }
 
     const dayWithSuffix = (day: number) => {
       if (day >= 11 && day <= 13) return day + 'th';
@@ -93,43 +103,56 @@ const StockTrendChart = ({ data, currentStock }: StockTrendChartProps) => {
 
   // Helper function to get month for highlighting
   const getMonth = (dateString: string) => {
+    if (!dateString || typeof dateString !== 'string' || !dateString.includes('.')) {
+      return '0000-00';
+    }
+
     const [, month, year] = dateString.split('.');
+
+    if (!month || !year) {
+      return '0000-00';
+    }
+
     return `${year}-${month.padStart(2, '0')}`;
   };
 
   // Helper function to group data by month
   const groupDataByMonth = (data: StockTrendItem[]): MonthData[] => {
-    const groupedData = data.reduce((acc, item) => {
-      const monthKey = getMonth(item.date);
-      if (!acc[monthKey]) {
-        acc[monthKey] = {
-          month: monthKey,
-          transactions: [],
-          totalIncoming: 0,
-          totalOutgoing: 0,
-          netChange: 0,
-          startStock: 0,
-          endStock: 0,
-          peakStock: 0,
-          lowestStock: 0
-        };
-      }
-      acc[monthKey].transactions.push(item);
-      return acc;
-    }, {} as Record<string, MonthData>);
+    const groupedData = data
+      .filter(item => item && item.date && typeof item.date === 'string' && item.date.includes('.'))
+      .reduce((acc, item) => {
+        const monthKey = getMonth(item.date);
+        if (!acc[monthKey]) {
+          acc[monthKey] = {
+            month: monthKey,
+            transactions: [],
+            totalIncoming: 0,
+            totalOutgoing: 0,
+            netChange: 0,
+            startStock: 0,
+            endStock: 0,
+            peakStock: 0,
+            lowestStock: 0
+          };
+        }
+        acc[monthKey].transactions.push(item);
+        return acc;
+      }, {} as Record<string, MonthData>);
 
     // Process each month's data
     Object.values(groupedData).forEach((monthData) => {
-      const sortedTransactions = monthData.transactions.sort((a: StockTrendItem, b: StockTrendItem) => {
-        const dateA = new Date(a.date.split('.').reverse().join('-'));
-        const dateB = new Date(b.date.split('.').reverse().join('-'));
-        return dateA.getTime() - dateB.getTime();
-      });
+      const sortedTransactions = monthData.transactions
+        .filter(item => item && item.date && typeof item.date === 'string' && item.date.includes('.'))
+        .sort((a: StockTrendItem, b: StockTrendItem) => {
+          const dateA = new Date(a.date.split('.').reverse().join('-'));
+          const dateB = new Date(b.date.split('.').reverse().join('-'));
+          return dateA.getTime() - dateB.getTime();
+        });
 
       monthData.startStock = sortedTransactions[0]?.currentStockAtThatTime || 0;
       monthData.endStock = sortedTransactions[sortedTransactions.length - 1]?.currentStockAtThatTime || 0;
-      monthData.peakStock = Math.max(...sortedTransactions.map((t: StockTrendItem) => t.currentStockAtThatTime));
-      monthData.lowestStock = Math.min(...sortedTransactions.map((t: StockTrendItem) => t.currentStockAtThatTime));
+      monthData.peakStock = sortedTransactions.length > 0 ? Math.max(...sortedTransactions.map((t: StockTrendItem) => t.currentStockAtThatTime)) : 0;
+      monthData.lowestStock = sortedTransactions.length > 0 ? Math.min(...sortedTransactions.map((t: StockTrendItem) => t.currentStockAtThatTime)) : 0;
       monthData.netChange = monthData.endStock - monthData.startStock;
       monthData.totalIncoming = sortedTransactions.filter((t: StockTrendItem) => t.type === 'incoming').length;
       monthData.totalOutgoing = sortedTransactions.filter((t: StockTrendItem) => t.type === 'outgoing').length;
