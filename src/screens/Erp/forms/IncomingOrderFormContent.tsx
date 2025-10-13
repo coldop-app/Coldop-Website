@@ -347,10 +347,11 @@ const IncomingOrderFormContent = () => {
   };
 
   const calculateTotalWeight = () => {
-    return Object.values(formData.bagApproxWeights).reduce(
-      (sum, weight) => sum + (parseFloat(weight) || 0),
-      0
-    );
+    return Object.keys(formData.quantities).reduce((sum, fieldName) => {
+      const quantity = parseFloat(formData.quantities[fieldName] || "0");
+      const weight = parseFloat(formData.bagApproxWeights[fieldName] || "0");
+      return sum + (quantity * weight);
+    }, 0);
   };
 
   const nextStep = () => {

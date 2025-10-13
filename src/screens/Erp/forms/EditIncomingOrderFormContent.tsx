@@ -234,6 +234,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
     enabled: !!adminInfo?.token,
   });
 
+
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -330,10 +331,11 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
   };
 
   const calculateTotalWeight = () => {
-    return Object.values(formData.bagWeights).reduce(
-      (sum, weight) => sum + (parseFloat(weight) || 0),
-      0
-    );
+    return Object.keys(formData.quantities).reduce((sum, fieldName) => {
+      const quantity = parseFloat(formData.quantities[fieldName] || "0");
+      const weight = parseFloat(formData.bagWeights[fieldName] || "0");
+      return sum + (quantity * weight);
+    }, 0);
   };
 
   // Function to find the first weight value
@@ -613,6 +615,16 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
         <h1 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-3">
           {t("editIncomingOrder.title")}
         </h1>
+
+        {/* GatePass Number Display - centered with primary color highlight */}
+        <div className="inline-flex items-center gap-1 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-primary/10 border border-primary/20 rounded-full shadow-sm">
+          <span className="text-xs font-medium text-primary uppercase tracking-wide">
+            GatePass No:
+          </span>
+          <span className="text-sm font-bold text-primary">
+            #{order.gatePass?.gatePassNumber || "-"}
+          </span>
+        </div>
       </div>
 
       {/* Progress indicator */}
@@ -772,7 +784,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                     Weighed Status
                   </label>
                   <CustomSelect
-                    value={formData.weighedStatus ? "true" : "false"}
+                    value={formData.weighedStatus}
                     onChange={(value) =>
                       updateFormData("weighedStatus", value)
                     }
