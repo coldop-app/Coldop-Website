@@ -17,21 +17,22 @@ import PublicRoute from "./components/auth/PublicRoute.tsx";
 import ERPLayout from "./components/layouts/ERPLayout.tsx";
 import NotFound from "./screens/NotFound/NotFound";
 import Error from "./screens/Error/Error";
-import IncomingOrderForm from "./screens/Erp/IncomingOrderForm.tsx";
-import OutgoingOrderForm from "./screens/Erp/OutgoingOrderForm.tsx";
-import EditIncomingOrderForm from "./screens/Erp/EditIncomingOrderForm.tsx";
-import EnhancedLoadingFallback from "./components/common/Shimmer/EnhancedLoadingFallback.tsx";
 import ScrollToTop from "./components/common/ScrollToTop/ScrollToTop.tsx";
+import ErrorBoundary from "./components/common/ErrorBoundary/ErrorBoundary.tsx";
+import RouteLoadingFallback from "./components/common/Loading/RouteLoadingFallback.tsx";
+import ERPLoadingFallback from "./components/common/Loading/ERPLoadingFallback.tsx";
 
-// Lazy load components
-const HomeScreen = lazy(() => import("./screens/HomeScreen/HomeScreen.tsx"));
+// Lazy load components with optimized imports
+const HomeScreen = lazy(() => import(/* @vitePreload */ "./screens/HomeScreen/HomeScreen.tsx"));
 const StoreAdminSignup = lazy(() => import("./screens/Signup/StoreAdminSignup.tsx"));
 const StoreAdminLogin = lazy(() => import("./screens/Login/StoreAdminLogin.tsx"));
 const FarmerLogin = lazy(() => import("./screens/Login/FarmerLogin.tsx"));
-const DaybookScreen = lazy(() => import("./screens/Erp/DaybookScreen.tsx"));
-const PeopleScreen = lazy(() => import("./screens/Erp/PeopleScreen.tsx"));
+
+// ERP screens with preloading
+const DaybookScreen = lazy(() => import(/* @vitePreload */ "./screens/Erp/DaybookScreen.tsx"));
+const PeopleScreen = lazy(() => import(/* @vitePreload */ "./screens/Erp/PeopleScreen.tsx"));
 const FarmerProfileScreen = lazy(() => import("./screens/Erp/FarmerProfileScreen.tsx"));
-const ColdStorageSummaryScreen = lazy(() => import("./screens/Erp/ColdStorageSummaryScreen.tsx"));
+const ColdStorageSummaryScreen = lazy(() => import(/* @vitePreload */ "./screens/Erp/ColdStorageSummaryScreen.tsx"));
 const CustomAnalyticsScreen = lazy(() => import("./screens/Erp/CustomAnalyticsScreen.tsx"));
 const VarietyBreakdownScreen = lazy(() => import("./screens/Erp/VarietyBreakdownScreen.tsx"));
 const SettingsScreen = lazy(() => import("./screens/Erp/SettingsScreen.tsx"));
@@ -39,142 +40,193 @@ const ProfileSettingsScreen = lazy(() => import("./screens/Erp/ProfileSettingsSc
 const BillingSettingsScreen = lazy(() => import("./screens/Erp/BillingSettingsScreen.tsx"));
 const ContactSupportScreen = lazy(() => import("./screens/Erp/ContactSupportScreen.tsx"));
 
-// New pages
+// Form components - split into separate chunks
+const IncomingOrderForm = lazy(() => import("./screens/Erp/IncomingOrderForm.tsx"));
+const OutgoingOrderForm = lazy(() => import("./screens/Erp/OutgoingOrderForm.tsx"));
+const EditIncomingOrderForm = lazy(() => import("./screens/Erp/EditIncomingOrderForm.tsx"));
+
+// Public pages
 const FAQ = lazy(() => import("./screens/FAQ/FAQ.tsx"));
 const Support = lazy(() => import("./screens/Support/Support.tsx"));
 const Privacy = lazy(() => import("./screens/Privacy/Privacy.tsx"));
 const CaseStudies = lazy(() => import("./screens/CaseStudies/CaseStudies.tsx"));
 
-// Loading component for non-ERP routes
-const LoadingFallback = () => (
-  <div className="flex items-center justify-center min-h-screen">
-    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-  </div>
-);
-
-// Initialize the Query Client
-const queryClient = new QueryClient();
+// Optimized Query Client with better caching
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      gcTime: 10 * 60 * 1000, // 10 minutes (renamed from cacheTime in v5)
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const router = createBrowserRouter(
   createRoutesFromElements(
     <Route path="/" element={<App />} errorElement={<Error />}>
         <Route element={<PublicRoute />}>
           <Route index element={
-            <Suspense fallback={<LoadingFallback />}>
-              <HomeScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<RouteLoadingFallback message="Loading Home..." />}>
+                <HomeScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="signup" element={
-            <Suspense fallback={<LoadingFallback />}>
-              <StoreAdminSignup />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<RouteLoadingFallback message="Loading Signup..." />}>
+                <StoreAdminSignup />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="signup/store-admin" element={
-            <Suspense fallback={<LoadingFallback />}>
-              <StoreAdminSignup />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<RouteLoadingFallback message="Loading Signup..." />}>
+                <StoreAdminSignup />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="login/store-admin" element={
-            <Suspense fallback={<LoadingFallback />}>
-              <StoreAdminLogin />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<RouteLoadingFallback message="Loading Login..." />}>
+                <StoreAdminLogin />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="login/farmer" element={
-            <Suspense fallback={<LoadingFallback />}>
-              <FarmerLogin />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<RouteLoadingFallback message="Loading Farmer Login..." />}>
+                <FarmerLogin />
+              </Suspense>
+            </ErrorBoundary>
           } />
         </Route>
 
         {/* Public pages */}
         <Route path="faq" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <FAQ />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<RouteLoadingFallback message="Loading FAQ..." />}>
+              <FAQ />
+            </Suspense>
+          </ErrorBoundary>
         } />
         <Route path="support" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <Support />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<RouteLoadingFallback message="Loading Support..." />}>
+              <Support />
+            </Suspense>
+          </ErrorBoundary>
         } />
         <Route path="privacy" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <Privacy />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<RouteLoadingFallback message="Loading Privacy Policy..." />}>
+              <Privacy />
+            </Suspense>
+          </ErrorBoundary>
         } />
         <Route path="case-studies" element={
-          <Suspense fallback={<LoadingFallback />}>
-            <CaseStudies />
-          </Suspense>
+          <ErrorBoundary>
+            <Suspense fallback={<RouteLoadingFallback message="Loading Case Studies..." />}>
+              <CaseStudies />
+            </Suspense>
+          </ErrorBoundary>
         } />
 
       <Route path="" element={<PrivateRoute />}>
         <Route path="erp" element={<ERPLayout />}>
           <Route path="daybook" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <ScrollToTop />
-              <DaybookScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Daybook" />}>
+                <ScrollToTop />
+                <DaybookScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="people" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <PeopleScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="People Management" />}>
+                <PeopleScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="people/:id" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <FarmerProfileScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Farmer Profile" />}>
+                <FarmerProfileScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="analytics" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <ColdStorageSummaryScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Analytics Dashboard" />}>
+                <ColdStorageSummaryScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="custom-analytics" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <CustomAnalyticsScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Custom Analytics" />}>
+                <CustomAnalyticsScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="variety-breakdown" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <VarietyBreakdownScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Variety Breakdown" />}>
+                <VarietyBreakdownScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="incoming-order" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <IncomingOrderForm />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Incoming Order Form" />}>
+                <IncomingOrderForm />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="incoming-order/edit" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <EditIncomingOrderForm />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Edit Incoming Order" />}>
+                <EditIncomingOrderForm />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="outgoing-order" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <OutgoingOrderForm />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Outgoing Order Form" />}>
+                <OutgoingOrderForm />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="settings" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <SettingsScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Settings" />}>
+                <SettingsScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="settings/profile" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <ProfileSettingsScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Profile Settings" />}>
+                <ProfileSettingsScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="settings/billing" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <BillingSettingsScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Billing Settings" />}>
+                <BillingSettingsScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           <Route path="settings/support" element={
-            <Suspense fallback={<EnhancedLoadingFallback />}>
-              <ContactSupportScreen />
-            </Suspense>
+            <ErrorBoundary>
+              <Suspense fallback={<ERPLoadingFallback section="Contact Support" />}>
+                <ContactSupportScreen />
+              </Suspense>
+            </ErrorBoundary>
           } />
           {/* Add more ERP routes here */}
         </Route>
