@@ -1312,9 +1312,7 @@ const OutgoingOrderFormContent = () => {
                         placeholder="Select Bag Type"
                         options={[
                           { value: "jute", label: "Jute" },
-                          { value: "plastic", label: "Plastic" },
-                          { value: "paper", label: "Paper" },
-                          { value: "cloth", label: "Cloth" }
+                          { value: "leno", label: "Leno" }
                         ]}
                       />
                     </div>

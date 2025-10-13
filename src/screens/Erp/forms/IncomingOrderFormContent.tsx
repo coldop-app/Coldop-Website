@@ -4,6 +4,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { storeAdminApi, CreateOrderPayload } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
@@ -125,6 +126,7 @@ interface Farmer {
 
 const IncomingOrderFormContent = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { adminInfo } = useSelector((state: RootState) => state.auth) as {
     adminInfo: StoreAdmin | null;
   };
@@ -508,8 +510,8 @@ const IncomingOrderFormContent = () => {
         isNullVoucher: false,
       });
       setCurrentStep(1);
-      // Force hard refresh to ensure scroll to top
-      window.location.href = "/erp/daybook";
+      // Navigate to daybook using React Router
+      navigate("/erp/daybook", { replace: true });
     },
     onError: (error: unknown) => {
       console.error("Error creating order:", error);
