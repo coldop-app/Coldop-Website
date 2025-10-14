@@ -348,23 +348,50 @@ const parseLocation = (location: string | undefined) => {
 
 const formatDate = (date: string | Date | undefined): string => {
   if (!date) return "-";
+
+  // Handle string "null" or "undefined" cases
+  if (typeof date === "string" && (date === "null" || date === "undefined")) {
+    return "-";
+  }
+
   try {
-    // Check if date is in DD.MM.YY format
+    // Check if date is in DD.MM.YYYY format (4-digit year)
+    if (typeof date === "string" && date.match(/^\d{2}\.\d{2}\.\d{4}$/)) {
+      // Convert DD.MM.YYYY to DD/MM/YY format
+      const parts = date.split('.');
+      if (parts.length === 3) {
+        const day = parts[0];
+        const month = parts[1];
+        const year = parts[2].slice(-2); // Take last 2 digits of year
+        return `${day}/${month}/${year}`;
+      }
+    }
+
+    // Check if date is in DD.MM.YY format (2-digit year)
     if (typeof date === "string" && date.match(/^\d{2}\.\d{2}\.\d{2}$/)) {
       // Already in the desired format, just replace dots with slashes
       return date.replace(/\./g, "/");
     }
 
+    // Check if date is already in DD/MM/YY format
+    if (typeof date === "string" && date.match(/^\d{2}\/\d{2}\/\d{2}$/)) {
+      return date;
+    }
+
     // For other formats, parse and format
     const parsedDate = typeof date === "string" ? new Date(date) : date;
-    if (isNaN(parsedDate.getTime())) return "-";
+    if (isNaN(parsedDate.getTime())) {
+      console.warn("Invalid date format:", date);
+      return "-";
+    }
 
     const day = parsedDate.getDate().toString().padStart(2, "0");
     const month = (parsedDate.getMonth() + 1).toString().padStart(2, "0");
     const year = parsedDate.getFullYear().toString().slice(-2);
 
     return `${day}/${month}/${year}`;
-  } catch {
+  } catch (error) {
+    console.warn("Error formatting date:", date, error);
     return "-";
   }
 };
@@ -378,13 +405,37 @@ const cleanBagSizeHeading = (size: string): string => {
 };
 
 const getOrderDate = (order: Order): string | undefined => {
-  // Try all possible date fields in order of preference
-  return (
-    order.dateOfSubmission ||
-    order.dateOfExtraction ||
-    order.createdAt ||
-    undefined
-  );
+  // Use specific date fields based on voucher type
+  if (order.gatePass.type === "RECEIPT") {
+    // For receipt vouchers, use dateOfSubmission first, then fallback to createdAt
+    if (order.dateOfSubmission && order.dateOfSubmission !== "null" && order.dateOfSubmission !== "undefined") {
+      console.log("Using dateOfSubmission for RECEIPT:", order.dateOfSubmission, "Voucher:", order.gatePass.gatePassNumber);
+      return order.dateOfSubmission;
+    }
+    if (order.createdAt && order.createdAt !== "null" && order.createdAt !== "undefined") {
+      console.log("Using createdAt for RECEIPT:", order.createdAt, "Voucher:", order.gatePass.gatePassNumber);
+      return order.createdAt;
+    }
+  } else if (order.gatePass.type === "DELIVERY") {
+    // For delivery vouchers, use dateOfExtraction first, then fallback to createdAt
+    if (order.dateOfExtraction && order.dateOfExtraction !== "null" && order.dateOfExtraction !== "undefined") {
+      console.log("Using dateOfExtraction for DELIVERY:", order.dateOfExtraction, "Voucher:", order.gatePass.gatePassNumber);
+      return order.dateOfExtraction;
+    }
+    if (order.createdAt && order.createdAt !== "null" && order.createdAt !== "undefined") {
+      console.log("Using createdAt for DELIVERY:", order.createdAt, "Voucher:", order.gatePass.gatePassNumber);
+      return order.createdAt;
+    }
+  }
+
+  // Fallback to createdAt for any other cases
+  if (order.createdAt && order.createdAt !== "null" && order.createdAt !== "undefined") {
+    console.log("Using createdAt fallback:", order.createdAt, "Voucher:", order.gatePass.gatePassNumber);
+    return order.createdAt;
+  }
+
+  console.log("No valid date found for voucher:", order.gatePass.gatePassNumber, "Type:", order.gatePass.type, "dateOfSubmission:", order.dateOfSubmission, "dateOfExtraction:", order.dateOfExtraction, "createdAt:", order.createdAt);
+  return undefined;
 };
 
 const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
