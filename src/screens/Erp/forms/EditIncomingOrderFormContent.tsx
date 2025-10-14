@@ -706,7 +706,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                 <SimpleDatePicker
                   value={formData.dateOfSubmissionDate}
                   onChange={handleDateChange}
-                  placeholder="Select submission date"
+                  placeholder="DD.MM.YYYY or click calendar"
                 />
               </div>
 

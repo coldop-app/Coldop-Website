@@ -1,8 +1,7 @@
 "use client"
 
-import { format } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -28,10 +27,82 @@ export function SimpleDatePicker({
   className,
 }: SimpleDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
+  const [inputValue, setInputValue] = useState("")
+  const [isInputFocused, setIsInputFocused] = useState(false)
+
+  // Parse DD.MM.YYYY format
+  const parseDate = (dateString: string): Date | null => {
+    const regex = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/
+    const match = dateString.match(regex)
+
+    if (!match) return null
+
+    const day = parseInt(match[1], 10)
+    const month = parseInt(match[2], 10) - 1 // JavaScript months are 0-indexed
+    const year = parseInt(match[3], 10)
+
+    // Validate date
+    if (day < 1 || day > 31 || month < 0 || month > 11 || year < 1900 || year > 2100) {
+      return null
+    }
+
+    const date = new Date(year, month, day)
+
+    // Check if the date is valid (handles cases like 31.02.2024)
+    if (date.getDate() !== day || date.getMonth() !== month || date.getFullYear() !== year) {
+      return null
+    }
+
+    return date
+  }
+
+  // Format date to DD.MM.YYYY
+  const formatDateToString = (date: Date): string => {
+    const day = date.getDate().toString().padStart(2, '0')
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const year = date.getFullYear().toString()
+    return `${day}.${month}.${year}`
+  }
+
+  // Update input value when value prop changes
+  useEffect(() => {
+    if (value && !isInputFocused) {
+      setInputValue(formatDateToString(value))
+    } else if (!value && !isInputFocused) {
+      setInputValue("")
+    }
+  }, [value, isInputFocused])
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setInputValue(value)
+
+    // Parse and validate the date as user types
+    const parsedDate = parseDate(value)
+    if (parsedDate) {
+      onChange?.(parsedDate)
+    }
+  }
+
+  const handleInputFocus = () => {
+    setIsInputFocused(true)
+    setIsOpen(true)
+  }
+
+  const handleInputBlur = () => {
+    setIsInputFocused(false)
+    // If input is empty or invalid, clear the value
+    if (!inputValue || !parseDate(inputValue)) {
+      setInputValue("")
+      onChange?.(undefined)
+    }
+  }
 
   const handleDateSelect = (date: Date) => {
     onChange?.(date)
+    setInputValue(formatDateToString(date))
     setIsOpen(false)
+    setIsInputFocused(false)
   }
 
   const generateCalendarDays = (year: number, month: number) => {
@@ -53,6 +124,14 @@ export function SimpleDatePicker({
   const currentDate = value || new Date()
   const [currentMonth, setCurrentMonth] = useState(currentDate.getMonth())
   const [currentYear, setCurrentYear] = useState(currentDate.getFullYear())
+
+  // Update calendar view when value changes
+  useEffect(() => {
+    if (value) {
+      setCurrentMonth(value.getMonth())
+      setCurrentYear(value.getFullYear())
+    }
+  }, [value])
 
   const monthNames = [
     "January", "February", "March", "April", "May", "June",
@@ -91,21 +170,36 @@ export function SimpleDatePicker({
   }
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant={"outline"}
-          className={cn(
-            "w-full justify-start text-left font-normal",
-            !value && "text-muted-foreground",
-            className
-          )}
-          disabled={disabled}
-        >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {value ? format(value, "PPP") : <span>{placeholder}</span>}
-        </Button>
-      </PopoverTrigger>
+    <div className="relative">
+      <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <div className="flex">
+          <PopoverTrigger asChild>
+            <Button
+              variant={"outline"}
+              className={cn(
+                "h-10 rounded-r-none border-r-0 px-3 flex-shrink-0",
+                disabled && "cursor-not-allowed opacity-50"
+              )}
+              disabled={disabled}
+            >
+              <CalendarIcon className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <input
+            type="text"
+            value={inputValue}
+            onChange={handleInputChange}
+            onFocus={handleInputFocus}
+            onBlur={handleInputBlur}
+            placeholder={placeholder}
+            disabled={disabled}
+            className={cn(
+              "h-10 w-full rounded-r-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
+              !inputValue && "text-muted-foreground",
+              className
+            )}
+          />
+        </div>
       <PopoverContent className="w-auto p-0" align="start">
         <div className="p-3">
           {/* Header */}
@@ -167,6 +261,7 @@ export function SimpleDatePicker({
           </div>
         </div>
       </PopoverContent>
-    </Popover>
+      </Popover>
+    </div>
   )
 }
