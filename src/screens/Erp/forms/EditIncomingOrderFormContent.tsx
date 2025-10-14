@@ -252,12 +252,17 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
   };
 
   const updateQuantity = (bagType: string, value: string) => {
-    const numericValue = value.replace(/\D/g, '');
+    // Allow numbers and decimal point
+    const numericValue = value.replace(/[^\d.]/g, "");
+    // Ensure only one decimal point
+    const parts = numericValue.split('.');
+    const validValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+
     setFormData(prev => ({
       ...prev,
       quantities: {
         ...prev.quantities,
-        [bagType]: numericValue
+        [bagType]: validValue
       }
     }));
   };
@@ -327,7 +332,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
 
   const calculateTotal = () => {
     return Object.values(formData.quantities)
-      .reduce((sum, quantity) => sum + (parseInt(quantity) || 0), 0);
+      .reduce((sum, quantity) => sum + (parseFloat(quantity) || 0), 0);
   };
 
   const calculateTotalWeight = () => {
@@ -456,7 +461,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
             const nextBagFieldName = getBagSizeFieldName(
               bagSizes[nextBagIndex]
             );
-            const quantity = parseInt(
+            const quantity = parseFloat(
               formData.quantities[nextBagFieldName] || "0"
             );
             if (quantity > 0) {
@@ -567,7 +572,7 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
           variety: formData.variety,
           bagSizes: adminInfo.preferences?.bagSizes?.map(bagSize => {
             const fieldName = getBagSizeFieldName(bagSize);
-            const currentQuantity = parseInt(formData.quantities[fieldName] || "0");
+            const currentQuantity = parseFloat(formData.quantities[fieldName] || "0");
             const approxWeight = parseFloat(formData.bagWeights[fieldName] || "0");
             return {
               size: bagSize,
@@ -990,12 +995,12 @@ const EditIncomingOrderFormContent = ({ order }: EditIncomingOrderFormContentPro
                 <div className="space-y-6">
                   {adminInfo?.preferences?.bagSizes?.map((bagSize) => {
                     const fieldName = getBagSizeFieldName(bagSize);
-                    const quantity = parseInt(
+                    const quantity = parseFloat(
                       formData.quantities[fieldName] || "0"
                     );
 
                     // Only show location inputs for bag sizes with quantities > 0
-                    if (quantity === 0) return null;
+                    if (quantity <= 0) return null;
 
                     return (
                       <div key={bagSize} className="space-y-3">
