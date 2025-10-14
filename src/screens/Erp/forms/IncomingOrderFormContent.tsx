@@ -148,6 +148,7 @@ const IncomingOrderFormContent = () => {
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [firstCompleteLocation, setFirstCompleteLocation] =
     useState<BagLocation | null>(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
@@ -221,6 +222,44 @@ const IncomingOrderFormContent = () => {
       }));
     }
   }, [farmer]);
+
+  // Auto-focus on farmer search input when component mounts
+  useEffect(() => {
+    if (!farmer) {
+      const timer = setTimeout(() => {
+        const farmerInput = document.getElementById("farmer-search-input");
+        if (farmerInput) {
+          (farmerInput as HTMLInputElement).focus();
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [farmer]);
+
+  // Add global keydown listener for variety selector
+  useEffect(() => {
+    const handleVarietyKeyDown = (e: Event) => {
+      const keyboardEvent = e as unknown as KeyboardEvent;
+      const target = keyboardEvent.target as HTMLElement;
+      if (target.id === "variety-search-input" && keyboardEvent.key === "Enter") {
+        keyboardEvent.preventDefault();
+        // Focus on first bag quantity input
+        const bagSizes = adminInfo?.preferences?.bagSizes || [];
+        if (bagSizes.length > 0) {
+          const firstBagFieldName = getBagSizeFieldName(bagSizes[0]);
+          const firstQuantityInput = document.querySelector(
+            `input[name="${firstBagFieldName}"]`
+          ) as HTMLInputElement;
+          if (firstQuantityInput) {
+            firstQuantityInput.focus();
+          }
+        }
+      }
+    };
+
+    document.addEventListener("keydown", handleVarietyKeyDown);
+    return () => document.removeEventListener("keydown", handleVarietyKeyDown);
+  }, [adminInfo?.preferences?.bagSizes]);
 
   const updateFormData = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -307,6 +346,14 @@ const IncomingOrderFormContent = () => {
     }));
 
     toast.success("Location applied to all bag sizes!");
+
+    // Focus on remarks field after applying location to all
+    setTimeout(() => {
+      const remarksTextarea = document.getElementById("remarks-textarea");
+      if (remarksTextarea) {
+        (remarksTextarea as HTMLTextAreaElement).focus();
+      }
+    }, 100);
   };
 
   const calculateTotal = () => {
@@ -341,6 +388,25 @@ const IncomingOrderFormContent = () => {
         formElement.scrollIntoView({ behavior: "smooth", block: "start" });
       }
     }, 100);
+
+    // Focus on the first location input after scrolling is complete
+    setTimeout(() => {
+      const bagSizes = adminInfo?.preferences?.bagSizes || [];
+      for (const bagSize of bagSizes) {
+        const fieldName = getBagSizeFieldName(bagSize);
+        const quantity = parseInt(formData.quantities[fieldName] || "0");
+
+        if (quantity > 0) {
+          const firstChamberInput = document.querySelector(
+            `input[data-bag-type="${fieldName}"][data-field="chamber"]`
+          ) as HTMLInputElement;
+          if (firstChamberInput) {
+            firstChamberInput.focus();
+            break;
+          }
+        }
+      }
+    }, 300); // Separate timeout for focus to ensure scroll completes first
   };
 
   const prevStep = () => {
@@ -499,8 +565,55 @@ const IncomingOrderFormContent = () => {
     setSearchQuery(value);
     setFormData((prev) => ({ ...prev, farmerName: value, farmerId: "" }));
     setShowDropdown(true);
+    setHighlightedIndex(-1); // Reset highlighted index when search changes
     debouncedSearch(value);
   };
+
+  // Auto-highlight first result when search results change
+  useEffect(() => {
+    if (searchResults && searchResults.length > 0) {
+      setHighlightedIndex(0); // Auto-highlight first result
+    } else {
+      setHighlightedIndex(-1);
+    }
+  }, [searchResults]);
+
+  // Handle keyboard navigation for farmer search dropdown
+  const handleFarmerSearchKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    const results = searchResults || [];
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setShowDropdown(true);
+      setHighlightedIndex(prev =>
+        prev < results.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setShowDropdown(true);
+      setHighlightedIndex(prev =>
+        prev > 0 ? prev - 1 : results.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (results.length > 0) {
+        // Select the highlighted farmer or first result if none highlighted
+        const selectedIndex = highlightedIndex >= 0 ? highlightedIndex : 0;
+        handleSelectFarmer(results[selectedIndex]);
+      } else {
+        // If no results, focus on variety selector
+        const varietyInput = document.getElementById("variety-search-input");
+        if (varietyInput) {
+          (varietyInput as HTMLInputElement).focus();
+        }
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setShowDropdown(false);
+      setHighlightedIndex(-1);
+    }
+  };
+
 
   const handleSelectFarmer = (selectedFarmer: Farmer) => {
     setFormData((prev) => ({
@@ -510,6 +623,15 @@ const IncomingOrderFormContent = () => {
     }));
     setSearchQuery(selectedFarmer.name);
     setShowDropdown(false);
+    setHighlightedIndex(-1);
+
+    // Focus on variety selector after farmer selection
+    setTimeout(() => {
+      const varietyInput = document.getElementById("variety-search-input");
+      if (varietyInput) {
+        (varietyInput as HTMLInputElement).focus();
+      }
+    }, 100);
   };
 
   // Close dropdown when clicking outside
@@ -558,6 +680,7 @@ const IncomingOrderFormContent = () => {
   const clearSelectedFarmer = () => {
     setSelectedFarmer(null);
     setSearchQuery("");
+    setHighlightedIndex(-1);
     setFormData((prev) => ({
       ...prev,
       farmerName: "",
@@ -584,6 +707,12 @@ const IncomingOrderFormContent = () => {
         ) as HTMLInputElement;
         if (nextInput) {
           nextInput.focus();
+        }
+      } else {
+        // If this is the last bag size, focus on the continue button
+        const continueButton = document.getElementById("continue-button");
+        if (continueButton) {
+          (continueButton as HTMLButtonElement).focus();
         }
       }
     }
@@ -789,6 +918,7 @@ const IncomingOrderFormContent = () => {
                           selectedFarmer ? selectedFarmer.name : searchQuery
                         }
                         onChange={handleSearchChange}
+                        onKeyDown={handleFarmerSearchKeyDown}
                         onFocus={() => setShowDropdown(true)}
                         placeholder={t(
                           "incomingOrder.farmer.searchPlaceholder"
@@ -831,18 +961,24 @@ const IncomingOrderFormContent = () => {
                             </div>
                           ) : (
                             <div className="py-1">
-                              {searchResults?.map((result: Farmer) => (
+                              {searchResults?.map((result: Farmer, index: number) => (
                                 <button
                                   key={result._id}
                                   type="button"
-                                  className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                  className={`w-full text-left px-4 py-2 focus:outline-none transition-colors ${
+                                    index === highlightedIndex
+                                      ? "bg-gray-100 text-gray-800 border-l-2 border-gray-400"
+                                      : "hover:bg-gray-50 focus:bg-gray-50"
+                                  }`}
                                   onClick={() => handleSelectFarmer(result)}
                                 >
                                   <div className="font-medium">
                                     {result.name}
                                   </div>
                                   {(result.mobileNumber || result.address) && (
-                                    <div className="text-sm text-gray-500">
+                                    <div className={`text-sm ${
+                                      index === highlightedIndex ? "text-gray-600" : "text-gray-500"
+                                    }`}>
                                       {result.mobileNumber && (
                                         <span>📱 {result.mobileNumber}</span>
                                       )}
@@ -942,6 +1078,7 @@ const IncomingOrderFormContent = () => {
 
               <div className="pt-4 flex justify-end">
                 <button
+                  id="continue-button"
                   type="button"
                   onClick={nextStep}
                   className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useQuery, useMutation } from "@tanstack/react-query";
@@ -290,8 +290,8 @@ const OutgoingOrderFormContent = () => {
   });
 
   // Create a debounced search function
-  const debouncedSearch = useCallback(
-    debounce((query: string) => {
+  const debouncedSearch = useMemo(
+    () => debounce((query: string) => {
       if (query.length >= 2) {
         refetch();
       }
@@ -351,6 +351,14 @@ const OutgoingOrderFormContent = () => {
     e.preventDefault(); // Prevent form submission
     setActiveBox({ receiptNumber, bagSize, maxQuantity });
     setInputQuantity('');
+
+    // Auto-focus the input field after modal opens
+    setTimeout(() => {
+      const inputElement = document.getElementById('quantity-input') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }, 100);
   };
 
   // Handle quantity submission
@@ -1158,7 +1166,7 @@ const OutgoingOrderFormContent = () => {
 
       {/* Quantity Input Modal */}
       {activeBox && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-4 sm:p-6 max-w-sm w-full mx-4">
             <div className="flex justify-between items-center mb-3 sm:mb-4">
               <h3 className="text-base sm:text-lg font-medium">{t('outgoingOrder.quantityModal.title')}</h3>
@@ -1180,6 +1188,7 @@ const OutgoingOrderFormContent = () => {
                       {t('outgoingOrder.quantityModal.enterQty')} :
                     </label>
                   <input
+                    id="quantity-input"
                     type="number"
                     value={inputQuantity}
                     onChange={(e) => {
@@ -1188,8 +1197,19 @@ const OutgoingOrderFormContent = () => {
                         setInputQuantity(value);
                       }
                     }}
+                    onKeyDown={(e) => {
+                      // Handle Enter key to submit
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        // Create a synthetic mouse event for the submit handler
+                        const syntheticEvent = {
+                          preventDefault: () => {},
+                        } as React.MouseEvent;
+                        handleQuantitySubmit(syntheticEvent);
+                      }
+                    }}
                     className="flex-1 p-2 sm:p-2.5 text-sm sm:text-base rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary"
-                                          placeholder={t('outgoingOrder.quantityModal.placeholder')}
+                    placeholder={t('outgoingOrder.quantityModal.placeholder')}
                     min="1"
                     max={activeBox.maxQuantity}
                   />

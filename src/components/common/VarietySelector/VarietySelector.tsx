@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Loader2, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, KeyboardEvent } from "react";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import debounce from "lodash/debounce";
 
@@ -16,6 +16,7 @@ const VarietySelector = ({ value, onValueChange, token }: VarietySelectorProps) 
   const [searchQuery, setSearchQuery] = useState(value);
   const [showDropdown, setShowDropdown] = useState(false);
   const [filteredVarieties, setFilteredVarieties] = useState<string[]>([]);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
 
   // Fetch varieties
   const { data: varietiesData, isLoading: isLoadingVarieties } = useQuery({
@@ -53,10 +54,20 @@ const VarietySelector = ({ value, onValueChange, token }: VarietySelectorProps) 
     setSearchQuery(value);
   }, [value]);
 
+  // Auto-highlight first result when filtered varieties change
+  useEffect(() => {
+    if (filteredVarieties && filteredVarieties.length > 0) {
+      setHighlightedIndex(0); // Auto-highlight first result
+    } else {
+      setHighlightedIndex(-1);
+    }
+  }, [filteredVarieties]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setSearchQuery(newValue);
     setShowDropdown(true);
+    setHighlightedIndex(-1); // Reset highlighted index when search changes
 
     // If the input is cleared, also clear the selected value
     if (newValue === '') {
@@ -64,16 +75,46 @@ const VarietySelector = ({ value, onValueChange, token }: VarietySelectorProps) 
     }
   };
 
+  // Handle keyboard navigation for variety dropdown
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setShowDropdown(true);
+      setHighlightedIndex(prev =>
+        prev < filteredVarieties.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setShowDropdown(true);
+      setHighlightedIndex(prev =>
+        prev > 0 ? prev - 1 : filteredVarieties.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (filteredVarieties.length > 0) {
+        // Select the highlighted variety or first result if none highlighted
+        const selectedIndex = highlightedIndex >= 0 ? highlightedIndex : 0;
+        handleSelectVariety(filteredVarieties[selectedIndex]);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setShowDropdown(false);
+      setHighlightedIndex(-1);
+    }
+  };
+
   const handleSelectVariety = (selectedVariety: string) => {
     setSearchQuery(selectedVariety);
     onValueChange(selectedVariety);
     setShowDropdown(false);
+    setHighlightedIndex(-1);
   };
 
   const clearSelection = () => {
     setSearchQuery('');
     onValueChange('');
     setShowDropdown(false);
+    setHighlightedIndex(-1);
   };
 
   // Close dropdown when clicking outside
@@ -103,6 +144,7 @@ const VarietySelector = ({ value, onValueChange, token }: VarietySelectorProps) 
             autoComplete="off"
             value={searchQuery}
             onChange={handleSearchChange}
+            onKeyDown={handleKeyDown}
             onFocus={() => setShowDropdown(true)}
             placeholder={t('incomingOrder.variety.selectPlaceholder')}
             disabled={isLoadingVarieties}
@@ -141,11 +183,15 @@ const VarietySelector = ({ value, onValueChange, token }: VarietySelectorProps) 
             ) : (
               <div className="py-1">
                 {filteredVarieties.length > 0 ? (
-                  filteredVarieties.map((variety: string) => (
+                  filteredVarieties.map((variety: string, index: number) => (
                     <button
                       key={variety}
                       type="button"
-                      className="w-full text-left px-4 py-2 hover:bg-gray-100 focus:bg-gray-100 focus:outline-none transition-colors"
+                      className={`w-full text-left px-4 py-2 focus:outline-none transition-colors ${
+                        index === highlightedIndex
+                          ? "bg-gray-100 text-gray-800 border-l-2 border-gray-400"
+                          : "hover:bg-gray-50 focus:bg-gray-50"
+                      }`}
                       onClick={() => handleSelectVariety(variety)}
                     >
                       <div className="font-medium">{variety}</div>
