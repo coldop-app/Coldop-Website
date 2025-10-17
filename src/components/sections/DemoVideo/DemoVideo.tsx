@@ -72,7 +72,7 @@ const DemoVideo = () => {
                 {/* Thumbnail Image (placeholder) */}
                 <div className="absolute inset-0 bg-gray-900/20 flex items-center justify-center">
                   <img
-                    src="https://img.youtube.com/vi/fma3E2uODck/maxresdefault.jpg"
+                    src="https://i9.ytimg.com/vi/aCQ3rb-K_m0/sddefault.jpg?v=68f23703&sqp=CMjtyMcG&rs=AOn4CLArxgnEFa48cBrmtwWcb3x8dmG8eA"
                     alt="Demo Video Thumbnail"
                     className="w-full h-full object-cover"
                   />
@@ -102,9 +102,11 @@ const DemoVideo = () => {
                 </div>
               </div>
             ) : (
+
+              
               <div className="aspect-video">
                 <iframe
-                  src="https://www.youtube.com/embed/fma3E2uODck?autoplay=1&rel=0&modestbranding=1"
+                  src="https://www.youtube.com/embed/aCQ3rb-K_m0?si=M97uTLyLQaB7dbfI"
                   title="Coldop Demo Video"
                   className="w-full h-full rounded-[11px]"
                   frameBorder="0"
