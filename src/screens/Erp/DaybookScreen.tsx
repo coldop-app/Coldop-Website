@@ -14,6 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import DeliveryVoucherCard from "@/components/vouchers/DeliveryVoucherCard";
 import ReceiptVoucherCard from "@/components/vouchers/ReceiptVoucherCard";
+import ShedVoucherCard from "@/components/vouchers/ShedVoucherCard";
 import { Order } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import ScrollToTop from "@/components/common/ScrollToTop/ScrollToTop";
@@ -35,14 +36,19 @@ interface ApiResponse {
   pagination: PaginationMeta;
 }
 
-type OrderType = "all" | "incoming" | "outgoing";
+interface OrderWithShedVouchers extends Order {
+  shedVouchers?: Order[];
+}
+
+type OrderType = "all" | "incoming" | "outgoing" | "shed";
 type SortOrder = "latest" | "oldest";
 
 interface SearchResponse {
   status: string;
   data: {
-    incoming: Order[];
-    outgoing: Order[];
+    incoming: OrderWithShedVouchers[];
+    outgoing: OrderWithShedVouchers[];
+    shedVouchers?: Order[];
   };
 }
 
@@ -91,12 +97,39 @@ const DaybookScreen = () => {
         data: [
           ...(searchResponse?.data?.incoming || []),
           ...(searchResponse?.data?.outgoing || []),
+          ...(searchResponse?.data?.shedVouchers || []),
         ],
         pagination: null,
       }
     : (data as ApiResponse);
 
-  const orders = apiResponse?.data || [];
+  // Extract shed vouchers from nested structure and combine with main data
+  const allOrders = [
+    ...(apiResponse?.data || []),
+    ...(apiResponse?.data?.flatMap((order: OrderWithShedVouchers) =>
+      order.shedVouchers || []
+    ) || []),
+  ];
+
+  // Debug logging
+  console.log("API Response:", apiResponse);
+  console.log("Extracted Shed Vouchers:", apiResponse?.data?.flatMap((order: OrderWithShedVouchers) =>
+    order.shedVouchers || []
+  ));
+  console.log("All Orders:", allOrders);
+
+  // Filter orders based on type
+  const orders = allOrders.filter((order) => {
+    if (type === "all") return true;
+    if (type === "incoming") return order.gatePass.type === "RECEIPT";
+    if (type === "outgoing") return order.gatePass.type === "DELIVERY";
+    if (type === "shed") return order.gatePass.type === "SHED";
+    return true;
+  });
+
+  console.log("Filtered Orders:", orders);
+  console.log("Current Type:", type);
+
   const pagination = apiResponse?.pagination;
 
   // Reset to first page when filters change
@@ -394,6 +427,7 @@ const DaybookScreen = () => {
                   <option value="all">{t("daybook.allOrders")}</option>
                   <option value="incoming">{t("daybook.incoming")}</option>
                   <option value="outgoing">{t("daybook.outgoing")}</option>
+                  <option value="shed">Shed Vouchers</option>
                 </select>
               </div>
               <div className="w-full sm:w-[200px]">
@@ -409,7 +443,7 @@ const DaybookScreen = () => {
                   <option value="oldest">{t("daybook.oldestFirst")}</option>
                 </select>
               </div>
-              <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3 sm:ml-auto mt-1 sm:mt-0">
+              <div className="grid grid-cols-3 sm:flex gap-2 sm:gap-3 sm:ml-auto mt-1 sm:mt-0">
                 <button
                   onClick={() => navigate("/erp/incoming-order")}
                   className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow"
@@ -427,6 +461,24 @@ const DaybookScreen = () => {
                     />
                   </svg>
                   <span className="truncate">{t("daybook.addIncoming")}</span>
+                </button>
+                <button
+                  onClick={() => navigate("/erp/shed-voucher")}
+                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 focus:outline-none focus:ring-2 focus:ring-yellow-500/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2H4zm2 6a2 2 0 114 0 2 2 0 01-4 0zm8 0a2 2 0 114 0 2 2 0 01-4 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="truncate">Shed Voucher</span>
                 </button>
                 <button
                   onClick={() => navigate("/erp/outgoing-order")}
@@ -529,6 +581,8 @@ const DaybookScreen = () => {
                 <div key={order._id} className="py-2 sm:py-3">
                   {order.gatePass.type === "DELIVERY" ? (
                     <DeliveryVoucherCard order={order} />
+                  ) : order.gatePass.type === "SHED" ? (
+                    <ShedVoucherCard order={order} />
                   ) : (
                     <ReceiptVoucherCard order={order} />
                   )}

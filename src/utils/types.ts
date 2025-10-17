@@ -58,7 +58,7 @@ export interface Farmer {
 }
 
 export interface Voucher {
-  type: "RECEIPT" | "DELIVERY";
+  type: "RECEIPT" | "DELIVERY" | "SHED";
   gatePassNumber: number;
 }
 
@@ -71,6 +71,10 @@ export interface BagSize {
   size: string;
   quantity?: BagSizeQuantity;
   quantityRemoved?: number;
+  quantityTakenOut?: number; // For shed vouchers
+  quantityRejected?: number; // For shed vouchers
+  quantityRestored?: number; // For shed vouchers
+  currentQuantity?: number; // For shed vouchers
   location?: string; // Location for each bag size
   approxWeight?: number; // Approximate weight for each bag size
 }

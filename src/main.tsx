@@ -19,6 +19,7 @@ import NotFound from "./screens/NotFound/NotFound";
 import Error from "./screens/Error/Error";
 import IncomingOrderForm from "./screens/Erp/IncomingOrderForm.tsx";
 import OutgoingOrderForm from "./screens/Erp/OutgoingOrderForm.tsx";
+import ShedVoucherForm from "./screens/Erp/ShedVoucherForm.tsx";
 import EditIncomingOrderForm from "./screens/Erp/EditIncomingOrderForm.tsx";
 import EnhancedLoadingFallback from "./components/common/Shimmer/EnhancedLoadingFallback.tsx";
 import ScrollToTop from "./components/common/ScrollToTop/ScrollToTop.tsx";
@@ -154,6 +155,11 @@ const router = createBrowserRouter(
           <Route path="outgoing-order" element={
             <Suspense fallback={<EnhancedLoadingFallback />}>
               <OutgoingOrderForm />
+            </Suspense>
+          } />
+          <Route path="shed-voucher" element={
+            <Suspense fallback={<EnhancedLoadingFallback />}>
+              <ShedVoucherForm />
             </Suspense>
           } />
           <Route path="settings" element={
