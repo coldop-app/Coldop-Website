@@ -432,6 +432,80 @@ interface CustomAnalyticsResponse {
   };
 }
 
+interface ShedVoucherBagUpdate {
+  size: string;
+  quantityToRemove: number;
+}
+
+interface ShedVoucherOrder {
+  orderId: string;
+  variety: string;
+  bagUpdates: ShedVoucherBagUpdate[];
+}
+
+export interface CreateShedVoucherPayload {
+  orders: ShedVoucherOrder[];
+  remarks: string;
+  dateOfExtraction: string;
+}
+
+interface ShedVoucherIncomingBagSize {
+  size: string;
+  initialQuantity: number;
+  currentQuantity: number;
+  location: string;
+  approxWeight: number;
+  _id: string;
+}
+
+interface ShedVoucherIncomingOrder {
+  _id: string;
+  gatePass: {
+    type: "RECEIPT";
+    gatePassNumber: number;
+  };
+  incomingBagSizes: ShedVoucherIncomingBagSize[];
+}
+
+interface ShedVoucherBagSize {
+  size: string;
+  quantityTakenOut: number;
+  quantityRejected: number;
+  quantityRestored: number;
+  currentQuantity: number;
+  location: string;
+  approxWeight: number;
+}
+
+interface ShedVoucherOrderDetail {
+  variety: string;
+  incomingOrder: ShedVoucherIncomingOrder;
+  bagSizes: ShedVoucherBagSize[];
+}
+
+interface ShedVoucherResponse {
+  status: string;
+  message: string;
+  data: {
+    coldStorageId: string;
+    farmerId: string;
+    gatePass: {
+      type: "SHED";
+      gatePassNumber: number;
+    };
+    dateOfExtraction: string;
+    remarks: string;
+    currentStockAtThatTime: number;
+    orderDetails: ShedVoucherOrderDetail[];
+    status: string;
+    isNullVoucher: boolean;
+    _id: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  };
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -905,6 +979,24 @@ export const storeAdminApi = {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  createShedVoucher: async (
+    farmerId: string,
+    payload: CreateShedVoucherPayload,
+    token: string
+  ): Promise<ShedVoucherResponse> => {
+    const response = await axios.post<ShedVoucherResponse>(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/shed-vouchers`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
       }
     );
