@@ -160,3 +160,94 @@ export interface OutgoingOrder {
   updatedAt: string;
   __v: number;
 }
+
+// Shed Voucher Types
+export interface ShedVoucherIncomingBagSize {
+  size: string;
+  initialQuantity: number;
+  currentQuantity: number;
+  location: string;
+  approxWeight: number;
+  _id: string;
+}
+
+export interface ShedVoucherIncomingOrder {
+  _id: string;
+  gatePass: {
+    type: "RECEIPT";
+    gatePassNumber: number;
+  };
+  incomingBagSizes: ShedVoucherIncomingBagSize[];
+}
+
+export interface ShedVoucherBagSize {
+  size: string;
+  quantityTakenOut: number;
+  quantityRejected: number;
+  quantityRestored: number;
+  currentQuantity: number;
+  location: string;
+  approxWeight: number;
+}
+
+export interface ShedOrderDetail {
+  variety: string;
+  incomingOrder: ShedVoucherIncomingOrder;
+  bagSizes: ShedVoucherBagSize[];
+}
+
+export interface ShedVoucher {
+  _id: string;
+  gatePass: {
+    type: "SHED";
+    gatePassNumber: number;
+  };
+  coldStorageId: string;
+  farmerId: string;
+  dateOfExtraction: string;
+  remarks: string;
+  currentStockAtThatTime: number;
+  orderDetails: ShedOrderDetail[];
+  status: string;
+  isNullVoucher: boolean;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+export interface ShedVoucherListResponse {
+  status: string;
+  data: ShedVoucher[];
+}
+
+// Bag Size Selection for forms
+export interface BagSizeSelection {
+  receiptNumber: number;
+  bagSize: string;
+  selectedQuantity: number;
+  maxQuantity: number;
+}
+
+// Form Data Types
+export interface FormData {
+  farmerName: string;
+  farmerId: string;
+  variety: string[];
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: string;
+  approxWeight: string;
+  bagType: string;
+  remarks: string;
+}
+
+// API Error Type
+export interface ApiError {
+  response?: {
+    data?: {
+      message?: string;
+    };
+  };
+}

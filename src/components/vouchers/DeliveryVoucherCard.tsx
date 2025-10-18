@@ -552,6 +552,11 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                     );
                   }
 
+                  // Check if any incoming order in this variety has SHED type
+                  const hasShedVoucher = detailsWithItems.some(
+                    (detail) => detail.incomingOrder?.gatePass.type === "SHED"
+                  );
+
                   return (
                     <div key={varietyIndex} className="bg-white rounded-lg p-4 border border-gray-200">
                       <h4 className="text-sm font-medium text-gray-900 mb-4">
@@ -568,7 +573,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                                 Location
                               </th>
                               <th className="text-left py-3 px-4 font-medium text-gray-900">
-                                R. Voucher
+                                {hasShedVoucher ? "Shed Voucher" : "R. Voucher"}
                               </th>
                               <th className="text-right py-3 px-4 font-medium text-gray-900">
                                 Current Qty
@@ -608,7 +613,11 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                                     <td className="py-3 px-4">
                                       {detail.incomingOrder ? (
                                         <div className="flex items-center gap-2">
-                                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
+                                          <div className={`w-1.5 h-1.5 rounded-full ${
+                                            detail.incomingOrder.gatePass.type === "SHED"
+                                              ? "bg-yellow-500"
+                                              : "bg-green-500"
+                                          }`}></div>
                                           <span className="text-sm font-medium text-gray-900">
                                             {
                                               detail.incomingOrder.gatePass

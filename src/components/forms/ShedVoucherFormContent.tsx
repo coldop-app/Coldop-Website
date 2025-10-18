@@ -6,13 +6,19 @@ import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
-import type { CreateOutgoingOrderPayload } from "@/lib/api/storeAdmin";
+import type { CreateOutgoingFromShedPayload } from "@/lib/api/storeAdmin";
 import { RootState } from "@/store";
-import { StoreAdmin } from "@/utils/types";
+import {
+  StoreAdmin,
+  ShedVoucher,
+  ShedOrderDetail,
+  ShedVoucherBagSize,
+  BagSizeSelection,
+  FormData,
+  ApiError
+} from "@/utils/types";
 import CustomSelect from "@/components/common/CustomSelect/CustomSelect";
 import MultiSelect from "@/components/common/MultiSelect";
-import VoucherTypeSelector from "@/components/forms/VoucherTypeSelector";
-import ShedVoucherFormContent from "../../../components/forms/ShedVoucherFormContent";
 import debounce from "lodash/debounce";
 
 // Custom scrollbar styles
@@ -87,84 +93,6 @@ interface Farmer {
   mobileNumber?: string;
 }
 
-interface FormData {
-  farmerName: string;
-  farmerId: string;
-  variety: string[];
-  generation: string;
-  rouging: string;
-  tuberType: string;
-  grader: string;
-  weighedStatus: string;
-  approxWeight: string;
-  bagType: string;
-  remarks: string;
-}
-
-interface BagSizeQuantity {
-  initialQuantity: number;
-  currentQuantity: number;
-}
-
-interface OrderBagSize {
-  size: string;
-  quantity: BagSizeQuantity;
-  location: string;
-}
-
-interface GatePass {
-  type: string;
-  gatePassNumber: number;
-}
-
-interface OrderDetail {
-  variety: string;
-  bagSizes: OrderBagSize[];
-  location: string;
-}
-
-interface IncomingOrder {
-  _id: string;
-  gatePass: GatePass;
-  coldStorageId: string;
-  farmerId: string;
-  generation: string;
-  tuberType: string;
-  grader: string;
-  weighedStatus: boolean;
-  approxWeight: string;
-  bagType: string;
-  dateOfSubmission: string;
-  remarks: string;
-  currentStockAtThatTime: number;
-  orderDetails: OrderDetail[];
-  fulfilled: boolean;
-  createdAt: string;
-  updatedAt: string;
-  __v: number;
-  rouging: string;
-}
-
-interface IncomingOrdersResponse {
-  status: string;
-  data: IncomingOrder[];
-}
-
-interface BagSizeSelection {
-  receiptNumber: number;
-  bagSize: string;
-  selectedQuantity: number;
-  maxQuantity: number;
-}
-
-
-interface ApiError {
-  response?: {
-    data?: {
-      message?: string;
-    };
-  };
-}
 
 const sortBagSizes = (adminPreferences: string[] | undefined) => {
   if (!adminPreferences) {
@@ -206,12 +134,9 @@ const sortBagSizes = (adminPreferences: string[] | undefined) => {
   };
 };
 
-const OutgoingOrderFormContent = () => {
+const ShedVoucherFormContent = () => {
   const { t } = useTranslation();
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
-
-  // Voucher type selection state
-  const [voucherType, setVoucherType] = useState<'receipt' | 'shed' | null>(null);
 
   // Pre-selected farmer data - only show if admin mobile number is not "9877741375"
   const farmer = useMemo<Farmer | null>(() => {
@@ -266,16 +191,16 @@ const OutgoingOrderFormContent = () => {
     remarks: ""
   });
 
-  // Fetch farmer's incoming orders
-  const { data: farmerIncomingOrders, isLoading: isLoadingIncomingOrders } = useQuery<IncomingOrdersResponse>({
-    queryKey: ['farmerIncomingOrders', formData.farmerId],
-    queryFn: () => storeAdminApi.getFarmerIncomingOrders(formData.farmerId, adminInfo?.token || ''),
+  // Fetch farmer's shed vouchers
+  const { data: shedVouchersData, isLoading: isLoadingShedVouchers } = useQuery({
+    queryKey: ['shedVouchers', formData.farmerId],
+    queryFn: () => storeAdminApi.getShedVouchers(formData.farmerId, adminInfo?.token || ''),
     enabled: !!formData.farmerId && !!adminInfo?.token
   });
 
-  // Update available options when orders change
+  // Update available options when shed vouchers change
   useEffect(() => {
-    if (farmerIncomingOrders?.data) {
+    if (shedVouchersData?.data) {
       const varieties = new Set<string>();
       const generations = new Set<string>();
       const rouging = new Set<string>();
@@ -284,21 +209,15 @@ const OutgoingOrderFormContent = () => {
       const weighedStatus = new Set<string>();
       const approxWeights = new Set<string>();
 
-      farmerIncomingOrders.data.forEach((order) => {
+      shedVouchersData.data.forEach((voucher: ShedVoucher) => {
         // Add variety from order details
-        order.orderDetails.forEach((detail) => {
+        voucher.orderDetails.forEach((detail: ShedOrderDetail) => {
           varieties.add(detail.variety);
         });
 
-        // Add other fields from order level
-        if (order.generation) generations.add(order.generation);
-        if (order.rouging) rouging.add(order.rouging);
-        if (order.tuberType) tuberTypes.add(order.tuberType);
-        if (order.grader) graders.add(order.grader);
-        if (order.approxWeight) approxWeights.add(order.approxWeight);
-
-        // Add weighed status options
-        weighedStatus.add(order.weighedStatus ? "true" : "false");
+        // Add other fields from order level - these don't exist in the API response
+        // so we'll set them as empty for now
+        weighedStatus.add("true"); // Default to weighed
       });
 
       setAvailableVarieties(Array.from(varieties));
@@ -309,28 +228,28 @@ const OutgoingOrderFormContent = () => {
       setAvailableWeighedStatus(Array.from(weighedStatus));
       setAvailableApproxWeights(Array.from(approxWeights));
     }
-  }, [farmerIncomingOrders?.data]);
+  }, [shedVouchersData?.data]);
 
   // Update the filteredOrders useMemo - now shows all orders initially
   const filteredOrders = React.useMemo(() => {
-    if (!farmerIncomingOrders?.data) return [];
+    if (!shedVouchersData?.data) return [];
 
-    return farmerIncomingOrders.data.filter((order) => {
+    return shedVouchersData.data.filter((order: ShedVoucher) => {
       // Filter by variety if selected (now supports multiple varieties)
-      const hasVariety = formData.variety.length === 0 || order.orderDetails.some(detail => formData.variety.includes(detail.variety));
+      const hasVariety = formData.variety.length === 0 || order.orderDetails.some((detail: ShedOrderDetail) => formData.variety.includes(detail.variety));
 
-      // Filter by other fields if they are selected
-      const hasGeneration = !formData.generation || order.generation === formData.generation;
-      const hasRouging = !formData.rouging || order.rouging === formData.rouging;
-      const hasTuberType = !formData.tuberType || order.tuberType === formData.tuberType;
-      const hasGrader = !formData.grader || order.grader === formData.grader;
-      const hasWeighedStatus = !formData.weighedStatus || (order.weighedStatus ? "true" : "false") === formData.weighedStatus;
-      const hasApproxWeight = !formData.approxWeight || order.approxWeight === formData.approxWeight;
+      // Filter by other fields if they are selected - these don't exist in shed vouchers
+      // so we'll always return true for them
+      const hasGeneration = true;
+      const hasRouging = true;
+      const hasTuberType = true;
+      const hasGrader = true;
+      const hasWeighedStatus = true;
+      const hasApproxWeight = true;
 
       return hasVariety && hasGeneration && hasRouging && hasTuberType && hasGrader && hasWeighedStatus && hasApproxWeight;
     });
-  }, [farmerIncomingOrders?.data, formData.variety, formData.generation, formData.rouging, formData.tuberType, formData.grader, formData.weighedStatus, formData.approxWeight]);
-
+  }, [shedVouchersData?.data, formData.variety]);
 
   // Get active bag sizes (columns with at least one cell that has quantities)
   const activeBagSizes = React.useMemo(() => {
@@ -338,11 +257,11 @@ const OutgoingOrderFormContent = () => {
 
     const activeSizes = new Set<string>();
 
-    filteredOrders.forEach(order => {
-      order.orderDetails.forEach(detail => {
-        detail.bagSizes.forEach(bagSize => {
+    filteredOrders.forEach((order: ShedVoucher) => {
+      order.orderDetails.forEach((detail: ShedOrderDetail) => {
+        detail.bagSizes.forEach((bagSize: ShedVoucherBagSize) => {
           // Only include bag sizes that have current quantity > 0
-          if (bagSize.quantity.currentQuantity > 0) {
+          if (bagSize.currentQuantity > 0) {
             activeSizes.add(bagSize.size);
           }
         });
@@ -371,11 +290,11 @@ const OutgoingOrderFormContent = () => {
 
     const allSizes = new Set<string>();
 
-    filteredOrders.forEach(order => {
-      order.orderDetails.forEach(detail => {
-        detail.bagSizes.forEach(bagSize => {
+    filteredOrders.forEach((order: ShedVoucher) => {
+      order.orderDetails.forEach((detail: ShedOrderDetail) => {
+        detail.bagSizes.forEach((bagSize: ShedVoucherBagSize) => {
           // Only include bag sizes that have current quantity > 0
-          if (bagSize.quantity.currentQuantity > 0) {
+          if (bagSize.currentQuantity > 0) {
             allSizes.add(bagSize.size);
           }
         });
@@ -580,10 +499,10 @@ const OutgoingOrderFormContent = () => {
   // Add handleSelectAll function after handleQuantityRemove - memoized for performance
   const handleSelectAll = useCallback(() => {
     // If we have selections matching all available quantities, deselect all
-    const totalAvailableQuantities = filteredOrders.reduce((total, order) => {
-      order.orderDetails.forEach(detail => {
-        detail.bagSizes.forEach(bagSize => {
-          if (bagSize.quantity.currentQuantity > 0) {
+    const totalAvailableQuantities = filteredOrders.reduce((total: number, order: ShedVoucher) => {
+      order.orderDetails.forEach((detail: ShedOrderDetail) => {
+        detail.bagSizes.forEach((bagSize: ShedVoucherBagSize) => {
+          if (bagSize.currentQuantity > 0) {
             total++;
           }
         });
@@ -599,15 +518,15 @@ const OutgoingOrderFormContent = () => {
 
     // Select all
     const newSelectedQuantities: BagSizeSelection[] = [];
-    filteredOrders.forEach(order => {
-      order.orderDetails.forEach(detail => {
-        detail.bagSizes.forEach(bagSize => {
-          if (bagSize.quantity.currentQuantity > 0) {
+    filteredOrders.forEach((order: ShedVoucher) => {
+      order.orderDetails.forEach((detail: ShedOrderDetail) => {
+        detail.bagSizes.forEach((bagSize: ShedVoucherBagSize) => {
+          if (bagSize.currentQuantity > 0) {
             newSelectedQuantities.push({
               receiptNumber: order.gatePass.gatePassNumber,
               bagSize: bagSize.size,
-              selectedQuantity: bagSize.quantity.currentQuantity,
-              maxQuantity: bagSize.quantity.currentQuantity
+              selectedQuantity: bagSize.currentQuantity,
+              maxQuantity: bagSize.currentQuantity
             });
           }
         });
@@ -619,10 +538,10 @@ const OutgoingOrderFormContent = () => {
 
   // Add isAllSelected computation
   const isAllSelected = useMemo(() => {
-    const totalAvailableQuantities = filteredOrders.reduce((total, order) => {
-      order.orderDetails.forEach(detail => {
-        detail.bagSizes.forEach(bagSize => {
-          if (bagSize.quantity.currentQuantity > 0) {
+    const totalAvailableQuantities = filteredOrders.reduce((total: number, order: ShedVoucher) => {
+      order.orderDetails.forEach((detail: ShedOrderDetail) => {
+        detail.bagSizes.forEach((bagSize: ShedVoucherBagSize) => {
+          if (bagSize.currentQuantity > 0) {
             total++;
           }
         });
@@ -638,11 +557,11 @@ const OutgoingOrderFormContent = () => {
     // Check if all quantities for this voucher are already selected
     const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
     const totalAvailableQuantitiesForVoucher = filteredOrders
-      .filter(order => order.gatePass.gatePassNumber === voucherNumber)
-      .reduce((total, order) => {
-        order.orderDetails.forEach(detail => {
-          detail.bagSizes.forEach(bagSize => {
-            if (bagSize.quantity.currentQuantity > 0) {
+      .filter((order: ShedVoucher) => order.gatePass.gatePassNumber === voucherNumber)
+      .reduce((total: number, order: ShedVoucher) => {
+        order.orderDetails.forEach((detail: ShedOrderDetail) => {
+          detail.bagSizes.forEach((bagSize: ShedVoucherBagSize) => {
+            if (bagSize.currentQuantity > 0) {
               total++;
             }
           });
@@ -657,18 +576,18 @@ const OutgoingOrderFormContent = () => {
     }
 
     // Select all available quantities for this voucher
-    const order = filteredOrders.find(o => o.gatePass.gatePassNumber === voucherNumber);
+    const order = filteredOrders.find((o: ShedVoucher) => o.gatePass.gatePassNumber === voucherNumber);
     if (!order) return;
 
     const newSelections: BagSizeSelection[] = [];
-    order.orderDetails.forEach(detail => {
-      detail.bagSizes.forEach(bagSize => {
-        if (bagSize.quantity.currentQuantity > 0) {
+    order.orderDetails.forEach((detail: ShedOrderDetail) => {
+        detail.bagSizes.forEach((bagSize: ShedVoucherBagSize) => {
+        if (bagSize.currentQuantity > 0) {
           newSelections.push({
             receiptNumber: voucherNumber,
             bagSize: bagSize.size,
-            selectedQuantity: bagSize.quantity.currentQuantity,
-            maxQuantity: bagSize.quantity.currentQuantity
+            selectedQuantity: bagSize.currentQuantity,
+            maxQuantity: bagSize.currentQuantity
           });
         }
       });
@@ -685,11 +604,11 @@ const OutgoingOrderFormContent = () => {
   const isVoucherSelected = useCallback((voucherNumber: number) => {
     const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
     const totalAvailableQuantitiesForVoucher = filteredOrders
-      .filter(order => order.gatePass.gatePassNumber === voucherNumber)
-      .reduce((total, order) => {
-        order.orderDetails.forEach(detail => {
-          detail.bagSizes.forEach(bagSize => {
-            if (bagSize.quantity.currentQuantity > 0) {
+      .filter((order: ShedVoucher) => order.gatePass.gatePassNumber === voucherNumber)
+      .reduce((total: number, order: ShedVoucher) => {
+        order.orderDetails.forEach((detail: ShedOrderDetail) => {
+          detail.bagSizes.forEach((bagSize: ShedVoucherBagSize) => {
+            if (bagSize.currentQuantity > 0) {
               total++;
             }
           });
@@ -719,7 +638,7 @@ const OutgoingOrderFormContent = () => {
     isSelected,
     onBoxClick
   }: {
-    order: IncomingOrder;
+    order: ShedVoucher;
     size: string;
     totalQuantities: { current: number; initial: number };
     bagSizeLocation?: string;
@@ -784,7 +703,7 @@ const OutgoingOrderFormContent = () => {
     </button>
   ));
 
-  // Update the generateOutgoingOrderRequestBody function
+  // Update the generateOutgoingOrderRequestBody function for shed vouchers
   const generateOutgoingOrderRequestBody = () => {
     // Group selected quantities by receipt number
     const groupedByReceipt = selectedQuantities.reduce((acc, sq) => {
@@ -800,37 +719,36 @@ const OutgoingOrderFormContent = () => {
       return acc;
     }, {} as Record<number, { bagUpdates: { size: string; quantityToRemove: number }[] }>);
 
-    // Find the order IDs from filtered orders and create proper order structure
-    const orders = filteredOrders
-      .filter(order => groupedByReceipt[order.gatePass.gatePassNumber])
-      .map(order => {
+    // Find the order IDs from filtered orders and create proper shed voucher structure
+    const shedVouchers = filteredOrders
+      .filter((order: ShedVoucher) => groupedByReceipt[order.gatePass.gatePassNumber])
+      .map((order: ShedVoucher) => {
         // Get the variety from the order details (use the first variety found)
         const variety = order.orderDetails[0]?.variety || (formData.variety.length > 0 ? formData.variety[0] : '');
 
         return {
-          orderId: order._id,
+          voucherId: order._id,
           variety: variety,
           bagUpdates: groupedByReceipt[order.gatePass.gatePassNumber].bagUpdates
         };
       });
 
     return {
-      generation: formData.generation,
-      rouging: formData.rouging,
-      tuberType: formData.tuberType,
-      grader: formData.grader,
+      shedVouchers: shedVouchers,
+      remarks: formData.remarks || "testing",
+      generation: formData.generation || "",
+      rouging: formData.rouging || "",
+      tuberType: formData.tuberType || "",
+      grader: formData.grader || "",
       weighedStatus: formData.weighedStatus === "true",
-      approxWeight: formData.approxWeight,
-      bagType: formData.bagType,
-      remarks: formData.remarks,
-      orders: orders
+      bagType: formData.bagType || ""
     };
   };
 
-  // Add mutation hook for creating outgoing order with proper types
-  const createOrderMutation: UseMutationResult<unknown, ApiError, CreateOutgoingOrderPayload> = useMutation<unknown, ApiError, CreateOutgoingOrderPayload>({
+  // Add mutation hook for creating outgoing order from shed with proper types
+  const createOrderMutation: UseMutationResult<unknown, ApiError, CreateOutgoingFromShedPayload> = useMutation<unknown, ApiError, CreateOutgoingFromShedPayload>({
     mutationFn: (requestBody) =>
-      storeAdminApi.createOutgoingOrder(
+      storeAdminApi.createOutgoingFromShed(
         formData.farmerId,
         requestBody,
         adminInfo?.token || ''
@@ -845,39 +763,11 @@ const OutgoingOrderFormContent = () => {
     }
   });
 
-  // If no voucher type is selected, show the selector
-  if (!voucherType) {
-    return (
-      <VoucherTypeSelector
-        selectedType={voucherType}
-        onTypeSelect={setVoucherType}
-      />
-    );
-  }
-
-  // If shed vouchers are selected, show the shed voucher form
-  if (voucherType === 'shed') {
-    return <ShedVoucherFormContent />;
-  }
-
-  // If receipt vouchers are selected, show the original form
   return (
     <div className="w-full bg-background rounded-lg shadow-lg border border-border overflow-hidden">
       <div className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5">
         <div className="flex flex-col items-center mb-3 sm:mb-4 md:mb-5">
-          <div className="flex items-center gap-4 mb-3">
-            <button
-              type="button"
-              onClick={() => setVoucherType(null)}
-              className="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to Selection
-            </button>
-            <h1 className="text-lg sm:text-xl md:text-2xl font-bold">{t('outgoingOrder.title')} (Receipt Vouchers)</h1>
-          </div>
+          <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-3">{t('outgoingOrder.title')} (Shed Vouchers)</h1>
           {isLoadingReceiptNumber ? (
             <div className="inline-flex items-center gap-2 bg-red-50 px-4 py-1.5 rounded-full">
               <Loader2 className="h-3 w-3 animate-spin text-red-600" />
@@ -1030,7 +920,7 @@ const OutgoingOrderFormContent = () => {
                   </div>
                   <p className="text-xs text-muted-foreground mb-2 sm:mb-3">
                     {availableVarieties.length > 0
-                      ? "Filter by variety (optional) - Select a variety to filter orders, or leave empty to show all varieties"
+                      ? "Filter by variety (optional) - Select a variety to filter shed vouchers, or leave empty to show all varieties"
                       : t('outgoingOrder.variety.noVarieties')}
                   </p>
 
@@ -1042,7 +932,7 @@ const OutgoingOrderFormContent = () => {
                       }))}
                       value={formData.variety}
                       onChange={(value) => setFormData(prev => ({ ...prev, variety: value }))}
-                      placeholder="Select varieties to filter orders..."
+                      placeholder="Select varieties to filter shed vouchers..."
                       maxDisplayItems={2}
                       className="border-gray-200 focus-within:border-gray-400 focus-within:ring-gray-100"
                     />
@@ -1489,7 +1379,7 @@ const OutgoingOrderFormContent = () => {
                     )}
 
                     {/* Orders Table */}
-                    {isLoadingIncomingOrders ? (
+                    {isLoadingShedVouchers ? (
                       <div className="flex items-center gap-2">
                         <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                         <span className="text-sm">{t('outgoingOrder.orders.loading')}</span>
@@ -1499,8 +1389,8 @@ const OutgoingOrderFormContent = () => {
                         {/* Orders Count */}
                         <div className="text-sm text-gray-600 mb-3">
                           {hasActiveFilters
-                            ? `Showing ${filteredOrders.length} order${filteredOrders.length !== 1 ? 's' : ''} matching your filters${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
-                            : `Showing all ${farmerIncomingOrders?.data?.length || 0} order${(farmerIncomingOrders?.data?.length || 0) !== 1 ? 's' : ''}${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
+                            ? `Showing ${filteredOrders.length} shed voucher${filteredOrders.length !== 1 ? 's' : ''} matching your filters${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
+                            : `Showing all ${shedVouchersData?.data?.length || 0} shed voucher${(shedVouchersData?.data?.length || 0) !== 1 ? 's' : ''}${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
                           }
                         </div>
 
@@ -1543,7 +1433,7 @@ const OutgoingOrderFormContent = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {filteredOrders.map(order => (
+                                  {filteredOrders.map((order: ShedVoucher) => (
                                     <tr
                                       key={order._id}
                                       className="hover:bg-gray-50/50 transition-colors"
@@ -1559,28 +1449,28 @@ const OutgoingOrderFormContent = () => {
                                       <td className="p-2.5 border-b">
                                         <div className="flex flex-col gap-1">
                                           <div className="font-medium text-base">#{order.gatePass.gatePassNumber}</div>
-                                          {order.orderDetails[0]?.location && (
+                                          {order.orderDetails[0]?.incomingOrder?.gatePass?.gatePassNumber && (
                                             <div className="text-xs text-gray-500">
-                                              {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
+                                              {t('outgoingOrder.orders.location')}: {order.orderDetails[0].incomingOrder.gatePass.gatePassNumber}
                                             </div>
                                           )}
                                         </div>
                                       </td>
                                       {activeBagSizes.map(size => {
-                                        const totalQuantities = order.orderDetails.reduce((acc, detail) => {
-                                          const bagSize = detail.bagSizes.find(b => b.size === size);
+                                        const totalQuantities = order.orderDetails.reduce((acc: { current: number; initial: number }, detail: ShedOrderDetail) => {
+                                          const bagSize = detail.bagSizes.find((b: ShedVoucherBagSize) => b.size === size);
                                           if (bagSize) {
-                                            acc.current += bagSize.quantity.currentQuantity;
-                                            acc.initial += bagSize.quantity.initialQuantity;
+                                            acc.current += bagSize.currentQuantity;
+                                            acc.initial += bagSize.quantityTakenOut;
                                           }
                                           return acc;
                                         }, { current: 0, initial: 0 });
 
                                         // Get location and variety for this bag size
-                                        const bagSizeDetail = order.orderDetails.find(detail =>
-                                          detail.bagSizes.some(b => b.size === size)
+                                        const bagSizeDetail = order.orderDetails.find((detail: ShedOrderDetail) =>
+                                          detail.bagSizes.some((b: ShedVoucherBagSize) => b.size === size)
                                         );
-                                        const bagSizeLocation = bagSizeDetail?.bagSizes.find(b => b.size === size)?.location;
+                                        const bagSizeLocation = bagSizeDetail?.bagSizes.find((b: ShedVoucherBagSize) => b.size === size)?.location;
                                         const variety = bagSizeDetail?.variety;
 
                                         const isSelected = selectedQuantities.some(
@@ -1619,14 +1509,14 @@ const OutgoingOrderFormContent = () => {
 
                         {/* Mobile View - Shown only on mobile */}
                         <div className="md:hidden space-y-4">
-                          {filteredOrders.map(order => (
+                          {filteredOrders.map((order: ShedVoucher) => (
                             <div key={order._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                               <div className="p-3 bg-gray-50 border-b border-gray-200">
                                 <div className="flex flex-col gap-1">
                                   <div className="font-medium">#{order.gatePass.gatePassNumber}</div>
-                                  {order.orderDetails[0]?.location && (
+                                  {order.orderDetails[0]?.incomingOrder?.gatePass?.gatePassNumber && (
                                     <div className="text-xs text-gray-500 mt-0.5">
-                                      {t('outgoingOrder.orders.location')}: {order.orderDetails[0].location}
+                                      {t('outgoingOrder.orders.location')}: {order.orderDetails[0].incomingOrder.gatePass.gatePassNumber}
                                     </div>
                                   )}
                                   <button
@@ -1645,20 +1535,20 @@ const OutgoingOrderFormContent = () => {
                               <div className="p-3">
                                 <div className="grid grid-cols-3 gap-2">
                                   {activeBagSizes.map(size => {
-                                    const totalQuantities = order.orderDetails.reduce((acc, detail) => {
-                                      const bagSize = detail.bagSizes.find(b => b.size === size);
+                                    const totalQuantities = order.orderDetails.reduce((acc: { current: number; initial: number }, detail: ShedOrderDetail) => {
+                                        const bagSize = detail.bagSizes.find((b: ShedVoucherBagSize) => b.size === size);
                                       if (bagSize) {
-                                        acc.current += bagSize.quantity.currentQuantity;
-                                        acc.initial += bagSize.quantity.initialQuantity;
+                                        acc.current += bagSize.currentQuantity;
+                                        acc.initial += bagSize.quantityTakenOut;
                                       }
                                       return acc;
                                     }, { current: 0, initial: 0 });
 
                                     // Get location and variety for this bag size
-                                    const bagSizeDetail = order.orderDetails.find(detail =>
-                                      detail.bagSizes.some(b => b.size === size)
+                                    const bagSizeDetail = order.orderDetails.find((detail: ShedOrderDetail) =>
+                                      detail.bagSizes.some((b: ShedVoucherBagSize) => b.size === size)
                                     );
-                                    const bagSizeLocation = bagSizeDetail?.bagSizes.find(b => b.size === size)?.location;
+                                        const bagSizeLocation = bagSizeDetail?.bagSizes.find((b: ShedVoucherBagSize) => b.size === size)?.location;
                                     const variety = bagSizeDetail?.variety;
 
                                     const isSelected = selectedQuantities.some(
@@ -1695,8 +1585,8 @@ const OutgoingOrderFormContent = () => {
                     ) : (
                       <p className="text-sm text-gray-500">
                         {hasActiveFilters
-                          ? "No orders match the selected filters. Try adjusting your filter criteria."
-                          : "No orders available for this farmer."}
+                          ? "No shed vouchers match the selected filters. Try adjusting your filter criteria."
+                          : "No shed vouchers available for this farmer."}
                       </p>
                     )}
 
@@ -1707,13 +1597,13 @@ const OutgoingOrderFormContent = () => {
                         <div className="space-y-2">
                           {selectedQuantities.map((sq, index) => {
                             // Find the order and get the specific location for this bag size
-                            const order = filteredOrders.find(o => o.gatePass.gatePassNumber === sq.receiptNumber);
+                            const order = filteredOrders.find((o: ShedVoucher) => o.gatePass.gatePassNumber === sq.receiptNumber);
                             let location = '';
 
                             if (order) {
                               // Find the specific bag size location within the order
                               for (const detail of order.orderDetails) {
-                                const bagSize = detail.bagSizes.find(b => b.size === sq.bagSize);
+                                const bagSize = detail.bagSizes.find((b: ShedVoucherBagSize) => b.size === sq.bagSize);
                                 if (bagSize && bagSize.location) {
                                   location = bagSize.location;
                                   break;
@@ -1761,11 +1651,11 @@ const OutgoingOrderFormContent = () => {
                         return;
                       }
                       if (filteredOrders.length === 0 && hasActiveFilters) {
-                        toast.error("No orders match the selected filters. Please adjust your filter criteria or clear filters to see all orders.");
+                        toast.error("No shed vouchers match the selected filters. Please adjust your filter criteria or clear filters to see all vouchers.");
                         return;
                       }
                       if (filteredOrders.length === 0) {
-                        toast.error("No orders available for this farmer.");
+                        toast.error("No shed vouchers available for this farmer.");
                         return;
                       }
                       setCurrentStep(2);
@@ -1792,13 +1682,13 @@ const OutgoingOrderFormContent = () => {
                     <div className="space-y-2">
                       {selectedQuantities.map((sq, index) => {
                         // Find the order and get the specific location for this bag size
-                        const order = filteredOrders.find(o => o.gatePass.gatePassNumber === sq.receiptNumber);
+                        const order = filteredOrders.find((o: ShedVoucher) => o.gatePass.gatePassNumber === sq.receiptNumber);
                         let location = '';
 
                         if (order) {
                           // Find the specific bag size location within the order
                           for (const detail of order.orderDetails) {
-                            const bagSize = detail.bagSizes.find(b => b.size === sq.bagSize);
+                                const bagSize = detail.bagSizes.find((b: ShedVoucherBagSize) => b.size === sq.bagSize);
                             if (bagSize && bagSize.location) {
                               location = bagSize.location;
                               break;
@@ -1833,7 +1723,7 @@ const OutgoingOrderFormContent = () => {
                     <textarea
                       value={formData.remarks}
                       onChange={(e) => setFormData(prev => ({ ...prev, remarks: e.target.value }))}
-                                              placeholder={t('outgoingOrder.review.remarksPlaceholder')}
+                      placeholder={t('outgoingOrder.review.remarksPlaceholder')}
                       className="w-full p-3 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary"
                       rows={3}
                     />
@@ -1853,24 +1743,24 @@ const OutgoingOrderFormContent = () => {
                       type="button"
                       onClick={() => {
                         const requestBody = generateOutgoingOrderRequestBody();
-                        console.log('Outgoing Order Request Body:', JSON.stringify(requestBody, null, 2));
-                        console.log('Orders array length:', requestBody.orders.length);
-                        console.log('First order structure:', requestBody.orders[0]);
+                        console.log('Shed Voucher Request Body:', JSON.stringify(requestBody, null, 2));
+                        console.log('Shed vouchers array length:', requestBody.shedVouchers.length);
+                        console.log('First shed voucher structure:', requestBody.shedVouchers[0]);
 
                         // Validate the request body structure
-                        if (requestBody.orders.length === 0) {
-                          toast.error('No orders selected. Please select quantities first.');
+                        if (requestBody.shedVouchers.length === 0) {
+                          toast.error('No shed vouchers selected. Please select quantities first.');
                           return;
                         }
 
-                        // Check if all orders have required fields
-                        const invalidOrders = requestBody.orders.filter(order =>
-                          !order.orderId || !order.variety || !order.bagUpdates || order.bagUpdates.length === 0
+                        // Check if all shed vouchers have required fields
+                        const invalidShedVouchers = requestBody.shedVouchers.filter((voucher: { voucherId: string; variety: string; bagUpdates: { size: string; quantityToRemove: number; }[] }) =>
+                          !voucher.voucherId || !voucher.variety || !voucher.bagUpdates || voucher.bagUpdates.length === 0
                         );
 
-                        if (invalidOrders.length > 0) {
-                          console.error('Invalid orders found:', invalidOrders);
-                          toast.error('Some selected orders are missing required information.');
+                        if (invalidShedVouchers.length > 0) {
+                          console.error('Invalid shed vouchers found:', invalidShedVouchers);
+                          toast.error('Some selected shed vouchers are missing required information.');
                           return;
                         }
 
@@ -1999,4 +1889,4 @@ const OutgoingOrderFormContent = () => {
   );
 };
 
-export default OutgoingOrderFormContent;
+export default ShedVoucherFormContent;
