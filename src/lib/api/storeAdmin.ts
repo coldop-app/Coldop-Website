@@ -506,6 +506,102 @@ interface ShedVoucherResponse {
   };
 }
 
+interface ShedVoucherListResponse {
+  status: string;
+  data: {
+    gatePass: {
+      type: "SHED";
+      gatePassNumber: number;
+    };
+    _id: string;
+    coldStorageId: string;
+    farmerId: string;
+    dateOfExtraction: string;
+    remarks: string;
+    currentStockAtThatTime: number;
+    orderDetails: ShedVoucherOrderDetail[];
+    status: string;
+    isNullVoucher: boolean;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  }[];
+}
+
+interface ShedVoucherBagUpdate {
+  size: string;
+  quantityToRemove: number;
+}
+
+interface ShedVoucherForOutgoing {
+  voucherId: string;
+  variety: string;
+  bagUpdates: ShedVoucherBagUpdate[];
+}
+
+export interface CreateOutgoingFromShedPayload {
+  shedVouchers: ShedVoucherForOutgoing[];
+  remarks: string;
+  generation: string;
+  rouging: string;
+  tuberType: string;
+  grader: string;
+  weighedStatus: boolean;
+  bagType: string;
+}
+
+interface OutgoingFromShedBagSize {
+  size: string;
+  quantityRemoved: number;
+  location: string;
+}
+
+interface OutgoingFromShedOrderDetail {
+  variety: string;
+  incomingOrder: {
+    _id: string;
+    gatePass: {
+      type: "SHED";
+      gatePassNumber: number;
+    };
+    incomingBagSizes: {
+      size: string;
+      currentQuantity: number;
+      initialQuantity: number;
+      location: string;
+      _id: string;
+    }[];
+  };
+  bagSizes: OutgoingFromShedBagSize[];
+}
+
+interface CreateOutgoingFromShedResponse {
+  status: string;
+  message: string;
+  outgoingOrder: {
+    coldStorageId: string;
+    farmerId: string;
+    gatePass: {
+      type: "DELIVERY";
+      gatePassNumber: number;
+    };
+    generation: string;
+    rouging: string;
+    tuberType: string;
+    grader: string;
+    weighedStatus: boolean;
+    bagType: string;
+    dateOfExtraction: string;
+    remarks: string;
+    currentStockAtThatTime: number;
+    orderDetails: OutgoingFromShedOrderDetail[];
+    _id: string;
+    createdAt: string;
+    updatedAt: string;
+    __v: number;
+  };
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -992,6 +1088,39 @@ export const storeAdminApi = {
   ): Promise<ShedVoucherResponse> => {
     const response = await axios.post<ShedVoucherResponse>(
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/shed-vouchers`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  getShedVouchers: async (
+    farmerId: string,
+    token: string
+  ): Promise<ShedVoucherListResponse> => {
+    const response = await axios.get<ShedVoucherListResponse>(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/shed-orders`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  createOutgoingFromShed: async (
+    farmerId: string,
+    payload: CreateOutgoingFromShedPayload,
+    token: string
+  ): Promise<CreateOutgoingFromShedResponse> => {
+    const response = await axios.post<CreateOutgoingFromShedResponse>(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}/outgoing-from-shed`,
       payload,
       {
         headers: {
