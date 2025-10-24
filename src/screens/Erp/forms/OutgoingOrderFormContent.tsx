@@ -491,8 +491,8 @@ const OutgoingOrderFormContent = () => {
   const handleQuantitySubmit = useCallback((e: React.MouseEvent) => {
     e.preventDefault(); // Prevent any form submission
     if (activeBox && inputQuantity && inputQuantity.trim() !== '') {
-      const quantity = parseInt(inputQuantity, 10); // Ensure it's an integer
-      if (!isNaN(quantity) && quantity > 0 && quantity <= activeBox.maxQuantity) {
+      const quantity = parseFloat(inputQuantity); // Allow decimal values
+      if (!isNaN(quantity) && quantity >= 0.1 && quantity <= activeBox.maxQuantity) {
         setSelectedQuantities(prev => {
           const existing = prev.find(
             item => item.receiptNumber === activeBox.receiptNumber && item.bagSize === activeBox.bagSize
@@ -760,10 +760,10 @@ const OutgoingOrderFormContent = () => {
 
           {/* Quantity in the middle */}
           <div className="text-xs font-bold text-gray-800 group-hover:text-gray-900 transition-colors duration-200">
-            {totalQuantities.current}
+            {totalQuantities.current.toFixed(1)}
           </div>
           <div className="text-[10px] text-gray-500 font-medium">
-            /{totalQuantities.initial}
+            /{totalQuantities.initial.toFixed(1)}
           </div>
         </>
       ) : null}
@@ -773,7 +773,7 @@ const OutgoingOrderFormContent = () => {
           {selectedQuantities.find(sq =>
             sq.receiptNumber === order.gatePass.gatePassNumber &&
             sq.bagSize === size
-          )?.selectedQuantity}
+          )?.selectedQuantity.toFixed(1)}
         </div>
       )}
     </button>
@@ -790,7 +790,7 @@ const OutgoingOrderFormContent = () => {
       }
       acc[sq.receiptNumber].bagUpdates.push({
         size: sq.bagSize,  // Use the size exactly as is
-        quantityToRemove: parseInt(sq.selectedQuantity.toString(), 10) // Ensure it's an integer
+        quantityToRemove: parseFloat(sq.selectedQuantity.toFixed(1)) // Ensure it's a decimal with 1 decimal place
       });
       return acc;
     }, {} as Record<number, { bagUpdates: { size: string; quantityToRemove: number }[] }>);
@@ -1693,7 +1693,7 @@ const OutgoingOrderFormContent = () => {
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center gap-2">
                                     <span className="text-xs sm:text-sm">
-                                      {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}: {sq.selectedQuantity} {t('outgoingOrder.selectedQuantities.bags')}
+                                      {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}: {sq.selectedQuantity.toFixed(1)} {t('outgoingOrder.selectedQuantities.bags')}
                                     </span>
                                     <button
                                       type="button"
@@ -1779,7 +1779,7 @@ const OutgoingOrderFormContent = () => {
                               <span>
                                 {t('outgoingOrder.selectedQuantities.receipt')} #{sq.receiptNumber} - {sq.bagSize}
                               </span>
-                              <span className="font-medium">{sq.selectedQuantity} {t('outgoingOrder.selectedQuantities.bags')}</span>
+                              <span className="font-medium">{sq.selectedQuantity.toFixed(1)} {t('outgoingOrder.selectedQuantities.bags')}</span>
                             </div>
                             {location && (
                               <div className="text-xs text-gray-500">
@@ -1886,7 +1886,7 @@ const OutgoingOrderFormContent = () => {
             <div className="space-y-4">
               <div>
                 <div className="text-sm text-gray-500 mb-2">
-                  {t('outgoingOrder.quantityModal.currentAvailable')} : {activeBox.maxQuantity}
+                  {t('outgoingOrder.quantityModal.currentAvailable')} : {activeBox.maxQuantity.toFixed(1)}
                 </div>
                 <div className="flex items-center gap-3 sm:gap-4">
                   <label className="text-sm sm:text-base text-gray-700 font-medium whitespace-nowrap">
@@ -1898,12 +1898,19 @@ const OutgoingOrderFormContent = () => {
                     value={inputQuantity}
                     onChange={(e) => {
                       const value = e.target.value;
-                      // Only allow numbers and empty string
-                      if (value === '' || /^\d+$/.test(value)) {
-                        const numValue = Number(value);
-                        // Only allow values between 1 and maxQuantity, or empty string
-                        if (value === '' || (numValue >= 1 && numValue <= activeBox.maxQuantity)) {
-                          setInputQuantity(value);
+                      // Allow numbers, decimal point, and empty string
+                      if (value === '' || /^\d*\.?\d*$/.test(value)) {
+                        // Limit to one decimal place
+                        let validValue = value;
+                        if (value.includes('.')) {
+                          const [integer, decimal] = value.split('.');
+                          validValue = integer + '.' + decimal.substring(0, 1);
+                        }
+
+                        const numValue = Number(validValue);
+                        // Only allow values between 0.1 and maxQuantity, or empty string
+                        if (validValue === '' || (numValue >= 0.1 && numValue <= activeBox.maxQuantity)) {
+                          setInputQuantity(validValue);
                         }
                       }
                     }}
@@ -1928,8 +1935,10 @@ const OutgoingOrderFormContent = () => {
                           (e.keyCode === 88 && e.ctrlKey === true)) {
                         return;
                       }
-                      // Only allow numeric keys (0-9) on both regular and numpad
-                      if ((e.keyCode < 48 || e.keyCode > 57) && (e.keyCode < 96 || e.keyCode > 105)) {
+                      // Allow numeric keys (0-9), decimal point (190 for .), and numpad decimal (110)
+                      if ((e.keyCode < 48 || e.keyCode > 57) &&
+                          (e.keyCode < 96 || e.keyCode > 105) &&
+                          e.keyCode !== 190 && e.keyCode !== 110) {
                         e.preventDefault();
                       }
                     }}
@@ -1937,11 +1946,17 @@ const OutgoingOrderFormContent = () => {
                       // Prevent pasting non-numeric content
                       e.preventDefault();
                       const paste = (e.clipboardData || (window as Window & { clipboardData?: DataTransfer }).clipboardData).getData('text');
-                      const numericPaste = paste.replace(/[^0-9]/g, '');
+                      // Allow numbers and decimal point, limit to one decimal place
+                      const numericPaste = paste.replace(/[^0-9.]/g, '');
                       if (numericPaste) {
-                        const numValue = parseInt(numericPaste, 10);
-                        if (numValue >= 1 && numValue <= activeBox.maxQuantity) {
-                          setInputQuantity(numericPaste);
+                        let validPaste = numericPaste;
+                        if (validPaste.includes('.')) {
+                          const [integer, decimal] = validPaste.split('.');
+                          validPaste = integer + '.' + decimal.substring(0, 1);
+                        }
+                        const numValue = Number(validPaste);
+                        if (numValue >= 0.1 && numValue <= activeBox.maxQuantity) {
+                          setInputQuantity(validPaste);
                         }
                       }
                     }}

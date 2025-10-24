@@ -267,7 +267,13 @@ const IncomingOrderFormContent = () => {
     const numericValue = value.replace(/[^\d.]/g, "");
     // Ensure only one decimal point
     const parts = numericValue.split('.');
-    const validValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+    let validValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+
+    // Limit to one decimal place
+    if (validValue.includes('.')) {
+      const [integer, decimal] = validValue.split('.');
+      validValue = integer + '.' + decimal.substring(0, 1);
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -283,7 +289,13 @@ const IncomingOrderFormContent = () => {
     const numericValue = value.replace(/[^\d.]/g, "");
     // Ensure only one decimal point
     const parts = numericValue.split('.');
-    const validValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+    let validValue = parts.length > 2 ? parts[0] + '.' + parts.slice(1).join('') : numericValue;
+
+    // Limit to one decimal place
+    if (validValue.includes('.')) {
+      const [integer, decimal] = validValue.split('.');
+      validValue = integer + '.' + decimal.substring(0, 1);
+    }
 
     setFormData((prev) => ({
       ...prev,
@@ -341,20 +353,26 @@ const IncomingOrderFormContent = () => {
     return "";
   };
 
-  const calculateTotal = () => {
-    return Object.values(formData.quantities).reduce(
-      (sum, quantity) => sum + (parseFloat(quantity) || 0),
-      0
-    );
-  };
+const calculateTotal = () => {
+  const total = Object.values(formData.quantities).reduce(
+    (sum, quantity) => sum + (parseFloat(quantity) || 0),
+    0
+  );
+  return parseFloat(total.toFixed(1)); // round to 1 decimal
+};
 
-  const calculateTotalWeight = () => {
-    return Object.keys(formData.quantities).reduce((sum, fieldName) => {
+const calculateTotalWeight = () => {
+  const totalWeight = Object.keys(formData.quantities).reduce(
+    (sum, fieldName) => {
       const quantity = parseFloat(formData.quantities[fieldName] || "0");
       const weight = parseFloat(formData.bagApproxWeights[fieldName] || "0");
-      return sum + (quantity * weight);
-    }, 0);
-  };
+      return sum + quantity * weight;
+    },
+    0
+  );
+  return parseFloat(totalWeight.toFixed(1)); // round to 1 decimal
+};
+
 
   const nextStep = () => {
     // Skip validation for null vouchers

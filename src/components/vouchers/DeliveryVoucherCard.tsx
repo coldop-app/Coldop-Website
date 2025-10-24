@@ -102,7 +102,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
   // Calculate lot number (total quantity removed)
   const calculateLotNo = () => {
     if (!order.orderDetails) return 0;
-    return order.orderDetails.reduce(
+    const total = order.orderDetails.reduce(
       (total, detail) =>
         total +
         detail.bagSizes.reduce(
@@ -111,6 +111,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
         ),
       0
     );
+    return parseFloat(total.toFixed(1));
   };
 
   // Get all unique varieties
@@ -128,7 +129,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
   // Calculate total quantity removed for a specific variety
   const calculateVarietyTotal = (variety: string) => {
     if (!order.orderDetails) return 0;
-    return order.orderDetails
+    const total = order.orderDetails
       .filter((detail) => detail.variety === variety)
       .reduce(
         (total, detail) =>
@@ -139,6 +140,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
           ),
         0
       );
+    return parseFloat(total.toFixed(1));
   };
 
 
@@ -488,7 +490,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                                   </td>
                                   <td className="py-2 px-3 text-center">
                                     <span className="font-medium text-red-600">
-                                      {totalRemoved}
+                                      {totalRemoved.toFixed(1)}
                                     </span>
                                   </td>
                                 </tr>
@@ -621,13 +623,13 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
                                       )}
                                     </td>
                                     <td className="py-3 px-4 text-right text-gray-700">
-                                      {currentQuantity}
+                                      {currentQuantity.toFixed(1)}
                                     </td>
                                     <td className="py-3 px-4 text-right text-red-600 font-medium">
-                                      {removedQuantity}
+                                      {removedQuantity.toFixed(1)}
                                     </td>
                                     <td className="py-3 px-4 text-right text-green-600 font-medium">
-                                      {availableQuantity}
+                                      {availableQuantity.toFixed(1)}
                                     </td>
                                   </tr>
                                 );

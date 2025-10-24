@@ -102,11 +102,12 @@ const ReceiptVoucherCard = ({ order }: ReceiptVoucherCardProps) => {
     if (!orderDetails || orderDetails.length === 0) {
       return 0;
     }
-    return orderDetails[0]?.bagSizes?.reduce(
+    const total = orderDetails[0]?.bagSizes?.reduce(
       (sum: number, bagSize: BagSize) =>
         sum + (bagSize.quantity?.initialQuantity || 0),
       0
     ) || 0;
+    return parseFloat(total.toFixed(1));
   };
 
   const formatBagSizeName = (size: string): string => {
@@ -138,8 +139,8 @@ ${order.orderDetails
     detail.bagSizes
       .map(
         (bag) =>
-          `${bag.size}: ${bag.quantity?.currentQuantity || 0}/${
-            bag.quantity?.initialQuantity || 0
+          `${bag.size}: ${(bag.quantity?.currentQuantity || 0).toFixed(1)}/${
+            (bag.quantity?.initialQuantity || 0).toFixed(1)
           }`
       )
       .join("\\n")
@@ -570,8 +571,8 @@ ${order.orderDetails
                                     const qty = bagSize.quantity;
                                     return qty && qty.initialQuantity ? (
                                       <span className="font-medium text-gray-900">
-                                        {qty.currentQuantity || 0}/
-                                        {qty.initialQuantity}
+                                        {(qty.currentQuantity || 0).toFixed(1)}/
+                                        {qty.initialQuantity.toFixed(1)}
                                       </span>
                                     ) : (
                                       "-"
@@ -616,13 +617,13 @@ ${order.orderDetails
                                     (sum: number, bag) =>
                                       sum + (bag.quantity?.currentQuantity || 0),
                                     0
-                                  )}
+                                  ).toFixed(1)}
                                   /
                                   {detail.sortedBagSizes.reduce(
                                     (sum: number, bag) =>
                                       sum + (bag.quantity?.initialQuantity || 0),
                                     0
-                                  )}
+                                  ).toFixed(1)}
                                 </span>
                               </td>
                               <td className="py-2 px-2 text-center text-xs">
@@ -686,8 +687,8 @@ ${order.orderDetails
                                     const qty = bagSize.quantity;
                                     return qty && qty.initialQuantity ? (
                                       <span className="font-medium text-gray-900">
-                                        {qty.currentQuantity || 0}/
-                                        {qty.initialQuantity}
+                                        {(qty.currentQuantity || 0).toFixed(1)}/
+                                        {qty.initialQuantity.toFixed(1)}
                                       </span>
                                     ) : (
                                       "-"
@@ -733,14 +734,14 @@ ${order.orderDetails
                                       sum +
                                       (bag.quantity?.currentQuantity || 0),
                                     0
-                                  )}
+                                  ).toFixed(1)}
                                   /
                                   {detail.sortedBagSizes.reduce(
                                     (sum: number, bag) =>
                                       sum +
                                       (bag.quantity?.initialQuantity || 0),
                                     0
-                                  )}
+                                  ).toFixed(1)}
                                 </span>
                               </td>
                               <td className="py-3 px-3 text-center">
