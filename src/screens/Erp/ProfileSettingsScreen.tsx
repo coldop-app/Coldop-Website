@@ -386,9 +386,7 @@ const ProfileSettingsScreen = () => {
           adminInfo.coldStorageDetails.coldStorageContactNumber || "",
         capacity: adminInfo.coldStorageDetails.capacity?.toString() || "",
         imageUrl: adminInfo.imageUrl || "",
-        bagSizes:
-          adminInfo.preferences?.bagSizes?.map((size) => size.toLowerCase()) ||
-          [],
+        bagSizes: adminInfo.preferences?.bagSizes || [],
         defaults: {
           generation: adminInfo.preferences?.defaults?.generation || "",
           rouging: adminInfo.preferences?.defaults?.rouging || "",
@@ -716,11 +714,7 @@ const ProfileSettingsScreen = () => {
           (adminInfo.coldStorageDetails.capacity?.toString() || "") ||
         formData.imageUrl !== (adminInfo.imageUrl || "") ||
         JSON.stringify(formData.bagSizes) !==
-          JSON.stringify(
-            adminInfo.preferences?.bagSizes?.map((size) =>
-              size.toLowerCase()
-            ) || []
-          ) ||
+          JSON.stringify(adminInfo.preferences?.bagSizes || []) ||
         JSON.stringify(formData.defaults) !==
           JSON.stringify(adminInfo.preferences?.defaults || {}) ||
         password !== "" ||

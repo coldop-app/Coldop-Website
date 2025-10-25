@@ -327,6 +327,11 @@ const OutgoingOrderFormContent = () => {
   }, [farmerIncomingOrders?.data, formData.variety, formData.generation, formData.rouging, formData.tuberType, formData.grader, formData.weighedStatus, formData.approxWeight]);
 
 
+  // Add a new useMemo for sorted bag sizes
+  const sortedBagSizes = useMemo(() => {
+    return sortBagSizes(adminInfo?.preferences?.bagSizes);
+  }, [adminInfo?.preferences?.bagSizes]);
+
   // Get active bag sizes (columns with at least one cell that has quantities)
   const activeBagSizes = React.useMemo(() => {
     if (!filteredOrders?.length) return [];
@@ -348,17 +353,12 @@ const OutgoingOrderFormContent = () => {
 
     // If no bag sizes are selected, show all active sizes
     if (selectedBagSizes.length === 0) {
-      return allActiveSizes;
+      return sortedBagSizes(allActiveSizes);
     }
 
     // Filter to only show selected bag sizes
-    return allActiveSizes.filter(size => selectedBagSizes.includes(size));
-  }, [filteredOrders, selectedBagSizes]);
-
-  // Add a new useMemo for sorted bag sizes
-  const sortedBagSizes = useMemo(() => {
-    return sortBagSizes(adminInfo?.preferences?.bagSizes);
-  }, [adminInfo?.preferences?.bagSizes]);
+    return sortedBagSizes(allActiveSizes.filter(size => selectedBagSizes.includes(size)));
+  }, [filteredOrders, selectedBagSizes, sortedBagSizes]);
 
   // Get all available bag sizes for the multi-select
   const allAvailableBagSizes = React.useMemo(() => {
@@ -377,8 +377,8 @@ const OutgoingOrderFormContent = () => {
       });
     });
 
-    return Array.from(allSizes);
-  }, [filteredOrders]);
+    return sortedBagSizes(Array.from(allSizes));
+  }, [filteredOrders, sortedBagSizes]);
 
   // Farmer search query
   const { data: searchResults, isLoading: isSearching, refetch } = useQuery({
@@ -1502,7 +1502,7 @@ const OutgoingOrderFormContent = () => {
                                       />
                                     </th>
                                     <th className="p-2.5 text-left border-b font-medium text-sm text-gray-600 w-28">{t('outgoingOrder.orders.receiptVoucher')}</th>
-                                    {sortedBagSizes(activeBagSizes).map(size => (
+                                    {activeBagSizes.map(size => (
                                       <th key={size} className="p-2.5 text-center border-b font-medium text-sm text-gray-600 w-[calc((100%-160px)/5)]">
                                         {size}
                                       </th>
