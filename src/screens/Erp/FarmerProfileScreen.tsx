@@ -229,6 +229,17 @@ const FarmerProfileScreen = () => {
     return adminInfo.preferences.bagSizes;
   }, [adminInfo?.preferences?.bagSizes, stockSummary]);
 
+  // Filter out bag sizes with no values
+  const allBagSizesWithValues = useMemo(() => {
+    return allBagSizes.filter(size => {
+      // Check if any variety has a non-zero value for this size
+      return sortedStockSummary.some(variety => {
+        const sizeData = variety.sizes.find(s => s.size === size);
+        return sizeData ? sizeData.currentQuantity > 0 : false;
+      });
+    });
+  }, [allBagSizes, sortedStockSummary]);
+
   // Helper function to get quantity for a specific bag size and variety
   const getQuantityForSize = (variety: StockSummary, sizeName: string) => {
     const sizeData = variety.sizes.find((s) => s.size === sizeName);
@@ -242,7 +253,7 @@ const FarmerProfileScreen = () => {
     }, 0);
   };
 
-  const totalBags = calculateFarmerTotalBags(sortedStockSummary, allBagSizes);
+  const totalBags = calculateFarmerTotalBags(sortedStockSummary, allBagSizesWithValues);
 
   // Memoize the PDF component to avoid recreating it unnecessarily
   const pdfComponent = useMemo(() => {
@@ -701,7 +712,7 @@ const FarmerProfileScreen = () => {
                         <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
                           Varieties
                         </th>
-                        {allBagSizes.map((size) => (
+                        {allBagSizesWithValues.map((size) => (
                           <th
                             key={size}
                             className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap"
@@ -730,7 +741,7 @@ const FarmerProfileScreen = () => {
                               {variety.variety}
                             </div>
                           </td>
-                          {allBagSizes.map((size) => (
+                          {allBagSizesWithValues.map((size) => (
                             <td
                               key={size}
                               className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm"
@@ -739,7 +750,7 @@ const FarmerProfileScreen = () => {
                             </td>
                           ))}
                           <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm">
-                            {calculateVarietyTotal(variety, allBagSizes)}
+                            {calculateVarietyTotal(variety, allBagSizesWithValues)}
                           </td>
                         </tr>
                       ))}
@@ -748,7 +759,7 @@ const FarmerProfileScreen = () => {
                         <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-gray-900 border-r text-xs sm:text-sm">
                           Bag Total
                         </td>
-                        {allBagSizes.map((size) => (
+                        {allBagSizesWithValues.map((size) => (
                           <td
                             key={size}
                             className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-900 border-r text-xs sm:text-sm"
