@@ -784,43 +784,6 @@ const DailySummaryPDF: React.FC<DailySummaryPDFProps> = ({
             )}
           </View>
 
-          {/* For delivery table, show receipt totals as opening balance */}
-          {isDeliveryTable && receiptTotalsForDelivery && (
-            <View style={[styles.tableRow, { backgroundColor: "#F5F5F5" }]}>
-              <View style={styles.colDate}>
-                <Text style={styles.balanceText}>OPENING</Text>
-              </View>
-              <View style={styles.colVoucher}>
-                <Text style={styles.balanceText}>BALANCE</Text>
-              </View>
-              <View style={styles.colVariety}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colChamber}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colFloor}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              <View style={styles.colRow}>
-                <Text style={styles.balanceText}>-</Text>
-              </View>
-              {bagSizes.map((size) => (
-                <View key={size} style={styles.colBagSize}>
-                  <Text style={styles.balanceText}>
-                    {receiptTotalsForDelivery[size] || 0}
-                  </Text>
-                </View>
-              ))}
-              <View style={styles.colTotal}>
-                <Text style={styles.balanceText}>{initialGrandTotal}</Text>
-              </View>
-              <View style={styles.colGrandTotal}>
-                <Text style={styles.balanceText}>{initialGrandTotal}</Text>
-              </View>
-            </View>
-          )}
-
           {entries.map((entry, index) => (
             <View key={index} style={styles.tableRow}>
               <View style={styles.colDate}>
