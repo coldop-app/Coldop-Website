@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import TopBar from "@/components/common/Topbar/Topbar";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
 import {
@@ -10,13 +10,25 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Search,
+  FileText,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import DeliveryVoucherCard from "@/components/vouchers/DeliveryVoucherCard";
 import ReceiptVoucherCard from "@/components/vouchers/ReceiptVoucherCard";
-import { Order } from "@/utils/types";
+import { Order, StoreAdmin } from "@/utils/types";
 import { useTranslation } from "react-i18next";
 import ScrollToTop from "@/components/common/ScrollToTop/ScrollToTop";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { SimpleDatePicker } from "@/components/ui/simple-date-picker";
+import { Button } from "@/components/ui/button";
+import { pdf } from "@react-pdf/renderer";
+import DailySummaryPDF from "@/components/pdf/DailySummaryPDF";
 
 interface PaginationMeta {
   currentPage: number;
@@ -53,6 +65,12 @@ const DaybookScreen = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchReceiptNumber, setSearchReceiptNumber] = useState<string>("");
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
+  const today = new Date();
+  const [startDate, setStartDate] = useState<Date | undefined>(today);
+  const [endDate, setEndDate] = useState<Date | undefined>(today);
+  const [reportData, setReportData] = useState<unknown | null>(null);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const navigate = useNavigate();
 
@@ -83,6 +101,128 @@ const DaybookScreen = () => {
       ),
     enabled: searchReceiptNumber === "",
   });
+
+  // Format date to DD.MM.YY format (2 digit year)
+  const formatDateForAPI = (date: Date): string => {
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const year = date.getFullYear().toString().slice(-2); // Last 2 digits of year
+    return `${day}.${month}.${year}`;
+  };
+
+  // Query for daily summary
+  const [dailySummaryParams, setDailySummaryParams] = useState<{
+    startDate: string;
+    endDate: string;
+  } | null>(null);
+
+  const {
+    data: dailySummaryData,
+    isLoading: isDailySummaryLoading,
+    error: dailySummaryError,
+  } = useQuery({
+    queryKey: ["dailySummary", dailySummaryParams],
+    queryFn: () =>
+      storeAdminApi.getOrdersDailySummary(
+        dailySummaryParams!,
+        adminInfo?.token || ""
+      ),
+    enabled:
+      !!dailySummaryParams &&
+      !!adminInfo?.token &&
+      !!dailySummaryParams.startDate &&
+      !!dailySummaryParams.endDate,
+  });
+
+  // Update report data when query succeeds
+  useEffect(() => {
+    if (dailySummaryData) {
+      setReportData(dailySummaryData);
+    }
+  }, [dailySummaryData]);
+
+  const handleGetReports = () => {
+    if (!startDate || !endDate) {
+      return;
+    }
+    const formattedStartDate = formatDateForAPI(startDate);
+    const formattedEndDate = formatDateForAPI(endDate);
+    setDailySummaryParams({
+      startDate: formattedStartDate,
+      endDate: formattedEndDate,
+    });
+  };
+
+  const handleCloseModal = () => {
+    setIsReportsModalOpen(false);
+    setReportData(null);
+    // Reset to today's date instead of undefined
+    const today = new Date();
+    setStartDate(today);
+    setEndDate(today);
+    setDailySummaryParams(null);
+  };
+
+  const handleGeneratePDF = async () => {
+    if (!adminInfo || !reportData || !startDate || !endDate) {
+      return;
+    }
+
+    setIsGeneratingPDF(true);
+
+    try {
+      const formattedStartDate = formatDateForAPI(startDate);
+      const formattedEndDate = formatDateForAPI(endDate);
+
+      const pdfComponent = (
+        <DailySummaryPDF
+          adminInfo={adminInfo as unknown as StoreAdmin}
+          summaryData={reportData}
+          startDate={formattedStartDate}
+          endDate={formattedEndDate}
+        />
+      );
+
+      const pdfBlob = await pdf(pdfComponent).toBlob();
+
+      // Create blob URL
+      const enhancedBlob = new Blob([pdfBlob], {
+        type: "application/pdf",
+      });
+
+      const pdfUrl = URL.createObjectURL(enhancedBlob);
+      const fileName = `Daily_Summary_${formattedStartDate}_${formattedEndDate}.pdf`;
+
+      // Open PDF in new tab
+      const newWindow = window.open(pdfUrl, "_blank");
+
+      if (newWindow) {
+        // Clean up the URL object after a delay
+        setTimeout(() => {
+          URL.revokeObjectURL(pdfUrl);
+        }, 5000);
+      } else {
+        // Popup blocked - fallback to download
+        const downloadLink = document.createElement("a");
+        downloadLink.href = pdfUrl;
+        downloadLink.download = fileName;
+        downloadLink.style.display = "none";
+
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+
+        alert("Popup was blocked. PDF has been downloaded instead.");
+
+        setTimeout(() => URL.revokeObjectURL(pdfUrl), 1000);
+      }
+    } catch (error) {
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
 
   // Handle search response data
   const searchResponse = searchData as SearchResponse;
@@ -446,6 +586,13 @@ const DaybookScreen = () => {
                   </svg>
                   <span className="truncate">{t("daybook.addOutgoing")}</span>
                 </button>
+                <button
+                  onClick={() => setIsReportsModalOpen(true)}
+                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-gray-50/80 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow"
+                >
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                  <span className="truncate">Get Reports</span>
+                </button>
               </div>
             </div>
           </div>
@@ -543,6 +690,119 @@ const DaybookScreen = () => {
           <PaginationControls />
         )}
       </div>
+
+      {/* Reports Modal */}
+      <Dialog
+        open={isReportsModalOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            handleCloseModal();
+          } else {
+            setIsReportsModalOpen(true);
+          }
+        }}
+      >
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Daily Summary Report</DialogTitle>
+            <DialogDescription>
+              Select a date range to get the daily summary report
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {/* Date Selection */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">
+                  Start Date
+                </label>
+                <SimpleDatePicker
+                  value={startDate}
+                  onChange={setStartDate}
+                  placeholder="DD.MM.YYYY or click calendar"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="block text-sm font-medium">End Date</label>
+                <SimpleDatePicker
+                  value={endDate}
+                  onChange={setEndDate}
+                  placeholder="DD.MM.YYYY or click calendar"
+                />
+              </div>
+            </div>
+
+            {/* Submit Button */}
+            <div className="flex justify-end">
+              <Button
+                onClick={handleGetReports}
+                disabled={!startDate || !endDate || isDailySummaryLoading}
+                className="px-6"
+              >
+                {isDailySummaryLoading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                    <span>Loading...</span>
+                  </div>
+                ) : (
+                  <span>Get Report</span>
+                )}
+              </Button>
+            </div>
+
+            {/* Error Message */}
+            {dailySummaryError && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-700">
+                  {dailySummaryError instanceof Error
+                    ? dailySummaryError.message
+                    : "Failed to fetch report. Please try again."}
+                </p>
+              </div>
+            )}
+
+            {/* Report Data Display */}
+            {reportData !== null && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold">Report Generated</h3>
+                  <Button
+                    onClick={handleGeneratePDF}
+                    disabled={isGeneratingPDF || !adminInfo}
+                    className="px-6"
+                  >
+                    {isGeneratingPDF ? (
+                      <div className="flex items-center gap-2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Generating PDF...</span>
+                      </div>
+                    ) : (
+                      "View PDF"
+                    )}
+                  </Button>
+                </div>
+                <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                  <p className="text-sm text-gray-600">
+                    Click "View PDF" to generate and view the daily summary report in PDF format.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Close button handler */}
+          <div className="flex justify-end mt-4">
+            <Button
+              variant="outline"
+              onClick={handleCloseModal}
+              className="px-6"
+            >
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 };

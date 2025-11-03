@@ -314,6 +314,11 @@ interface CustomAnalyticsParams {
   bagType?: string;
 }
 
+interface DailySummaryParams {
+  startDate: string;
+  endDate: string;
+}
+
 interface SizeData {
   size: string;
   initialQuantity: number;
@@ -900,6 +905,23 @@ export const storeAdminApi = {
   ): Promise<CustomAnalyticsResponse> => {
     const response = await axios.get<CustomAnalyticsResponse>(
       `${BASE_URL}/api/store-admin/orders/custom-analytics`,
+      {
+        params,
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    return response.data;
+  },
+
+  getOrdersDailySummary: async (
+    params: DailySummaryParams,
+    token: string
+  ) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/orders/daily-summary`,
       {
         params,
         headers: {
