@@ -726,6 +726,55 @@ const DailySummaryPDF: React.FC<DailySummaryPDFProps> = ({
   const receiptTotals = calculateBagSizeTotals(receiptEntries);
   const deliveryTotals = calculateBagSizeTotals(deliveryEntries);
 
+  // Calculate totals by variety
+  const calculateVarietyTotals = (entries: LedgerEntry[]) => {
+    const varietyTotals: { [variety: string]: { [bagSize: string]: number } } = {};
+
+    entries.forEach((entry) => {
+      // Handle multiple varieties separated by comma
+      const varieties = entry.variety.split(',').map(v => v.trim()).filter(v => v && v !== '-');
+
+      if (varieties.length === 0) {
+        varieties.push('-');
+      }
+
+      // If single variety, add full quantities
+      // If multiple varieties, split evenly (rounding to preserve totals)
+      const isMultiple = varieties.length > 1;
+
+      bagSizes.forEach((size) => {
+        const quantity = entry.quantities[size] || 0;
+        let remaining = quantity;
+
+        varieties.forEach((variety, index) => {
+          if (!varietyTotals[variety]) {
+            varietyTotals[variety] = {};
+            bagSizes.forEach((s) => {
+              varietyTotals[variety][s] = 0;
+            });
+          }
+
+          if (isMultiple) {
+            // For last variety, use remaining to avoid rounding errors
+            const splitQty = index === varieties.length - 1
+              ? remaining
+              : Math.floor(quantity / varieties.length);
+            varietyTotals[variety][size] += splitQty;
+            remaining -= splitQty;
+          } else {
+            // Single variety, add full quantity
+            varietyTotals[variety][size] += quantity;
+          }
+        });
+      });
+    });
+
+    return varietyTotals;
+  };
+
+  const deliveryVarietyTotals = calculateVarietyTotals(deliveryEntries);
+  const receiptVarietyTotals = calculateVarietyTotals(receiptEntries);
+
   const renderTable = (
     entries: LedgerEntry[],
     title: string,
@@ -934,6 +983,102 @@ const DailySummaryPDF: React.FC<DailySummaryPDFProps> = ({
     );
   };
 
+  // Render variety-wise totals table
+  const renderVarietyTotalsTable = (
+    varietyTotals: { [variety: string]: { [bagSize: string]: number } },
+    title: string
+  ) => {
+    const varieties = Object.keys(varietyTotals).sort();
+
+    if (varieties.length === 0) return null;
+
+    // Calculate grand totals for each bag size and filter out zero columns
+    const grandTotalsByBagSize: { [bagSize: string]: number } = {};
+    bagSizes.forEach((size) => {
+      grandTotalsByBagSize[size] = varieties.reduce(
+        (sum, variety) => sum + (varietyTotals[variety][size] || 0),
+        0
+      );
+    });
+
+    // Filter bag sizes to only show columns with non-zero grand totals
+    const filteredBagSizes = bagSizes.filter(
+      (size) => (grandTotalsByBagSize[size] || 0) > 0
+    );
+
+    return (
+      <View style={styles.ledgerContainer}>
+        <Text style={styles.ledgerTitle}>{title}</Text>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <View style={styles.colVariety}>
+              <Text style={styles.cellHeaderText}>VARIETY</Text>
+            </View>
+            {filteredBagSizes.map((size) => (
+              <View key={size} style={styles.colBagSize}>
+                <Text style={styles.cellHeaderText}>
+                  {cleanBagSizeHeading(size)}
+                </Text>
+              </View>
+            ))}
+            <View style={styles.colTotal}>
+              <Text style={styles.cellHeaderText}>TOTAL</Text>
+            </View>
+          </View>
+
+          {varieties.map((variety) => {
+            const totals = varietyTotals[variety];
+            const varietyTotal = filteredBagSizes.reduce(
+              (sum, size) => sum + (totals[size] || 0),
+              0
+            );
+
+            return (
+              <View key={variety} style={styles.tableRow}>
+                <View style={styles.colVariety}>
+                  <Text style={styles.cellTextLeft}>{variety}</Text>
+                </View>
+                {filteredBagSizes.map((size) => (
+                  <View key={size} style={styles.colBagSize}>
+                    <Text style={styles.cellText}>
+                      {totals[size] || 0}
+                    </Text>
+                  </View>
+                ))}
+                <View style={styles.colTotal}>
+                  <Text style={styles.balanceText}>{varietyTotal}</Text>
+                </View>
+              </View>
+            );
+          })}
+
+          {/* Grand Total Row */}
+          <View style={[styles.tableRow, styles.totalRow]}>
+            <View style={styles.colVariety}>
+              <Text style={styles.balanceText}>TOTAL</Text>
+            </View>
+            {filteredBagSizes.map((size) => {
+              const grandTotal = grandTotalsByBagSize[size] || 0;
+              return (
+                <View key={size} style={styles.colBagSize}>
+                  <Text style={styles.balanceText}>{grandTotal}</Text>
+                </View>
+              );
+            })}
+            <View style={styles.colTotal}>
+              <Text style={styles.balanceText}>
+                {filteredBagSizes.reduce(
+                  (sum, size) => sum + (grandTotalsByBagSize[size] || 0),
+                  0
+                )}
+              </Text>
+            </View>
+          </View>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <Document>
       <Page size="A4" style={styles.page}>
@@ -960,6 +1105,20 @@ const DailySummaryPDF: React.FC<DailySummaryPDFProps> = ({
             deliveryTotals,
             true,
             receiptTotals
+          )}
+
+        {/* Receipt Variety-wise Totals Table */}
+        {Object.keys(receiptVarietyTotals).length > 0 &&
+          renderVarietyTotalsTable(
+            receiptVarietyTotals,
+            "Receipt Summary by Variety"
+          )}
+
+        {/* Delivery Variety-wise Totals Table */}
+        {Object.keys(deliveryVarietyTotals).length > 0 &&
+          renderVarietyTotalsTable(
+            deliveryVarietyTotals,
+            "Delivery Summary by Variety"
           )}
 
         {/* Summary Box */}
