@@ -241,6 +241,7 @@ const OutgoingOrderFormContent = () => {
   const [selectedQuantities, setSelectedQuantities] = useState<BagSizeSelection[]>([]);
   const [inputQuantity, setInputQuantity] = useState<string>('');
   const [selectedBagSizes, setSelectedBagSizes] = useState<string[]>([]);
+  const [showEmptyVouchers, setShowEmptyVouchers] = useState<boolean>(false);
   const [activeBox, setActiveBox] = useState<{
     receiptNumber: number;
     bagSize: string;
@@ -306,6 +307,21 @@ const OutgoingOrderFormContent = () => {
     }
   }, [farmerIncomingOrders?.data]);
 
+  // Helper function to check if a voucher is empty (all bag sizes have currentQuantity === 0)
+  const isVoucherEmpty = useCallback((order: IncomingOrder): boolean => {
+    // Check all order details and their bag sizes
+    for (const detail of order.orderDetails) {
+      for (const bagSize of detail.bagSizes) {
+        // If any bag size has currentQuantity > 0, the voucher is not empty
+        if (bagSize.quantity.currentQuantity > 0) {
+          return false;
+        }
+      }
+    }
+    // All bag sizes have currentQuantity === 0, so the voucher is empty
+    return true;
+  }, []);
+
   // Update the filteredOrders useMemo - now shows all orders initially
   const filteredOrders = React.useMemo(() => {
     if (!farmerIncomingOrders?.data) return [];
@@ -326,6 +342,15 @@ const OutgoingOrderFormContent = () => {
     });
   }, [farmerIncomingOrders?.data, formData.variety, formData.generation, formData.rouging, formData.tuberType, formData.grader, formData.weighedStatus, formData.approxWeight]);
 
+  // Final filtered orders that exclude empty vouchers when showEmptyVouchers is false
+  const finalFilteredOrders = React.useMemo(() => {
+    if (showEmptyVouchers) {
+      return filteredOrders;
+    }
+    // Filter out empty vouchers
+    return filteredOrders.filter(order => !isVoucherEmpty(order));
+  }, [filteredOrders, showEmptyVouchers, isVoucherEmpty]);
+
 
   // Add a new useMemo for sorted bag sizes
   const sortedBagSizes = useMemo(() => {
@@ -334,11 +359,11 @@ const OutgoingOrderFormContent = () => {
 
   // Get active bag sizes (columns with at least one cell that has quantities)
   const activeBagSizes = React.useMemo(() => {
-    if (!filteredOrders?.length) return [];
+    if (!finalFilteredOrders?.length) return [];
 
     const activeSizes = new Set<string>();
 
-    filteredOrders.forEach(order => {
+    finalFilteredOrders.forEach(order => {
       order.orderDetails.forEach(detail => {
         detail.bagSizes.forEach(bagSize => {
           // Only include bag sizes that have current quantity > 0
@@ -358,15 +383,15 @@ const OutgoingOrderFormContent = () => {
 
     // Filter to only show selected bag sizes
     return sortedBagSizes(allActiveSizes.filter(size => selectedBagSizes.includes(size)));
-  }, [filteredOrders, selectedBagSizes, sortedBagSizes]);
+  }, [finalFilteredOrders, selectedBagSizes, sortedBagSizes]);
 
   // Get all available bag sizes for the multi-select
   const allAvailableBagSizes = React.useMemo(() => {
-    if (!filteredOrders?.length) return [];
+    if (!finalFilteredOrders?.length) return [];
 
     const allSizes = new Set<string>();
 
-    filteredOrders.forEach(order => {
+    finalFilteredOrders.forEach(order => {
       order.orderDetails.forEach(detail => {
         detail.bagSizes.forEach(bagSize => {
           // Only include bag sizes that have current quantity > 0
@@ -378,7 +403,7 @@ const OutgoingOrderFormContent = () => {
     });
 
     return sortedBagSizes(Array.from(allSizes));
-  }, [filteredOrders, sortedBagSizes]);
+  }, [finalFilteredOrders, sortedBagSizes]);
 
   // Farmer search query
   const { data: searchResults, isLoading: isSearching, refetch } = useQuery({
@@ -575,7 +600,7 @@ const OutgoingOrderFormContent = () => {
   // Add handleSelectAll function after handleQuantityRemove - memoized for performance
   const handleSelectAll = useCallback(() => {
     // If we have selections matching all available quantities, deselect all
-    const totalAvailableQuantities = filteredOrders.reduce((total, order) => {
+    const totalAvailableQuantities = finalFilteredOrders.reduce((total, order) => {
       order.orderDetails.forEach(detail => {
         detail.bagSizes.forEach(bagSize => {
           if (bagSize.quantity.currentQuantity > 0) {
@@ -594,7 +619,7 @@ const OutgoingOrderFormContent = () => {
 
     // Select all
     const newSelectedQuantities: BagSizeSelection[] = [];
-    filteredOrders.forEach(order => {
+    finalFilteredOrders.forEach(order => {
       order.orderDetails.forEach(detail => {
         detail.bagSizes.forEach(bagSize => {
           if (bagSize.quantity.currentQuantity > 0) {
@@ -610,11 +635,11 @@ const OutgoingOrderFormContent = () => {
     });
 
     setSelectedQuantities(newSelectedQuantities);
-  }, [filteredOrders, selectedQuantities.length]);
+  }, [finalFilteredOrders, selectedQuantities.length]);
 
   // Add isAllSelected computation
   const isAllSelected = useMemo(() => {
-    const totalAvailableQuantities = filteredOrders.reduce((total, order) => {
+    const totalAvailableQuantities = finalFilteredOrders.reduce((total, order) => {
       order.orderDetails.forEach(detail => {
         detail.bagSizes.forEach(bagSize => {
           if (bagSize.quantity.currentQuantity > 0) {
@@ -626,13 +651,13 @@ const OutgoingOrderFormContent = () => {
     }, 0);
 
     return selectedQuantities.length === totalAvailableQuantities && totalAvailableQuantities > 0;
-  }, [selectedQuantities, filteredOrders]);
+  }, [selectedQuantities, finalFilteredOrders]);
 
   // Add handleSelectVoucher function after handleSelectAll - memoized for performance
   const handleSelectVoucher = useCallback((voucherNumber: number) => {
     // Check if all quantities for this voucher are already selected
     const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
-    const totalAvailableQuantitiesForVoucher = filteredOrders
+    const totalAvailableQuantitiesForVoucher = finalFilteredOrders
       .filter(order => order.gatePass.gatePassNumber === voucherNumber)
       .reduce((total, order) => {
         order.orderDetails.forEach(detail => {
@@ -652,7 +677,7 @@ const OutgoingOrderFormContent = () => {
     }
 
     // Select all available quantities for this voucher
-    const order = filteredOrders.find(o => o.gatePass.gatePassNumber === voucherNumber);
+    const order = finalFilteredOrders.find(o => o.gatePass.gatePassNumber === voucherNumber);
     if (!order) return;
 
     const newSelections: BagSizeSelection[] = [];
@@ -674,12 +699,12 @@ const OutgoingOrderFormContent = () => {
       ...prev.filter(sq => sq.receiptNumber !== voucherNumber),
       ...newSelections
     ]);
-  }, [filteredOrders, selectedQuantities]);
+  }, [finalFilteredOrders, selectedQuantities]);
 
   // Add isVoucherSelected function after handleSelectVoucher - memoized for performance
   const isVoucherSelected = useCallback((voucherNumber: number) => {
     const voucherSelections = selectedQuantities.filter(sq => sq.receiptNumber === voucherNumber);
-    const totalAvailableQuantitiesForVoucher = filteredOrders
+    const totalAvailableQuantitiesForVoucher = finalFilteredOrders
       .filter(order => order.gatePass.gatePassNumber === voucherNumber)
       .reduce((total, order) => {
         order.orderDetails.forEach(detail => {
@@ -693,7 +718,7 @@ const OutgoingOrderFormContent = () => {
       }, 0);
 
     return voucherSelections.length === totalAvailableQuantitiesForVoucher && totalAvailableQuantitiesForVoucher > 0;
-  }, [filteredOrders, selectedQuantities]);
+  }, [finalFilteredOrders, selectedQuantities]);
 
   // Get box color based on quantities - memoized for performance
   const getBoxColor = useCallback((currentQuantity: number, initialQuantity: number, isSelected: boolean) => {
@@ -795,7 +820,8 @@ const OutgoingOrderFormContent = () => {
       return acc;
     }, {} as Record<number, { bagUpdates: { size: string; quantityToRemove: number }[] }>);
 
-    // Find the order IDs from filtered orders and create proper order structure
+    // Find the order IDs from filtered orders (not finalFilteredOrders) to include orders even if they're currently hidden
+    // This ensures selected quantities are processed even if the voucher becomes hidden after selection
     const orders = filteredOrders
       .filter(order => groupedByReceipt[order.gatePass.gatePassNumber])
       .map(order => {
@@ -1461,18 +1487,18 @@ const OutgoingOrderFormContent = () => {
                         <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 animate-spin" />
                         <span className="text-sm">{t('outgoingOrder.orders.loading')}</span>
                       </div>
-                    ) : (filteredOrders.length > 0 || !hasActiveFilters) ? (
+                    ) : (finalFilteredOrders.length > 0 || !hasActiveFilters) ? (
                       <>
                         {/* Orders Count */}
                         <div className="text-sm text-gray-600 mb-3">
                           {hasActiveFilters
-                            ? `Showing ${filteredOrders.length} order${filteredOrders.length !== 1 ? 's' : ''} matching your filters${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
-                            : `Showing all ${farmerIncomingOrders?.data?.length || 0} order${(farmerIncomingOrders?.data?.length || 0) !== 1 ? 's' : ''}${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
+                            ? `Showing ${finalFilteredOrders.length} order${finalFilteredOrders.length !== 1 ? 's' : ''} matching your filters${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
+                            : `Showing all ${finalFilteredOrders.length} order${finalFilteredOrders.length !== 1 ? 's' : ''}${selectedBagSizes.length > 0 ? ` (${activeBagSizes.length} bag size${activeBagSizes.length !== 1 ? 's' : ''} displayed)` : ''}`
                           }
                         </div>
 
-                        {/* Select/Deselect All Button */}
-                        <div className="mb-4">
+                        {/* Select/Deselect All Button and Show Empty Vouchers Checkbox */}
+                        <div className="mb-4 flex flex-col sm:flex-row gap-3 sm:items-center">
                           <button
                             type="button"
                             onClick={handleSelectAll}
@@ -1484,6 +1510,15 @@ const OutgoingOrderFormContent = () => {
                           >
                             {isAllSelected ? "Deselect All Quantities" : "Select All Quantities"}
                           </button>
+                          <label className="flex items-center gap-2 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={showEmptyVouchers}
+                              onChange={(e) => setShowEmptyVouchers(e.target.checked)}
+                              className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
+                            />
+                            <span className="text-sm text-gray-700">Show empty vouchers</span>
+                          </label>
                         </div>
 
                         {/* Desktop View - Hidden on mobile */}
@@ -1510,7 +1545,7 @@ const OutgoingOrderFormContent = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {filteredOrders.map(order => (
+                                  {finalFilteredOrders.map(order => (
                                     <tr
                                       key={order._id}
                                       className="hover:bg-gray-50/50 transition-colors"
@@ -1586,7 +1621,7 @@ const OutgoingOrderFormContent = () => {
 
                         {/* Mobile View - Shown only on mobile */}
                         <div className="md:hidden space-y-4">
-                          {filteredOrders.map(order => (
+                          {finalFilteredOrders.map(order => (
                             <div key={order._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                               <div className="p-3 bg-gray-50 border-b border-gray-200">
                                 <div className="flex flex-col gap-1">
@@ -1674,6 +1709,7 @@ const OutgoingOrderFormContent = () => {
                         <div className="space-y-2">
                           {selectedQuantities.map((sq, index) => {
                             // Find the order and get the specific location for this bag size
+                            // Use filteredOrders (not finalFilteredOrders) to find orders even if they're currently hidden
                             const order = filteredOrders.find(o => o.gatePass.gatePassNumber === sq.receiptNumber);
                             let location = '';
 
@@ -1727,11 +1763,11 @@ const OutgoingOrderFormContent = () => {
                         toast.error(t('outgoingOrder.errors.enterFarmerName'));
                         return;
                       }
-                      if (filteredOrders.length === 0 && hasActiveFilters) {
+                      if (finalFilteredOrders.length === 0 && hasActiveFilters) {
                         toast.error("No orders match the selected filters. Please adjust your filter criteria or clear filters to see all orders.");
                         return;
                       }
-                      if (filteredOrders.length === 0) {
+                      if (finalFilteredOrders.length === 0) {
                         toast.error("No orders available for this farmer.");
                         return;
                       }
@@ -1759,6 +1795,7 @@ const OutgoingOrderFormContent = () => {
                     <div className="space-y-2">
                       {selectedQuantities.map((sq, index) => {
                         // Find the order and get the specific location for this bag size
+                        // Use filteredOrders (not finalFilteredOrders) to find orders even if they're currently hidden
                         const order = filteredOrders.find(o => o.gatePass.gatePassNumber === sq.receiptNumber);
                         let location = '';
 
