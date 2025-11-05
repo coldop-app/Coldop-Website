@@ -827,6 +827,145 @@ const CustomAnalyticsScreen = () => {
               </Card>
             </div>
 
+            {/* Stock Summary Table */}
+            <Card className="bg-white border border-gray-100 shadow-sm">
+              <CardHeader className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg flex-shrink-0">
+                    <Package className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
+                      Stock Summary by Variety
+                    </CardTitle>
+                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
+                      Detailed breakdown of {stockType === 'current' ? 'current' : 'initial'} stock quantities by variety and size
+                    </p>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="p-0">
+                {(() => {
+                  // Calculate filtered sizes once - show sizes that have values based on stockType
+                  const filteredSizes = bagSizeOptions.filter(size => {
+                    return analyticsData.stockSummary.some(variety => {
+                      const sizeData = variety.sizes.find(s => s.size === size);
+                      if (!sizeData) return false;
+                      switch (stockType) {
+                        case 'current':
+                          return sizeData.currentQuantity > 0;
+                        case 'initial':
+                          return sizeData.initialQuantity > 0;
+                        default:
+                          return sizeData.currentQuantity > 0;
+                      }
+                    });
+                  });
+
+                  // Helper function to get quantity for a specific bag size and variety
+                  const getQuantityForSize = (variety: typeof analyticsData.stockSummary[0], sizeName: string) => {
+                    const sizeData = variety.sizes.find(s => s.size === sizeName);
+                    if (!sizeData) return 0;
+                    switch (stockType) {
+                      case 'current':
+                        return sizeData.currentQuantity;
+                      case 'initial':
+                        return sizeData.initialQuantity;
+                      default:
+                        return sizeData.currentQuantity;
+                    }
+                  };
+
+                  // Helper function to calculate total for a specific bag size across all varieties
+                  const getTotalForSize = (sizeName: string) => {
+                    return analyticsData.stockSummary.reduce((total, variety) => {
+                      return total + getQuantityForSize(variety, sizeName);
+                    }, 0);
+                  };
+
+                  // Helper function to calculate variety total
+                  const calculateVarietyTotal = (variety: typeof analyticsData.stockSummary[0]) => {
+                    return filteredSizes.reduce((total, size) => {
+                      return total + getQuantityForSize(variety, size);
+                    }, 0);
+                  };
+
+                  return (
+                    <div className="overflow-x-auto">
+                      <div className="min-w-full inline-block align-middle">
+                        <table className="w-full">
+                          <thead className="bg-gray-50 border-b">
+                            <tr>
+                              <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-left text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
+                                Varieties
+                              </th>
+                              {filteredSizes.map(size => (
+                                <th key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 border-r whitespace-nowrap">
+                                  {size}
+                                </th>
+                              ))}
+                              <th className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-xs sm:text-sm font-semibold text-gray-900 bg-blue-50 whitespace-nowrap">
+                                Total
+                              </th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-gray-200">
+                            {analyticsData.stockSummary
+                              .sort((a, b) => a.variety.localeCompare(b.variety))
+                              .map((variety, index) => {
+                                const varietyTotal = calculateVarietyTotal(variety);
+
+                                return (
+                                  <tr key={variety.variety} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}>
+                                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 font-medium text-gray-900 border-r text-xs sm:text-sm">
+                                      <div className="truncate max-w-[120px] sm:max-w-none" title={variety.variety}>
+                                        {variety.variety}
+                                      </div>
+                                    </td>
+                                    {filteredSizes.map(size => {
+                                      const quantity = getQuantityForSize(variety, size);
+
+                                      return (
+                                        <td
+                                          key={size}
+                                          className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-700 border-r text-xs sm:text-sm"
+                                        >
+                                          {quantity > 0 ? formatNumber(quantity) : '-'}
+                                        </td>
+                                      );
+                                    })}
+                                    <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center font-bold text-blue-600 bg-blue-50 text-xs sm:text-sm">
+                                      {varietyTotal > 0 ? formatNumber(varietyTotal) : '-'}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            {/* Totals Row */}
+                            <tr className="bg-gray-100 font-bold">
+                              <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-gray-900 border-r text-xs sm:text-sm">
+                                Bag Total
+                              </td>
+                              {filteredSizes.map(size => {
+                                const sizeTotal = getTotalForSize(size);
+                                return (
+                                  <td key={size} className="px-2 sm:px-3 lg:px-4 py-3 sm:py-4 text-center text-gray-900 border-r text-xs sm:text-sm">
+                                    {sizeTotal > 0 ? formatNumber(sizeTotal) : '-'}
+                                  </td>
+                                );
+                              })}
+                              <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-blue-600 bg-blue-100 text-xs sm:text-sm">
+                                {formatNumber(stockType === 'current' ? analyticsData.totals.totalCurrentBags : analyticsData.totals.totalBags)}
+                              </td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
             {/* Stock Type Tabs */}
             <Card className="bg-white border border-gray-100 shadow-sm">
               <CardHeader className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
@@ -1070,113 +1209,6 @@ const CustomAnalyticsScreen = () => {
                 </Card>
               </div>
             )}
-
-            {/* Stock Summary Table */}
-            <Card className="bg-white border border-gray-100 shadow-sm">
-              <CardHeader className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-1.5 sm:p-2 bg-indigo-50 rounded-lg flex-shrink-0">
-                    <Package className="h-4 w-4 sm:h-5 sm:w-5 text-indigo-500" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
-                      Stock Summary by Variety
-                    </CardTitle>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-                      Detailed breakdown of {stockType === 'current' ? 'current' : 'initial'} stock quantities by variety and size
-                    </p>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Tabs defaultValue={analyticsData.stockSummary[0]?.variety || "all"} className="w-full">
-                  <div className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50/50">
-                    <div className="overflow-x-auto">
-                      <TabsList className="inline-flex w-max bg-transparent p-1 gap-2">
-                        {analyticsData.stockSummary.map((variety) => (
-                          <TabsTrigger
-                            key={variety.variety}
-                            value={variety.variety}
-                            className="flex items-center justify-center gap-1.5 sm:gap-2 text-xs sm:text-sm data-[state=active]:bg-white data-[state=active]:shadow-sm py-2.5 px-4 whitespace-nowrap flex-shrink-0"
-                          >
-                            <Package className="h-3 w-3 sm:h-4 sm:w-4 flex-shrink-0" />
-                            <span className="truncate">{variety.variety}</span>
-                          </TabsTrigger>
-                        ))}
-                      </TabsList>
-                    </div>
-                  </div>
-
-                  {analyticsData.stockSummary.map((variety) => (
-                    <TabsContent key={variety.variety} value={variety.variety} className="p-0">
-                      <div className="overflow-x-auto">
-                        <div className="min-w-full">
-                          {/* Mobile Card View */}
-                          <div className="block sm:hidden">
-                            <div className="p-3 space-y-3">
-                              {variety.sizes.map((size, sizeIndex) => (
-                                <div key={`${variety.variety}-${sizeIndex}`} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                                  <div className="flex items-center justify-between mb-3">
-                                    <h4 className="font-semibold text-gray-900 text-sm">{size.size}</h4>
-                                    <div className="text-xs text-gray-500">Size</div>
-                                  </div>
-                                  <div className="grid grid-cols-3 gap-3">
-                                    <div className={`text-center p-2 rounded-lg ${stockType === 'current' ? 'bg-green-50 text-green-700' : 'bg-gray-50 text-gray-700'}`}>
-                                      <div className="text-lg font-bold">{formatNumber(size.currentQuantity)}</div>
-                                      <div className="text-xs">Current</div>
-                                    </div>
-                                    <div className={`text-center p-2 rounded-lg ${stockType === 'initial' ? 'bg-blue-50 text-blue-700' : 'bg-gray-50 text-gray-700'}`}>
-                                      <div className="text-lg font-bold">{formatNumber(size.initialQuantity)}</div>
-                                      <div className="text-xs">Initial</div>
-                                    </div>
-                                    <div className="text-center p-2 rounded-lg bg-gray-50 text-gray-700">
-                                      <div className="text-lg font-bold">{formatNumber(size.quantityRemoved)}</div>
-                                      <div className="text-xs">Removed</div>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Desktop Table View */}
-                          <div className="hidden sm:block">
-                            <table className="w-full">
-                              <thead className="bg-gray-50">
-                                <tr>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Size</th>
-                                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${stockType === 'current' ? 'text-green-600 bg-green-50' : 'text-gray-500'}`}>
-                                    Current Qty
-                                  </th>
-                                  <th className={`px-4 py-3 text-left text-xs font-medium uppercase tracking-wider ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-500'}`}>
-                                    Initial Qty
-                                  </th>
-                                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Removed</th>
-                                </tr>
-                              </thead>
-                              <tbody className="bg-white divide-y divide-gray-200">
-                                {variety.sizes.map((size, sizeIndex) => (
-                                  <tr key={`${variety.variety}-${sizeIndex}`} className={sizeIndex % 2 === 0 ? "bg-gray-50" : "bg-white"}>
-                                    <td className="px-4 py-4 text-sm font-medium text-gray-900">{size.size}</td>
-                                    <td className={`px-4 py-4 text-sm font-medium ${stockType === 'current' ? 'text-green-600 bg-green-50' : 'text-gray-900'}`}>
-                                      {formatNumber(size.currentQuantity)}
-                                    </td>
-                                    <td className={`px-4 py-4 text-sm font-medium ${stockType === 'initial' ? 'text-blue-600 bg-blue-50' : 'text-gray-900'}`}>
-                                      {formatNumber(size.initialQuantity)}
-                                    </td>
-                                    <td className="px-4 py-4 text-sm text-gray-900">{formatNumber(size.quantityRemoved)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          </div>
-                        </div>
-                      </div>
-                    </TabsContent>
-                  ))}
-                </Tabs>
-              </CardContent>
-            </Card>
 
             {/* View Vouchers Button */}
             <Card className="bg-gradient-to-br from-gray-50 to-blue-50/30 border border-gray-100 shadow-sm">
