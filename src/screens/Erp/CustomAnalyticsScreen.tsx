@@ -188,7 +188,7 @@ const CustomAnalyticsScreen = () => {
   const [showCharts, setShowCharts] = useState(true);
   const [chartType, setChartType] = useState<'pie' | 'bar'>('pie');
   const [activeTab, setActiveTab] = useState("overview");
-  const [stockType, setStockType] = useState<'current' | 'initial'>('current');
+  const [stockType, setStockType] = useState<'current' | 'initial' | 'outgoing'>('current');
 
 
   // Fetch orders only when showVouchers is true
@@ -839,12 +839,50 @@ const CustomAnalyticsScreen = () => {
                       Stock Summary by Variety
                     </CardTitle>
                     <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-                      Detailed breakdown of {stockType === 'current' ? 'current' : 'initial'} stock quantities by variety and size
+                      View stock quantities by current inventory, initial quantities, or outgoing quantities
                     </p>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="p-0">
+                {/* Tabs */}
+                <div className="border-b border-gray-200">
+                  <nav className="flex space-x-8 px-4 sm:px-6" aria-label="Tabs">
+                    <button
+                      onClick={() => setStockType('current')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        stockType === 'current'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Current ({formatNumber(analyticsData.totals.totalCurrentBags)})
+                    </button>
+                    <button
+                      onClick={() => setStockType('initial')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        stockType === 'initial'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Initial ({formatNumber(analyticsData.totals.totalBags)})
+                    </button>
+                    <button
+                      onClick={() => setStockType('outgoing')}
+                      className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                        stockType === 'outgoing'
+                          ? 'border-blue-500 text-blue-600'
+                          : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      Outgoing ({formatNumber(analyticsData.totals.totalRemovedBags)})
+                    </button>
+                  </nav>
+                </div>
+
+                {/* Tab Content */}
+                <div className="p-0">
                 {(() => {
                   // Calculate filtered sizes once - show sizes that have values based on stockType
                   const filteredSizes = bagSizeOptions.filter(size => {
@@ -856,6 +894,8 @@ const CustomAnalyticsScreen = () => {
                           return sizeData.currentQuantity > 0;
                         case 'initial':
                           return sizeData.initialQuantity > 0;
+                        case 'outgoing':
+                          return (sizeData.initialQuantity - sizeData.currentQuantity) > 0;
                         default:
                           return sizeData.currentQuantity > 0;
                       }
@@ -871,6 +911,8 @@ const CustomAnalyticsScreen = () => {
                         return sizeData.currentQuantity;
                       case 'initial':
                         return sizeData.initialQuantity;
+                      case 'outgoing':
+                        return sizeData.initialQuantity - sizeData.currentQuantity;
                       default:
                         return sizeData.currentQuantity;
                     }
@@ -954,7 +996,13 @@ const CustomAnalyticsScreen = () => {
                                 );
                               })}
                               <td className="px-3 sm:px-4 lg:px-6 py-3 sm:py-4 text-center text-blue-600 bg-blue-100 text-xs sm:text-sm">
-                                {formatNumber(stockType === 'current' ? analyticsData.totals.totalCurrentBags : analyticsData.totals.totalBags)}
+                                {formatNumber(
+                                  stockType === 'current'
+                                    ? analyticsData.totals.totalCurrentBags
+                                    : stockType === 'initial'
+                                    ? analyticsData.totals.totalBags
+                                    : analyticsData.totals.totalRemovedBags
+                                )}
                               </td>
                             </tr>
                           </tbody>
@@ -963,45 +1011,7 @@ const CustomAnalyticsScreen = () => {
                     </div>
                   );
                 })()}
-              </CardContent>
-            </Card>
-
-            {/* Stock Type Tabs */}
-            <Card className="bg-white border border-gray-100 shadow-sm">
-              <CardHeader className="px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-100">
-                <div className="flex items-center gap-2 sm:gap-3">
-                  <div className="p-1.5 sm:p-2 bg-green-50 rounded-lg flex-shrink-0">
-                    <TrendingUp className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-base sm:text-lg md:text-xl font-bold text-gray-900">
-                      Stock Data View
-                    </CardTitle>
-                    <p className="text-xs sm:text-sm text-gray-600 mt-0.5">
-                      Toggle between current and initial stock data for analysis
-                    </p>
-                  </div>
                 </div>
-              </CardHeader>
-              <CardContent className="px-3 sm:px-6 py-3 sm:py-5">
-                <Tabs value={stockType} onValueChange={(value) => setStockType(value as 'current' | 'initial')} className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 h-12">
-                    <TabsTrigger
-                      value="current"
-                      className="flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm font-medium py-2.5"
-                    >
-                      <TrendingUp className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="truncate">Current</span>
-                    </TabsTrigger>
-                    <TabsTrigger
-                      value="initial"
-                      className="flex items-center justify-center gap-1.5 sm:gap-2 data-[state=active]:bg-white data-[state=active]:shadow-sm text-xs sm:text-sm font-medium py-2.5"
-                    >
-                      <Package className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                      <span className="truncate">Initial</span>
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
               </CardContent>
             </Card>
 
