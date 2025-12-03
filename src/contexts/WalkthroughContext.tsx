@@ -1,8 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, type ReactNode } from 'react';
 
 interface WalkthroughContextType {
   isActive: boolean;
-  currentStep: 'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | null;
+  currentStep: 'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | null;
   startWalkthrough: () => void;
   nextStep: () => void;
   endWalkthrough: () => void;
@@ -12,7 +12,7 @@ const WalkthroughContext = createContext<WalkthroughContextType | undefined>(und
 
 export const WalkthroughProvider = ({ children }: { children: ReactNode }) => {
   const [isActive, setIsActive] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | null>(null);
+  const [currentStep, setCurrentStep] = useState<'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | null>(null);
 
   const startWalkthrough = () => {
     setIsActive(true);
@@ -26,6 +26,8 @@ export const WalkthroughProvider = ({ children }: { children: ReactNode }) => {
       setCurrentStep('incoming-select-variety');
     } else if (currentStep === 'incoming-select-variety') {
       setCurrentStep('incoming-enter-quantities');
+    } else if (currentStep === 'incoming-enter-quantities') {
+      setCurrentStep('incoming-enter-location');
     } else {
       endWalkthrough();
     }

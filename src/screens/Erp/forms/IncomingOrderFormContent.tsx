@@ -413,6 +413,11 @@ const IncomingOrderFormContent = () => {
 
     toast.success("Location applied to all bag sizes!");
 
+    // End walkthrough to close all spotlights
+    if (isWalkthroughActive) {
+      endWalkthrough();
+    }
+
     // Focus on remarks field after applying location to all
     setTimeout(() => {
       const remarksTextarea = document.getElementById("remarks-textarea");
@@ -923,6 +928,56 @@ const IncomingOrderFormContent = () => {
     }
   }, [walkthroughStep]);
 
+  // Scroll to location section when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'incoming-enter-location') {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const locationSection = document.getElementById('location-section');
+        if (locationSection) {
+          locationSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep]);
+
+  // Check if all locations are complete and focus on remarks
+  useEffect(() => {
+    if (currentStep !== 2) return; // Only check when on step 2
+
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    const bagSizesWithQuantities = bagSizes.filter((bagSize) => {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const quantity = parseInt(formData.quantities[fieldName] || "0");
+      return quantity > 0;
+    });
+
+    if (bagSizesWithQuantities.length === 0) return;
+
+    const allLocationsComplete = bagSizesWithQuantities.every((bagSize) => {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const location = formData.bagLocations[fieldName];
+      return (
+        location &&
+        location.chamber &&
+        location.floor &&
+        location.row
+      );
+    });
+
+    // If all locations are complete, focus on remarks field
+    if (allLocationsComplete) {
+      const timer = setTimeout(() => {
+        const remarksTextarea = document.getElementById("remarks-textarea");
+        if (remarksTextarea) {
+          (remarksTextarea as HTMLTextAreaElement).focus();
+        }
+      }, 200);
+      return () => clearTimeout(timer);
+    }
+  }, [formData.bagLocations, formData.quantities, currentStep, adminInfo?.preferences?.bagSizes]);
+
   return (
     <>
       <Spotlight
@@ -939,6 +994,16 @@ const IncomingOrderFormContent = () => {
         instruction="Enter the number of bags for each bag size below."
         targetId="quantities-section"
         isActive={walkthroughStep === 'incoming-enter-quantities'}
+      />
+      <Spotlight
+        instruction="Enter the storage location (Chamber, Floor, Row) for each bag size. You can apply one location to all bag sizes using the 'Apply to All' button."
+        targetId="location-section"
+        isActive={walkthroughStep === 'incoming-enter-location' && currentStep === 2}
+      />
+      <Spotlight
+        instruction="Click 'Apply to All' to quickly apply the same location to all bag sizes instead of typing each one."
+        targetId="apply-to-all-button"
+        isActive={walkthroughStep === 'incoming-enter-location' && currentStep === 2 && !!firstCompleteLocation}
       />
       <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <div className="text-center mb-6">
@@ -1242,9 +1307,11 @@ const IncomingOrderFormContent = () => {
                   id="continue-button"
                   type="button"
                   onClick={() => {
-                    // End walkthrough when continuing to next step
+                    // Advance to location step when continuing from quantities
                     if (walkthroughStep === 'incoming-enter-quantities') {
-                      endWalkthrough();
+                      setTimeout(() => {
+                        nextWalkthroughStep();
+                      }, 100);
                     }
                     nextStep();
                   }}
@@ -1262,7 +1329,7 @@ const IncomingOrderFormContent = () => {
           {currentStep === 2 && (
             <div className="space-y-6">
               {/* Location Section */}
-              <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+              <div id="location-section" className="border border-green-200 rounded-lg p-4 bg-green-50/50">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold">Enter Address (CH R FL)</h3>
                   <div className="flex gap-2">
@@ -1275,6 +1342,7 @@ const IncomingOrderFormContent = () => {
                     </button>
                     {firstCompleteLocation && (
                       <button
+                        id="apply-to-all-button"
                         type="button"
                         onClick={applyLocationToAll}
                         className="px-4 py-2 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
@@ -1417,6 +1485,12 @@ const IncomingOrderFormContent = () => {
                 <button
                   type="submit"
                   disabled={createOrderMutation.isPending}
+                  onClick={() => {
+                    // End walkthrough when submitting the form
+                    if (walkthroughStep === 'incoming-enter-location') {
+                      endWalkthrough();
+                    }
+                  }}
                   className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"
                   style={{ minWidth: 0 }}
                 >
