@@ -13,7 +13,7 @@ const Sidebar = ({ className }: SidebarProps) => {
   const { t } = useTranslation();
   const location = useLocation();
   const navigate = useNavigate();
-  const { startWalkthrough } = useWalkthrough();
+  const { startWalkthrough, startOutgoingWalkthrough } = useWalkthrough();
   const menuItems = [
     { icon: BookOpen, labelKey: "erpFooter.daybook", href: "/erp/daybook" },
     { icon: Users, labelKey: "erpFooter.people", href: "/erp/people" },
@@ -35,6 +35,19 @@ const Sidebar = ({ className }: SidebarProps) => {
       }, 100);
     } else {
       startWalkthrough();
+    }
+  };
+
+  const handleStartOutgoingWalkthrough = () => {
+    // Navigate to daybook if not already there
+    if (location.pathname !== "/erp/daybook") {
+      navigate("/erp/daybook");
+      // Wait for navigation to complete before starting walkthrough
+      setTimeout(() => {
+        startOutgoingWalkthrough();
+      }, 100);
+    } else {
+      startOutgoingWalkthrough();
     }
   };
 
@@ -81,14 +94,21 @@ const Sidebar = ({ className }: SidebarProps) => {
           })}
         </nav>
 
-        {/* Start Walkthrough Button */}
-        <div className="px-4 pt-4">
+        {/* Start Walkthrough Buttons */}
+        <div className="px-4 pt-4 space-y-2">
           <button
             onClick={handleStartWalkthrough}
             className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 w-full text-gray-600 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
           >
             <PlayCircle className="h-5 w-5 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
-            <span className="font-medium">Start Walkthrough</span>
+            <span className="font-medium">Start Incoming Walkthrough</span>
+          </button>
+          <button
+            onClick={handleStartOutgoingWalkthrough}
+            className="group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 w-full text-gray-600 hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+          >
+            <PlayCircle className="h-5 w-5 transition-transform duration-200 group-hover:scale-110 group-hover:text-primary" />
+            <span className="font-medium">Start Outgoing Walkthrough</span>
           </button>
         </div>
       </ScrollArea>

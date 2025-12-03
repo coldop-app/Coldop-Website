@@ -66,6 +66,20 @@ const DaybookScreen = () => {
     }
   }, [currentStep]);
 
+  // Scroll to add outgoing button when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'daybook-add-outgoing') {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const button = document.getElementById('add-outgoing-button');
+        if (button) {
+          button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
   const { data: searchData, isLoading: isSearchLoading, error: searchError } = useQuery({
     queryKey: ['searchReceipt', searchReceiptNumber],
     queryFn: () => storeAdminApi.searchReceipt(
@@ -286,6 +300,11 @@ const DaybookScreen = () => {
         targetId="add-incoming-button"
         isActive={currentStep === 'daybook-add-incoming'}
       />
+      <Spotlight
+        instruction="Let's start by adding an outgoing order"
+        targetId="add-outgoing-button"
+        isActive={currentStep === 'daybook-add-outgoing'}
+      />
       <div className="p-2 sm:p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Header with total count */}
         <div className="flex items-center justify-between mb-4 sm:mb-6 bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100">
@@ -381,8 +400,14 @@ const DaybookScreen = () => {
                   <span className="truncate">{t('daybook.addIncoming')}</span>
                 </button>
                 <button
-                  onClick={() => navigate('/erp/outgoing-order')}
-                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow"
+                  id="add-outgoing-button"
+                  onClick={() => {
+                    if (currentStep === 'daybook-add-outgoing') {
+                      nextStep();
+                    }
+                    navigate('/erp/outgoing-order');
+                  }}
+                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative z-[9999]"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
