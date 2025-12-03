@@ -282,6 +282,7 @@ const DaybookScreen = () => {
     <>
       <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
       <Spotlight
+       instruction="Let's start by adding an incoming order"
         targetId="add-incoming-button"
         isActive={currentStep === 'daybook-add-incoming'}
       />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, KeyboardEvent } from "react";
+import React, { useState, useEffect, useMemo, KeyboardEvent, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Plus, Loader2, X } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -142,7 +142,17 @@ const IncomingOrderFormContent = () => {
   const { adminInfo } = useSelector((state: RootState) => state.auth) as {
     adminInfo: StoreAdmin | null;
   };
-  const { currentStep: walkthroughStep, endWalkthrough } = useWalkthrough();
+  const { currentStep: walkthroughStep, endWalkthrough, nextStep: nextWalkthroughStep, isActive: isWalkthroughActive } = useWalkthrough();
+
+  // Use ref to track walkthrough state for mutation callbacks
+  const walkthroughStepRef = useRef(walkthroughStep);
+  const isWalkthroughActiveRef = useRef(isWalkthroughActive);
+
+  // Update refs when walkthrough state changes
+  useEffect(() => {
+    walkthroughStepRef.current = walkthroughStep;
+    isWalkthroughActiveRef.current = isWalkthroughActive;
+  }, [walkthroughStep, isWalkthroughActive]);
 
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -546,6 +556,14 @@ const IncomingOrderFormContent = () => {
       handleSelectFarmer(newFarmer);
       setSelectedFarmer(newFarmer);
       setIsNewFarmerModalOpen(false);
+      // Advance to next walkthrough step if active
+      // Use refs to get current values in callback
+      if (isWalkthroughActiveRef.current && walkthroughStepRef.current === 'incoming-add-farmer') {
+        // Use setTimeout to ensure state updates are processed
+        setTimeout(() => {
+          nextWalkthroughStep();
+        }, 100);
+      }
     },
     onError: (error: unknown) => {
       console.error("Error creating farmer:", error);
@@ -730,6 +748,14 @@ const IncomingOrderFormContent = () => {
       handleSelectFarmer(newFarmer);
       setSelectedFarmer(newFarmer);
       setIsNewFarmerModalOpen(false);
+      // Advance to next walkthrough step if active
+      // Use refs to get current values in callback
+      if (isWalkthroughActiveRef.current && walkthroughStepRef.current === 'incoming-add-farmer') {
+        // Use setTimeout to ensure state updates are processed
+        setTimeout(() => {
+          nextWalkthroughStep();
+        }, 100);
+      }
     }
   };
 
@@ -846,14 +872,51 @@ const IncomingOrderFormContent = () => {
     enabled: !!adminInfo?.token,
   });
 
-  // Scroll to add farmer button when walkthrough step is active
+  // Scroll to add farmer button or modal when walkthrough step is active
   useEffect(() => {
     if (walkthroughStep === 'incoming-add-farmer') {
       // Wait for component to render
       const timer = setTimeout(() => {
-        const button = document.getElementById('add-farmer-button');
-        if (button) {
-          button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (isNewFarmerModalOpen) {
+          // If modal is open, scroll to modal
+          const modal = document.getElementById('new-farmer-modal');
+          if (modal) {
+            modal.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        } else {
+          // Otherwise scroll to button
+          const button = document.getElementById('add-farmer-button');
+          if (button) {
+            button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep, isNewFarmerModalOpen]);
+
+  // Scroll to variety selector when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'incoming-select-variety') {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const varietySection = document.getElementById('variety-selector-section');
+        if (varietySection) {
+          varietySection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep]);
+
+  // Scroll to quantities section when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'incoming-enter-quantities') {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const quantitiesSection = document.getElementById('quantities-section');
+        if (quantitiesSection) {
+          quantitiesSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -863,8 +926,19 @@ const IncomingOrderFormContent = () => {
   return (
     <>
       <Spotlight
-        targetId="add-farmer-button"
+        instruction={isNewFarmerModalOpen ? "Fill in the farmer details and click 'Add Farmer' to create a new account." : "Add a new farmer account"}
+        targetId={isNewFarmerModalOpen ? "new-farmer-modal" : "add-farmer-button"}
         isActive={walkthroughStep === 'incoming-add-farmer'}
+      />
+      <Spotlight
+        instruction="Choose the potato variety for this voucher. You can edit the variety list later in settings."
+        targetId="variety-selector-section"
+        isActive={walkthroughStep === 'incoming-select-variety'}
+      />
+      <Spotlight
+        instruction="Enter the number of bags for each bag size below."
+        targetId="quantities-section"
+        isActive={walkthroughStep === 'incoming-enter-quantities'}
       />
       <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <div className="text-center mb-6">
@@ -983,7 +1057,7 @@ const IncomingOrderFormContent = () => {
                   </div>
                 ) : (
                   // Show search input when no farmer is pre-selected
-                  <div className="flex gap-2 items-center relative">
+                  <div className="flex gap-2 items-center relative z-[10000]">
                     <div className="flex-1 relative">
                       <input
                         id="farmer-search-input"
@@ -1016,12 +1090,9 @@ const IncomingOrderFormContent = () => {
                       id="add-farmer-button"
                       type="button"
                       onClick={() => {
-                        if (walkthroughStep === 'incoming-add-farmer') {
-                          endWalkthrough();
-                        }
                         setIsNewFarmerModalOpen(true);
                       }}
-                      className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 relative z-[9999]"
+                      className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 relative"
                     >
                       <Plus size={18} />
                       <span className="text-sm">
@@ -1083,12 +1154,21 @@ const IncomingOrderFormContent = () => {
               {/* Variety Selection */}
               <VarietySelector
                 value={formData.variety}
-                onValueChange={(value) => updateFormData("variety", value)}
+                onValueChange={(value) => {
+                  updateFormData("variety", value);
+                  // Advance to next walkthrough step when variety is selected
+                  if (walkthroughStep === 'incoming-select-variety' && value) {
+                    setTimeout(() => {
+                      nextWalkthroughStep();
+                    }, 100);
+                  }
+                }}
                 token={adminInfo?.token || ""}
               />
 
               {/* Quantities Section */}
               <div
+                id="quantities-section"
                 className={cn(
                   "border rounded-lg p-4",
                   formData.variety
@@ -1161,7 +1241,13 @@ const IncomingOrderFormContent = () => {
                 <button
                   id="continue-button"
                   type="button"
-                  onClick={nextStep}
+                  onClick={() => {
+                    // End walkthrough when continuing to next step
+                    if (walkthroughStep === 'incoming-enter-quantities') {
+                      endWalkthrough();
+                    }
+                    nextStep();
+                  }}
                   className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-8 py-3 text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
                 >
                   {t("incomingOrder.buttons.continue")}

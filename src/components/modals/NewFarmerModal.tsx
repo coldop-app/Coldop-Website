@@ -115,7 +115,7 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background rounded-lg p-6 w-full max-w-md relative">
+      <div id="new-farmer-modal" className="bg-background rounded-lg p-6 w-full max-w-md relative">
         <button
           onClick={onClose}
           disabled={isLoading}

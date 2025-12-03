@@ -132,7 +132,7 @@ const VarietySelector = ({ value, onValueChange, token }: VarietySelectorProps) 
   }, []);
 
   return (
-    <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
+    <div id="variety-selector-section" className="border border-green-200 rounded-lg p-4 bg-green-50/50">
       <h3 className="text-lg font-medium mb-2">{t('incomingOrder.variety.title')}</h3>
       <p className="text-sm text-muted-foreground mb-4">{t('incomingOrder.variety.description')}</p>
 
