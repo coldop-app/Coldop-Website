@@ -8,6 +8,7 @@ import { useDispatch } from "react-redux";
 import { setCredentials } from "@/slices/authSlice";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import axios from "axios";
+import { DEFAULT_LOGO } from "@/utils/const";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -57,7 +58,7 @@ const StoreAdminSignupForm = () => {
     mobileNumber: "",
     password: "",
     confirmPassword: "",
-    imageUrl: "",
+    imageUrl: DEFAULT_LOGO,
 
     // Cold storage details
     coldStorageName: "",

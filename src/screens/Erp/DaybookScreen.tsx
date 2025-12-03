@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import TopBar from '@/components/common/Topbar/Topbar';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react';
@@ -10,6 +10,8 @@ import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
 import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
 import { Order } from '@/utils/types';
 import { useTranslation } from 'react-i18next';
+import { useWalkthrough } from '@/contexts/WalkthroughContext';
+import Spotlight from '@/components/common/Spotlight/Spotlight';
 
 interface PaginationMeta {
   currentPage: number;
@@ -48,6 +50,21 @@ const DaybookScreen = () => {
   const [searchReceiptNumber, setSearchReceiptNumber] = useState<string>('');
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const navigate = useNavigate();
+  const { currentStep, nextStep } = useWalkthrough();
+
+  // Scroll to add incoming button when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'daybook-add-incoming') {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const button = document.getElementById('add-incoming-button');
+        if (button) {
+          button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
 
   const { data: searchData, isLoading: isSearchLoading, error: searchError } = useQuery({
     queryKey: ['searchReceipt', searchReceiptNumber],
@@ -264,6 +281,10 @@ const DaybookScreen = () => {
   return (
     <>
       <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+      <Spotlight
+        targetId="add-incoming-button"
+        isActive={currentStep === 'daybook-add-incoming'}
+      />
       <div className="p-2 sm:p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Header with total count */}
         <div className="flex items-center justify-between mb-4 sm:mb-6 bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100">
@@ -335,8 +356,14 @@ const DaybookScreen = () => {
               </div>
               <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3 sm:ml-auto mt-1 sm:mt-0">
                 <button
-                  onClick={() => navigate('/erp/incoming-order')}
-                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow"
+                  id="add-incoming-button"
+                  onClick={() => {
+                    if (currentStep === 'daybook-add-incoming') {
+                      nextStep();
+                    }
+                    navigate('/erp/incoming-order');
+                  }}
+                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative z-[9999]"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

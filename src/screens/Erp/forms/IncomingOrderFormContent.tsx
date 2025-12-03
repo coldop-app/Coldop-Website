@@ -15,6 +15,8 @@ import debounce from "lodash/debounce";
 import NewFarmerModal, {
   NewFarmerFormData,
 } from "@/components/modals/NewFarmerModal";
+import { useWalkthrough } from "@/contexts/WalkthroughContext";
+import Spotlight from "@/components/common/Spotlight/Spotlight";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -140,6 +142,7 @@ const IncomingOrderFormContent = () => {
   const { adminInfo } = useSelector((state: RootState) => state.auth) as {
     adminInfo: StoreAdmin | null;
   };
+  const { currentStep: walkthroughStep, endWalkthrough } = useWalkthrough();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
@@ -291,16 +294,22 @@ const IncomingOrderFormContent = () => {
         },
       };
 
-      // Check if this location is now complete and set as first complete location
+      // Check if this location is now complete and update first complete location
       const updatedLocation = newBagLocations[bagType];
       if (
         updatedLocation &&
         updatedLocation.chamber &&
         updatedLocation.floor &&
-        updatedLocation.row &&
-        !firstCompleteLocation
+        updatedLocation.row
       ) {
+        // Always update firstCompleteLocation when a complete location is found
         setFirstCompleteLocation(updatedLocation);
+      } else if (
+        updatedLocation &&
+        (!updatedLocation.chamber || !updatedLocation.floor || !updatedLocation.row)
+      ) {
+        // If location becomes incomplete, clear firstCompleteLocation
+        setFirstCompleteLocation(null);
       }
 
       return {
@@ -324,19 +333,21 @@ const IncomingOrderFormContent = () => {
     return "";
   };
 
-  const applyLocationToAll = () => {
-    if (!firstCompleteLocation) return;
-
+  const clearAllLocations = () => {
     const bagSizes = adminInfo?.preferences?.bagSizes || [];
     const newBagLocations = { ...formData.bagLocations };
 
-    // Apply the first complete location to all bag sizes that have quantities > 0
+    // Clear all locations for bag sizes with quantities > 0
     bagSizes.forEach((bagSize) => {
       const fieldName = getBagSizeFieldName(bagSize);
       const quantity = parseInt(formData.quantities[fieldName] || "0");
 
       if (quantity > 0) {
-        newBagLocations[fieldName] = { ...firstCompleteLocation };
+        newBagLocations[fieldName] = {
+          chamber: "",
+          floor: "",
+          row: "",
+        };
       }
     });
 
@@ -344,6 +355,51 @@ const IncomingOrderFormContent = () => {
       ...prev,
       bagLocations: newBagLocations,
     }));
+
+    setFirstCompleteLocation(null);
+    toast.success("All locations cleared!");
+  };
+
+  const applyLocationToAll = () => {
+    // Find the most recent complete location from all bag locations
+    const bagSizes = adminInfo?.preferences?.bagSizes || [];
+    let mostRecentCompleteLocation: BagLocation | null = null;
+
+    // Look for the most recent complete location
+    for (const bagSize of bagSizes) {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const location = formData.bagLocations[fieldName];
+      const quantity = parseInt(formData.quantities[fieldName] || "0");
+
+      if (quantity > 0 && location && location.chamber && location.floor && location.row) {
+        mostRecentCompleteLocation = location;
+      }
+    }
+
+    if (!mostRecentCompleteLocation) {
+      toast.error("Please complete at least one location first!");
+      return;
+    }
+
+    const newBagLocations = { ...formData.bagLocations };
+
+    // Apply the most recent complete location to all bag sizes that have quantities > 0
+    bagSizes.forEach((bagSize) => {
+      const fieldName = getBagSizeFieldName(bagSize);
+      const quantity = parseInt(formData.quantities[fieldName] || "0");
+
+      if (quantity > 0) {
+        newBagLocations[fieldName] = { ...mostRecentCompleteLocation };
+      }
+    });
+
+    setFormData((prev) => ({
+      ...prev,
+      bagLocations: newBagLocations,
+    }));
+
+    // Update firstCompleteLocation to the applied location
+    setFirstCompleteLocation(mostRecentCompleteLocation);
 
     toast.success("Location applied to all bag sizes!");
 
@@ -790,8 +846,27 @@ const IncomingOrderFormContent = () => {
     enabled: !!adminInfo?.token,
   });
 
+  // Scroll to add farmer button when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'incoming-add-farmer') {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const button = document.getElementById('add-farmer-button');
+        if (button) {
+          button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep]);
+
   return (
-    <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
+    <>
+      <Spotlight
+        targetId="add-farmer-button"
+        isActive={walkthroughStep === 'incoming-add-farmer'}
+      />
+      <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <div className="text-center mb-6">
         <h1 className="text-2xl font-bold mb-3">{t("incomingOrder.title")}</h1>
 
@@ -938,9 +1013,15 @@ const IncomingOrderFormContent = () => {
                       )}
                     </div>
                     <button
+                      id="add-farmer-button"
                       type="button"
-                      onClick={() => setIsNewFarmerModalOpen(true)}
-                      className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      onClick={() => {
+                        if (walkthroughStep === 'incoming-add-farmer') {
+                          endWalkthrough();
+                        }
+                        setIsNewFarmerModalOpen(true);
+                      }}
+                      className="flex items-center gap-2 px-4 py-3 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-semibold focus:outline-none focus:ring-2 focus:ring-primary/50 relative z-[9999]"
                     >
                       <Plus size={18} />
                       <span className="text-sm">
@@ -1098,15 +1179,24 @@ const IncomingOrderFormContent = () => {
               <div className="border border-green-200 rounded-lg p-4 bg-green-50/50">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-lg font-bold">Enter Address (CH R FL)</h3>
-                  {firstCompleteLocation && (
+                  <div className="flex gap-2">
                     <button
                       type="button"
-                      onClick={applyLocationToAll}
-                      className="px-4 py-2 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      onClick={clearAllLocations}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 transition font-medium text-sm focus:outline-none focus:ring-2 focus:ring-gray-500/50"
                     >
-                      Apply to All
+                      Clear All
                     </button>
-                  )}
+                    {firstCompleteLocation && (
+                      <button
+                        type="button"
+                        onClick={applyLocationToAll}
+                        className="px-4 py-2 bg-primary text-secondary rounded-md hover:bg-primary/85 transition font-medium text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                      >
+                        Apply to All
+                      </button>
+                    )}
+                  </div>
                 </div>
                 <p className="text-sm text-muted-foreground mb-4">
                   This will be used as a reference in outgoing.
@@ -1259,6 +1349,7 @@ const IncomingOrderFormContent = () => {
         </AnimatedFormStep>
       </form>
     </div>
+    </>
   );
 };
 

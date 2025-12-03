@@ -9,6 +9,7 @@ import {
 import { Provider } from "react-redux";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HelmetProvider } from "react-helmet-async";
+import { WalkthroughProvider } from "./contexts/WalkthroughContext.tsx";
 import store from "./store.ts";
 import "./index.css";
 import App from "./App.tsx";
@@ -182,7 +183,9 @@ createRoot(document.getElementById("root")!).render(
     <HelmetProvider>
       <Provider store={store}>
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <WalkthroughProvider>
+            <RouterProvider router={router} />
+          </WalkthroughProvider>
         </QueryClientProvider>
       </Provider>
     </HelmetProvider>
