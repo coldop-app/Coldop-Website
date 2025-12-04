@@ -142,7 +142,7 @@ const IncomingOrderFormContent = () => {
   const { adminInfo } = useSelector((state: RootState) => state.auth) as {
     adminInfo: StoreAdmin | null;
   };
-  const { currentStep: walkthroughStep, endWalkthrough, nextStep: nextWalkthroughStep, isActive: isWalkthroughActive } = useWalkthrough();
+  const { currentStep: walkthroughStep, nextStep: nextWalkthroughStep, isActive: isWalkthroughActive } = useWalkthrough();
 
   // Use ref to track walkthrough state for mutation callbacks
   const walkthroughStepRef = useRef(walkthroughStep);
@@ -412,11 +412,6 @@ const IncomingOrderFormContent = () => {
     setFirstCompleteLocation(mostRecentCompleteLocation);
 
     toast.success("Location applied to all bag sizes!");
-
-    // End walkthrough to close all spotlights
-    if (isWalkthroughActive) {
-      endWalkthrough();
-    }
 
     // Focus on remarks field after applying location to all
     setTimeout(() => {
@@ -1486,9 +1481,9 @@ const IncomingOrderFormContent = () => {
                   type="submit"
                   disabled={createOrderMutation.isPending}
                   onClick={() => {
-                    // End walkthrough when submitting the form
-                    if (walkthroughStep === 'incoming-enter-location') {
-                      endWalkthrough();
+                    // Advance to voucher explanation step when submitting the form
+                    if (walkthroughStep === 'incoming-enter-location' && isWalkthroughActive) {
+                      nextWalkthroughStep();
                     }
                   }}
                   className="font-custom flex-1 cursor-pointer rounded-lg bg-primary px-0 py-3 text-base font-semibold text-secondary hover:bg-primary/85 focus:outline-none focus:ring-2 focus:ring-primary/50 transition relative"

@@ -80,6 +80,20 @@ const DaybookScreen = () => {
     }
   }, [currentStep]);
 
+  // Scroll to incoming voucher card when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'incoming-voucher-explanation') {
+      // Wait for orders to load and component to render
+      const timer = setTimeout(() => {
+        const incomingVoucherCard = document.getElementById('incoming-voucher-card');
+        if (incomingVoucherCard) {
+          incomingVoucherCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 500); // Wait for orders to load
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
   // Scroll to voucher card when walkthrough step is active
   useEffect(() => {
     if (currentStep === 'outgoing-voucher-created' || currentStep === 'outgoing-voucher-card') {
@@ -396,9 +410,17 @@ const DaybookScreen = () => {
     <>
       <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
       <Spotlight
-       instruction="Let's start by adding an incoming order"
+        instruction="Let's start by adding an incoming order"
         targetId="add-incoming-button"
         isActive={currentStep === 'daybook-add-incoming'}
+      />
+      <Spotlight
+        instruction="Great! Your incoming voucher has been created successfully. This is the receipt voucher card that shows all the details of the incoming order you just created, including the farmer information, variety, bag quantities, and storage locations."
+        targetId="incoming-voucher-card"
+        isActive={currentStep === 'incoming-voucher-explanation'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={nextStep}
       />
       <Spotlight
         instruction="Let's start by adding an outgoing order"
@@ -631,15 +653,23 @@ const DaybookScreen = () => {
             </div>
           ) : (
             <div>
-              {orders.map((order: Order) => (
-                <div key={order._id} className="py-2 sm:py-3">
-                  {order.voucher.type === 'DELIVERY' ? (
-                    <DeliveryVoucherCard order={order} />
-                  ) : (
-                    <ReceiptVoucherCard order={order} />
-                  )}
-                </div>
-              ))}
+              {orders.map((order: Order, index: number) => {
+                // Find the first receipt voucher for the walkthrough
+                const isFirstReceipt = order.voucher.type === 'RECEIPT' &&
+                  orders.findIndex((o: Order) => o.voucher.type === 'RECEIPT') === index;
+
+                return (
+                  <div key={order._id} className="py-2 sm:py-3">
+                    {order.voucher.type === 'DELIVERY' ? (
+                      <DeliveryVoucherCard order={order} />
+                    ) : (
+                      <div id={isFirstReceipt ? 'incoming-voucher-card' : undefined}>
+                        <ReceiptVoucherCard order={order} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
