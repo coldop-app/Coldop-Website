@@ -9,6 +9,8 @@ interface SpotlightProps {
   padding?: number;
   instruction?: string;
   instructionPosition?: "top" | "bottom" | "left" | "right" | "auto";
+  showContinueButton?: boolean;
+  onContinue?: () => void;
 }
 
 const Spotlight = ({
@@ -17,6 +19,8 @@ const Spotlight = ({
   padding = 8,
   instruction,
   instructionPosition = "auto",
+  showContinueButton = false,
+  onContinue,
 }: SpotlightProps) => {
   const [position, setPosition] = useState({ x: 0, y: 0, width: 0, height: 0 });
   const [isVisible, setIsVisible] = useState(false);
@@ -255,7 +259,17 @@ const Spotlight = ({
                 delay: 0.1,
               }}
             >
-              <p className="text-sm leading-relaxed">{instruction}</p>
+              <p className="text-sm leading-relaxed mb-3">{instruction}</p>
+
+              {/* Continue button */}
+              {showContinueButton && onContinue && (
+                <button
+                  onClick={onContinue}
+                  className="w-full bg-primary text-white rounded-md py-2 px-4 text-sm font-medium hover:bg-primary/90 transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                >
+                  Continue
+                </button>
+              )}
 
               {/* Arrow pointer */}
               <div

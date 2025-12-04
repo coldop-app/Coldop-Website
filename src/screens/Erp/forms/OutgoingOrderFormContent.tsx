@@ -17,6 +17,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import debounce from "lodash/debounce";
+import { useWalkthrough } from "@/contexts/WalkthroughContext";
+import Spotlight from "@/components/common/Spotlight/Spotlight";
 
 // Custom scrollbar styles
 const scrollbarStyles = `
@@ -206,6 +208,7 @@ const OutgoingOrderFormContent = () => {
   const location = useLocation();
   const farmer = location.state?.farmer as Farmer | undefined;
   const { adminInfo } = useSelector((state: RootState) => state.auth) as { adminInfo: StoreAdmin | null };
+  const { currentStep: walkthroughStep, endWalkthrough, nextStep: nextWalkthroughStep, isActive: isWalkthroughActive } = useWalkthrough();
 
   // Get receipt number for outgoing order
   const { data: receiptNumberData, isLoading: isLoadingReceiptNumber } = useQuery({
@@ -225,6 +228,7 @@ const OutgoingOrderFormContent = () => {
     bagSize: string;
     maxQuantity: number;
   } | null>(null);
+  const firstAvailableCellRef = React.useRef<HTMLButtonElement | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
@@ -261,6 +265,16 @@ const OutgoingOrderFormContent = () => {
       order.orderDetails.some(detail => detail.variety === formData.variety)
     );
   }, [farmerIncomingOrders?.data, formData.variety]);
+
+  // Reset cell ref when variety or orders change
+  useEffect(() => {
+    firstAvailableCellRef.current = null;
+    // Remove ID from any existing element
+    const existingCell = document.getElementById('sample-quantity-cell');
+    if (existingCell) {
+      existingCell.removeAttribute('id');
+    }
+  }, [formData.variety, filteredOrders]);
 
   // Get available bag sizes from the first order's details
   const availableBagSizes = React.useMemo(() => {
@@ -307,8 +321,14 @@ const OutgoingOrderFormContent = () => {
         farmerName: farmer.name,
         farmerId: farmer._id
       }));
+      // If farmer is pre-selected and we're on the add-farmer step, advance to variety step
+      if (walkthroughStep === 'outgoing-add-farmer') {
+        setTimeout(() => {
+          nextWalkthroughStep();
+        }, 100);
+      }
     }
-  }, [farmer]);
+  }, [farmer, walkthroughStep, nextWalkthroughStep]);
 
   const updateFormData = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -330,6 +350,13 @@ const OutgoingOrderFormContent = () => {
     }));
     setSearchQuery(selectedFarmer.name);
     setShowDropdown(false);
+
+    // Advance to next walkthrough step when farmer is selected
+    if (walkthroughStep === 'outgoing-add-farmer') {
+      setTimeout(() => {
+        nextWalkthroughStep();
+      }, 100);
+    }
   };
 
   // Close dropdown when clicking outside
@@ -474,6 +501,10 @@ const OutgoingOrderFormContent = () => {
     if (voucherSelections.length === totalAvailableQuantitiesForVoucher) {
       // Deselect all quantities for this voucher
       setSelectedQuantities(prev => prev.filter(sq => sq.receiptNumber !== voucherNumber));
+      // End walkthrough if active
+      if (walkthroughStep === 'outgoing-select-checkbox' && isWalkthroughActive) {
+        endWalkthrough();
+      }
       return;
     }
 
@@ -500,6 +531,13 @@ const OutgoingOrderFormContent = () => {
       ...prev.filter(sq => sq.receiptNumber !== voucherNumber),
       ...newSelections
     ]);
+
+    // End walkthrough after checkbox is checked
+    if (walkthroughStep === 'outgoing-select-checkbox' && isWalkthroughActive) {
+      setTimeout(() => {
+        endWalkthrough();
+      }, 100);
+    }
   };
 
   // Add isVoucherSelected function after handleSelectVoucher
@@ -574,6 +612,10 @@ const OutgoingOrderFormContent = () => {
       ),
     onSuccess: () => {
       toast.success(t('outgoingOrder.success.orderCreated'));
+      // End walkthrough when order is created
+      if (isWalkthroughActive) {
+        endWalkthrough();
+      }
       navigate('/erp/daybook'); // Navigate to daybook after success
     },
     onError: (error) => {
@@ -581,8 +623,122 @@ const OutgoingOrderFormContent = () => {
     }
   });
 
+  // Scroll to farmer selection section when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'outgoing-add-farmer') {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const farmerSection = document.getElementById('farmer-selection-section');
+        if (farmerSection) {
+          farmerSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep]);
+
+  // Scroll to variety selector when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'outgoing-select-variety') {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const varietySection = document.getElementById('variety-selector-section');
+        if (varietySection) {
+          varietySection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep]);
+
+  // Scroll to table when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'outgoing-view-table') {
+      // Wait for component to render and variety to be selected
+      const timer = setTimeout(() => {
+        const tableSection = document.getElementById('orders-table-section') ||
+                            document.getElementById('orders-table-section-mobile');
+        if (tableSection) {
+          tableSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep]);
+
+  // Scroll to checkbox when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'outgoing-select-checkbox') {
+      // Wait for component to render and retry if element not found
+      const findAndScroll = () => {
+        const checkboxElement = document.getElementById('sample-voucher-checkbox');
+        if (checkboxElement) {
+          checkboxElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          // Retry after a short delay if element not found
+          setTimeout(findAndScroll, 200);
+        }
+      };
+
+      const timer = setTimeout(findAndScroll, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep, filteredOrders]);
+
+  // Scroll to sample cell when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'outgoing-select-cell') {
+      // Wait for component to render and retry if element not found
+      const findAndScroll = () => {
+        const cellElement = document.getElementById('sample-quantity-cell');
+        if (cellElement) {
+          cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          // Retry after a short delay if element not found
+          setTimeout(findAndScroll, 200);
+        }
+      };
+
+      const timer = setTimeout(findAndScroll, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep, filteredOrders]);
+
   return (
-    <div className="w-full bg-background rounded-lg shadow-lg border border-border overflow-hidden">
+    <>
+      <Spotlight
+        instruction="Search for a farmer or select from the dropdown. The farmer must have incoming orders to create an outgoing order."
+        targetId="farmer-selection-section"
+        isActive={walkthroughStep === 'outgoing-add-farmer'}
+        padding={100}
+      />
+      <Spotlight
+        instruction="Select the potato variety from the farmer's incoming orders. Only varieties that have available stock will be shown."
+        targetId="variety-selector-section"
+        isActive={walkthroughStep === 'outgoing-select-variety'}
+        padding={24}
+      />
+      <Spotlight
+        instruction="The table shows receipt vouchers of the Farmer and the variety that you have selected."
+        targetId="orders-table-section"
+        isActive={walkthroughStep === 'outgoing-view-table'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={nextWalkthroughStep}
+      />
+      <Spotlight
+        instruction="Now, click on the checkbox icon to remove the bags that you created during incoming and then click on continue below."
+        targetId="sample-voucher-checkbox"
+        isActive={walkthroughStep === 'outgoing-select-checkbox'}
+        padding={12}
+      />
+      <Spotlight
+        instruction="Click on any cell to select quantities from that receipt voucher and bag size."
+        targetId="sample-quantity-cell"
+        isActive={walkthroughStep === 'outgoing-select-cell'}
+        padding={8}
+      />
+      <div className="w-full bg-background rounded-lg shadow-lg border border-border overflow-hidden">
       <div className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5">
         <div className="flex flex-col items-center mb-3 sm:mb-4 md:mb-5">
           <h1 className="text-lg sm:text-xl md:text-2xl font-bold mb-3">{t('outgoingOrder.title')}</h1>
@@ -644,7 +800,7 @@ const OutgoingOrderFormContent = () => {
             {currentStep === 1 && (
               <div className="space-y-3 sm:space-y-4">
                 {/* Farmer Selection */}
-                <div>
+                <div id="farmer-selection-section">
                   <label className="block text-sm font-medium mb-1 sm:mb-1.5">
                     {t('outgoingOrder.farmer.label')}
                   </label>
@@ -690,7 +846,7 @@ const OutgoingOrderFormContent = () => {
                       {showDropdown && (searchResults?.length > 0 || isSearching) && (
                         <div
                           id="farmer-search-dropdown"
-                          className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-50 bg-white rounded-md shadow-lg border border-gray-200"
+                          className="absolute left-0 right-0 top-full mt-1 max-h-60 overflow-auto z-[9999] bg-white rounded-md shadow-lg border border-gray-200"
                         >
                           {isSearching ? (
                             <div className="flex items-center justify-center p-4">
@@ -723,7 +879,7 @@ const OutgoingOrderFormContent = () => {
                 </div>
 
                 {/* Variety Selection */}
-                <div className="border border-green-200 rounded-lg p-2 sm:p-3 bg-green-50/50">
+                <div id="variety-selector-section" className="border border-green-200 rounded-lg p-2 sm:p-3 bg-green-50/50">
                   <h3 className="text-sm sm:text-base font-medium mb-1 sm:mb-1.5">{t('outgoingOrder.variety.title')}</h3>
                   <p className="text-xs text-muted-foreground mb-2 sm:mb-3">
                                           {availableVarieties.length > 0
@@ -734,7 +890,16 @@ const OutgoingOrderFormContent = () => {
                   <div className="relative">
                     <Select
                       value={formData.variety}
-                      onValueChange={(value) => updateFormData('variety', value)}
+                      onValueChange={(value) => {
+                        updateFormData('variety', value);
+                        // Advance to next walkthrough step when variety is selected
+                        if (walkthroughStep === 'outgoing-select-variety' && value) {
+                          // Wait for table to render before advancing
+                          setTimeout(() => {
+                            nextWalkthroughStep();
+                          }, 500);
+                        }
+                      }}
                       disabled={isLoadingIncomingOrders || availableVarieties.length === 0}
                     >
                       <SelectTrigger className="w-full bg-background text-sm p-2 sm:p-2.5">
@@ -747,7 +912,7 @@ const OutgoingOrderFormContent = () => {
                                                       <SelectValue placeholder={t('outgoingOrder.variety.selectPlaceholder')} />
                         )}
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="z-[9999]">
                         {availableVarieties.map((variety: string) => (
                           <SelectItem key={variety} value={variety} className="text-sm">
                             {variety}
@@ -784,7 +949,7 @@ const OutgoingOrderFormContent = () => {
                         </div>
 
                         {/* Desktop View - Hidden on mobile */}
-                        <div className="hidden md:block relative -mx-4">
+                        <div id="orders-table-section" className="hidden md:block relative -mx-4">
                           <div className="overflow-x-auto">
                             <div className="min-w-[600px] px-4">
                               <table className="w-full border-collapse bg-white rounded-lg overflow-hidden">
@@ -807,13 +972,14 @@ const OutgoingOrderFormContent = () => {
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  {filteredOrders.map(order => (
+                                  {filteredOrders.map((order, orderIndex) => (
                                     <tr
                                       key={order._id}
                                       className="hover:bg-gray-50/50 transition-colors"
                                     >
                                       <td className="p-2.5 border-b text-center">
                                         <input
+                                          id={orderIndex === 0 ? "sample-voucher-checkbox" : undefined}
                                           type="checkbox"
                                           checked={isVoucherSelected(order.voucher.voucherNumber)}
                                           onChange={() => handleSelectVoucher(order.voucher.voucherNumber)}
@@ -850,10 +1016,23 @@ const OutgoingOrderFormContent = () => {
                                                sq.bagSize === size
                                         );
 
+                                        // Track first available cell for walkthrough
+                                        const isFirstAvailableCell = filteredOrders.length > 0 &&
+                                                                     filteredOrders[0]?._id === order._id &&
+                                                                     availableBagSizes.length > 0 &&
+                                                                     availableBagSizes[0] === size &&
+                                                                     totalQuantities.current > 0;
+
                                         return (
                                           <td key={size} className="p-2 border-b text-center">
                                             <div className="flex flex-col items-center justify-center">
                                               <button
+                                                ref={isFirstAvailableCell ? (el) => {
+                                                  if (el && !firstAvailableCellRef.current) {
+                                                    firstAvailableCellRef.current = el;
+                                                    el.id = "sample-quantity-cell";
+                                                  }
+                                                } : undefined}
                                                 type="button"
                                                 onClick={(e) => handleBoxClick(
                                                   order.voucher.voucherNumber,
@@ -915,8 +1094,8 @@ const OutgoingOrderFormContent = () => {
                         </div>
 
                         {/* Mobile View - Shown only on mobile */}
-                        <div className="md:hidden space-y-4">
-                          {filteredOrders.map(order => (
+                        <div id="orders-table-section-mobile" className="md:hidden space-y-4">
+                          {filteredOrders.map((order, orderIndex) => (
                             <div key={order._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden">
                               <div className="p-3 bg-gray-50 border-b border-gray-200">
                                 <div className="flex flex-col gap-1">
@@ -927,6 +1106,7 @@ const OutgoingOrderFormContent = () => {
                                     </div>
                                   )}
                                   <button
+                                    id={orderIndex === 0 ? "sample-voucher-checkbox" : undefined}
                                     type="button"
                                     onClick={() => handleSelectVoucher(order.voucher.voucherNumber)}
                                     className={`text-xs px-2 py-1 rounded-md w-fit transition-colors ${
@@ -961,10 +1141,23 @@ const OutgoingOrderFormContent = () => {
                                            sq.bagSize === size
                                     );
 
+                                    // Track first available cell for walkthrough (mobile)
+                                    const isFirstAvailableCellMobile = filteredOrders.length > 0 &&
+                                                                       filteredOrders[0]?._id === order._id &&
+                                                                       availableBagSizes.length > 0 &&
+                                                                       availableBagSizes[0] === size &&
+                                                                       totalQuantities.current > 0;
+
                                     return (
                                       <div key={size} className="flex flex-col items-center">
                                         <div className="text-xs font-medium mb-1">{size}</div>
                                         <button
+                                          ref={isFirstAvailableCellMobile ? (el) => {
+                                            if (el && !firstAvailableCellRef.current) {
+                                              firstAvailableCellRef.current = el;
+                                              el.id = "sample-quantity-cell";
+                                            }
+                                          } : undefined}
                                           type="button"
                                           onClick={(e) => handleBoxClick(
                                             order.voucher.voucherNumber,
@@ -1226,7 +1419,8 @@ const OutgoingOrderFormContent = () => {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </>
   );
 };
 
