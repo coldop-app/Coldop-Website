@@ -2,7 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 
 interface WalkthroughContextType {
   isActive: boolean;
-  currentStep: 'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | 'daybook-add-outgoing' | 'outgoing-add-farmer' | 'outgoing-select-variety' | 'outgoing-view-table' | 'outgoing-select-cell' | 'outgoing-select-checkbox' | null;
+  currentStep: 'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | 'daybook-add-outgoing' | 'outgoing-add-farmer' | 'outgoing-select-variety' | 'outgoing-view-table' | 'outgoing-select-checkbox' | 'outgoing-continue-button' | 'outgoing-create-button' | 'outgoing-voucher-created' | 'outgoing-voucher-card' | 'outgoing-voucher-more-details' | 'outgoing-voucher-farmer-details' | 'outgoing-voucher-net-outgoing' | 'outgoing-voucher-detailed-breakdown' | 'outgoing-voucher-remarks' | null;
   startWalkthrough: () => void;
   startOutgoingWalkthrough: () => void;
   nextStep: () => void;
@@ -13,7 +13,7 @@ const WalkthroughContext = createContext<WalkthroughContextType | undefined>(und
 
 export const WalkthroughProvider = ({ children }: { children: ReactNode }) => {
   const [isActive, setIsActive] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | 'daybook-add-outgoing' | 'outgoing-add-farmer' | 'outgoing-select-variety' | 'outgoing-view-table' | 'outgoing-select-cell' | 'outgoing-select-checkbox' | null>(null);
+  const [currentStep, setCurrentStep] = useState<'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | 'daybook-add-outgoing' | 'outgoing-add-farmer' | 'outgoing-select-variety' | 'outgoing-view-table' | 'outgoing-select-checkbox' | 'outgoing-continue-button' | 'outgoing-create-button' | 'outgoing-voucher-created' | 'outgoing-voucher-card' | 'outgoing-voucher-more-details' | 'outgoing-voucher-farmer-details' | 'outgoing-voucher-net-outgoing' | 'outgoing-voucher-detailed-breakdown' | 'outgoing-voucher-remarks' | null>(null);
 
   const startWalkthrough = () => {
     setIsActive(true);
@@ -43,7 +43,23 @@ export const WalkthroughProvider = ({ children }: { children: ReactNode }) => {
     } else if (currentStep === 'outgoing-view-table') {
       setCurrentStep('outgoing-select-checkbox');
     } else if (currentStep === 'outgoing-select-checkbox') {
-      setCurrentStep('outgoing-select-cell');
+      setCurrentStep('outgoing-continue-button');
+    } else if (currentStep === 'outgoing-continue-button') {
+      setCurrentStep('outgoing-create-button');
+    } else if (currentStep === 'outgoing-create-button') {
+      setCurrentStep('outgoing-voucher-created');
+    } else if (currentStep === 'outgoing-voucher-created') {
+      setCurrentStep('outgoing-voucher-card');
+    } else if (currentStep === 'outgoing-voucher-card') {
+      setCurrentStep('outgoing-voucher-more-details');
+    } else if (currentStep === 'outgoing-voucher-more-details') {
+      setCurrentStep('outgoing-voucher-farmer-details');
+    } else if (currentStep === 'outgoing-voucher-farmer-details') {
+      setCurrentStep('outgoing-voucher-net-outgoing');
+    } else if (currentStep === 'outgoing-voucher-net-outgoing') {
+      setCurrentStep('outgoing-voucher-detailed-breakdown');
+    } else if (currentStep === 'outgoing-voucher-detailed-breakdown') {
+      setCurrentStep('outgoing-voucher-remarks');
     } else {
       endWalkthrough();
     }

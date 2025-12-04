@@ -228,7 +228,6 @@ const OutgoingOrderFormContent = () => {
     bagSize: string;
     maxQuantity: number;
   } | null>(null);
-  const firstAvailableCellRef = React.useRef<HTMLButtonElement | null>(null);
 
   const [formData, setFormData] = useState<FormData>({
     farmerName: farmer?.name || "",
@@ -266,15 +265,6 @@ const OutgoingOrderFormContent = () => {
     );
   }, [farmerIncomingOrders?.data, formData.variety]);
 
-  // Reset cell ref when variety or orders change
-  useEffect(() => {
-    firstAvailableCellRef.current = null;
-    // Remove ID from any existing element
-    const existingCell = document.getElementById('sample-quantity-cell');
-    if (existingCell) {
-      existingCell.removeAttribute('id');
-    }
-  }, [formData.variety, filteredOrders]);
 
   // Get available bag sizes from the first order's details
   const availableBagSizes = React.useMemo(() => {
@@ -501,7 +491,7 @@ const OutgoingOrderFormContent = () => {
     if (voucherSelections.length === totalAvailableQuantitiesForVoucher) {
       // Deselect all quantities for this voucher
       setSelectedQuantities(prev => prev.filter(sq => sq.receiptNumber !== voucherNumber));
-      // End walkthrough if active
+      // If walkthrough is active and we're on checkbox step, we can end it since they deselected
       if (walkthroughStep === 'outgoing-select-checkbox' && isWalkthroughActive) {
         endWalkthrough();
       }
@@ -532,10 +522,10 @@ const OutgoingOrderFormContent = () => {
       ...newSelections
     ]);
 
-    // End walkthrough after checkbox is checked
+    // Advance walkthrough after checkbox is checked
     if (walkthroughStep === 'outgoing-select-checkbox' && isWalkthroughActive) {
       setTimeout(() => {
-        endWalkthrough();
+        nextWalkthroughStep();
       }, 100);
     }
   };
@@ -612,9 +602,10 @@ const OutgoingOrderFormContent = () => {
       ),
     onSuccess: () => {
       toast.success(t('outgoingOrder.success.orderCreated'));
-      // End walkthrough when order is created
-      if (isWalkthroughActive) {
-        endWalkthrough();
+      // Advance to voucher explanation step instead of ending walkthrough
+      if (isWalkthroughActive && walkthroughStep === 'outgoing-create-button') {
+        // Advance to voucher created step before navigating
+        nextWalkthroughStep();
       }
       navigate('/erp/daybook'); // Navigate to daybook after success
     },
@@ -685,24 +676,31 @@ const OutgoingOrderFormContent = () => {
     }
   }, [walkthroughStep, filteredOrders]);
 
-  // Scroll to sample cell when walkthrough step is active
+  // Scroll to continue button when walkthrough step is active
   useEffect(() => {
-    if (walkthroughStep === 'outgoing-select-cell') {
-      // Wait for component to render and retry if element not found
-      const findAndScroll = () => {
-        const cellElement = document.getElementById('sample-quantity-cell');
-        if (cellElement) {
-          cellElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        } else {
-          // Retry after a short delay if element not found
-          setTimeout(findAndScroll, 200);
+    if (walkthroughStep === 'outgoing-continue-button') {
+      const timer = setTimeout(() => {
+        const continueButton = document.getElementById('outgoing-continue-button');
+        if (continueButton) {
+          continueButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-      };
-
-      const timer = setTimeout(findAndScroll, 300);
+      }, 300);
       return () => clearTimeout(timer);
     }
-  }, [walkthroughStep, filteredOrders]);
+  }, [walkthroughStep]);
+
+  // Scroll to review details card when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'outgoing-create-button' && currentStep === 2) {
+      const timer = setTimeout(() => {
+        const reviewCard = document.getElementById('review-details-card');
+        if (reviewCard) {
+          reviewCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep, currentStep]);
 
   return (
     <>
@@ -731,12 +729,22 @@ const OutgoingOrderFormContent = () => {
         targetId="sample-voucher-checkbox"
         isActive={walkthroughStep === 'outgoing-select-checkbox'}
         padding={12}
+        showContinueButton={true}
+        onContinue={nextWalkthroughStep}
       />
       <Spotlight
-        instruction="Click on any cell to select quantities from that receipt voucher and bag size."
-        targetId="sample-quantity-cell"
-        isActive={walkthroughStep === 'outgoing-select-cell'}
-        padding={8}
+        instruction="Click the Continue button to proceed to the review page where you can add remarks and create the outgoing order."
+        targetId="outgoing-continue-button"
+        isActive={walkthroughStep === 'outgoing-continue-button' && currentStep === 1}
+        padding={12}
+      />
+      <Spotlight
+        instruction="Review all the selected quantities and add any remarks if needed. Then click the Create Outgoing Order button to finalize and create your outgoing voucher."
+        targetId="review-details-card"
+        isActive={walkthroughStep === 'outgoing-create-button' && currentStep === 2}
+        padding={12}
+        showContinueButton={true}
+        onContinue={nextWalkthroughStep}
       />
       <div className="w-full bg-background rounded-lg shadow-lg border border-border overflow-hidden">
       <div className="px-2 sm:px-3 md:px-4 py-3 sm:py-4 md:py-5">
@@ -1016,23 +1024,10 @@ const OutgoingOrderFormContent = () => {
                                                sq.bagSize === size
                                         );
 
-                                        // Track first available cell for walkthrough
-                                        const isFirstAvailableCell = filteredOrders.length > 0 &&
-                                                                     filteredOrders[0]?._id === order._id &&
-                                                                     availableBagSizes.length > 0 &&
-                                                                     availableBagSizes[0] === size &&
-                                                                     totalQuantities.current > 0;
-
                                         return (
                                           <td key={size} className="p-2 border-b text-center">
                                             <div className="flex flex-col items-center justify-center">
                                               <button
-                                                ref={isFirstAvailableCell ? (el) => {
-                                                  if (el && !firstAvailableCellRef.current) {
-                                                    firstAvailableCellRef.current = el;
-                                                    el.id = "sample-quantity-cell";
-                                                  }
-                                                } : undefined}
                                                 type="button"
                                                 onClick={(e) => handleBoxClick(
                                                   order.voucher.voucherNumber,
@@ -1141,23 +1136,10 @@ const OutgoingOrderFormContent = () => {
                                            sq.bagSize === size
                                     );
 
-                                    // Track first available cell for walkthrough (mobile)
-                                    const isFirstAvailableCellMobile = filteredOrders.length > 0 &&
-                                                                       filteredOrders[0]?._id === order._id &&
-                                                                       availableBagSizes.length > 0 &&
-                                                                       availableBagSizes[0] === size &&
-                                                                       totalQuantities.current > 0;
-
                                     return (
                                       <div key={size} className="flex flex-col items-center">
                                         <div className="text-xs font-medium mb-1">{size}</div>
                                         <button
-                                          ref={isFirstAvailableCellMobile ? (el) => {
-                                            if (el && !firstAvailableCellRef.current) {
-                                              firstAvailableCellRef.current = el;
-                                              el.id = "sample-quantity-cell";
-                                            }
-                                          } : undefined}
                                           type="button"
                                           onClick={(e) => handleBoxClick(
                                             order.voucher.voucherNumber,
@@ -1250,6 +1232,7 @@ const OutgoingOrderFormContent = () => {
 
                 <div className="pt-4 flex justify-end">
                   <button
+                    id="outgoing-continue-button"
                     type="button"
                     onClick={() => {
                           if (!formData.farmerName.trim()) {
@@ -1261,6 +1244,12 @@ const OutgoingOrderFormContent = () => {
       return;
     }
                       setCurrentStep(2);
+                      // Advance walkthrough step if active
+                      if (isWalkthroughActive && walkthroughStep === 'outgoing-continue-button') {
+                        setTimeout(() => {
+                          nextWalkthroughStep();
+                        }, 100);
+                      }
                     }}
                     className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-6 sm:px-8 py-2.5 sm:py-3 text-base sm:text-lg font-semibold text-secondary no-underline duration-100 hover:bg-primary/85 hover:text-secondary focus:outline-none focus:ring-2 focus:ring-primary/50"
                   >
@@ -1279,13 +1268,15 @@ const OutgoingOrderFormContent = () => {
                   <h3 className="text-lg font-medium mb-4">{t('outgoingOrder.review.title')}</h3>
 
                   {/* Selected Quantities Summary */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                  <div id="review-details-card" className="bg-gray-50 rounded-lg p-4 mb-6">
                     <h4 className="font-medium mb-3">{t('outgoingOrder.selectedQuantities.title')}</h4>
                     <div className="space-y-2">
                       {selectedQuantities.map((sq, index) => {
-                        // Find the order and its location
+                        // Find the order and location for this specific bag size
                         const order = filteredOrders.find(o => o.voucher.voucherNumber === sq.receiptNumber);
-                        const location = order?.orderDetails[0]?.location;
+                        const location = order?.orderDetails.find(detail =>
+                          detail.bagSizes.some(b => b.size === sq.bagSize)
+                        )?.bagSizes.find(b => b.size === sq.bagSize)?.location;
 
                         return (
                           <div key={index} className="flex flex-col gap-1">
@@ -1331,11 +1322,18 @@ const OutgoingOrderFormContent = () => {
                       {t('outgoingOrder.buttons.back')}
                     </button>
                     <button
+                      id="outgoing-create-button"
                       type="button"
                       onClick={() => {
                         const requestBody = generateOutgoingOrderRequestBody();
                         console.log('Outgoing Order Request Body:', JSON.stringify(requestBody, null, 2));
                         createOrderMutation.mutate(requestBody);
+                        // Advance walkthrough step if active
+                        if (isWalkthroughActive && walkthroughStep === 'outgoing-create-button') {
+                          setTimeout(() => {
+                            nextWalkthroughStep();
+                          }, 100);
+                        }
                       }}
                       disabled={createOrderMutation.isPending || selectedQuantities.length === 0}
                       className="flex-1 py-2.5 px-4 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"

@@ -50,7 +50,7 @@ const DaybookScreen = () => {
   const [searchReceiptNumber, setSearchReceiptNumber] = useState<string>('');
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const navigate = useNavigate();
-  const { currentStep, nextStep } = useWalkthrough();
+  const { currentStep, nextStep, isActive: isWalkthroughActive, endWalkthrough } = useWalkthrough();
 
   // Scroll to add incoming button when walkthrough step is active
   useEffect(() => {
@@ -79,6 +79,106 @@ const DaybookScreen = () => {
       return () => clearTimeout(timer);
     }
   }, [currentStep]);
+
+  // Scroll to voucher card when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'outgoing-voucher-created' || currentStep === 'outgoing-voucher-card') {
+      const timer = setTimeout(() => {
+        const voucherCard = document.getElementById('outgoing-voucher-card');
+        if (voucherCard) {
+          voucherCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        // Auto-advance from created to card step after showing the card
+        if (currentStep === 'outgoing-voucher-created' && isWalkthroughActive) {
+          setTimeout(() => {
+            nextStep();
+          }, 1000);
+        }
+      }, 500); // Wait for orders to load
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, isWalkthroughActive, nextStep]);
+
+  // Scroll to more details button when walkthrough step is active and auto-expand
+  useEffect(() => {
+    if (currentStep === 'outgoing-voucher-more-details') {
+      const timer = setTimeout(() => {
+        const moreDetailsButton = document.getElementById('outgoing-voucher-more-details-button');
+        if (moreDetailsButton) {
+          // Check if the card is already expanded by checking if the button text contains "Less"
+          const buttonText = moreDetailsButton.textContent || '';
+          const isExpanded = buttonText.includes('Less');
+
+          // If not expanded, click the button to expand it
+          if (!isExpanded) {
+            (moreDetailsButton as HTMLButtonElement).click();
+          }
+
+          moreDetailsButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Scroll to farmer details when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'outgoing-voucher-farmer-details') {
+      const timer = setTimeout(() => {
+        const farmerDetails = document.getElementById('outgoing-voucher-farmer-details');
+        if (farmerDetails) {
+          farmerDetails.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Scroll to net outgoing details when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'outgoing-voucher-net-outgoing') {
+      const timer = setTimeout(() => {
+        const netOutgoing = document.getElementById('outgoing-voucher-net-outgoing');
+        if (netOutgoing) {
+          netOutgoing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Scroll to detailed breakdown when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'outgoing-voucher-detailed-breakdown') {
+      const timer = setTimeout(() => {
+        const detailedBreakdown = document.getElementById('outgoing-voucher-detailed-breakdown');
+        if (detailedBreakdown) {
+          detailedBreakdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Scroll to remarks when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'outgoing-voucher-remarks') {
+      const timer = setTimeout(() => {
+        const remarks = document.getElementById('outgoing-voucher-remarks');
+        if (remarks) {
+          remarks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          // If remarks don't exist, end the walkthrough
+          if (isWalkthroughActive) {
+            setTimeout(() => {
+              endWalkthrough();
+            }, 100);
+          }
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, isWalkthroughActive, endWalkthrough]);
 
   const { data: searchData, isLoading: isSearchLoading, error: searchError } = useQuery({
     queryKey: ['searchReceipt', searchReceiptNumber],
@@ -304,6 +404,63 @@ const DaybookScreen = () => {
         instruction="Let's start by adding an outgoing order"
         targetId="add-outgoing-button"
         isActive={currentStep === 'daybook-add-outgoing'}
+      />
+      <Spotlight
+        instruction="Great! Your outgoing voucher has been created successfully. This is the delivery voucher card that shows all the details of the outgoing order you just created."
+        targetId="outgoing-voucher-card"
+        isActive={currentStep === 'outgoing-voucher-created' || currentStep === 'outgoing-voucher-card'}
+        padding={16}
+        showContinueButton={currentStep === 'outgoing-voucher-card'}
+        onContinue={currentStep === 'outgoing-voucher-card' ? nextStep : undefined}
+      />
+      <Spotlight
+        instruction="Click on 'More Details' to expand and see the complete breakdown of your outgoing voucher, including farmer details, net outgoing quantities, and detailed breakdown by receipt vouchers."
+        targetId="outgoing-voucher-more-details-button"
+        isActive={currentStep === 'outgoing-voucher-more-details'}
+        padding={12}
+      />
+      <Spotlight
+        instruction="This section shows the farmer's contact information including their address and mobile number. This helps you identify and contact the farmer associated with this outgoing order."
+        targetId="outgoing-voucher-farmer-details"
+        isActive={currentStep === 'outgoing-voucher-farmer-details'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={nextStep}
+      />
+      <Spotlight
+        instruction="The Net Outgoing Details table shows the total quantity removed for each bag size across all receipt vouchers. This gives you a quick summary of what was taken out in this outgoing order."
+        targetId="outgoing-voucher-net-outgoing"
+        isActive={currentStep === 'outgoing-voucher-net-outgoing'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={nextStep}
+      />
+      <Spotlight
+        instruction="The Detailed Breakdown table provides comprehensive information for each bag size: the location where it's stored, the receipt voucher number it came from, current quantity before removal, quantity issued (removed), and remaining available quantity. This helps you track exactly which bags were removed from which receipt vouchers."
+        targetId="outgoing-voucher-detailed-breakdown"
+        isActive={currentStep === 'outgoing-voucher-detailed-breakdown'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={() => {
+          // Check if any delivery voucher has remarks
+          const hasRemarks = orders.some((order: Order) =>
+            order.voucher.type === 'DELIVERY' && order.remarks && order.remarks.trim() !== ''
+          );
+          if (hasRemarks) {
+            nextStep();
+          } else {
+            // Skip remarks step and end walkthrough
+            endWalkthrough();
+          }
+        }}
+      />
+      <Spotlight
+        instruction="If you added any remarks while creating the outgoing order, they will be displayed here. Remarks are useful for adding notes or special instructions related to this order."
+        targetId="outgoing-voucher-remarks"
+        isActive={currentStep === 'outgoing-voucher-remarks'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={nextStep}
       />
       <div className="p-2 sm:p-4 lg:p-6 max-w-7xl mx-auto">
         {/* Header with total count */}

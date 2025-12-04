@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { ChevronDown, ChevronUp, Share2 } from 'lucide-react';
+import { useWalkthrough } from '@/contexts/WalkthroughContext';
 
 interface WebViewMessage {
   type: 'SHARE_CARD';
@@ -41,6 +42,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // Loading state for PDF generation
 
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
+  const { currentStep: walkthroughStep, nextStep: nextWalkthroughStep, isActive: isWalkthroughActive } = useWalkthrough();
 
   // Sort bag sizes according to admin preferences using useMemo
   const sortBagSizes = useMemo(() => {
@@ -244,7 +246,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
   };
 
   return (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:border-primary/10 hover:shadow-md">
+    <div id="outgoing-voucher-card" className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden transition-all duration-200 hover:border-primary/10 hover:shadow-md">
       {/* Header Section */}
       <div className="p-3 sm:p-4 lg:p-5">
         {/* Top Row - Voucher Number and Stock */}
@@ -324,7 +326,16 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
 
             {/* Expand/Collapse Button */}
             <button
-              onClick={() => setIsExpanded(!isExpanded)}
+              id="outgoing-voucher-more-details-button"
+              onClick={() => {
+                setIsExpanded(!isExpanded);
+                // Advance walkthrough step if we're on the more-details step
+                if (isWalkthroughActive && walkthroughStep === 'outgoing-voucher-more-details' && !isExpanded) {
+                  setTimeout(() => {
+                    nextWalkthroughStep();
+                  }, 100);
+                }
+              }}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200 sm:order-2 lg:order-1 w-full sm:w-auto justify-center sm:justify-start"
             >
               {isExpanded ? (
@@ -348,7 +359,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
         <div className="border-t border-gray-100">
           <div className="p-3 sm:p-4 lg:p-5 space-y-6">
             {/* Farmer Details */}
-            <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+            <div id="outgoing-voucher-farmer-details" className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Farmer Details</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -363,7 +374,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
             </div>
 
             {/* Net Outgoing Details */}
-            <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+            <div id="outgoing-voucher-net-outgoing" className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Net Outgoing Details</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -404,7 +415,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
             </div>
 
             {/* Detailed Breakdown */}
-            <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+            <div id="outgoing-voucher-detailed-breakdown" className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Detailed Breakdown</h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -464,7 +475,7 @@ const DeliveryVoucherCard = ({ order }: DeliveryVoucherCardProps) => {
 
             {/* Remarks Section */}
             {order.remarks && (
-              <div className="bg-yellow-50/50 rounded-xl p-4 border border-yellow-100">
+              <div id="outgoing-voucher-remarks" className="bg-yellow-50/50 rounded-xl p-4 border border-yellow-100">
                 <h3 className="text-sm font-medium text-gray-900 mb-2">Remarks</h3>
                 <p className="text-sm text-gray-700 leading-relaxed break-words">{order.remarks}</p>
               </div>
