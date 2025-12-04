@@ -375,6 +375,7 @@ ${order.orderDetails.map(detail =>
 
             {/* Expand/Collapse Button */}
             <button
+              id="incoming-voucher-more-details-button"
               onClick={() => setIsExpanded(!isExpanded)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-500/20 transition-all duration-200 sm:order-2 lg:order-1 w-full sm:w-auto justify-center sm:justify-start"
             >
@@ -399,7 +400,7 @@ ${order.orderDetails.map(detail =>
         <div className="border-t border-gray-100">
           <div className="p-3 sm:p-4 lg:p-5 space-y-6">
             {/* Farmer Details */}
-            <div className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
+            <div id="incoming-voucher-farmer-details" className="bg-gray-50/50 rounded-xl p-4 border border-gray-100">
               <h3 className="text-sm font-medium text-gray-900 mb-4">Farmer Details</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -507,7 +508,7 @@ ${order.orderDetails.map(detail =>
                         </thead>
                         <tbody>
                           {/* Quantity Row */}
-                          <tr className="border-b border-gray-100">
+                          <tr id="incoming-voucher-quantities" className="border-b border-gray-100">
                             <td className="py-3 px-3 text-center font-medium text-gray-900">
                               Quantity
                             </td>
@@ -533,7 +534,7 @@ ${order.orderDetails.map(detail =>
                           </tr>
 
                           {/* Location Row */}
-                          <tr className="border-b border-gray-100">
+                          <tr id="incoming-voucher-locations" className="border-b border-gray-100">
                             <td className="py-3 px-3 text-center font-medium text-gray-900">
                               Location
                             </td>
@@ -581,7 +582,7 @@ ${order.orderDetails.map(detail =>
 
             {/* Remarks Section */}
             {order.remarks && (
-              <div className="bg-yellow-50/50 rounded-xl p-4 border border-yellow-100">
+              <div id="incoming-voucher-remarks" className="bg-yellow-50/50 rounded-xl p-4 border border-yellow-100">
                 <h3 className="text-sm font-medium text-gray-900 mb-2">Remarks</h3>
                 <p className="text-sm text-gray-700 leading-relaxed break-words">{order.remarks}</p>
               </div>

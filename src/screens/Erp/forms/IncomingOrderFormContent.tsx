@@ -413,6 +413,13 @@ const IncomingOrderFormContent = () => {
 
     toast.success("Location applied to all bag sizes!");
 
+    // Advance walkthrough to create button step if active
+    if (isWalkthroughActive && walkthroughStep === 'incoming-enter-location') {
+      setTimeout(() => {
+        nextWalkthroughStep();
+      }, 100);
+    }
+
     // Focus on remarks field after applying location to all
     setTimeout(() => {
       const remarksTextarea = document.getElementById("remarks-textarea");
@@ -937,6 +944,20 @@ const IncomingOrderFormContent = () => {
     }
   }, [walkthroughStep]);
 
+  // Scroll to create button when walkthrough step is active
+  useEffect(() => {
+    if (walkthroughStep === 'incoming-create-button' && currentStep === 2) {
+      // Wait for component to render
+      const timer = setTimeout(() => {
+        const createButton = document.getElementById('create-incoming-order-button');
+        if (createButton) {
+          createButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [walkthroughStep, currentStep]);
+
   // Check if all locations are complete and focus on remarks
   useEffect(() => {
     if (currentStep !== 2) return; // Only check when on step 2
@@ -999,6 +1020,11 @@ const IncomingOrderFormContent = () => {
         instruction="Click 'Apply to All' to quickly apply the same location to all bag sizes instead of typing each one."
         targetId="apply-to-all-button"
         isActive={walkthroughStep === 'incoming-enter-location' && currentStep === 2 && !!firstCompleteLocation}
+      />
+      <Spotlight
+        instruction="Click 'Create Incoming Order' to submit the form and create your receipt voucher. You can add optional remarks before submitting."
+        targetId="create-incoming-order-button"
+        isActive={walkthroughStep === 'incoming-create-button' && currentStep === 2}
       />
       <div className="max-w-2xl mx-auto p-6 bg-background rounded-lg shadow-lg border border-border">
       <div className="text-center mb-6">
@@ -1478,11 +1504,12 @@ const IncomingOrderFormContent = () => {
                   {t("incomingOrder.buttons.back")}
                 </button>
                 <button
+                  id="create-incoming-order-button"
                   type="submit"
                   disabled={createOrderMutation.isPending}
                   onClick={() => {
                     // Advance to voucher explanation step when submitting the form
-                    if (walkthroughStep === 'incoming-enter-location' && isWalkthroughActive) {
+                    if ((walkthroughStep === 'incoming-create-button' || walkthroughStep === 'incoming-enter-location') && isWalkthroughActive) {
                       nextWalkthroughStep();
                     }
                   }}

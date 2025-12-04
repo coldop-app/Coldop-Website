@@ -2,7 +2,7 @@ import { createContext, useContext, useState, type ReactNode } from 'react';
 
 interface WalkthroughContextType {
   isActive: boolean;
-  currentStep: 'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | 'incoming-voucher-explanation' | 'daybook-add-outgoing' | 'outgoing-add-farmer' | 'outgoing-select-variety' | 'outgoing-view-table' | 'outgoing-select-checkbox' | 'outgoing-continue-button' | 'outgoing-create-button' | 'outgoing-voucher-created' | 'outgoing-voucher-card' | 'outgoing-voucher-more-details' | 'outgoing-voucher-farmer-details' | 'outgoing-voucher-net-outgoing' | 'outgoing-voucher-detailed-breakdown' | 'outgoing-voucher-remarks' | null;
+  currentStep: 'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | 'incoming-create-button' | 'incoming-voucher-explanation' | 'incoming-voucher-more-details' | 'incoming-voucher-farmer-details' | 'incoming-voucher-quantities' | 'incoming-voucher-locations' | 'incoming-voucher-remarks' | 'daybook-add-outgoing' | 'outgoing-add-farmer' | 'outgoing-select-variety' | 'outgoing-view-table' | 'outgoing-select-checkbox' | 'outgoing-continue-button' | 'outgoing-create-button' | 'outgoing-voucher-created' | 'outgoing-voucher-card' | 'outgoing-voucher-more-details' | 'outgoing-voucher-farmer-details' | 'outgoing-voucher-net-outgoing' | 'outgoing-voucher-detailed-breakdown' | 'outgoing-voucher-remarks' | null;
   startWalkthrough: () => void;
   startOutgoingWalkthrough: () => void;
   nextStep: () => void;
@@ -13,7 +13,7 @@ const WalkthroughContext = createContext<WalkthroughContextType | undefined>(und
 
 export const WalkthroughProvider = ({ children }: { children: ReactNode }) => {
   const [isActive, setIsActive] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | 'incoming-voucher-explanation' | 'daybook-add-outgoing' | 'outgoing-add-farmer' | 'outgoing-select-variety' | 'outgoing-view-table' | 'outgoing-select-checkbox' | 'outgoing-continue-button' | 'outgoing-create-button' | 'outgoing-voucher-created' | 'outgoing-voucher-card' | 'outgoing-voucher-more-details' | 'outgoing-voucher-farmer-details' | 'outgoing-voucher-net-outgoing' | 'outgoing-voucher-detailed-breakdown' | 'outgoing-voucher-remarks' | null>(null);
+  const [currentStep, setCurrentStep] = useState<'daybook-add-incoming' | 'incoming-add-farmer' | 'incoming-select-variety' | 'incoming-enter-quantities' | 'incoming-enter-location' | 'incoming-create-button' | 'incoming-voucher-explanation' | 'incoming-voucher-more-details' | 'incoming-voucher-farmer-details' | 'incoming-voucher-quantities' | 'incoming-voucher-locations' | 'incoming-voucher-remarks' | 'daybook-add-outgoing' | 'outgoing-add-farmer' | 'outgoing-select-variety' | 'outgoing-view-table' | 'outgoing-select-checkbox' | 'outgoing-continue-button' | 'outgoing-create-button' | 'outgoing-voucher-created' | 'outgoing-voucher-card' | 'outgoing-voucher-more-details' | 'outgoing-voucher-farmer-details' | 'outgoing-voucher-net-outgoing' | 'outgoing-voucher-detailed-breakdown' | 'outgoing-voucher-remarks' | null>(null);
 
   const startWalkthrough = () => {
     setIsActive(true);
@@ -35,7 +35,19 @@ export const WalkthroughProvider = ({ children }: { children: ReactNode }) => {
     } else if (currentStep === 'incoming-enter-quantities') {
       setCurrentStep('incoming-enter-location');
     } else if (currentStep === 'incoming-enter-location') {
+      setCurrentStep('incoming-create-button');
+    } else if (currentStep === 'incoming-create-button') {
       setCurrentStep('incoming-voucher-explanation');
+    } else if (currentStep === 'incoming-voucher-explanation') {
+      setCurrentStep('incoming-voucher-more-details');
+    } else if (currentStep === 'incoming-voucher-more-details') {
+      setCurrentStep('incoming-voucher-farmer-details');
+    } else if (currentStep === 'incoming-voucher-farmer-details') {
+      setCurrentStep('incoming-voucher-quantities');
+    } else if (currentStep === 'incoming-voucher-quantities') {
+      setCurrentStep('incoming-voucher-locations');
+    } else if (currentStep === 'incoming-voucher-locations') {
+      setCurrentStep('incoming-voucher-remarks');
     } else if (currentStep === 'daybook-add-outgoing') {
       setCurrentStep('outgoing-add-farmer');
     } else if (currentStep === 'outgoing-add-farmer') {

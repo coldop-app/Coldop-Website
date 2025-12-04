@@ -94,6 +94,87 @@ const DaybookScreen = () => {
     }
   }, [currentStep]);
 
+  // Scroll to incoming voucher more details button when walkthrough step is active and auto-expand
+  useEffect(() => {
+    if (currentStep === 'incoming-voucher-more-details') {
+      const timer = setTimeout(() => {
+        const moreDetailsButton = document.getElementById('incoming-voucher-more-details-button');
+        if (moreDetailsButton) {
+          // Check if the card is already expanded by checking if the button text contains "Less"
+          const buttonText = moreDetailsButton.textContent || '';
+          const isExpanded = buttonText.includes('Less');
+
+          // If not expanded, click the button to expand it
+          if (!isExpanded) {
+            (moreDetailsButton as HTMLButtonElement).click();
+          }
+
+          moreDetailsButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Scroll to incoming voucher farmer details when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'incoming-voucher-farmer-details') {
+      const timer = setTimeout(() => {
+        const farmerDetails = document.getElementById('incoming-voucher-farmer-details');
+        if (farmerDetails) {
+          farmerDetails.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Scroll to incoming voucher quantities when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'incoming-voucher-quantities') {
+      const timer = setTimeout(() => {
+        const quantities = document.getElementById('incoming-voucher-quantities');
+        if (quantities) {
+          quantities.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Scroll to incoming voucher locations when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'incoming-voucher-locations') {
+      const timer = setTimeout(() => {
+        const locations = document.getElementById('incoming-voucher-locations');
+        if (locations) {
+          locations.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep]);
+
+  // Scroll to incoming voucher remarks when walkthrough step is active
+  useEffect(() => {
+    if (currentStep === 'incoming-voucher-remarks') {
+      const timer = setTimeout(() => {
+        const remarks = document.getElementById('incoming-voucher-remarks');
+        if (remarks) {
+          remarks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        } else {
+          // If remarks don't exist, end the walkthrough
+          if (isWalkthroughActive) {
+            setTimeout(() => {
+              endWalkthrough();
+            }, 100);
+          }
+        }
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [currentStep, isWalkthroughActive, endWalkthrough]);
+
   // Scroll to voucher card when walkthrough step is active
   useEffect(() => {
     if (currentStep === 'outgoing-voucher-created' || currentStep === 'outgoing-voucher-card') {
@@ -418,6 +499,57 @@ const DaybookScreen = () => {
         instruction="Great! Your incoming voucher has been created successfully. This is the receipt voucher card that shows all the details of the incoming order you just created, including the farmer information, variety, bag quantities, and storage locations."
         targetId="incoming-voucher-card"
         isActive={currentStep === 'incoming-voucher-explanation'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={nextStep}
+      />
+      <Spotlight
+        instruction="Click on 'More Details' to expand and see the complete breakdown of your receipt voucher, including farmer details, quantities, locations, and remarks."
+        targetId="incoming-voucher-more-details-button"
+        isActive={currentStep === 'incoming-voucher-more-details'}
+        padding={12}
+        showContinueButton={true}
+        onContinue={nextStep}
+      />
+      <Spotlight
+        instruction="This section shows the farmer's contact information including their address and mobile number. This helps you identify and contact the farmer associated with this receipt voucher."
+        targetId="incoming-voucher-farmer-details"
+        isActive={currentStep === 'incoming-voucher-farmer-details'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={nextStep}
+      />
+      <Spotlight
+        instruction="The Quantity table shows the current and initial quantities for each bag size. The format is 'current/initial', where current is the remaining quantity and initial is the original quantity when the order was created."
+        targetId="incoming-voucher-quantities"
+        isActive={currentStep === 'incoming-voucher-quantities'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={nextStep}
+      />
+      <Spotlight
+        instruction="The Location table shows the storage location (Chamber-Floor-Row) for each bag size. This is the location you entered when creating the incoming order, and it will be used as a reference when creating outgoing orders."
+        targetId="incoming-voucher-locations"
+        isActive={currentStep === 'incoming-voucher-locations'}
+        padding={16}
+        showContinueButton={true}
+        onContinue={() => {
+          // Check if any receipt voucher has remarks
+          const hasRemarks = orders.some((order: Order) =>
+            order.voucher.type === 'RECEIPT' && order.remarks && order.remarks.trim() !== ''
+          );
+          if (hasRemarks) {
+            nextStep();
+          } else {
+            // Skip remarks step and end walkthrough
+            endWalkthrough();
+          }
+        }}
+      />
+      <Spotlight
+        instruction="If you added any remarks while creating the incoming order, they will be displayed here. Remarks are useful for adding notes or special instructions related to this order."
+        targetId="incoming-voucher-remarks"
+        isActive={currentStep === 'incoming-voucher-remarks'}
         padding={16}
         showContinueButton={true}
         onContinue={nextStep}
