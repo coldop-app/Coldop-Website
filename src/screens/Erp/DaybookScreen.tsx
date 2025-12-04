@@ -531,7 +531,7 @@ const DaybookScreen = () => {
         instruction="The Location table shows the storage location (Chamber-Floor-Row) for each bag size. This is the location you entered when creating the incoming order, and it will be used as a reference when creating outgoing orders."
         targetId="incoming-voucher-locations"
         isActive={currentStep === 'incoming-voucher-locations'}
-        padding={16}
+        padding={80}
         showContinueButton={true}
         onContinue={() => {
           // Check if any receipt voucher has remarks
