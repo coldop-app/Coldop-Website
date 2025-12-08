@@ -105,7 +105,9 @@ const TopFarmersChart = ({ data, topFarmersData, totalBags }: TopFarmersChartPro
               <h5 className="font-medium text-gray-900 mb-2 text-sm">{t('coldStorageSummary.storageShare')}</h5>
               <div className="text-center">
                 <div className="text-2xl sm:text-3xl font-bold text-gray-900">
-                  {((topFarmersData.data[0].totalBags / totalBags) * 100).toFixed(1)}%
+                  {totalBags > 0
+                    ? Math.min(((topFarmersData.data[0].totalBags / totalBags) * 100), 100).toFixed(1)
+                    : '0.0'}%
                 </div>
                 <div className="text-xs sm:text-sm text-gray-600">{t('coldStorageSummary.ofTotalInventory')}</div>
               </div>

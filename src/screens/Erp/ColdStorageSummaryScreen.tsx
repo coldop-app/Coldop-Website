@@ -119,14 +119,18 @@ const ColdStorageSummaryScreen = () => {
     .map(variety => ({
       variety: variety.variety,
       quantity: calculateVarietyTotal(variety.sizes, activeTab),
-      percentage: (calculateVarietyTotal(variety.sizes, activeTab) / totalBags) * 100
+      percentage: totalBags > 0
+        ? Math.min((calculateVarietyTotal(variety.sizes, activeTab) / totalBags) * 100, 100)
+        : 0
     }))
     .sort((a, b) => b.quantity - a.quantity);
 
   // Get top 5 varieties and group rest as "Others"
   const top5Varieties = varietyDistributionData.slice(0, 5);
   const othersQuantity = varietyDistributionData.slice(5).reduce((sum, variety) => sum + variety.quantity, 0);
-  const othersPercentage = (othersQuantity / totalBags) * 100;
+  const othersPercentage = totalBags > 0
+    ? Math.min((othersQuantity / totalBags) * 100, 100)
+    : 0;
 
   const finalVarietyDistribution = [
     ...top5Varieties,
@@ -142,6 +146,13 @@ const ColdStorageSummaryScreen = () => {
     name: farmer.farmerName,
     totalBags: farmer.totalBags
   })) || [];
+
+  // Calculate total from all farmers' current stock for storage share calculation
+  // This ensures storage share is calculated as: (single farmer stock / sum of all farmers stock) * 100
+  const totalFarmersStock = topFarmersData?.data?.reduce((sum, farmer) => sum + farmer.totalBags, 0) || 0;
+
+  // Use the sum of all farmers' stock for storage share, fallback to currentTotal if not available
+  const totalBagsForStorageShare = totalFarmersStock > 0 ? totalFarmersStock : currentTotal;
 
 
 
@@ -242,7 +253,9 @@ const ColdStorageSummaryScreen = () => {
             )[0];
 
             const topVarietyTotal = calculateVarietyTotal(topVariety.sizes, activeTab);
-            const topVarietyPercentage = (topVarietyTotal / totalBags) * 100;
+            const topVarietyPercentage = totalBags > 0
+              ? Math.min((topVarietyTotal / totalBags) * 100, 100)
+              : 0;
 
             return (
               <Card className="bg-gray-50/50 border border-gray-100 rounded-xl hover:shadow-sm transition-all duration-200">
@@ -457,7 +470,7 @@ const ColdStorageSummaryScreen = () => {
           <TopFarmersChart
             data={topFarmersChartData}
             topFarmersData={topFarmersData}
-            totalBags={currentTotal}
+            totalBags={totalBagsForStorageShare}
           />
         </div>
       </div>

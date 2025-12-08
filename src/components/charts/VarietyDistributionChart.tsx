@@ -94,7 +94,7 @@ const VarietyDistributionChart = ({ data }: VarietyDistributionChartProps) => {
             <h5 className="font-medium text-blue-900 mb-2 text-sm">{t('coldStorageSummary.distributionInsights')}</h5>
             <ul className="space-y-1 text-xs sm:text-sm text-blue-800">
               <li>• {data[0]?.variety} {t('coldStorageSummary.mostStoredVariety')} {data[0]?.percentage.toFixed(1)}% {t('coldStorageSummary.ofAllInventory')}</li>
-              <li>• {t('coldStorageSummary.topVarietiesAccount')} {(data[0]?.percentage + (data[1]?.percentage || 0)).toFixed(1)}% {t('coldStorageSummary.ofInventory')}</li>
+              <li>• {t('coldStorageSummary.topVarietiesAccount')} {Math.min((data[0]?.percentage || 0) + (data[1]?.percentage || 0), 100).toFixed(1)}% {t('coldStorageSummary.ofInventory')}</li>
               {data.length > 5 && othersQuantity > 0 && (
                 <li>• {data.length - 5} {t('coldStorageSummary.varietiesGroupedAs')} "{t('coldStorageSummary.others')}" {t('coldStorageSummary.accountFor')} {othersPercentage.toFixed(1)}% {t('coldStorageSummary.ofInventory')}</li>
               )}

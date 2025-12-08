@@ -584,5 +584,19 @@ export const storeAdminApi = {
       }
     );
     return response.data;
+  },
+
+  sendWhatsApp: async (payload: { to: string; body: string }, token: string) => {
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/send-whatsapp`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
   }
 };
