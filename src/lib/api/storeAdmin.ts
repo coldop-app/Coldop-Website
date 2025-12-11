@@ -108,7 +108,7 @@ interface UpdateProfilePayload {
   password?: string | undefined;
 }
 
-interface UpdateIncomingOrderPayload {
+export interface UpdateIncomingOrderPayload {
   remarks: string;
   dateOfSubmission: string;
   fulfilled: boolean;

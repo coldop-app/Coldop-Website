@@ -103,7 +103,8 @@ const PeopleScreen = () => {
     farmers = farmers.filter(farmer =>
       farmer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       farmer.mobileNumber.includes(searchQuery) ||
-      farmer.address.toLowerCase().includes(searchQuery.toLowerCase())
+      farmer.address.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      farmer.farmerId.includes(searchQuery)
     );
   }
 
