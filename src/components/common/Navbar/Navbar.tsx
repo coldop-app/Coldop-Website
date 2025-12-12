@@ -9,16 +9,15 @@ import {
   SheetTrigger,
   SheetClose
 } from "@/components/ui/sheet";
-import SignInModal from "@/components/auth/SignInModal";
 import LanguageSelector from "@/components/common/LanguageSelector/LanguageSelector";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu } from "lucide-react";
 
 const Navbar = () => {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [scrollProgress, setScrollProgress] = useState(0);
   const [isFullySticky, setIsFullySticky] = useState(false);
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -52,14 +51,6 @@ const Navbar = () => {
       window.removeEventListener("scroll", handleScroll);
     };
   }, []);
-
-  const openSignInModal = () => {
-    setIsSignInModalOpen(true);
-  };
-
-  const closeSignInModal = () => {
-    setIsSignInModalOpen(false);
-  };
 
   const side = 'right';
 
@@ -122,7 +113,7 @@ const Navbar = () => {
                       <li className="flex items-center">
                         <SheetClose asChild>
                           <button
-                            onClick={openSignInModal}
+                            onClick={() => navigate("/login/store-admin")}
                             className="font-custom inline-flex items-center cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
                           >
                             {t('nav.signIn')}
@@ -173,7 +164,7 @@ const Navbar = () => {
             </li>
             <li className="flex items-center">
               <button
-                onClick={openSignInModal}
+                onClick={() => navigate("/login/store-admin")}
                 className="font-custom inline-flex items-center cursor-pointer rounded-lg bg-primary px-8 py-3 text-xl font-bold text-secondary no-underline duration-100 hover:bg-primary/90 hover:text-secondary"
               >
                 {t('nav.signIn')}
@@ -185,9 +176,6 @@ const Navbar = () => {
 
       {/* Spacer to prevent content from jumping when navbar becomes fixed */}
       <div className="h-16 lg:h-20" />
-
-      {/* Sign In Modal */}
-      <SignInModal isOpen={isSignInModalOpen} onClose={closeSignInModal} isMobileApp={false} />
     </>
   );
 };

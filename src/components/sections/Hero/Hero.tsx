@@ -1,7 +1,7 @@
 import { useTranslation } from "react-i18next";
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import SignInModal from "@/components/auth/SignInModal";
+import { useNavigate } from "react-router-dom";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 
 interface CustomerImage {
@@ -23,7 +23,7 @@ const Hero = ({
   heroImage
 }: HeroProps) => {
   const { t } = useTranslation();
-  const [isSignInModalOpen, setIsSignInModalOpen] = useState(false);
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
 
   // Mutation to increment count
@@ -74,7 +74,7 @@ const Hero = ({
 
             <div className="align-center flex justify-center gap-4 md:gap-2 lg:justify-start whitespace-nowrap ">
               <button
-                onClick={() => setIsSignInModalOpen(true)}
+                onClick={() => navigate("/login/store-admin")}
                 className="font-custom inline-block cursor-pointer rounded-lg bg-primary px-4 py-2 text-lg font-bold text-secondary hover:bg-primary/85 sm:text-xl sm:px-8 sm:py-4 sm:mr-4"
               >
                 {t('hero.getStarted')}
@@ -136,8 +136,6 @@ const Hero = ({
           </div>
         </div>
       </section>
-
-      <SignInModal isOpen={isSignInModalOpen} onClose={() => setIsSignInModalOpen(false)} isMobileApp={false} />
     </>
   );
 };
