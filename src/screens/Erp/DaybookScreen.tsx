@@ -4,7 +4,7 @@ import { storeAdminApi } from '@/lib/api/storeAdmin';
 import { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
 import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
@@ -12,6 +12,7 @@ import { Order } from '@/utils/types';
 import { useTranslation } from 'react-i18next';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import Spotlight from '@/components/common/Spotlight/Spotlight';
+import GetReportsDialog from '@/components/reports/GetReportsDialog';
 
 interface PaginationMeta {
   currentPage: number;
@@ -48,6 +49,7 @@ const DaybookScreen = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [searchReceiptNumber, setSearchReceiptNumber] = useState<string>('');
+  const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const navigate = useNavigate();
   const { currentStep, nextStep, isActive: isWalkthroughActive, endWalkthrough } = useWalkthrough();
@@ -294,6 +296,7 @@ const DaybookScreen = () => {
     enabled: searchReceiptNumber === '',
   });
 
+
   // Handle search response data
   const searchResponse = searchData as SearchResponse;
   const apiResponse = searchReceiptNumber
@@ -489,16 +492,20 @@ const DaybookScreen = () => {
 
   return (
     <>
-      <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+      <TopBar
+        title={t("daybook.title")}
+        isSidebarOpen={false}
+        setIsSidebarOpen={() => {}}
+      />
       <Spotlight
         instruction="Let's start by adding an incoming order"
         targetId="add-incoming-button"
-        isActive={currentStep === 'daybook-add-incoming'}
+        isActive={currentStep === "daybook-add-incoming"}
       />
       <Spotlight
         instruction="Great! Your incoming voucher has been created successfully. This is the receipt voucher card that shows all the details of the incoming order you just created, including the farmer information, variety, bag quantities, and storage locations."
         targetId="incoming-voucher-card"
-        isActive={currentStep === 'incoming-voucher-explanation'}
+        isActive={currentStep === "incoming-voucher-explanation"}
         padding={16}
         showContinueButton={true}
         onContinue={nextStep}
@@ -506,7 +513,7 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="Click on 'More Details' to expand and see the complete breakdown of your receipt voucher, including farmer details, quantities, locations, and remarks."
         targetId="incoming-voucher-more-details-button"
-        isActive={currentStep === 'incoming-voucher-more-details'}
+        isActive={currentStep === "incoming-voucher-more-details"}
         padding={12}
         showContinueButton={true}
         onContinue={nextStep}
@@ -514,7 +521,7 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="This section shows the farmer's contact information including their address and mobile number. This helps you identify and contact the farmer associated with this receipt voucher."
         targetId="incoming-voucher-farmer-details"
-        isActive={currentStep === 'incoming-voucher-farmer-details'}
+        isActive={currentStep === "incoming-voucher-farmer-details"}
         padding={16}
         showContinueButton={true}
         onContinue={nextStep}
@@ -522,7 +529,7 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="The Quantity table shows the current and initial quantities for each bag size. The format is 'current/initial', where current is the remaining quantity and initial is the original quantity when the order was created."
         targetId="incoming-voucher-quantities"
-        isActive={currentStep === 'incoming-voucher-quantities'}
+        isActive={currentStep === "incoming-voucher-quantities"}
         padding={16}
         showContinueButton={true}
         onContinue={nextStep}
@@ -530,13 +537,16 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="The Location table shows the storage location (Chamber-Floor-Row) for each bag size. This is the location you entered when creating the incoming order, and it will be used as a reference when creating outgoing orders."
         targetId="incoming-voucher-locations"
-        isActive={currentStep === 'incoming-voucher-locations'}
+        isActive={currentStep === "incoming-voucher-locations"}
         padding={80}
         showContinueButton={true}
         onContinue={() => {
           // Check if any receipt voucher has remarks
-          const hasRemarks = orders.some((order: Order) =>
-            order.voucher.type === 'RECEIPT' && order.remarks && order.remarks.trim() !== ''
+          const hasRemarks = orders.some(
+            (order: Order) =>
+              order.voucher.type === "RECEIPT" &&
+              order.remarks &&
+              order.remarks.trim() !== ""
           );
           if (hasRemarks) {
             nextStep();
@@ -549,7 +559,7 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="If you added any remarks while creating the incoming order, they will be displayed here. Remarks are useful for adding notes or special instructions related to this order."
         targetId="incoming-voucher-remarks"
-        isActive={currentStep === 'incoming-voucher-remarks'}
+        isActive={currentStep === "incoming-voucher-remarks"}
         padding={16}
         showContinueButton={true}
         onContinue={nextStep}
@@ -557,26 +567,31 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="Let's start by adding an outgoing order"
         targetId="add-outgoing-button"
-        isActive={currentStep === 'daybook-add-outgoing'}
+        isActive={currentStep === "daybook-add-outgoing"}
       />
       <Spotlight
         instruction="Great! Your outgoing voucher has been created successfully. This is the delivery voucher card that shows all the details of the outgoing order you just created."
         targetId="outgoing-voucher-card"
-        isActive={currentStep === 'outgoing-voucher-created' || currentStep === 'outgoing-voucher-card'}
+        isActive={
+          currentStep === "outgoing-voucher-created" ||
+          currentStep === "outgoing-voucher-card"
+        }
         padding={16}
-        showContinueButton={currentStep === 'outgoing-voucher-card'}
-        onContinue={currentStep === 'outgoing-voucher-card' ? nextStep : undefined}
+        showContinueButton={currentStep === "outgoing-voucher-card"}
+        onContinue={
+          currentStep === "outgoing-voucher-card" ? nextStep : undefined
+        }
       />
       <Spotlight
         instruction="Click on 'More Details' to expand and see the complete breakdown of your outgoing voucher, including farmer details, net outgoing quantities, and detailed breakdown by receipt vouchers."
         targetId="outgoing-voucher-more-details-button"
-        isActive={currentStep === 'outgoing-voucher-more-details'}
+        isActive={currentStep === "outgoing-voucher-more-details"}
         padding={12}
       />
       <Spotlight
         instruction="This section shows the farmer's contact information including their address and mobile number. This helps you identify and contact the farmer associated with this outgoing order."
         targetId="outgoing-voucher-farmer-details"
-        isActive={currentStep === 'outgoing-voucher-farmer-details'}
+        isActive={currentStep === "outgoing-voucher-farmer-details"}
         padding={16}
         showContinueButton={true}
         onContinue={nextStep}
@@ -584,7 +599,7 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="The Net Outgoing Details table shows the total quantity removed for each bag size across all receipt vouchers. This gives you a quick summary of what was taken out in this outgoing order."
         targetId="outgoing-voucher-net-outgoing"
-        isActive={currentStep === 'outgoing-voucher-net-outgoing'}
+        isActive={currentStep === "outgoing-voucher-net-outgoing"}
         padding={16}
         showContinueButton={true}
         onContinue={nextStep}
@@ -592,13 +607,16 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="The Detailed Breakdown table provides comprehensive information for each bag size: the location where it's stored, the receipt voucher number it came from, current quantity before removal, quantity issued (removed), and remaining available quantity. This helps you track exactly which bags were removed from which receipt vouchers."
         targetId="outgoing-voucher-detailed-breakdown"
-        isActive={currentStep === 'outgoing-voucher-detailed-breakdown'}
+        isActive={currentStep === "outgoing-voucher-detailed-breakdown"}
         padding={16}
         showContinueButton={true}
         onContinue={() => {
           // Check if any delivery voucher has remarks
-          const hasRemarks = orders.some((order: Order) =>
-            order.voucher.type === 'DELIVERY' && order.remarks && order.remarks.trim() !== ''
+          const hasRemarks = orders.some(
+            (order: Order) =>
+              order.voucher.type === "DELIVERY" &&
+              order.remarks &&
+              order.remarks.trim() !== ""
           );
           if (hasRemarks) {
             nextStep();
@@ -611,7 +629,7 @@ const DaybookScreen = () => {
       <Spotlight
         instruction="If you added any remarks while creating the outgoing order, they will be displayed here. Remarks are useful for adding notes or special instructions related to this order."
         targetId="outgoing-voucher-remarks"
-        isActive={currentStep === 'outgoing-voucher-remarks'}
+        isActive={currentStep === "outgoing-voucher-remarks"}
         padding={16}
         showContinueButton={true}
         onContinue={nextStep}
@@ -621,19 +639,31 @@ const DaybookScreen = () => {
         <div className="flex items-center justify-between mb-4 sm:mb-6 bg-white rounded-xl p-3 sm:p-4 shadow-sm border border-gray-100">
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="h-6 w-6 sm:h-8 sm:w-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5 text-primary" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clipRule="evenodd"/>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 sm:h-5 sm:w-5 text-primary"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
             {pagination && (
               <p className="text-sm sm:text-base font-semibold text-gray-900 truncate">
-                {pagination.totalItems} <span className="text-gray-500 font-normal">{t('daybook.orders')}</span>
+                {pagination.totalItems}{" "}
+                <span className="text-gray-500 font-normal">
+                  {t("daybook.orders")}
+                </span>
               </p>
             )}
           </div>
         </div>
 
-                    {/* Search and Filters */}
+        {/* Search and Filters */}
         <div className="bg-white rounded-xl p-3 sm:p-4 lg:p-6 shadow-sm border border-gray-100 mb-4 sm:mb-6">
           <div className="space-y-4 sm:space-y-5">
             {/* Search Receipt */}
@@ -643,18 +673,30 @@ const DaybookScreen = () => {
                   type="number"
                   value={searchReceiptNumber}
                   onChange={(e) => setSearchReceiptNumber(e.target.value)}
-                  placeholder={t('daybook.searchPlaceholder')}
+                  placeholder={t("daybook.searchPlaceholder")}
                   className="w-full px-4 py-2.5 sm:py-3 pl-11 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base placeholder:text-gray-400 transition-all duration-200"
                 />
-                <Search className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Search
+                  className="absolute left-3.5 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
               </div>
               {searchReceiptNumber && (
                 <button
-                  onClick={() => setSearchReceiptNumber('')}
+                  onClick={() => setSearchReceiptNumber("")}
                   className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-gray-100 transition-all duration-200"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 sm:h-5 sm:w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                 </button>
               )}
@@ -665,36 +707,40 @@ const DaybookScreen = () => {
               <div className="w-full sm:w-[200px]">
                 <select
                   value={type}
-                  onChange={(e) => handleTypeChange(e.target.value as OrderType)}
+                  onChange={(e) =>
+                    handleTypeChange(e.target.value as OrderType)
+                  }
                   className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
-                  disabled={searchReceiptNumber !== ''}
+                  disabled={searchReceiptNumber !== ""}
                 >
-                  <option value="all">{t('daybook.allOrders')}</option>
-                  <option value="incoming">{t('daybook.incoming')}</option>
-                  <option value="outgoing">{t('daybook.outgoing')}</option>
+                  <option value="all">{t("daybook.allOrders")}</option>
+                  <option value="incoming">{t("daybook.incoming")}</option>
+                  <option value="outgoing">{t("daybook.outgoing")}</option>
                 </select>
               </div>
               <div className="w-full sm:w-[200px]">
                 <select
                   value={sortBy}
-                  onChange={(e) => handleSortChange(e.target.value as SortOrder)}
+                  onChange={(e) =>
+                    handleSortChange(e.target.value as SortOrder)
+                  }
                   className="w-full px-3 sm:px-4 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm sm:text-base disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-200"
-                  disabled={searchReceiptNumber !== ''}
+                  disabled={searchReceiptNumber !== ""}
                 >
-                  <option value="latest">{t('daybook.latestFirst')}</option>
-                  <option value="oldest">{t('daybook.oldestFirst')}</option>
+                  <option value="latest">{t("daybook.latestFirst")}</option>
+                  <option value="oldest">{t("daybook.oldestFirst")}</option>
                 </select>
               </div>
               <div className="grid grid-cols-2 sm:flex gap-2 sm:gap-3 sm:ml-auto mt-1 sm:mt-0">
                 <button
                   id="add-incoming-button"
                   onClick={() => {
-                    if (currentStep === 'daybook-add-incoming') {
+                    if (currentStep === "daybook-add-incoming") {
                       nextStep();
                     }
-                    navigate('/erp/incoming-order');
+                    navigate("/erp/incoming-order");
                   }}
-                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative z-[9999]"
+                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -708,17 +754,17 @@ const DaybookScreen = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="truncate">{t('daybook.addIncoming')}</span>
+                  <span className="truncate">{t("daybook.addIncoming")}</span>
                 </button>
                 <button
                   id="add-outgoing-button"
                   onClick={() => {
-                    if (currentStep === 'daybook-add-outgoing') {
+                    if (currentStep === "daybook-add-outgoing") {
                       nextStep();
                     }
-                    navigate('/erp/outgoing-order');
+                    navigate("/erp/outgoing-order");
                   }}
-                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative z-[9999]"
+                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -732,7 +778,14 @@ const DaybookScreen = () => {
                       clipRule="evenodd"
                     />
                   </svg>
-                  <span className="truncate">{t('daybook.addOutgoing')}</span>
+                  <span className="truncate">{t("daybook.addOutgoing")}</span>
+                </button>
+                <button
+                  onClick={() => setIsReportsModalOpen(true)}
+                  className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-gray-50/80 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-300/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow"
+                >
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                  <span className="truncate">Get Reports</span>
                 </button>
               </div>
             </div>
@@ -744,12 +797,24 @@ const DaybookScreen = () => {
           <div className="mb-6 p-4 bg-red-50 border border-red-100 rounded-xl">
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0 w-10 h-10 bg-red-100 rounded-lg flex items-center justify-center">
-                <svg className="w-6 h-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                <svg
+                  className="w-6 h-6 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
                 </svg>
               </div>
               <p className="text-base text-red-700">
-                {searchError instanceof Error ? searchError.message : t('daybook.searchError')}
+                {searchError instanceof Error
+                  ? searchError.message
+                  : t("daybook.searchError")}
               </p>
             </div>
           </div>
@@ -760,7 +825,9 @@ const DaybookScreen = () => {
           <div className="mb-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
             <div className="flex items-center gap-3">
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent"></div>
-              <span className="text-base text-blue-700">{t('daybook.searching')}</span>
+              <span className="text-base text-blue-700">
+                {t("daybook.searching")}
+              </span>
             </div>
           </div>
         )}
@@ -771,15 +838,29 @@ const DaybookScreen = () => {
             <div className="bg-white rounded-xl p-8 border border-gray-100 shadow-sm">
               <div className="text-center">
                 <div className="mx-auto w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                  <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  <svg
+                    className="w-8 h-8 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
                   </svg>
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-1">
-                  {searchReceiptNumber ? t('daybook.noReceiptFound') : 'No orders found'}
+                  {searchReceiptNumber
+                    ? t("daybook.noReceiptFound")
+                    : "No orders found"}
                 </h3>
                 <p className="text-gray-500">
-                  {searchReceiptNumber ? t('daybook.tryDifferentNumber') : 'Click on add incoming to create new orders'}
+                  {searchReceiptNumber
+                    ? t("daybook.tryDifferentNumber")
+                    : "Click on add incoming to create new orders"}
                 </p>
               </div>
             </div>
@@ -787,15 +868,22 @@ const DaybookScreen = () => {
             <div>
               {orders.map((order: Order, index: number) => {
                 // Find the first receipt voucher for the walkthrough
-                const isFirstReceipt = order.voucher.type === 'RECEIPT' &&
-                  orders.findIndex((o: Order) => o.voucher.type === 'RECEIPT') === index;
+                const isFirstReceipt =
+                  order.voucher.type === "RECEIPT" &&
+                  orders.findIndex(
+                    (o: Order) => o.voucher.type === "RECEIPT"
+                  ) === index;
 
                 return (
                   <div key={order._id} className="py-2 sm:py-3">
-                    {order.voucher.type === 'DELIVERY' ? (
+                    {order.voucher.type === "DELIVERY" ? (
                       <DeliveryVoucherCard order={order} />
                     ) : (
-                      <div id={isFirstReceipt ? 'incoming-voucher-card' : undefined}>
+                      <div
+                        id={
+                          isFirstReceipt ? "incoming-voucher-card" : undefined
+                        }
+                      >
                         <ReceiptVoucherCard order={order} />
                       </div>
                     )}
@@ -811,6 +899,12 @@ const DaybookScreen = () => {
           <PaginationControls />
         )}
       </div>
+
+      {/* Reports Modal */}
+      <GetReportsDialog
+        open={isReportsModalOpen}
+        onOpenChange={setIsReportsModalOpen}
+      />
     </>
   );
 };

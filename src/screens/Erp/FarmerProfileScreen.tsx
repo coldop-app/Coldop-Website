@@ -15,7 +15,8 @@ import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
 import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
 import { Order, StoreAdmin } from '@/utils/types';
 import { pdf, PDFDownloadLink } from '@react-pdf/renderer';
-import FarmerReportPDF from '@/components/pdf/FarmerReportPDF';
+// import FarmerReportPDF from '@/components/pdf/FarmerReportPDF';
+import KangReportPdf from '@/components/pdf/kang/KangReportPDF';
 import Loader from '@/components/common/Loader/Loader';
 
 // Add WebView interfaces
@@ -119,7 +120,7 @@ const FarmerProfileScreen = () => {
   const [activeTab, setActiveTab] = useState<TabType>('current');
 
   // Memoized PDF component to prevent unnecessary re-renders
-  const MemoizedFarmerReportPDF = memo(FarmerReportPDF);
+  const MemoizedFarmerReportPDF = memo(KangReportPdf);
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
     queryKey: ['farmerStock', id, adminInfo?.token],

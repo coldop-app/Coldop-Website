@@ -1,7 +1,14 @@
-import React, { useMemo } from 'react';
-import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
-import { Order, StoreAdmin } from '@/utils/types';
-import coldopLogo from '/coldop-logo.png';
+import React, { useMemo } from "react";
+import {
+  Document,
+  Page,
+  Text,
+  View,
+  StyleSheet,
+  Image,
+} from "@react-pdf/renderer";
+import { Order, StoreAdmin } from "@/utils/types";
+import coldopLogo from "/coldop-logo.png";
 
 interface Farmer {
   _id: string;
@@ -342,34 +349,36 @@ const parseLocation = (location: string | undefined) => {
 };
 
 const formatDate = (date: string | Date | undefined): string => {
-  if (!date) return '-';
+  if (!date) return "-";
   try {
     // Check if date is in DD.MM.YY format
-    if (typeof date === 'string' && date.match(/^\d{2}\.\d{2}\.\d{2}$/)) {
+    if (typeof date === "string" && date.match(/^\d{2}\.\d{2}\.\d{2}$/)) {
       // Already in the desired format, just replace dots with slashes
-      return date.replace(/\./g, '/');
+      return date.replace(/\./g, "/");
     }
 
     // For other formats, parse and format
-    const parsedDate = typeof date === 'string' ? new Date(date) : date;
-    if (isNaN(parsedDate.getTime())) return '-';
+    const parsedDate = typeof date === "string" ? new Date(date) : date;
+    if (isNaN(parsedDate.getTime())) return "-";
 
-    const day = parsedDate.getDate().toString().padStart(2, '0');
-    const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+    const day = parsedDate.getDate().toString().padStart(2, "0");
+    const month = (parsedDate.getMonth() + 1).toString().padStart(2, "0");
     const year = parsedDate.getFullYear().toString().slice(-2);
 
     return `${day}/${month}/${year}`;
   } catch {
-    return '-';
+    return "-";
   }
 };
 
 const getOrderDate = (order: Order): string | undefined => {
   // Try all possible date fields in order of preference
-  return order.dateOfSubmission ||
-         order.dateOfExtraction ||
-         order.createdAt ||
-         undefined;
+  return (
+    order.dateOfSubmission ||
+    order.dateOfExtraction ||
+    order.createdAt ||
+    undefined
+  );
 };
 
 const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
@@ -380,35 +389,18 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
   console.log("adminInfo", adminInfo);
 
   // Memoize expensive calculations
-  const bagSizes = useMemo(() => adminInfo.preferences?.bagSizes || [], [adminInfo.preferences?.bagSizes]);
+  const bagSizes = useMemo(
+    () => adminInfo.preferences?.bagSizes || [],
+    [adminInfo.preferences?.bagSizes]
+  );
 
   const { receiptOrders, deliveryOrders } = useMemo(() => {
     const receipt = orders.filter((order) => order.voucher.type === "RECEIPT");
-    const delivery = orders.filter((order) => order.voucher.type === "DELIVERY");
+    const delivery = orders.filter(
+      (order) => order.voucher.type === "DELIVERY"
+    );
     return { receiptOrders: receipt, deliveryOrders: delivery };
   }, [orders]);
-
-  if (!orders || orders.length === 0) {
-    return (
-      <Document>
-        <Page size="A4" style={styles.page}>
-          <View style={styles.header}>
-          <View style={styles.logoSection}>
-              {adminInfo.imageUrl ? (
-                <Image style={styles.logo} src={adminInfo.imageUrl} />
-              ) : (
-                <View style={[styles.logo, { backgroundColor: "#f0f0f0" }]} />
-              )}
-            </View>
-            <Text style={styles.companyName}>
-              {adminInfo.coldStorageDetails.coldStorageName.toUpperCase()}
-            </Text>
-            <Text style={styles.reportTitle}>NO TRANSACTIONS FOUND</Text>
-          </View>
-        </Page>
-      </Document>
-    );
-  }
 
   // Memoize receipt ledger entries creation
   const receiptEntries = useMemo(() => {
@@ -454,9 +446,12 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
             // Get the initial quantity from the bag data
             let initialQty = 0;
             if (matchingBag.quantity) {
-              if (typeof matchingBag.quantity === 'object' && 'initialQuantity' in matchingBag.quantity) {
+              if (
+                typeof matchingBag.quantity === "object" &&
+                "initialQuantity" in matchingBag.quantity
+              ) {
                 initialQty = matchingBag.quantity.initialQuantity || 0;
-              } else if (typeof matchingBag.quantity === 'number') {
+              } else if (typeof matchingBag.quantity === "number") {
                 initialQty = matchingBag.quantity;
               }
             }
@@ -617,6 +612,42 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     return totals;
   }, [receiptEntries, bagSizes]);
 
+  // Memoize page splitting function
+  const splitEntriesIntoPages = useMemo(() => {
+    return (entries: LedgerEntry[]) => {
+      const pages: LedgerEntry[][] = [];
+      const entriesPerPage = 25; // Approximate number of entries that can fit on one page
+
+      for (let i = 0; i < entries.length; i += entriesPerPage) {
+        pages.push(entries.slice(i, i + entriesPerPage));
+      }
+
+      return pages;
+    };
+  }, []);
+
+  if (!orders || orders.length === 0) {
+    return (
+      <Document>
+        <Page size="A4" style={styles.page}>
+          <View style={styles.header}>
+            <View style={styles.logoSection}>
+              {adminInfo.imageUrl ? (
+                <Image style={styles.logo} src={adminInfo.imageUrl} />
+              ) : (
+                <View style={[styles.logo, { backgroundColor: "#f0f0f0" }]} />
+              )}
+            </View>
+            <Text style={styles.companyName}>
+              {adminInfo.coldStorageDetails.coldStorageName.toUpperCase()}
+            </Text>
+            <Text style={styles.reportTitle}>NO TRANSACTIONS FOUND</Text>
+          </View>
+        </Page>
+      </Document>
+    );
+  }
+
   // Helper function to render table header
   const renderTableHeader = (isDeliveryTable: boolean = false) => (
     <View style={styles.tableHeader}>
@@ -659,7 +690,10 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
   );
 
   // Helper function to render opening balance row for delivery table
-  const renderOpeningBalanceRow = (initialGrandTotal: number, receiptTotals: { [key: string]: number }) => (
+  const renderOpeningBalanceRow = (
+    initialGrandTotal: number,
+    receiptTotals: { [key: string]: number }
+  ) => (
     <View style={[styles.tableRow, { backgroundColor: "#F5F5F5" }]}>
       <View style={styles.colDate}>
         <Text style={styles.balanceText}>OPENING</Text>
@@ -693,9 +727,13 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
     </View>
   );
 
-
   // Helper function to render a single table row
-  const renderTableRow = (entry: LedgerEntry, index: number, isDeliveryTable: boolean, initialGrandTotal: number) => (
+  const renderTableRow = (
+    entry: LedgerEntry,
+    index: number,
+    isDeliveryTable: boolean,
+    initialGrandTotal: number
+  ) => (
     <View key={index} style={styles.tableRow}>
       <View style={styles.colDate}>
         <Text style={styles.cellText}>{formatDate(entry.date)}</Text>
@@ -717,9 +755,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
       </View>
       {bagSizes.map((size) => (
         <View key={size} style={styles.colBagSize}>
-          <Text style={styles.cellText}>
-            {entry.quantities[size] || "-"}
-          </Text>
+          <Text style={styles.cellText}>{entry.quantities[size] || "-"}</Text>
         </View>
       ))}
       <View style={styles.colTotal}>
@@ -744,21 +780,6 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
       )}
     </View>
   );
-
-  // Memoize page splitting function
-  const splitEntriesIntoPages = useMemo(() => {
-    return (entries: LedgerEntry[]) => {
-      const pages: LedgerEntry[][] = [];
-      const entriesPerPage = 25; // Approximate number of entries that can fit on one page
-
-      for (let i = 0; i < entries.length; i += entriesPerPage) {
-        pages.push(entries.slice(i, i + entriesPerPage));
-      }
-
-      return pages;
-    };
-  }, []);
-
 
   // Helper function to render header section
   const renderHeader = () => (
@@ -801,9 +822,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Member Since:</Text>
-          <Text style={styles.infoValue}>
-            {formatDate(farmer.createdAt)}
-          </Text>
+          <Text style={styles.infoValue}>{formatDate(farmer.createdAt)}</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Report Date:</Text>
@@ -819,15 +838,11 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
       <Text style={styles.summaryTitle}>Account Summary</Text>
       <View style={styles.summaryTable}>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>
-            Total Receipt Transactions:
-          </Text>
+          <Text style={styles.summaryLabel}>Total Receipt Transactions:</Text>
           <Text style={styles.summaryValue}>{receiptOrders.length}</Text>
         </View>
         <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>
-            Total Delivery Transactions:
-          </Text>
+          <Text style={styles.summaryLabel}>Total Delivery Transactions:</Text>
           <Text style={styles.summaryValue}>{deliveryOrders.length}</Text>
         </View>
         <View style={styles.summaryRow}>
@@ -867,9 +882,7 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
           <Text style={styles.poweredBy}>Powered by Coldop</Text>
         </View>
         <View style={styles.footerRight}>
-          <Text style={styles.footerText}>
-            Date: {formatDate(new Date())}
-          </Text>
+          <Text style={styles.footerText}>Date: {formatDate(new Date())}</Text>
         </View>
       </View>
       <Text style={styles.pageNumber}>Page {pageNumber}</Text>
@@ -881,7 +894,10 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
   const deliveryPages = splitEntriesIntoPages(deliveryEntries);
 
   // Calculate total pages needed
-  const totalPages = Math.max(1, receiptPages.length + deliveryPages.length + 1); // +1 for summary page
+  const totalPages = Math.max(
+    1,
+    receiptPages.length + deliveryPages.length + 1
+  ); // +1 for summary page
 
   return (
     <Document>
@@ -932,18 +948,20 @@ const FarmerReportPDF: React.FC<FarmerReportPDFProps> = ({
 
           <View style={styles.ledgerContainer}>
             <Text style={styles.ledgerTitle}>
-              {pageIndex === 0 ? "Delivery Details" : "Delivery Details (continued)"}
+              {pageIndex === 0
+                ? "Delivery Details"
+                : "Delivery Details (continued)"}
             </Text>
             <View style={styles.table}>
               {renderTableHeader(true)}
 
               {/* Show opening balance only on first delivery page */}
-              {pageIndex === 0 && receiptTotals &&
+              {pageIndex === 0 &&
+                receiptTotals &&
                 renderOpeningBalanceRow(
                   receiptEntries.reduce((sum, entry) => sum + entry.total, 0),
                   receiptTotals
-                )
-              }
+                )}
 
               {pageEntries.map((entry, index) =>
                 renderTableRow(

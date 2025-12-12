@@ -1,4 +1,4 @@
 export const BASE_URL =
-  "https://coldop-mela-fveag4h7f5b8c8fj.centralindia-01.azurewebsites.net";
+  "http://localhost:8000";
 
 export const DEFAULT_LOGO="abc"

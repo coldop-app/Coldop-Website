@@ -598,5 +598,19 @@ export const storeAdminApi = {
       }
     );
     return response.data;
+  },
+
+  getOrdersDailySummary: async (params: { startDate: string; endDate: string }, token: string) => {
+    const response = await axios.get(
+      `${BASE_URL}/api/store-admin/orders/daily-summary`,
+      {
+        params,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    return response.data;
   }
 };
