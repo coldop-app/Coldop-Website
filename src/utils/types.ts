@@ -17,6 +17,7 @@ export interface ColdStorageDetails {
 
 export interface Preferences {
   bagSizes: string[];
+  showFinancesButton?: boolean;
 }
 
 export interface StoreAdmin {

@@ -1,18 +1,28 @@
-import { useQuery } from '@tanstack/react-query';
-import TopBar from '@/components/common/Topbar/Topbar';
-import { storeAdminApi } from '@/lib/api/storeAdmin';
-import { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
-import { RootState } from '@/store';
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
-import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
-import { Order } from '@/utils/types';
-import { useTranslation } from 'react-i18next';
-import { useWalkthrough } from '@/contexts/WalkthroughContext';
-import Spotlight from '@/components/common/Spotlight/Spotlight';
-import GetReportsDialog from '@/components/reports/GetReportsDialog';
+import { useQuery } from "@tanstack/react-query";
+import TopBar from "@/components/common/Topbar/Topbar";
+import { storeAdminApi } from "@/lib/api/storeAdmin";
+import { useState, useEffect } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store";
+import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Search,
+  FileText,
+  DollarSign,
+} from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import DeliveryVoucherCard from "@/components/vouchers/DeliveryVoucherCard";
+import ReceiptVoucherCard from "@/components/vouchers/ReceiptVoucherCard";
+import { Order, StoreAdmin } from "@/utils/types";
+import { useTranslation } from "react-i18next";
+import { useWalkthrough } from "@/contexts/WalkthroughContext";
+import Spotlight from "@/components/common/Spotlight/Spotlight";
+import GetReportsDialog from "@/components/reports/GetReportsDialog";
+import FinancesModal from "@/components/modals/FinancesModal";
+import toast from "react-hot-toast";
 
 interface PaginationMeta {
   currentPage: number;
@@ -31,8 +41,8 @@ interface ApiResponse {
   pagination: PaginationMeta;
 }
 
-type OrderType = 'all' | 'incoming' | 'outgoing';
-type SortOrder = 'latest' | 'oldest';
+type OrderType = "all" | "incoming" | "outgoing";
+type SortOrder = "latest" | "oldest";
 
 interface SearchResponse {
   status: string;
@@ -42,26 +52,43 @@ interface SearchResponse {
   };
 }
 
+// Type guard to check if admin is a StoreAdmin
+const isStoreAdmin = (admin: unknown): admin is StoreAdmin => {
+  return (
+    admin !== null &&
+    typeof admin === "object" &&
+    "coldStorageDetails" in admin &&
+    "preferences" in admin
+  );
+};
+
 const DaybookScreen = () => {
   const { t } = useTranslation();
-  const [sortBy, setSortBy] = useState<SortOrder>('latest');
-  const [type, setType] = useState<OrderType>('all');
+  const [sortBy, setSortBy] = useState<SortOrder>("latest");
+  const [type, setType] = useState<OrderType>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchReceiptNumber, setSearchReceiptNumber] = useState<string>('');
+  const [searchReceiptNumber, setSearchReceiptNumber] = useState<string>("");
   const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
+  const [isFinancesModalOpen, setIsFinancesModalOpen] = useState(false);
+  const [isFinancesLoading, setIsFinancesLoading] = useState(false);
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const navigate = useNavigate();
-  const { currentStep, nextStep, isActive: isWalkthroughActive, endWalkthrough } = useWalkthrough();
+  const {
+    currentStep,
+    nextStep,
+    isActive: isWalkthroughActive,
+    endWalkthrough,
+  } = useWalkthrough();
 
   // Scroll to add incoming button when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'daybook-add-incoming') {
+    if (currentStep === "daybook-add-incoming") {
       // Wait for component to render
       const timer = setTimeout(() => {
-        const button = document.getElementById('add-incoming-button');
+        const button = document.getElementById("add-incoming-button");
         if (button) {
-          button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          button.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -70,12 +97,12 @@ const DaybookScreen = () => {
 
   // Scroll to add outgoing button when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'daybook-add-outgoing') {
+    if (currentStep === "daybook-add-outgoing") {
       // Wait for component to render
       const timer = setTimeout(() => {
-        const button = document.getElementById('add-outgoing-button');
+        const button = document.getElementById("add-outgoing-button");
         if (button) {
-          button.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          button.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -84,12 +111,17 @@ const DaybookScreen = () => {
 
   // Scroll to incoming voucher card when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'incoming-voucher-explanation') {
+    if (currentStep === "incoming-voucher-explanation") {
       // Wait for orders to load and component to render
       const timer = setTimeout(() => {
-        const incomingVoucherCard = document.getElementById('incoming-voucher-card');
+        const incomingVoucherCard = document.getElementById(
+          "incoming-voucher-card"
+        );
         if (incomingVoucherCard) {
-          incomingVoucherCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          incomingVoucherCard.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }
       }, 500); // Wait for orders to load
       return () => clearTimeout(timer);
@@ -98,20 +130,25 @@ const DaybookScreen = () => {
 
   // Scroll to incoming voucher more details button when walkthrough step is active and auto-expand
   useEffect(() => {
-    if (currentStep === 'incoming-voucher-more-details') {
+    if (currentStep === "incoming-voucher-more-details") {
       const timer = setTimeout(() => {
-        const moreDetailsButton = document.getElementById('incoming-voucher-more-details-button');
+        const moreDetailsButton = document.getElementById(
+          "incoming-voucher-more-details-button"
+        );
         if (moreDetailsButton) {
           // Check if the card is already expanded by checking if the button text contains "Less"
-          const buttonText = moreDetailsButton.textContent || '';
-          const isExpanded = buttonText.includes('Less');
+          const buttonText = moreDetailsButton.textContent || "";
+          const isExpanded = buttonText.includes("Less");
 
           // If not expanded, click the button to expand it
           if (!isExpanded) {
             (moreDetailsButton as HTMLButtonElement).click();
           }
 
-          moreDetailsButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          moreDetailsButton.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -120,11 +157,13 @@ const DaybookScreen = () => {
 
   // Scroll to incoming voucher farmer details when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'incoming-voucher-farmer-details') {
+    if (currentStep === "incoming-voucher-farmer-details") {
       const timer = setTimeout(() => {
-        const farmerDetails = document.getElementById('incoming-voucher-farmer-details');
+        const farmerDetails = document.getElementById(
+          "incoming-voucher-farmer-details"
+        );
         if (farmerDetails) {
-          farmerDetails.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          farmerDetails.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -133,11 +172,13 @@ const DaybookScreen = () => {
 
   // Scroll to incoming voucher quantities when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'incoming-voucher-quantities') {
+    if (currentStep === "incoming-voucher-quantities") {
       const timer = setTimeout(() => {
-        const quantities = document.getElementById('incoming-voucher-quantities');
+        const quantities = document.getElementById(
+          "incoming-voucher-quantities"
+        );
         if (quantities) {
-          quantities.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          quantities.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -146,11 +187,11 @@ const DaybookScreen = () => {
 
   // Scroll to incoming voucher locations when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'incoming-voucher-locations') {
+    if (currentStep === "incoming-voucher-locations") {
       const timer = setTimeout(() => {
-        const locations = document.getElementById('incoming-voucher-locations');
+        const locations = document.getElementById("incoming-voucher-locations");
         if (locations) {
-          locations.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          locations.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -159,11 +200,11 @@ const DaybookScreen = () => {
 
   // Scroll to incoming voucher remarks when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'incoming-voucher-remarks') {
+    if (currentStep === "incoming-voucher-remarks") {
       const timer = setTimeout(() => {
-        const remarks = document.getElementById('incoming-voucher-remarks');
+        const remarks = document.getElementById("incoming-voucher-remarks");
         if (remarks) {
-          remarks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          remarks.scrollIntoView({ behavior: "smooth", block: "center" });
         } else {
           // If remarks don't exist, end the walkthrough
           if (isWalkthroughActive) {
@@ -179,14 +220,17 @@ const DaybookScreen = () => {
 
   // Scroll to voucher card when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'outgoing-voucher-created' || currentStep === 'outgoing-voucher-card') {
+    if (
+      currentStep === "outgoing-voucher-created" ||
+      currentStep === "outgoing-voucher-card"
+    ) {
       const timer = setTimeout(() => {
-        const voucherCard = document.getElementById('outgoing-voucher-card');
+        const voucherCard = document.getElementById("outgoing-voucher-card");
         if (voucherCard) {
-          voucherCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          voucherCard.scrollIntoView({ behavior: "smooth", block: "center" });
         }
         // Auto-advance from created to card step after showing the card
-        if (currentStep === 'outgoing-voucher-created' && isWalkthroughActive) {
+        if (currentStep === "outgoing-voucher-created" && isWalkthroughActive) {
           setTimeout(() => {
             nextStep();
           }, 1000);
@@ -198,20 +242,25 @@ const DaybookScreen = () => {
 
   // Scroll to more details button when walkthrough step is active and auto-expand
   useEffect(() => {
-    if (currentStep === 'outgoing-voucher-more-details') {
+    if (currentStep === "outgoing-voucher-more-details") {
       const timer = setTimeout(() => {
-        const moreDetailsButton = document.getElementById('outgoing-voucher-more-details-button');
+        const moreDetailsButton = document.getElementById(
+          "outgoing-voucher-more-details-button"
+        );
         if (moreDetailsButton) {
           // Check if the card is already expanded by checking if the button text contains "Less"
-          const buttonText = moreDetailsButton.textContent || '';
-          const isExpanded = buttonText.includes('Less');
+          const buttonText = moreDetailsButton.textContent || "";
+          const isExpanded = buttonText.includes("Less");
 
           // If not expanded, click the button to expand it
           if (!isExpanded) {
             (moreDetailsButton as HTMLButtonElement).click();
           }
 
-          moreDetailsButton.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          moreDetailsButton.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -220,11 +269,13 @@ const DaybookScreen = () => {
 
   // Scroll to farmer details when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'outgoing-voucher-farmer-details') {
+    if (currentStep === "outgoing-voucher-farmer-details") {
       const timer = setTimeout(() => {
-        const farmerDetails = document.getElementById('outgoing-voucher-farmer-details');
+        const farmerDetails = document.getElementById(
+          "outgoing-voucher-farmer-details"
+        );
         if (farmerDetails) {
-          farmerDetails.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          farmerDetails.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -233,11 +284,13 @@ const DaybookScreen = () => {
 
   // Scroll to net outgoing details when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'outgoing-voucher-net-outgoing') {
+    if (currentStep === "outgoing-voucher-net-outgoing") {
       const timer = setTimeout(() => {
-        const netOutgoing = document.getElementById('outgoing-voucher-net-outgoing');
+        const netOutgoing = document.getElementById(
+          "outgoing-voucher-net-outgoing"
+        );
         if (netOutgoing) {
-          netOutgoing.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          netOutgoing.scrollIntoView({ behavior: "smooth", block: "center" });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -246,11 +299,16 @@ const DaybookScreen = () => {
 
   // Scroll to detailed breakdown when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'outgoing-voucher-detailed-breakdown') {
+    if (currentStep === "outgoing-voucher-detailed-breakdown") {
       const timer = setTimeout(() => {
-        const detailedBreakdown = document.getElementById('outgoing-voucher-detailed-breakdown');
+        const detailedBreakdown = document.getElementById(
+          "outgoing-voucher-detailed-breakdown"
+        );
         if (detailedBreakdown) {
-          detailedBreakdown.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          detailedBreakdown.scrollIntoView({
+            behavior: "smooth",
+            block: "center",
+          });
         }
       }, 300);
       return () => clearTimeout(timer);
@@ -259,11 +317,11 @@ const DaybookScreen = () => {
 
   // Scroll to remarks when walkthrough step is active
   useEffect(() => {
-    if (currentStep === 'outgoing-voucher-remarks') {
+    if (currentStep === "outgoing-voucher-remarks") {
       const timer = setTimeout(() => {
-        const remarks = document.getElementById('outgoing-voucher-remarks');
+        const remarks = document.getElementById("outgoing-voucher-remarks");
         if (remarks) {
-          remarks.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          remarks.scrollIntoView({ behavior: "smooth", block: "center" });
         } else {
           // If remarks don't exist, end the walkthrough
           if (isWalkthroughActive) {
@@ -277,34 +335,45 @@ const DaybookScreen = () => {
     }
   }, [currentStep, isWalkthroughActive, endWalkthrough]);
 
-  const { data: searchData, isLoading: isSearchLoading, error: searchError } = useQuery({
-    queryKey: ['searchReceipt', searchReceiptNumber],
-    queryFn: () => storeAdminApi.searchReceipt(
-      { receiptNumber: parseInt(searchReceiptNumber) },
-      adminInfo?.token || ''
-    ),
-    enabled: searchReceiptNumber !== '',
+  const {
+    data: searchData,
+    isLoading: isSearchLoading,
+    error: searchError,
+  } = useQuery({
+    queryKey: ["searchReceipt", searchReceiptNumber],
+    queryFn: () =>
+      storeAdminApi.searchReceipt(
+        { receiptNumber: parseInt(searchReceiptNumber) },
+        adminInfo?.token || ""
+      ),
+    enabled: searchReceiptNumber !== "",
     retry: false,
   });
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['daybookOrders', { type, sortBy, page: currentPage, limit: itemsPerPage }],
-    queryFn: () => storeAdminApi.getDaybookOrders(
+    queryKey: [
+      "daybookOrders",
       { type, sortBy, page: currentPage, limit: itemsPerPage },
-      adminInfo?.token || ''
-    ),
-    enabled: searchReceiptNumber === '',
+    ],
+    queryFn: () =>
+      storeAdminApi.getDaybookOrders(
+        { type, sortBy, page: currentPage, limit: itemsPerPage },
+        adminInfo?.token || ""
+      ),
+    enabled: searchReceiptNumber === "",
   });
-
 
   // Handle search response data
   const searchResponse = searchData as SearchResponse;
   const apiResponse = searchReceiptNumber
     ? {
-        data: [...(searchResponse?.data?.incoming || []), ...(searchResponse?.data?.outgoing || [])],
-        pagination: null
+        data: [
+          ...(searchResponse?.data?.incoming || []),
+          ...(searchResponse?.data?.outgoing || []),
+        ],
+        pagination: null,
       }
-    : data as ApiResponse;
+    : (data as ApiResponse);
 
   const orders = apiResponse?.data || [];
   const pagination = apiResponse?.pagination;
@@ -336,14 +405,15 @@ const DaybookScreen = () => {
 
       for (
         let i = Math.max(2, pagination.currentPage - delta);
-        i <= Math.min(pagination.totalPages - 1, pagination.currentPage + delta);
+        i <=
+        Math.min(pagination.totalPages - 1, pagination.currentPage + delta);
         i++
       ) {
         range.push(i);
       }
 
       if (pagination.currentPage - delta > 2) {
-        rangeWithDots.push(1, '...');
+        rangeWithDots.push(1, "...");
       } else {
         rangeWithDots.push(1);
       }
@@ -351,7 +421,7 @@ const DaybookScreen = () => {
       rangeWithDots.push(...range);
 
       if (pagination.currentPage + delta < pagination.totalPages - 1) {
-        rangeWithDots.push('...', pagination.totalPages);
+        rangeWithDots.push("...", pagination.totalPages);
       } else if (pagination.totalPages > 1) {
         rangeWithDots.push(pagination.totalPages);
       }
@@ -367,11 +437,22 @@ const DaybookScreen = () => {
             <div className="flex items-center gap-2 text-center sm:text-left">
               <div className="w-2 h-2 bg-primary/20 rounded-full"></div>
               <span className="text-sm text-gray-600">
-                {t('daybook.showing')} <span className="font-medium text-gray-900">{((pagination.currentPage - 1) * pagination.itemsPerPage) + 1}</span> {t('daybook.to')}{' '}
+                {t("daybook.showing")}{" "}
                 <span className="font-medium text-gray-900">
-                  {Math.min(pagination.currentPage * pagination.itemsPerPage, pagination.totalItems)}
-                </span>{' '}
-                {t('daybook.of')} <span className="font-medium text-gray-900">{pagination.totalItems}</span> {t('daybook.entries')}
+                  {(pagination.currentPage - 1) * pagination.itemsPerPage + 1}
+                </span>{" "}
+                {t("daybook.to")}{" "}
+                <span className="font-medium text-gray-900">
+                  {Math.min(
+                    pagination.currentPage * pagination.itemsPerPage,
+                    pagination.totalItems
+                  )}
+                </span>{" "}
+                {t("daybook.of")}{" "}
+                <span className="font-medium text-gray-900">
+                  {pagination.totalItems}
+                </span>{" "}
+                {t("daybook.entries")}
               </span>
             </div>
             <select
@@ -379,10 +460,10 @@ const DaybookScreen = () => {
               onChange={(e) => handleItemsPerPageChange(Number(e.target.value))}
               className="w-full sm:w-auto px-3 py-1.5 border border-gray-200 rounded-lg text-sm bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200"
             >
-              <option value={5}>5 {t('daybook.perPage')}</option>
-              <option value={10}>10 {t('daybook.perPage')}</option>
-              <option value={20}>20 {t('daybook.perPage')}</option>
-              <option value={50}>50 {t('daybook.perPage')}</option>
+              <option value={5}>5 {t("daybook.perPage")}</option>
+              <option value={10}>10 {t("daybook.perPage")}</option>
+              <option value={20}>20 {t("daybook.perPage")}</option>
+              <option value={50}>50 {t("daybook.perPage")}</option>
             </select>
           </div>
 
@@ -395,7 +476,7 @@ const DaybookScreen = () => {
                 onClick={() => setCurrentPage(1)}
                 disabled={!pagination.hasPreviousPage}
                 className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                aria-label={t('daybook.firstPage')}
+                aria-label={t("daybook.firstPage")}
               >
                 <ChevronsLeft size={16} className="text-gray-600" />
               </button>
@@ -405,7 +486,7 @@ const DaybookScreen = () => {
                 onClick={() => setCurrentPage(pagination.previousPage!)}
                 disabled={!pagination.hasPreviousPage}
                 className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                aria-label={t('daybook.previousPage')}
+                aria-label={t("daybook.previousPage")}
               >
                 <ChevronLeft size={16} className="text-gray-600" />
               </button>
@@ -417,14 +498,16 @@ const DaybookScreen = () => {
                 {getPageNumbers().map((pageNum, index) => (
                   <button
                     key={index}
-                    onClick={() => typeof pageNum === 'number' && setCurrentPage(pageNum)}
-                    disabled={pageNum === '...'}
+                    onClick={() =>
+                      typeof pageNum === "number" && setCurrentPage(pageNum)
+                    }
+                    disabled={pageNum === "..."}
                     className={`flex-shrink-0 min-w-[32px] h-8 px-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                       pageNum === pagination.currentPage
-                        ? 'bg-primary text-white hover:bg-primary/90'
-                        : pageNum === '...'
-                        ? 'cursor-default px-1'
-                        : 'border border-gray-200 text-gray-700 hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20'
+                        ? "bg-primary text-white hover:bg-primary/90"
+                        : pageNum === "..."
+                        ? "cursor-default px-1"
+                        : "border border-gray-200 text-gray-700 hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20"
                     }`}
                   >
                     {pageNum}
@@ -440,7 +523,7 @@ const DaybookScreen = () => {
                 onClick={() => setCurrentPage(pagination.nextPage!)}
                 disabled={!pagination.hasNextPage}
                 className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                aria-label={t('daybook.nextPage')}
+                aria-label={t("daybook.nextPage")}
               >
                 <ChevronRight size={16} className="text-gray-600" />
               </button>
@@ -450,7 +533,7 @@ const DaybookScreen = () => {
                 onClick={() => setCurrentPage(pagination.totalPages)}
                 disabled={!pagination.hasNextPage}
                 className="p-2 rounded-lg border border-gray-200 disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                aria-label={t('daybook.lastPage')}
+                aria-label={t("daybook.lastPage")}
               >
                 <ChevronsRight size={16} className="text-gray-600" />
               </button>
@@ -469,7 +552,11 @@ const DaybookScreen = () => {
   if (isLoading && !orders.length) {
     return (
       <>
-        <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+        <TopBar
+          title={t("daybook.title")}
+          isSidebarOpen={false}
+          setIsSidebarOpen={() => {}}
+        />
         {!isWebView() && (
           <div className="flex items-center justify-center h-[calc(100vh-64px)]">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -482,9 +569,13 @@ const DaybookScreen = () => {
   if (error) {
     return (
       <>
-        <TopBar title={t('daybook.title')} isSidebarOpen={false} setIsSidebarOpen={() => {}} />
+        <TopBar
+          title={t("daybook.title")}
+          isSidebarOpen={false}
+          setIsSidebarOpen={() => {}}
+        />
         <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <div className="text-red-500">{t('daybook.errorLoading')}</div>
+          <div className="text-red-500">{t("daybook.errorLoading")}</div>
         </div>
       </>
     );
@@ -787,6 +878,16 @@ const DaybookScreen = () => {
                   <FileText className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
                   <span className="truncate">Get Reports</span>
                 </button>
+                {isStoreAdmin(adminInfo) &&
+                  adminInfo.preferences?.showFinancesButton && (
+                    <button
+                      onClick={() => setIsFinancesModalOpen(true)}
+                      className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow"
+                    >
+                      <DollarSign className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+                      <span className="truncate">Finances</span>
+                    </button>
+                  )}
               </div>
             </div>
           </div>
@@ -904,6 +1005,41 @@ const DaybookScreen = () => {
       <GetReportsDialog
         open={isReportsModalOpen}
         onOpenChange={setIsReportsModalOpen}
+      />
+
+      {/* Finances Modal */}
+      <FinancesModal
+        isOpen={isFinancesModalOpen}
+        onClose={() => setIsFinancesModalOpen(false)}
+        onSubmit={async (data) => {
+          try {
+            setIsFinancesLoading(true);
+            const payload = {
+              amount: data.amount,
+              costPerBag: data.costPerBag!,
+              date: data.date,
+              farmerId: data.farmerId,
+              farmerName: data.farmerName,
+              remarks: data.remarks || "",
+            };
+            await storeAdminApi.createPaymentHistory(
+              payload,
+              adminInfo?.token || ""
+            );
+            toast.success("Payment history entry created successfully");
+            setIsFinancesModalOpen(false);
+          } catch (error: any) {
+            toast.error(
+              error.response?.data?.message ||
+                "Failed to create payment history entry"
+            );
+          } finally {
+            setIsFinancesLoading(false);
+          }
+        }}
+        isLoading={isFinancesLoading}
+        token={adminInfo?.token || ""}
+        coldStorageId={adminInfo?._id || ""}
       />
     </>
   );

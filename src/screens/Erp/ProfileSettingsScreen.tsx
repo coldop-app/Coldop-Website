@@ -35,6 +35,7 @@ interface UpdateProfilePayload {
   imageUrl: string;
   preferences: {
     bagSizes: string[];
+    showFinancesButton?: boolean;
   };
   isMobile: boolean;
   password: string;
@@ -91,7 +92,8 @@ const ProfileSettingsScreen = () => {
     coldStorageContactNumber: "",
     capacity: "",
     imageUrl: "",
-    bagSizes: [] as string[]  // Initialize as empty array
+    bagSizes: [] as string[],  // Initialize as empty array
+    showFinancesButton: false
   });
 
   // Image handling states
@@ -325,7 +327,8 @@ const ProfileSettingsScreen = () => {
         coldStorageContactNumber: adminInfo.coldStorageDetails.coldStorageContactNumber || "",
         capacity: adminInfo.coldStorageDetails.capacity?.toString() || "",
         imageUrl: adminInfo.imageUrl || "",
-        bagSizes: adminInfo.preferences?.bagSizes?.map(size => size.toLowerCase()) || []
+        bagSizes: adminInfo.preferences?.bagSizes?.map(size => size.toLowerCase()) || [],
+        showFinancesButton: adminInfo.preferences?.showFinancesButton || false
       });
       if (adminInfo.imageUrl) {
         setImagePreview(adminInfo.imageUrl);
@@ -633,6 +636,7 @@ const ProfileSettingsScreen = () => {
         formData.capacity !== (adminInfo.coldStorageDetails.capacity?.toString() || "") ||
         formData.imageUrl !== (adminInfo.imageUrl || "") ||
         JSON.stringify(formData.bagSizes) !== JSON.stringify(adminInfo.preferences?.bagSizes?.map(size => size.toLowerCase()) || []) ||
+        formData.showFinancesButton !== (adminInfo.preferences?.showFinancesButton || false) ||
         password !== "" ||
         confirmPassword !== "";
 
@@ -704,7 +708,8 @@ const ProfileSettingsScreen = () => {
       capacity: formData.capacity ? parseInt(formData.capacity) : undefined,
       imageUrl: formData.imageUrl,
       preferences: {
-        bagSizes: formData.bagSizes.map(size => size.charAt(0).toUpperCase() + size.slice(1))
+        bagSizes: formData.bagSizes.map(size => size.charAt(0).toUpperCase() + size.slice(1)),
+        showFinancesButton: formData.showFinancesButton
       },
       isMobile: false as const
     };
@@ -1251,6 +1256,33 @@ const ProfileSettingsScreen = () => {
                 </button>
               </div>
             </div>
+
+            {/* Display Preferences Section */}
+            {/* <div className="space-y-4 pt-6"> */}
+              {/* <h3 className="text-lg font-semibold">Display Preferences</h3> */}
+
+              {/* <div className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex-1">
+                  <label className="text-sm font-medium">Show Finances Button</label>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Toggle to show or hide the Finances button in the Daybook screen
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setFormData(prev => ({ ...prev, showFinancesButton: !prev.showFinancesButton }))}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+                    formData.showFinancesButton ? 'bg-primary' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      formData.showFinancesButton ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div> */}
+            {/* </div> */}
 
             <div className="pt-6">
               <Button type="submit" className="w-full" disabled={isUpdating}>

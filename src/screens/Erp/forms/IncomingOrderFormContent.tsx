@@ -132,6 +132,7 @@ interface Farmer {
   name: string;
   address?: string;
   mobileNumber?: string;
+  costPerBag?: number;
 }
 
 const IncomingOrderFormContent = () => {
@@ -233,6 +234,7 @@ const IncomingOrderFormContent = () => {
         farmerName: farmer.name,
         farmerId: farmer._id,
       }));
+      setSelectedFarmer(farmer); // Store the farmer object including costPerBag if available
     }
   }, [farmer]);
 
@@ -434,6 +436,12 @@ const IncomingOrderFormContent = () => {
       (sum, quantity) => sum + (parseInt(quantity) || 0),
       0
     );
+  };
+
+  const calculateRent = () => {
+    if (!selectedFarmer?.costPerBag) return 0;
+    const totalBags = calculateTotal();
+    return selectedFarmer.costPerBag * totalBags;
   };
 
   const nextStep = () => {
@@ -696,13 +704,14 @@ const IncomingOrderFormContent = () => {
   };
 
 
-  const handleSelectFarmer = (selectedFarmer: Farmer) => {
+  const handleSelectFarmer = (farmer: Farmer) => {
     setFormData((prev) => ({
       ...prev,
-      farmerName: selectedFarmer.name,
-      farmerId: selectedFarmer._id,
+      farmerName: farmer.name,
+      farmerId: farmer._id,
     }));
-    setSearchQuery(selectedFarmer.name);
+    setSearchQuery(farmer.name);
+    setSelectedFarmer(farmer); // Store the full farmer object including costPerBag
     setShowDropdown(false);
     setHighlightedIndex(-1);
 
@@ -1493,6 +1502,31 @@ const IncomingOrderFormContent = () => {
                   rows={4}
                 />
               </div>
+
+              {/* Rent Display Section - Only show if showFinancesButton is enabled */}
+              {adminInfo?.preferences?.showFinancesButton && (
+                <div className="border border-primary/30 rounded-lg p-4 bg-primary/5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-lg font-bold text-primary mb-1">Total Rent</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {selectedFarmer?.costPerBag ? (
+                          <>
+                            ₹{selectedFarmer.costPerBag} per bag × {calculateTotal()} bags
+                          </>
+                        ) : (
+                          "Cost per bag not available"
+                        )}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-3xl font-bold text-primary">
+                        ₹{calculateRent().toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4 flex gap-4">
                 <button

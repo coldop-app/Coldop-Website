@@ -30,12 +30,13 @@ interface SignupCredentials {
   isMobile: boolean;
   preferences: {
     bagSizes: string[];
+    showFinancesButton?: boolean;
   };
 }
 
 interface DaybookOrdersParams {
-  type: 'all' | 'incoming' | 'outgoing';
-  sortBy: 'latest' | 'oldest';
+  type: "all" | "incoming" | "outgoing";
+  sortBy: "latest" | "oldest";
   page: number;
   limit: number;
 }
@@ -103,6 +104,7 @@ interface UpdateProfilePayload {
   imageUrl: string;
   preferences: {
     bagSizes: string[];
+    showFinancesButton?: boolean;
   };
   isMobile: boolean;
   password?: string | undefined;
@@ -177,6 +179,42 @@ interface ReceiptNumberResponse {
   receiptNumber: number;
 }
 
+interface PaymentHistoryItem {
+  _id: string;
+  farmer: string;
+  amount: number;
+  amount_left: number;
+  remarks: string;
+  date: string;
+  createdAt: string;
+  updatedAt: string;
+  __v: number;
+}
+
+interface PaymentHistoryResponse {
+  status: string;
+  data: PaymentHistoryItem[];
+  count: number;
+}
+
+interface CreatePaymentHistoryPayload {
+  amount: number;
+  costPerBag: number;
+  date: string;
+  farmerId: string;
+  farmerName: string;
+  remarks: string;
+}
+
+export interface UpdateFarmerPayload {
+  farmerId?: string; // business farmer ID
+  name?: string;
+  address?: string;
+  mobileNumber?: string;
+  imageUrl?: string;
+  costPerBag?: number | null;
+}
+
 export const storeAdminApi = {
   login: async (credentials: LoginCredentials) => {
     const response = await axios.post(
@@ -184,8 +222,8 @@ export const storeAdminApi = {
       credentials,
       {
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data;
@@ -197,8 +235,8 @@ export const storeAdminApi = {
       credentials,
       {
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data;
@@ -206,14 +244,14 @@ export const storeAdminApi = {
 
   sendOtp: async (mobileNumber: string) => {
     const formData = new URLSearchParams();
-    formData.append('mobileNumber', mobileNumber);
+    formData.append("mobileNumber", mobileNumber);
 
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/send-otp`,
       formData,
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
@@ -222,15 +260,15 @@ export const storeAdminApi = {
 
   verifyOtp: async (mobileNumber: string, enteredOtp: string) => {
     const formData = new URLSearchParams();
-    formData.append('mobileNumber', mobileNumber);
-    formData.append('enteredOtp', enteredOtp);
+    formData.append("mobileNumber", mobileNumber);
+    formData.append("enteredOtp", enteredOtp);
 
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/verify-mobile`,
       formData,
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
@@ -239,14 +277,14 @@ export const storeAdminApi = {
 
   resendOtp: async (mobileNumber: string) => {
     const formData = new URLSearchParams();
-    formData.append('mobileNumber', mobileNumber);
+    formData.append("mobileNumber", mobileNumber);
 
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/resend-otp`,
       formData,
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
@@ -255,14 +293,14 @@ export const storeAdminApi = {
 
   editMobile: async (mobileNumber: string) => {
     const formData = new URLSearchParams();
-    formData.append('mobileNumber', mobileNumber);
+    formData.append("mobileNumber", mobileNumber);
 
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/edit-mobile`,
       formData,
       {
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
       }
     );
@@ -275,8 +313,8 @@ export const storeAdminApi = {
       {
         params,
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -288,9 +326,9 @@ export const storeAdminApi = {
       params,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -302,9 +340,9 @@ export const storeAdminApi = {
       params,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -315,8 +353,8 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/farmers`,
       {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -327,8 +365,8 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/stock-summary`,
       {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -339,8 +377,8 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/cold-storage-summary`,
       {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -352,48 +390,53 @@ export const storeAdminApi = {
       payload,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
   },
 
-  searchFarmers: async (coldStorageId: string, query: string, token: string) => {
+  searchFarmers: async (
+    coldStorageId: string,
+    query: string,
+    token: string
+  ) => {
     const response = await axios.get(
       `${BASE_URL}/api/store-admin/${coldStorageId}/farmers/search`,
       {
         params: { query },
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
   },
 
   getVarieties: async (token: string) => {
-    const response = await axios.get(
-      `${BASE_URL}/api/store-admin/varieties`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    );
+    const response = await axios.get(`${BASE_URL}/api/store-admin/varieties`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   },
 
-  createOutgoingOrder: async (farmerId: string, payload: CreateOutgoingOrderPayload, token: string) => {
+  createOutgoingOrder: async (
+    farmerId: string,
+    payload: CreateOutgoingOrderPayload,
+    token: string
+  ) => {
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/outgoing`,
       payload,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -404,28 +447,31 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders/incoming`,
       {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
   },
 
-  quickRegister: async (credentials: QuickRegisterCredentials, token?: string) => {
+  quickRegister: async (
+    credentials: QuickRegisterCredentials,
+    token?: string
+  ) => {
     const formData = new URLSearchParams();
-    formData.append('name', credentials.name);
-    formData.append('address', credentials.address);
-    formData.append('mobileNumber', credentials.mobileNumber);
-    formData.append('password', credentials.password);
-    formData.append('imageUrl', credentials.imageUrl);
-    formData.append('farmerId', credentials.farmerId);
+    formData.append("name", credentials.name);
+    formData.append("address", credentials.address);
+    formData.append("mobileNumber", credentials.mobileNumber);
+    formData.append("password", credentials.password);
+    formData.append("imageUrl", credentials.imageUrl);
+    formData.append("farmerId", credentials.farmerId);
 
     const headers: Record<string, string> = {
-      'Content-Type': 'application/x-www-form-urlencoded',
+      "Content-Type": "application/x-www-form-urlencoded",
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     const response = await axios.post(
@@ -442,9 +488,9 @@ export const storeAdminApi = {
       payload,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -455,8 +501,8 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/farmerid/check`,
       {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -467,8 +513,8 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders`,
       {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -480,23 +526,27 @@ export const storeAdminApi = {
       payload,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
   },
 
-  updateIncomingOrder: async (orderId: string, payload: UpdateIncomingOrderPayload, token: string) => {
+  updateIncomingOrder: async (
+    orderId: string,
+    payload: UpdateIncomingOrderPayload,
+    token: string
+  ) => {
     const response = await axios.put(
       `${BASE_URL}/api/store-admin/incoming-orders/${orderId}`,
       payload,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
@@ -504,15 +554,15 @@ export const storeAdminApi = {
 
   uploadProfilePhoto: async (image: File) => {
     const formData = new FormData();
-    formData.append('image', image);
+    formData.append("image", image);
 
     const response = await axios.post<UploadProfilePhotoResponse>(
       `${BASE_URL}/api/store-admin/upload-profile-photo`,
       formData,
       {
         headers: {
-          'Content-Type': 'multipart/form-data',
-        }
+          "Content-Type": "multipart/form-data",
+        },
       }
     );
     return response.data;
@@ -523,9 +573,9 @@ export const storeAdminApi = {
       `${BASE_URL}/api/store-admin/delete-profile-photo`,
       {
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        data: payload
+        data: payload,
       }
     );
     return response.data;
@@ -536,14 +586,11 @@ export const storeAdminApi = {
       status: string;
       message: string;
       data: TopFarmer[];
-    }>(
-      `${BASE_URL}/api/store-admin/top-farmers`,
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      }
-    );
+    }>(`${BASE_URL}/api/store-admin/top-farmers`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     return response.data;
   },
 
@@ -553,64 +600,119 @@ export const storeAdminApi = {
       {},
       {
         headers: {
-          'Content-Type': 'application/json'
-        }
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data;
   },
 
   getCount: async () => {
-    const response = await axios.get<CountResponse>(
-      `${BASE_URL}/api/count`,
-      {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      }
-    );
+    const response = await axios.get<CountResponse>(`${BASE_URL}/api/count`, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
     return response.data;
   },
 
-  getReceiptNumber: async (type: 'incoming' | 'outgoing', token: string) => {
+  getReceiptNumber: async (type: "incoming" | "outgoing", token: string) => {
     const response = await axios.get<ReceiptNumberResponse>(
       `${BASE_URL}/api/store-admin/receipt-number`,
       {
         params: { type },
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data;
   },
 
-  sendWhatsApp: async (payload: { to: string; body: string }, token: string) => {
+  sendWhatsApp: async (
+    payload: { to: string; body: string },
+    token: string
+  ) => {
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/send-whatsapp`,
       payload,
       {
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        }
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       }
     );
     return response.data;
   },
 
-  getOrdersDailySummary: async (params: { startDate: string; endDate: string }, token: string) => {
+  getOrdersDailySummary: async (
+    params: { startDate: string; endDate: string },
+    token: string
+  ) => {
     const response = await axios.get(
       `${BASE_URL}/api/store-admin/orders/daily-summary`,
       {
         params,
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
       }
     );
     return response.data;
-  }
+  },
+
+  getPaymentHistory: async (
+    farmerId: string,
+    token: string
+  ): Promise<PaymentHistoryResponse> => {
+    const response = await axios.get<PaymentHistoryResponse>(
+      `${BASE_URL}/api/store-admin/payment-history/farmer/${farmerId}`,
+      {
+        headers: {
+          "Content-Type": "text/plain",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  createPaymentHistory: async (
+    payload: CreatePaymentHistoryPayload,
+    token: string
+  ) => {
+    const response = await axios.post(
+      `${BASE_URL}/api/store-admin/payment-history`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  updateFarmer: async (
+    farmerId: string,
+    payload: UpdateFarmerPayload,
+    token: string
+  ) => {
+    const response = await axios.put(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
 };

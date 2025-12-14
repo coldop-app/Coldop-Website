@@ -1,15 +1,21 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useMemo } from "react";
 import { X, Loader2, HelpCircle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import debounce from "lodash/debounce";
-import { Popover, PopoverTrigger, PopoverContent } from "@/components/ui/popover";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
 
 export interface NewFarmerFormData {
   accNo: string;
   name: string;
   address: string;
   contact: string;
+  costPerBag: number;
 }
 
 interface NewFarmerModalProps {
@@ -25,19 +31,20 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
   onClose,
   onSubmit,
   isLoading,
-  token
+  token,
 }) => {
   const { data: farmerIdsData } = useQuery({
-    queryKey: ['farmerIds'],
+    queryKey: ["farmerIds"],
     queryFn: () => storeAdminApi.checkFarmerId(token),
-    enabled: isOpen, // Only fetch when modal is open
+    enabled: isOpen,
   });
 
   const [formData, setFormData] = useState<NewFarmerFormData>({
     accNo: "",
     name: "",
     address: "",
-    contact: ""
+    contact: "",
+    costPerBag: null as any, // Allow empty initial state
   });
   const [accNoError, setAccNoError] = useState<string>("");
 
@@ -46,7 +53,9 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
     () =>
       debounce((id: string, registeredFarmers: string[]) => {
         if (registeredFarmers.includes(id)) {
-          setAccNoError(`Farmer ID ${id} is already taken. Please use a different ID.`);
+          setAccNoError(
+            `Farmer ID ${id} is already taken. Please use a different ID.`
+          );
         } else {
           setAccNoError("");
         }
@@ -56,29 +65,41 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
   const handleChange = (field: keyof NewFarmerFormData, value: string) => {
     // Handle numeric-only validation for accNo field
-    if (field === 'accNo') {
-      const numericValue = value.replace(/[^0-9]/g, '');
-      setFormData(prev => ({ ...prev, [field]: numericValue }));
+    if (field === "accNo") {
+      const numericValue = value.replace(/[^0-9]/g, "");
+      setFormData((prev) => ({ ...prev, [field]: numericValue }));
 
       // Debounced check for existing farmer ID
       if (numericValue && farmerIdsData?.data?.registeredFarmers) {
-        debouncedCheckFarmerId(numericValue, farmerIdsData.data.registeredFarmers);
+        debouncedCheckFarmerId(
+          numericValue,
+          farmerIdsData.data.registeredFarmers
+        );
       } else {
         setAccNoError("");
       }
       return;
     }
 
+    if (field === "costPerBag") {
+      const numericValue = value.replace(/[^0-9.]/g, "");
+      setFormData((prev) => ({
+        ...prev,
+        costPerBag: numericValue ? Number(numericValue) : (null as any),
+      }));
+      return;
+    }
+
     // Handle numeric-only validation and 10-digit limit for contact field
-    if (field === 'contact') {
-      const numericValue = value.replace(/[^0-9]/g, '');
+    if (field === "contact") {
+      const numericValue = value.replace(/[^0-9]/g, "");
       if (numericValue.length <= 10) {
-        setFormData(prev => ({ ...prev, [field]: numericValue }));
+        setFormData((prev) => ({ ...prev, [field]: numericValue }));
       }
       return;
     }
 
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -86,7 +107,9 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
     // Validate that the farmer ID doesn't exist
     if (farmerIdsData?.data?.registeredFarmers?.includes(formData.accNo)) {
-      setAccNoError(`Farmer ID ${formData.accNo} is already taken. Please use a different ID.`);
+      setAccNoError(
+        `Farmer ID ${formData.accNo} is already taken. Please use a different ID.`
+      );
       return;
     }
 
@@ -97,9 +120,11 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
     // Validate contact number length
     if (formData.contact.length !== 10) {
-      alert('Contact number must be exactly 10 digits');
+      alert("Contact number must be exactly 10 digits");
       return;
     }
+
+
 
     onSubmit(formData);
     // Reset form data after submission
@@ -107,7 +132,8 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
       accNo: "",
       name: "",
       address: "",
-      contact: ""
+      contact: "",
+      costPerBag: null as any,
     });
   };
 
@@ -115,7 +141,10 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div id="new-farmer-modal" className="bg-background rounded-lg p-6 w-full max-w-md relative">
+      <div
+        id="new-farmer-modal"
+        className="bg-background rounded-lg p-6 w-full max-w-md relative"
+      >
         <button
           onClick={onClose}
           disabled={isLoading}
@@ -132,10 +161,20 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
               {farmerIdsData?.data?.registeredFarmers?.length > 0 ? (
                 <>
                   <p className="text-sm font-medium">
-                    Current Farmer ID: {Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id)))}
+                    Current Farmer ID:{" "}
+                    {Math.max(
+                      ...farmerIdsData.data.registeredFarmers.map(
+                        (id: string) => parseInt(id)
+                      )
+                    )}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Next farmer will be assigned ID: {Math.max(...farmerIdsData.data.registeredFarmers.map((id: string) => parseInt(id))) + 1}
+                    Next farmer will be assigned ID:{" "}
+                    {Math.max(
+                      ...farmerIdsData.data.registeredFarmers.map(
+                        (id: string) => parseInt(id)
+                      )
+                    ) + 1}
                   </p>
                 </>
               ) : (
@@ -165,7 +204,9 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
                     {farmerIdsData?.data?.registeredFarmers?.length > 0 ? (
                       <div className="grid grid-cols-5 gap-2">
                         {farmerIdsData.data.registeredFarmers
-                          .sort((a: string, b: string) => parseInt(a) - parseInt(b))
+                          .sort(
+                            (a: string, b: string) => parseInt(a) - parseInt(b)
+                          )
                           .map((id: string) => (
                             <div
                               key={id}
@@ -176,7 +217,9 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
                           ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted-foreground">No farmer IDs registered yet</p>
+                      <p className="text-sm text-muted-foreground">
+                        No farmer IDs registered yet
+                      </p>
                     )}
                   </div>
                 </div>
@@ -244,6 +287,21 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
             <p className="text-xs text-muted-foreground mt-1">
               {formData.contact.length}/10 digits
             </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">
+              Cost per Bag (₹):
+            </label>
+            <input
+              type="number"
+              value={formData.costPerBag ?? ""}
+              onChange={(e) => handleChange("costPerBag", e.target.value)}
+              className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
+              placeholder="Enter cost per bag"
+              min="0"
+              disabled={isLoading}
+            />
           </div>
 
           <div className="pt-4 flex gap-4">
