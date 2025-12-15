@@ -1016,7 +1016,6 @@ const DaybookScreen = () => {
             setIsFinancesLoading(true);
             const payload = {
               amount: data.amount,
-              costPerBag: data.costPerBag!,
               date: data.date,
               farmerId: data.farmerId,
               farmerName: data.farmerName,
@@ -1028,6 +1027,7 @@ const DaybookScreen = () => {
             );
             toast.success("Payment history entry created successfully");
             setIsFinancesModalOpen(false);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (error: any) {
             toast.error(
               error.response?.data?.message ||

@@ -199,7 +199,6 @@ interface PaymentHistoryResponse {
 
 interface CreatePaymentHistoryPayload {
   amount: number;
-  costPerBag: number;
   date: string;
   farmerId: string;
   farmerName: string;
