@@ -53,7 +53,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     backgroundColor: "#FEFDF8",
     padding: 16,
-    paddingBottom: 80,
+    paddingBottom: 60,
     fontFamily: "Helvetica",
     fontSize: 10,
   },
@@ -139,7 +139,6 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
     minHeight: 24,
   },
-  // Updated column styles - removed chamber, floor, row columns
   colDate: {
     width: "8%",
     borderRightWidth: 0.5,
@@ -161,7 +160,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 2,
     justifyContent: "center",
   },
-  // Increased bag size column width since we removed 3 columns
   colBagSize: {
     width: "10%",
     borderRightWidth: 0.5,
@@ -209,7 +207,6 @@ const styles = StyleSheet.create({
     textAlign: "left",
     color: "#000",
   },
-  // New styles for location + quantity display
   bagCellContainer: {
     flexDirection: "column",
     alignItems: "center",
@@ -278,7 +275,10 @@ const styles = StyleSheet.create({
     color: "#000",
   },
   footer: {
-    marginTop: 20,
+    position: "absolute",
+    bottom: 16,
+    left: 16,
+    right: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
@@ -326,7 +326,6 @@ interface LedgerEntry {
   voucher: number;
   type: "RECEIPT" | "DELIVERY";
   variety: string;
-  // Changed to store location per bag size
   quantitiesWithLocation: {
     [bagSize: string]: { quantity: number; location: string }[];
   };
@@ -522,6 +521,55 @@ const KangReportPdf: React.FC<KangReportPdfProps> = ({
     return entries;
   }, [deliveryOrders, bagSizes]);
 
+  const receiptTotals = useMemo(() => {
+    const totals: { [key: string]: number } = {};
+    bagSizes.forEach((size) => {
+      totals[size] = receiptEntries.reduce((sum, entry) => {
+        const items = entry.quantitiesWithLocation[size] || [];
+        return (
+          sum + items.reduce((itemSum, item) => itemSum + item.quantity, 0)
+        );
+      }, 0);
+    });
+    return totals;
+  }, [receiptEntries, bagSizes]);
+
+  // FIXED: Better pagination logic
+  const splitEntriesIntoPages = useMemo(() => {
+    return (entries: LedgerEntry[], isFirstPage: boolean = false) => {
+      const pages: LedgerEntry[][] = [];
+      // First page has less space due to farmer info, subsequent pages have more
+      const firstPageRows = 20; // Conservative for first page with farmer info
+      const subsequentPageRows = 28; // More rows for continuation pages
+
+      if (entries.length === 0) return pages;
+
+      if (isFirstPage && entries.length > firstPageRows) {
+        // Split first page
+        pages.push(entries.slice(0, firstPageRows));
+
+        // Split remaining entries
+        let remaining = entries.slice(firstPageRows);
+        while (remaining.length > 0) {
+          pages.push(remaining.slice(0, subsequentPageRows));
+          remaining = remaining.slice(subsequentPageRows);
+        }
+      } else if (isFirstPage) {
+        // All entries fit on first page
+        pages.push(entries);
+      } else {
+        // Split without first page consideration
+        let remaining = entries;
+        while (remaining.length > 0) {
+          pages.push(remaining.slice(0, subsequentPageRows));
+          remaining = remaining.slice(subsequentPageRows);
+        }
+      }
+
+      return pages;
+    };
+  }, []);
+
   const renderTableHeader = (isDeliveryTable: boolean = false) => (
     <View style={styles.tableHeader}>
       <View style={styles.colDate}>
@@ -549,6 +597,34 @@ const KangReportPdf: React.FC<KangReportPdfProps> = ({
           <Text style={styles.cellHeaderText}>REMARKS</Text>
         </View>
       )}
+    </View>
+  );
+
+  const renderOpeningBalanceRow = (
+    initialGrandTotal: number,
+    receiptTotals: { [key: string]: number }
+  ) => (
+    <View style={[styles.tableRow, { backgroundColor: "#F5F5F5" }]}>
+      <View style={styles.colDate}>
+        <Text style={styles.balanceText}>OPENING</Text>
+      </View>
+      <View style={styles.colVoucher}>
+        <Text style={styles.balanceText}>BALANCE</Text>
+      </View>
+      <View style={styles.colVariety}>
+        <Text style={styles.balanceText}>-</Text>
+      </View>
+      {bagSizes.map((size) => (
+        <View key={size} style={styles.colBagSize}>
+          <Text style={styles.balanceText}>{receiptTotals[size] || 0}</Text>
+        </View>
+      ))}
+      <View style={styles.colTotal}>
+        <Text style={styles.balanceText}>{initialGrandTotal}</Text>
+      </View>
+      <View style={styles.colGrandTotal}>
+        <Text style={styles.balanceText}>{initialGrandTotal}</Text>
+      </View>
     </View>
   );
 
@@ -654,55 +730,145 @@ const KangReportPdf: React.FC<KangReportPdfProps> = ({
     </View>
   );
 
+  const renderSummary = () => (
+    <View style={styles.summaryContainer}>
+      <Text style={styles.summaryTitle}>Account Summary</Text>
+      <View style={styles.summaryTable}>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Receipt Transactions:</Text>
+          <Text style={styles.summaryValue}>{receiptOrders.length}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Delivery Transactions:</Text>
+          <Text style={styles.summaryValue}>{deliveryOrders.length}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Bags Received:</Text>
+          <Text style={styles.summaryValue}>
+            {receiptEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
+          <Text style={styles.summaryValue}>
+            {deliveryEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+        <View style={[styles.summaryRow, { backgroundColor: "#D0D0D0" }]}>
+          <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
+          <Text style={styles.summaryValue}>
+            {receiptEntries.reduce((sum, entry) => sum + entry.total, 0) -
+              deliveryEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  const renderFooter = (pageNumber: number, totalPages: number) => (
+    <View style={styles.footer}>
+      <View style={styles.footerLeft}>
+        <Text style={styles.footerText}>
+          Authorized Signature: ____________________
+        </Text>
+      </View>
+      <View style={styles.footerCenter}>
+        <Text style={styles.footerText}>Date: {formatDate(new Date())}</Text>
+      </View>
+      <View style={styles.footerRight}>
+        <Text style={styles.footerText}>
+          Page {pageNumber} of {totalPages}
+        </Text>
+      </View>
+    </View>
+  );
+
   if (!orders || orders.length === 0) {
     return (
       <Document>
         <Page size="A4" style={styles.page}>
           {renderHeader()}
+          {renderFarmerInfo()}
           <Text style={styles.reportTitle}>NO TRANSACTIONS FOUND</Text>
+          {renderFooter(1, 1)}
         </Page>
       </Document>
     );
   }
 
+  // FIXED: Use the improved pagination
+  const receiptPages = splitEntriesIntoPages(receiptEntries, true);
+  const deliveryPages = splitEntriesIntoPages(deliveryEntries, false);
+
+  const totalPages = receiptPages.length + deliveryPages.length + 1; // +1 for summary
+
+  const initialGrandTotal = receiptEntries.reduce(
+    (sum, entry) => sum + entry.total,
+    0
+  );
+
+  let currentPageNumber = 1;
+
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
-        {renderHeader()}
-        {renderFarmerInfo()}
+      {/* Receipt pages */}
+      {receiptPages.map((pageEntries, pageIndex) => (
+        <Page key={`receipt-${pageIndex}`} size="A4" style={styles.page}>
+          {renderHeader()}
+          {pageIndex === 0 && renderFarmerInfo()}
 
-        {receiptEntries.length > 0 && (
           <View style={styles.ledgerContainer}>
-            <Text style={styles.ledgerTitle}>Receipt Details</Text>
+            <Text style={styles.ledgerTitle}>
+              {pageIndex === 0
+                ? "Receipt Details"
+                : "Receipt Details (continued)"}
+            </Text>
             <View style={styles.table}>
               {renderTableHeader(false)}
-              {receiptEntries
-                .slice(0, 15)
-                .map((entry, index) => renderTableRow(entry, index, false, 0))}
-            </View>
-          </View>
-        )}
-      </Page>
-
-      {deliveryEntries.length > 0 && (
-        <Page size="A4" style={styles.page}>
-          {renderHeader()}
-          <View style={styles.ledgerContainer}>
-            <Text style={styles.ledgerTitle}>Delivery Details</Text>
-            <View style={styles.table}>
-              {renderTableHeader(true)}
-              {deliveryEntries.slice(0, 15).map((entry, index) =>
-                renderTableRow(
-                  entry,
-                  index,
-                  true,
-                  receiptEntries.reduce((sum, e) => sum + e.total, 0)
-                )
+              {pageEntries.map((entry, index) =>
+                renderTableRow(entry, index, false, 0)
               )}
             </View>
           </View>
+
+          {renderFooter(currentPageNumber++, totalPages)}
         </Page>
-      )}
+      ))}
+
+      {/* Delivery pages */}
+      {deliveryPages.map((pageEntries, pageIndex) => (
+        <Page key={`delivery-${pageIndex}`} size="A4" style={styles.page}>
+          {renderHeader()}
+
+          <View style={styles.ledgerContainer}>
+            <Text style={styles.ledgerTitle}>
+              {pageIndex === 0
+                ? "Delivery Details"
+                : "Delivery Details (continued)"}
+            </Text>
+            <View style={styles.table}>
+              {renderTableHeader(true)}
+
+              {pageIndex === 0 &&
+                receiptTotals &&
+                renderOpeningBalanceRow(initialGrandTotal, receiptTotals)}
+
+              {pageEntries.map((entry, index) =>
+                renderTableRow(entry, index, true, initialGrandTotal)
+              )}
+            </View>
+          </View>
+
+          {renderFooter(currentPageNumber++, totalPages)}
+        </Page>
+      ))}
+
+      {/* Summary page */}
+      <Page size="A4" style={styles.page}>
+        {renderHeader()}
+        {renderSummary()}
+        {renderFooter(currentPageNumber, totalPages)}
+      </Page>
     </Document>
   );
 };

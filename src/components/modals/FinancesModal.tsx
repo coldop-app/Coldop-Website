@@ -11,7 +11,6 @@ interface Farmer {
   name: string;
   address?: string;
   mobileNumber?: string;
-  costPerBag?: number;
 }
 
 interface FinancesFormData {
@@ -20,7 +19,6 @@ interface FinancesFormData {
   amount: number;
   remarks: string;
   date: string;
-  costPerBag: number;
 }
 
 interface FinancesModalProps {
@@ -50,7 +48,6 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
     amount: 0,
     remarks: "",
     date: new Date().toISOString().split("T")[0],
-    costPerBag: 0,
   });
 
   // Farmer search query
@@ -85,7 +82,6 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
         amount: 0,
         remarks: "",
         date: new Date().toISOString().split("T")[0],
-        costPerBag: 0,
       });
       setSearchQuery("");
       setSelectedFarmer(null);
@@ -119,7 +115,6 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
       ...prev,
       farmerId: farmer._id,
       farmerName: farmer.name,
-      costPerBag: farmer.costPerBag || 0,
     }));
     setSearchQuery(farmer.name);
     setShowDropdown(false);
@@ -134,7 +129,6 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
       ...prev,
       farmerName: "",
       farmerId: "",
-      costPerBag: 0,
     }));
   };
 
@@ -215,13 +209,6 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
       return;
     }
 
-    const costPerBagNumber = Number(formData.costPerBag);
-
-    if (!costPerBagNumber || costPerBagNumber <= 0) {
-      toast.error("Please enter a valid cost per bag");
-      return;
-    }
-
     if (!formData.date) {
       toast.error("Please select a date");
       return;
@@ -230,7 +217,6 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
     const payload = {
       ...formData,
       amount: amountNumber, // ✅ converted to number
-      costPerBag: costPerBagNumber, // ✅ converted to number
     };
 
     console.log("form data is:", payload);
@@ -348,25 +334,6 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
               onChange={handleAmountChange}
               className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
               placeholder="Enter amount"
-              required
-              disabled={isLoading}
-            />
-          </div>
-
-          {/* Cost Per Bag */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Cost Per Bag <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={formData.costPerBag || ""}
-              onChange={(e) => {
-                const value = e.target.value.replace(/[^0-9.]/g, "");
-                setFormData((prev) => ({ ...prev, costPerBag: value as any }));
-              }}
-              className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
-              placeholder="Enter cost per bag"
               required
               disabled={isLoading}
             />
