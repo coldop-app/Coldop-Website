@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from "react-i18next";
 import { useSearchParams } from "react-router-dom";
 import TopBar from "@/components/common/Topbar/Topbar";
 import OutgoingOrderFormContent from "./forms/OutgoingOrderFormContent";
@@ -38,7 +38,7 @@ const OutgoingOrderForm = () => {
       <TopBar
         isSidebarOpen={isSidebarOpen}
         setIsSidebarOpen={toggleSidebar}
-        title={t('outgoingOrder.title')}
+        title={t("outgoingOrder.title")}
       />
 
       <div className="w-full px-2 sm:px-4 md:px-6 py-4 sm:py-6 md:py-8">
@@ -81,7 +81,7 @@ const OutgoingOrderForm = () => {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-2">
-                  Shed Cost <span className="text-red-500">*</span>
+                  Shed Cost per Bag <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
