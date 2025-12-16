@@ -72,6 +72,7 @@ const DaybookScreen = () => {
   const [isReportsModalOpen, setIsReportsModalOpen] = useState(false);
   const [isFinancesModalOpen, setIsFinancesModalOpen] = useState(false);
   const [isFinancesLoading, setIsFinancesLoading] = useState(false);
+  const [isOutgoingTypeModalOpen, setIsOutgoingTypeModalOpen] = useState(false);
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const navigate = useNavigate();
   const {
@@ -853,7 +854,7 @@ const DaybookScreen = () => {
                     if (currentStep === "daybook-add-outgoing") {
                       nextStep();
                     }
-                    navigate("/erp/outgoing-order");
+                    setIsOutgoingTypeModalOpen(true);
                   }}
                   className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative"
                 >
@@ -1020,6 +1021,7 @@ const DaybookScreen = () => {
               farmerId: data.farmerId,
               farmerName: data.farmerName,
               remarks: data.remarks || "",
+              paymentType: data.paymentType,
             };
             await storeAdminApi.createPaymentHistory(
               payload,
@@ -1027,7 +1029,7 @@ const DaybookScreen = () => {
             );
             toast.success("Payment history entry created successfully");
             setIsFinancesModalOpen(false);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
           } catch (error: any) {
             toast.error(
               error.response?.data?.message ||
@@ -1041,6 +1043,54 @@ const DaybookScreen = () => {
         token={adminInfo?.token || ""}
         coldStorageId={adminInfo?._id || ""}
       />
+
+      {/* Outgoing Type Selection Modal */}
+      {isOutgoingTypeModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md relative">
+            <button
+              onClick={() => setIsOutgoingTypeModalOpen(false)}
+              className="absolute right-4 top-4 text-gray-500 hover:text-gray-700"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                viewBox="0 0 20 20"
+                fill="currentColor"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+
+            <h2 className="text-xl font-bold mb-6">Select Outgoing Type</h2>
+
+            <div className="space-y-3">
+              <button
+                onClick={() => {
+                  setIsOutgoingTypeModalOpen(false);
+                  navigate("/erp/outgoing-order?type=shed");
+                }}
+                className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base font-medium"
+              >
+                Shed
+              </button>
+              <button
+                onClick={() => {
+                  setIsOutgoingTypeModalOpen(false);
+                  navigate("/erp/outgoing-order?type=delivery");
+                }}
+                className="w-full px-4 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-base font-medium"
+              >
+                Delivery
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };

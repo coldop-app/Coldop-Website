@@ -13,12 +13,15 @@ interface Farmer {
   mobileNumber?: string;
 }
 
+type PaymentType = "CREDIT" | "DEBIT";
+
 interface FinancesFormData {
   farmerId: string;
   farmerName: string;
   amount: number;
   remarks: string;
   date: string;
+  paymentType: PaymentType;
 }
 
 interface FinancesModalProps {
@@ -40,13 +43,21 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showPaymentTypeDropdown, setShowPaymentTypeDropdown] = useState(false);
+  const [paymentTypeHighlightedIndex, setPaymentTypeHighlightedIndex] =
+    useState(-1);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const paymentTypeOptions: { label: string; value: PaymentType }[] = [
+    { label: "Receive Payment", value: "CREDIT" },
+    { label: "Add Payment", value: "DEBIT" },
+  ];
   const [formData, setFormData] = useState<FinancesFormData>({
     farmerId: "",
     farmerName: "",
     amount: 0,
     remarks: "",
+    paymentType: "CREDIT",
     date: new Date().toISOString().split("T")[0],
   });
 
@@ -81,6 +92,7 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
         farmerName: "",
         amount: 0,
         remarks: "",
+        paymentType: "CREDIT",
         date: new Date().toISOString().split("T")[0],
       });
       setSearchQuery("");
@@ -164,6 +176,12 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
         "finances-farmer-search-dropdown"
       );
       const input = document.getElementById("finances-farmer-search-input");
+      const paymentTypeDropdown = document.getElementById(
+        "finances-payment-type-dropdown"
+      );
+      const paymentTypeButton = document.getElementById(
+        "finances-payment-type-button"
+      );
       if (
         dropdown &&
         input &&
@@ -171,6 +189,14 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
         !input.contains(event.target as Node)
       ) {
         setShowDropdown(false);
+      }
+      if (
+        paymentTypeDropdown &&
+        paymentTypeButton &&
+        !paymentTypeDropdown.contains(event.target as Node) &&
+        !paymentTypeButton.contains(event.target as Node)
+      ) {
+        setShowPaymentTypeDropdown(false);
       }
     };
 
@@ -194,6 +220,44 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
     setFormData((prev) => ({ ...prev, date: e.target.value }));
   };
 
+  const handlePaymentTypeChange = (value: PaymentType) => {
+    setFormData((prev) => ({
+      ...prev,
+      paymentType: value,
+    }));
+    setShowPaymentTypeDropdown(false);
+    setPaymentTypeHighlightedIndex(-1);
+  };
+
+  const handlePaymentTypeKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setShowPaymentTypeDropdown(true);
+      setPaymentTypeHighlightedIndex((prev) =>
+        prev < paymentTypeOptions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setShowPaymentTypeDropdown(true);
+      setPaymentTypeHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : paymentTypeOptions.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (paymentTypeHighlightedIndex >= 0) {
+        handlePaymentTypeChange(
+          paymentTypeOptions[paymentTypeHighlightedIndex].value
+        );
+      } else {
+        setShowPaymentTypeDropdown(!showPaymentTypeDropdown);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setShowPaymentTypeDropdown(false);
+      setPaymentTypeHighlightedIndex(-1);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -215,8 +279,12 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
     }
 
     const payload = {
-      ...formData,
-      amount: amountNumber, // ✅ converted to number
+      farmerId: formData.farmerId,
+      farmerName: formData.farmerName,
+      amount: amountNumber,
+      remarks: formData.remarks,
+      date: formData.date,
+      paymentType: formData.paymentType,
     };
 
     console.log("form data is:", payload);
@@ -240,6 +308,57 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
         <h2 className="text-xl font-bold mb-6">Add Finance Entry</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Payment Type */}
+          <div className="relative">
+            <label className="block text-sm font-medium mb-2">
+              Payment Type <span className="text-red-500">*</span>
+            </label>
+            <button
+              id="finances-payment-type-button"
+              type="button"
+              onClick={() =>
+                setShowPaymentTypeDropdown(!showPaymentTypeDropdown)
+              }
+              onKeyDown={handlePaymentTypeKeyDown}
+              onFocus={() => setPaymentTypeHighlightedIndex(-1)}
+              disabled={isLoading}
+              className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50 text-left flex items-center justify-between"
+            >
+              <span>
+                {
+                  paymentTypeOptions.find(
+                    (opt) => opt.value === formData.paymentType
+                  )?.label
+                }
+              </span>
+            </button>
+
+            {/* Payment Type Dropdown */}
+            {showPaymentTypeDropdown && (
+              <div
+                id="finances-payment-type-dropdown"
+                className="absolute z-50 left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200"
+              >
+                <div className="py-1">
+                  {paymentTypeOptions.map((option, index) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`w-full text-left px-4 py-2 focus:outline-none transition-colors ${
+                        index === paymentTypeHighlightedIndex
+                          ? "bg-gray-100 text-gray-800 border-l-2 border-gray-400"
+                          : "hover:bg-gray-50 focus:bg-gray-50"
+                      }`}
+                      onClick={() => handlePaymentTypeChange(option.value)}
+                    >
+                      <div className="font-medium">{option.label}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Farmer Search */}
           <div className="relative">
             <label className="block text-sm font-medium mb-2">

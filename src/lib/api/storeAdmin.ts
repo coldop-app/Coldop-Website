@@ -83,6 +83,7 @@ interface OutgoingOrderDetail {
 interface CreateOutgoingOrderPayload {
   orders: OutgoingOrderDetail[];
   remarks: string;
+  shedCost?: number;
 }
 
 interface CreateFarmerPayload {
@@ -186,6 +187,7 @@ interface PaymentHistoryItem {
   amount_left: number;
   remarks: string;
   date: string;
+  paymentType: PaymentType;
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -197,12 +199,15 @@ interface PaymentHistoryResponse {
   count: number;
 }
 
+type PaymentType = "CREDIT" | "DEBIT";
+
 interface CreatePaymentHistoryPayload {
   amount: number;
   date: string;
   farmerId: string;
   farmerName: string;
   remarks: string;
+  paymentType: PaymentType;
 }
 
 export interface UpdateFarmerPayload {
