@@ -670,8 +670,13 @@ const OutgoingOrderFormContent = ({
     };
 
     // Include shedCost if type is "shed" and shedCost is provided
+    // Calculate total shed cost by multiplying per-bag cost by total number of bags
     if (type === "shed" && shedCost > 0) {
-      payload.shedCost = shedCost;
+      const totalBags = selectedQuantities.reduce(
+        (total, sq) => total + sq.selectedQuantity,
+        0
+      );
+      payload.shedCost = shedCost * totalBags;
     }
 
     return payload;
