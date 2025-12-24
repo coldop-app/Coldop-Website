@@ -287,6 +287,7 @@ const resources = {
         daybook: "Daybook",
         people: "People",
         analytics: "Analytics",
+        myFinances: "My Finances",
         settings: "Settings"
       },
       daybook: {
@@ -489,6 +490,12 @@ const resources = {
           orderCreated: "Incoming order created successfully!",
           farmerCreated: "Farmer created successfully!"
         }
+      },
+      myFinances: {
+        title: "My Finances",
+        addPayment: "Add Payment",
+        receivePayment: "Receive Payment",
+        viewStock: "View Stock",
       },
       settings: {
         title: "Settings",
@@ -883,6 +890,7 @@ const resources = {
         daybook: "डेबुक",
         people: "लोग",
         analytics: "विश्लेषण",
+        myFinances: "मेरे वित्त",
         settings: "सेटिंग्स"
       },
       daybook: {
@@ -1032,6 +1040,12 @@ const resources = {
           orderCreated: "Incoming order created successfully!",
           farmerCreated: "Farmer created successfully!"
         }
+      },
+      myFinances: {
+        title: "मेरे वित्त",
+        addPayment: "भुगतान जोड़ें",
+        receivePayment: "भुगतान प्राप्त करें",
+        viewStock: "स्टॉक देखें",
       },
       settings: {
         title: "सेटिंग्स",
@@ -1426,6 +1440,7 @@ const resources = {
         daybook: "डेबुक",
         people: "लोग",
         analytics: "विश्लेषण",
+        myFinances: "मेरे वित्त",
         settings: "सेटिंग्स"
       },
       daybook: {
@@ -1583,6 +1598,12 @@ const resources = {
           orderCreated: "ਇਨਕਮਿੰਗ ਆਰਡਰ ਸਫਲਤਾਪੂਰਵਕ ਬਣਾਇਆ ਗਿਆ!",
           farmerCreated: "ਕਿਸਾਨ ਸਫਲਤਾਪੂਰਵਕ ਬਣਾਇਆ ਗਿਆ!"
         }
+      },
+      myFinances: {
+        title: "ਮੇਰੇ ਵਿੱਤ",
+        addPayment: "ਭੁਗਤਾਨ ਜੋੜੋ",
+        receivePayment: "ਭੁਗਤਾਨ ਪ੍ਰਾਪਤ ਕਰੋ",
+        viewStock: "ਸਟਾਕ ਦੇਖੋ",
       },
       settings: {
         title: "ਸੈਟਿੰਗਾਂ",

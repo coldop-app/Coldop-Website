@@ -204,10 +204,12 @@ type PaymentType = "CREDIT" | "DEBIT";
 interface CreatePaymentHistoryPayload {
   amount: number;
   date: string;
-  farmerId: string;
-  farmerName: string;
+  farmerId?: string;
+  farmerName?: string;
   remarks: string;
   paymentType: PaymentType;
+  coldStorageId?: string;
+  category?: "LABOUR" | "ELECTRICITY" | "TRANSPORT" | "SALARY" | "FESTIVAL" | "OTHER";
 }
 
 export interface UpdateFarmerPayload {
@@ -217,6 +219,53 @@ export interface UpdateFarmerPayload {
   mobileNumber?: string;
   imageUrl?: string;
   costPerBag?: number | null;
+}
+
+interface StoreExpense {
+  _id: string;
+  coldStorageId: string;
+  farmer: string | null;
+  amount: number;
+  remarks: string;
+  date: string;
+  paymentType: PaymentType;
+  category: "LABOUR" | "ELECTRICITY" | "TRANSPORT" | "SALARY" | "FESTIVAL" | "OTHER";
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface FarmerTransactionFarmer {
+  _id: string;
+  farmerId: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+}
+
+interface FarmerTransaction {
+  _id: string;
+  farmer: FarmerTransactionFarmer;
+  amount: number;
+  amount_left: number;
+  remarks: string;
+  date: string;
+  paymentType: PaymentType;
+  category: "LABOUR" | "ELECTRICITY" | "TRANSPORT" | "SALARY" | "FESTIVAL" | "OTHER";
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface MyFinancesResponse {
+  status: string;
+  data: {
+    storeExpenses: StoreExpense[];
+    farmerTransactions: FarmerTransaction[];
+  };
+  counts: {
+    storeExpenses: number;
+    farmerTransactions: number;
+    total: number;
+  };
 }
 
 export const storeAdminApi = {
@@ -713,6 +762,18 @@ export const storeAdminApi = {
         headers: {
           "Content-Type": "application/json",
 
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+    return response.data;
+  },
+
+  getMyFinances: async (token: string): Promise<MyFinancesResponse> => {
+    const response = await axios.get<MyFinancesResponse>(
+      `${BASE_URL}/api/store-admin/my-finances`,
+      {
+        headers: {
           Authorization: `Bearer ${token}`,
         },
       }

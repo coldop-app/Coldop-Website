@@ -37,6 +37,7 @@ const SettingsScreen = lazy(() => import("./screens/Erp/SettingsScreen.tsx"));
 const ProfileSettingsScreen = lazy(() => import("./screens/Erp/ProfileSettingsScreen.tsx"));
 const BillingSettingsScreen = lazy(() => import("./screens/Erp/BillingSettingsScreen.tsx"));
 const ContactSupportScreen = lazy(() => import("./screens/Erp/ContactSupportScreen.tsx"));
+const MyFinancesScreen = lazy(() => import("./screens/Erp/MyFinancesScreen.tsx"));
 
 // New pages
 const FAQ = lazy(() => import("./screens/FAQ/FAQ.tsx"));
@@ -167,6 +168,11 @@ const router = createBrowserRouter(
           <Route path="settings/support" element={
             <Suspense fallback={<EnhancedLoadingFallback />}>
               <ContactSupportScreen />
+            </Suspense>
+          } />
+          <Route path="my-finances" element={
+            <Suspense fallback={<EnhancedLoadingFallback />}>
+              <MyFinancesScreen />
             </Suspense>
           } />
           {/* Add more ERP routes here */}

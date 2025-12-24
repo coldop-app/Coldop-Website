@@ -14,14 +14,17 @@ interface Farmer {
 }
 
 type PaymentType = "CREDIT" | "DEBIT";
+type CategoryType = "LABOUR" | "ELECTRICITY" | "TRANSPORT" | "SALARY" | "FESTIVAL" | "OTHER";
 
 interface FinancesFormData {
-  farmerId: string;
-  farmerName: string;
+  farmerId?: string;
+  farmerName?: string;
   amount: number;
   remarks: string;
   date: string;
   paymentType: PaymentType;
+  coldStorageId?: string;
+  category?: CategoryType;
 }
 
 interface FinancesModalProps {
@@ -31,6 +34,8 @@ interface FinancesModalProps {
   isLoading: boolean;
   token: string;
   coldStorageId: string;
+  initialPaymentType?: PaymentType;
+  currentUserId?: string;
 }
 
 const FinancesModal: React.FC<FinancesModalProps> = ({
@@ -40,6 +45,8 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
   isLoading,
   token,
   coldStorageId,
+  initialPaymentType = "CREDIT",
+  currentUserId,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showDropdown, setShowDropdown] = useState(false);
@@ -48,17 +55,28 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
     useState(-1);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [showCategoryDropdown, setShowCategoryDropdown] = useState(false);
+  const [categoryHighlightedIndex, setCategoryHighlightedIndex] = useState(-1);
   const paymentTypeOptions: { label: string; value: PaymentType }[] = [
     { label: "Receive Payment", value: "CREDIT" },
     { label: "Add Payment", value: "DEBIT" },
+  ];
+  const categoryOptions: { label: string; value: CategoryType }[] = [
+    { label: "Labour", value: "LABOUR" },
+    { label: "Electricity", value: "ELECTRICITY" },
+    { label: "Transport", value: "TRANSPORT" },
+    { label: "Salary", value: "SALARY" },
+    { label: "Festival", value: "FESTIVAL" },
+    { label: "Other", value: "OTHER" },
   ];
   const [formData, setFormData] = useState<FinancesFormData>({
     farmerId: "",
     farmerName: "",
     amount: 0,
     remarks: "",
-    paymentType: "CREDIT",
+    paymentType: initialPaymentType,
     date: new Date().toISOString().split("T")[0],
+    category: "OTHER",
   });
 
   // Farmer search query
@@ -84,7 +102,7 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
     [refetch]
   );
 
-  // Reset form when modal closes
+  // Reset form when modal closes or initialPaymentType changes
   useEffect(() => {
     if (!isOpen) {
       setFormData({
@@ -92,15 +110,26 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
         farmerName: "",
         amount: 0,
         remarks: "",
-        paymentType: "CREDIT",
+        paymentType: initialPaymentType,
         date: new Date().toISOString().split("T")[0],
+        category: "OTHER",
       });
       setSearchQuery("");
       setSelectedFarmer(null);
       setShowDropdown(false);
       setHighlightedIndex(-1);
+      setShowCategoryDropdown(false);
+      setCategoryHighlightedIndex(-1);
+    } else {
+      // Update payment type when modal opens with a new initialPaymentType
+      setFormData((prev) => ({
+        ...prev,
+        paymentType: initialPaymentType,
+        category: initialPaymentType === "DEBIT" ? (prev.category || "OTHER") : undefined,
+        coldStorageId: initialPaymentType === "DEBIT" ? currentUserId : undefined,
+      }));
     }
-  }, [isOpen]);
+  }, [isOpen, initialPaymentType, currentUserId]);
 
   // Auto-highlight first result when search results change
   useEffect(() => {
@@ -182,6 +211,12 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
       const paymentTypeButton = document.getElementById(
         "finances-payment-type-button"
       );
+      const categoryDropdown = document.getElementById(
+        "finances-category-dropdown"
+      );
+      const categoryButton = document.getElementById(
+        "finances-category-button"
+      );
       if (
         dropdown &&
         input &&
@@ -197,6 +232,14 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
         !paymentTypeButton.contains(event.target as Node)
       ) {
         setShowPaymentTypeDropdown(false);
+      }
+      if (
+        categoryDropdown &&
+        categoryButton &&
+        !categoryDropdown.contains(event.target as Node) &&
+        !categoryButton.contains(event.target as Node)
+      ) {
+        setShowCategoryDropdown(false);
       }
     };
 
@@ -221,10 +264,28 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
   };
 
   const handlePaymentTypeChange = (value: PaymentType) => {
-    setFormData((prev) => ({
-      ...prev,
-      paymentType: value,
-    }));
+    if (value === "DEBIT") {
+      // Clear farmer fields and set category for DEBIT
+      setFormData((prev) => ({
+        ...prev,
+        paymentType: value,
+        farmerId: "",
+        farmerName: "",
+        category: prev.category || "OTHER",
+        coldStorageId: currentUserId,
+      }));
+      setSelectedFarmer(null);
+      setSearchQuery("");
+      setShowDropdown(false);
+    } else {
+      // Clear category and coldStorageId for CREDIT
+      setFormData((prev) => ({
+        ...prev,
+        paymentType: value,
+        category: undefined,
+        coldStorageId: undefined,
+      }));
+    }
     setShowPaymentTypeDropdown(false);
     setPaymentTypeHighlightedIndex(-1);
   };
@@ -258,12 +319,59 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
     }
   };
 
+  const handleCategoryChange = (value: CategoryType) => {
+    setFormData((prev) => ({
+      ...prev,
+      category: value,
+    }));
+    setShowCategoryDropdown(false);
+    setCategoryHighlightedIndex(-1);
+  };
+
+  const handleCategoryKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setShowCategoryDropdown(true);
+      setCategoryHighlightedIndex((prev) =>
+        prev < categoryOptions.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setShowCategoryDropdown(true);
+      setCategoryHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : categoryOptions.length - 1
+      );
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      if (categoryHighlightedIndex >= 0) {
+        handleCategoryChange(categoryOptions[categoryHighlightedIndex].value);
+      } else {
+        setShowCategoryDropdown(!showCategoryDropdown);
+      }
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      setShowCategoryDropdown(false);
+      setCategoryHighlightedIndex(-1);
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.farmerId || !formData.farmerName.trim()) {
-      toast.error("Please select a farmer");
-      return;
+    // For CREDIT (Receive Payment), farmer is required
+    if (formData.paymentType === "CREDIT") {
+      if (!formData.farmerId || !formData.farmerName?.trim()) {
+        toast.error("Please select a farmer");
+        return;
+      }
+    }
+
+    // For DEBIT (Add Payment), category is required
+    if (formData.paymentType === "DEBIT") {
+      if (!formData.category) {
+        toast.error("Please select a category");
+        return;
+      }
     }
 
     const amountNumber = Number(formData.amount);
@@ -278,14 +386,25 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
       return;
     }
 
-    const payload = {
-      farmerId: formData.farmerId,
-      farmerName: formData.farmerName,
+    // Build payload conditionally based on payment type
+    const payload: FinancesFormData = {
       amount: amountNumber,
       remarks: formData.remarks,
       date: formData.date,
       paymentType: formData.paymentType,
     };
+
+    // Only include farmer fields for CREDIT payments
+    if (formData.paymentType === "CREDIT") {
+      payload.farmerId = formData.farmerId;
+      payload.farmerName = formData.farmerName;
+    }
+
+    // Only include category and coldStorageId for DEBIT payments
+    if (formData.paymentType === "DEBIT") {
+      payload.category = formData.category;
+      payload.coldStorageId = formData.coldStorageId;
+    }
 
     console.log("form data is:", payload);
 
@@ -308,139 +427,194 @@ const FinancesModal: React.FC<FinancesModalProps> = ({
         <h2 className="text-xl font-bold mb-6">Add Finance Entry</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Payment Type */}
-          <div className="relative">
-            <label className="block text-sm font-medium mb-2">
-              Payment Type <span className="text-red-500">*</span>
-            </label>
-            <button
-              id="finances-payment-type-button"
-              type="button"
-              onClick={() =>
-                setShowPaymentTypeDropdown(!showPaymentTypeDropdown)
-              }
-              onKeyDown={handlePaymentTypeKeyDown}
-              onFocus={() => setPaymentTypeHighlightedIndex(-1)}
-              disabled={isLoading}
-              className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50 text-left flex items-center justify-between"
-            >
-              <span>
-                {
-                  paymentTypeOptions.find(
-                    (opt) => opt.value === formData.paymentType
-                  )?.label
-                }
-              </span>
-            </button>
-
-            {/* Payment Type Dropdown */}
-            {showPaymentTypeDropdown && (
-              <div
-                id="finances-payment-type-dropdown"
-                className="absolute z-50 left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200"
-              >
-                <div className="py-1">
-                  {paymentTypeOptions.map((option, index) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`w-full text-left px-4 py-2 focus:outline-none transition-colors ${
-                        index === paymentTypeHighlightedIndex
-                          ? "bg-gray-100 text-gray-800 border-l-2 border-gray-400"
-                          : "hover:bg-gray-50 focus:bg-gray-50"
-                      }`}
-                      onClick={() => handlePaymentTypeChange(option.value)}
-                    >
-                      <div className="font-medium">{option.label}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Farmer Search */}
-          <div className="relative">
-            <label className="block text-sm font-medium mb-2">
-              Farmer <span className="text-red-500">*</span>
-            </label>
+          {/* Payment Type - Only show for CREDIT (Receive Payment) */}
+          {formData.paymentType === "CREDIT" && (
             <div className="relative">
-              <input
-                id="finances-farmer-search-input"
-                type="text"
-                autoComplete="off"
-                value={selectedFarmer ? selectedFarmer.name : searchQuery}
-                onChange={handleSearchChange}
-                onKeyDown={handleFarmerSearchKeyDown}
-                onFocus={() => setShowDropdown(true)}
-                placeholder="Search for farmer..."
-                className="w-full p-3 pl-10 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
-                required
+              <label className="block text-sm font-medium mb-2">
+                Payment Type <span className="text-red-500">*</span>
+              </label>
+              <button
+                id="finances-payment-type-button"
+                type="button"
+                onClick={() =>
+                  setShowPaymentTypeDropdown(!showPaymentTypeDropdown)
+                }
+                onKeyDown={handlePaymentTypeKeyDown}
+                onFocus={() => setPaymentTypeHighlightedIndex(-1)}
                 disabled={isLoading}
-              />
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={18}
-              />
-              {selectedFarmer && (
-                <button
-                  type="button"
-                  onClick={clearSelectedFarmer}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
-                  title="Clear selection"
-                >
-                  <X size={16} className="text-gray-500" />
-                </button>
-              )}
-            </div>
-
-            {/* Search Results Dropdown */}
-            {showDropdown && (searchResults?.length > 0 || isSearching) && (
-              <div
-                id="finances-farmer-search-dropdown"
-                className="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded-md shadow-lg border border-gray-200"
+                className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50 text-left flex items-center justify-between"
               >
-                {isSearching ? (
-                  <div className="flex items-center justify-center p-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                  </div>
-                ) : (
+                <span>
+                  {
+                    paymentTypeOptions.find(
+                      (opt) => opt.value === formData.paymentType
+                    )?.label
+                  }
+                </span>
+              </button>
+
+              {/* Payment Type Dropdown */}
+              {showPaymentTypeDropdown && (
+                <div
+                  id="finances-payment-type-dropdown"
+                  className="absolute z-50 left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200"
+                >
                   <div className="py-1">
-                    {searchResults?.map((result: Farmer, index: number) => (
+                    {paymentTypeOptions.map((option, index) => (
                       <button
-                        key={result._id}
+                        key={option.value}
                         type="button"
                         className={`w-full text-left px-4 py-2 focus:outline-none transition-colors ${
-                          index === highlightedIndex
+                          index === paymentTypeHighlightedIndex
                             ? "bg-gray-100 text-gray-800 border-l-2 border-gray-400"
                             : "hover:bg-gray-50 focus:bg-gray-50"
                         }`}
-                        onClick={() => handleSelectFarmer(result)}
+                        onClick={() => handlePaymentTypeChange(option.value)}
                       >
-                        <div className="font-medium">{result.name}</div>
-                        {(result.mobileNumber || result.address) && (
-                          <div
-                            className={`text-sm ${
-                              index === highlightedIndex
-                                ? "text-gray-600"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {result.mobileNumber && (
-                              <span>📱 {result.mobileNumber}</span>
-                            )}
-                            {result.address && (
-                              <span className="ml-2">📍 {result.address}</span>
-                            )}
-                          </div>
-                        )}
+                        <div className="font-medium">{option.label}</div>
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Category - Only show for DEBIT (Add Payment) */}
+          {formData.paymentType === "DEBIT" && (
+            <div className="relative">
+              <label className="block text-sm font-medium mb-2">
+                Category <span className="text-red-500">*</span>
+              </label>
+              <button
+                id="finances-category-button"
+                type="button"
+                onClick={() => setShowCategoryDropdown(!showCategoryDropdown)}
+                onKeyDown={handleCategoryKeyDown}
+                onFocus={() => setCategoryHighlightedIndex(-1)}
+                disabled={isLoading}
+                className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50 text-left flex items-center justify-between"
+              >
+                <span>
+                  {
+                    categoryOptions.find(
+                      (opt) => opt.value === formData.category
+                    )?.label
+                  }
+                </span>
+              </button>
+
+              {/* Category Dropdown */}
+              {showCategoryDropdown && (
+                <div
+                  id="finances-category-dropdown"
+                  className="absolute z-50 left-0 right-0 mt-1 bg-white rounded-md shadow-lg border border-gray-200"
+                >
+                  <div className="py-1">
+                    {categoryOptions.map((option, index) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className={`w-full text-left px-4 py-2 focus:outline-none transition-colors ${
+                          index === categoryHighlightedIndex
+                            ? "bg-gray-100 text-gray-800 border-l-2 border-gray-400"
+                            : "hover:bg-gray-50 focus:bg-gray-50"
+                        }`}
+                        onClick={() => handleCategoryChange(option.value)}
+                      >
+                        <div className="font-medium">{option.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Farmer Search - Only show for CREDIT (Receive Payment) */}
+          {formData.paymentType === "CREDIT" && (
+            <div className="relative">
+              <label className="block text-sm font-medium mb-2">
+                Farmer <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  id="finances-farmer-search-input"
+                  type="text"
+                  autoComplete="off"
+                  value={selectedFarmer ? selectedFarmer.name : searchQuery}
+                  onChange={handleSearchChange}
+                  onKeyDown={handleFarmerSearchKeyDown}
+                  onFocus={() => setShowDropdown(true)}
+                  placeholder="Search for farmer..."
+                  className="w-full p-3 pl-10 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
+                  required
+                  disabled={isLoading}
+                />
+                <Search
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
+                {selectedFarmer && (
+                  <button
+                    type="button"
+                    onClick={clearSelectedFarmer}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full transition-colors"
+                    title="Clear selection"
+                  >
+                    <X size={16} className="text-gray-500" />
+                  </button>
                 )}
               </div>
-            )}
-          </div>
+
+              {/* Search Results Dropdown */}
+              {showDropdown && (searchResults?.length > 0 || isSearching) && (
+                <div
+                  id="finances-farmer-search-dropdown"
+                  className="absolute z-50 left-0 right-0 mt-1 max-h-60 overflow-auto bg-white rounded-md shadow-lg border border-gray-200"
+                >
+                  {isSearching ? (
+                    <div className="flex items-center justify-center p-4">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                    </div>
+                  ) : (
+                    <div className="py-1">
+                      {searchResults?.map((result: Farmer, index: number) => (
+                        <button
+                          key={result._id}
+                          type="button"
+                          className={`w-full text-left px-4 py-2 focus:outline-none transition-colors ${
+                            index === highlightedIndex
+                              ? "bg-gray-100 text-gray-800 border-l-2 border-gray-400"
+                              : "hover:bg-gray-50 focus:bg-gray-50"
+                          }`}
+                          onClick={() => handleSelectFarmer(result)}
+                        >
+                          <div className="font-medium">{result.name}</div>
+                          {(result.mobileNumber || result.address) && (
+                            <div
+                              className={`text-sm ${
+                                index === highlightedIndex
+                                  ? "text-gray-600"
+                                  : "text-gray-500"
+                              }`}
+                            >
+                              {result.mobileNumber && (
+                                <span>📱 {result.mobileNumber}</span>
+                              )}
+                              {result.address && (
+                                <span className="ml-2">📍 {result.address}</span>
+                              )}
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Amount */}
           <div>
