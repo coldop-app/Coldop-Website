@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
@@ -15,14 +15,14 @@ const StoreAdminLoginForm = () => {
   const dispatch = useDispatch();
   const [formData, setFormData] = useState({
     mobileNumber: "",
-    password: ""
+    password: "",
   });
 
   const updateFormData = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   };
 
@@ -31,13 +31,13 @@ const StoreAdminLoginForm = () => {
       return storeAdminApi.login({
         mobileNumber: data.mobileNumber,
         password: data.password,
-        isMobile: true
+        isMobile: true,
       });
     },
     onSuccess: (data) => {
       dispatch(setCredentials(data.data));
       toast.success("Login successful!");
-      navigate('/erp/daybook');
+      navigate("/erp/daybook");
     },
     onError: (error: unknown) => {
       if (axios.isAxiosError(error)) {
@@ -45,7 +45,7 @@ const StoreAdminLoginForm = () => {
       } else {
         toast.error("Login failed. Please try again.");
       }
-    }
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,12 +55,18 @@ const StoreAdminLoginForm = () => {
 
   return (
     <div className="w-full max-w-md mx-auto p-5 sm:p-8 bg-background rounded-lg shadow-lg border border-border">
-      <h1 className="text-xl sm:text-2xl font-bold text-center mb-6">{t('storeAdminLogin.title')}</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-center mb-6">
+        {t("storeAdminLogin.title")}
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-6">
         <div>
-          <label htmlFor="mobileNumber" className="block text-sm font-medium mb-1">
-            {t('storeAdminLogin.mobileNumber')} <span className="text-red-500">*</span>
+          <label
+            htmlFor="mobileNumber"
+            className="block text-sm font-medium mb-1"
+          >
+            {t("storeAdminLogin.mobileNumber")}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <input
             type="tel"
@@ -70,13 +76,14 @@ const StoreAdminLoginForm = () => {
             onChange={updateFormData}
             className="w-full p-3 border border-border rounded-md bg-background"
             required
-            placeholder={t('storeAdminLogin.mobileNumberPlaceholder')}
+            placeholder={t("storeAdminLogin.mobileNumberPlaceholder")}
           />
         </div>
 
         <div>
           <label htmlFor="password" className="block text-sm font-medium mb-1">
-            {t('storeAdminLogin.password')} <span className="text-red-500">*</span>
+            {t("storeAdminLogin.password")}{" "}
+            <span className="text-red-500">*</span>
           </label>
           <input
             type="password"
@@ -86,13 +93,16 @@ const StoreAdminLoginForm = () => {
             onChange={updateFormData}
             className="w-full p-3 border border-border rounded-md bg-background"
             required
-            placeholder={t('storeAdminLogin.passwordPlaceholder')}
+            placeholder={t("storeAdminLogin.passwordPlaceholder")}
           />
         </div>
 
         <div className="flex justify-start">
-          <a href="#" className="text-sm text-green-600 hover:underline text-left">
-            {t('storeAdminLogin.forgotPassword')}
+          <a
+            href="#"
+            className="text-sm text-green-600 hover:underline text-left"
+          >
+            {t("storeAdminLogin.forgotPassword")}
           </a>
         </div>
 
@@ -104,22 +114,13 @@ const StoreAdminLoginForm = () => {
           {loginMutation.isPending ? (
             <div className="flex items-center justify-center">
               <Loader size="sm" className="mr-2" />
-              <span>{t('storeAdminLogin.signingIn')}</span>
+              <span>{t("storeAdminLogin.signingIn")}</span>
             </div>
           ) : (
-            t('storeAdminLogin.signIn')
+            t("storeAdminLogin.signIn")
           )}
         </button>
       </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          {t('storeAdminLogin.noAccount')}{" "}
-          <Link to="/signup/store-admin" className="text-green-600 hover:underline font-medium">
-            {t('storeAdminLogin.signUp')}
-          </Link>
-        </p>
-      </div>
     </div>
   );
 };

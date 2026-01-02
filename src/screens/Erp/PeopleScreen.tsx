@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { RootState } from "@/store";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import TopBar from "@/components/common/Topbar/Topbar";
-import { Search, ChevronDown, Plus, Users2, MapPin, Phone } from "lucide-react";
+import { Search, ChevronDown, Plus, Users2, MapPin, Phone, Package, Wallet, TrendingUp } from "lucide-react";
 import NewFarmerModal, {
   NewFarmerFormData,
 } from "@/components/modals/NewFarmerModal";
@@ -18,6 +18,8 @@ interface Farmer {
   address: string;
   mobileNumber: string;
   costPerBag: number;
+  totalAmountPaid: number;
+  amountLeft: number;
   farmerId: string;
   createdAt: string;
   imageUrl?: string;
@@ -65,23 +67,49 @@ const PeopleScreen = () => {
     queryFn: () => storeAdminApi.getFarmers(adminInfo?.token || ""),
   });
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+
   // Create farmer mutation
   const createFarmerMutation = useMutation({
     mutationFn: async (farmerData: NewFarmerFormData) => {
       if (!adminInfo?.token) {
         throw new Error("No authentication token found");
       }
-      return storeAdminApi.quickRegister(
-        {
-          name: farmerData.name,
-          address: farmerData.address,
-          mobileNumber: farmerData.contact,
-          password: "123456", // Hardcoded default password
-          imageUrl: "",
-          farmerId: farmerData.accNo,
-        },
-        adminInfo.token
-      );
+      // Only include costPerBag if it's a valid number > 0
+      const payload: {
+        name: string;
+        address: string;
+        mobileNumber: string;
+        password: string;
+        imageUrl: string;
+        farmerId: string;
+        costPerBag?: number;
+      } = {
+        name: farmerData.name,
+        address: farmerData.address,
+        mobileNumber: farmerData.contact,
+        password: "123456", // Hardcoded default password
+        imageUrl: "",
+        farmerId: farmerData.accNo,
+      };
+
+      if (
+        farmerData.costPerBag !== undefined &&
+        farmerData.costPerBag !== null &&
+        !isNaN(Number(farmerData.costPerBag)) &&
+        Number(farmerData.costPerBag) > 0
+      ) {
+        payload.costPerBag = Number(farmerData.costPerBag);
+      }
+
+      return storeAdminApi.quickRegister(payload, adminInfo.token);
     },
     onSuccess: () => {
       toast.success(t("people.success.farmerCreated"));
@@ -354,7 +382,7 @@ const PeopleScreen = () => {
                         address: farmer.address,
                         costPerBag: farmer?.costPerBag,
                         mobileNumber: farmer.mobileNumber,
-                        farmerId: farmer.farmerId,
+                        farmerId: farmer?.farmerId,
                         createdAt: farmer.createdAt,
                         imageUrl: farmer.imageUrl,
                       },
@@ -403,6 +431,40 @@ const PeopleScreen = () => {
                         <MapPin size={16} className="text-gray-400" />
                         <span>{farmer.address}</span>
                       </div>
+                      {/* Financial Information */}
+                      {(farmer.costPerBag !== undefined && farmer.costPerBag !== null) ||
+                      (farmer.totalAmountPaid !== undefined && farmer.totalAmountPaid !== null) ||
+                      (farmer.amountLeft !== undefined && farmer.amountLeft !== null) ? (
+                        <div className="mt-3 pt-3 border-t border-gray-200 space-y-2">
+                          {farmer.costPerBag !== undefined && farmer.costPerBag !== null && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Package size={16} className="text-gray-400" />
+                              <span className="text-gray-600">Cost per Bag:</span>
+                              <span className="font-medium text-gray-900">
+                                {formatCurrency(farmer.costPerBag)}
+                              </span>
+                            </div>
+                          )}
+                          {farmer.totalAmountPaid !== undefined && farmer.totalAmountPaid !== null && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <TrendingUp size={16} className="text-green-500" />
+                              <span className="text-gray-600">Total Paid:</span>
+                              <span className="font-medium text-green-600">
+                                {formatCurrency(farmer.totalAmountPaid)}
+                              </span>
+                            </div>
+                          )}
+                          {farmer.amountLeft !== undefined && farmer.amountLeft !== null && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <Wallet size={16} className="text-blue-500" />
+                              <span className="text-gray-600">Amount Left:</span>
+                              <span className="font-medium text-blue-600">
+                                {formatCurrency(farmer.amountLeft)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 

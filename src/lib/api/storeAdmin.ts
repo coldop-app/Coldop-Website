@@ -14,6 +14,7 @@ interface QuickRegisterCredentials {
   password: string;
   imageUrl: string;
   farmerId: string;
+  costPerBag?: number;
 }
 
 interface SignupCredentials {
@@ -188,6 +189,7 @@ interface PaymentHistoryItem {
   remarks: string;
   date: string;
   paymentType: PaymentType;
+  shedCost?: number | null;
   createdAt: string;
   updatedAt: string;
   __v: number;
@@ -199,7 +201,7 @@ interface PaymentHistoryResponse {
   count: number;
 }
 
-type PaymentType = "CREDIT" | "DEBIT";
+type PaymentType = "CREDIT" | "DEBIT" | "SHED";
 
 interface CreatePaymentHistoryPayload {
   amount: number;
@@ -221,50 +223,72 @@ export interface UpdateFarmerPayload {
   costPerBag?: number | null;
 }
 
-interface StoreExpense {
-  _id: string;
-  coldStorageId: string;
-  farmer: string | null;
-  amount: number;
-  remarks: string;
-  date: string;
-  paymentType: PaymentType;
-  category: "LABOUR" | "ELECTRICITY" | "TRANSPORT" | "SALARY" | "FESTIVAL" | "OTHER";
-  createdAt: string;
-  updatedAt: string;
+
+interface ExpenseCategory {
+  category: string;
+  total: number;
+  list: Array<{
+    _id: string;
+    coldStorageId: string;
+    farmer: string | null;
+    amount: number;
+    remarks: string;
+    date: string;
+    paymentType: PaymentType;
+    category: "LABOUR" | "ELECTRICITY" | "TRANSPORT" | "SALARY" | "FESTIVAL" | "OTHER";
+    createdAt: string;
+    updatedAt: string;
+  }>;
 }
 
-interface FarmerTransactionFarmer {
-  _id: string;
+interface FarmerIncome {
   farmerId: string;
   name: string;
   address: string;
-  mobileNumber: string;
+  stock: {
+    totalBags: number;
+    costPerBag: number;
+  };
+  rentIncome: number;
+  shed: {
+    list: Array<{
+      _id: string;
+      amount: number;
+      amount_left: number;
+      remarks: string;
+      date: string;
+    }>;
+    total: number;
+  };
+  credit: {
+    list: Array<{
+      _id: string;
+      amount: number;
+      amount_left: number;
+      remarks: string;
+      date: string;
+    }>;
+    total: number;
+  };
+  totalIncome: number;
 }
 
-interface FarmerTransaction {
-  _id: string;
-  farmer: FarmerTransactionFarmer;
-  amount: number;
-  amount_left: number;
-  remarks: string;
-  date: string;
-  paymentType: PaymentType;
-  category: "LABOUR" | "ELECTRICITY" | "TRANSPORT" | "SALARY" | "FESTIVAL" | "OTHER";
-  createdAt: string;
-  updatedAt: string;
+interface PnLSummary {
+  expenses: {
+    byCategory: ExpenseCategory[];
+    total: number;
+  };
+  income: {
+    farmers: FarmerIncome[];
+    total: number;
+  };
+  netProfitOrLoss: number;
 }
 
 interface MyFinancesResponse {
   status: string;
   data: {
-    storeExpenses: StoreExpense[];
-    farmerTransactions: FarmerTransaction[];
-  };
-  counts: {
-    storeExpenses: number;
-    farmerTransactions: number;
-    total: number;
+    pnlSummary: PnLSummary;
   };
 }
 
@@ -511,16 +535,35 @@ export const storeAdminApi = {
     credentials: QuickRegisterCredentials,
     token?: string
   ) => {
-    const formData = new URLSearchParams();
-    formData.append("name", credentials.name);
-    formData.append("address", credentials.address);
-    formData.append("mobileNumber", credentials.mobileNumber);
-    formData.append("password", credentials.password);
-    formData.append("imageUrl", credentials.imageUrl);
-    formData.append("farmerId", credentials.farmerId);
+    // Build JSON payload with proper types
+    const payload: {
+      name: string;
+      address: string;
+      mobileNumber: string;
+      password: string;
+      imageUrl: string;
+      farmerId: string;
+      costPerBag?: number;
+    } = {
+      name: credentials.name,
+      address: credentials.address,
+      mobileNumber: credentials.mobileNumber,
+      password: credentials.password,
+      imageUrl: credentials.imageUrl,
+      farmerId: credentials.farmerId,
+    };
+
+    // Only include costPerBag if it's a valid number
+    if (
+      credentials.costPerBag !== undefined &&
+      credentials.costPerBag !== null &&
+      !isNaN(Number(credentials.costPerBag))
+    ) {
+      payload.costPerBag = Number(credentials.costPerBag);
+    }
 
     const headers: Record<string, string> = {
-      "Content-Type": "application/x-www-form-urlencoded",
+      "Content-Type": "application/json",
     };
 
     if (token) {
@@ -529,7 +572,7 @@ export const storeAdminApi = {
 
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/quick-register`,
-      formData,
+      payload,
       { headers }
     );
     return response.data;

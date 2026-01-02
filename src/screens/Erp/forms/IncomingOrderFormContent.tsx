@@ -539,17 +539,34 @@ const IncomingOrderFormContent = () => {
       if (!adminInfo?.token) {
         throw new Error("No authentication token found");
       }
-      return storeAdminApi.quickRegister(
-        {
-          name: farmerData.name,
-          address: farmerData.address,
-          mobileNumber: farmerData.contact,
-          password: "123456", // Hardcoded default password
-          imageUrl: "",
-          farmerId: farmerData.accNo,
-        },
-        adminInfo.token
-      );
+      // Only include costPerBag if it's a valid number > 0
+      const payload: {
+        name: string;
+        address: string;
+        mobileNumber: string;
+        password: string;
+        imageUrl: string;
+        farmerId: string;
+        costPerBag?: number;
+      } = {
+        name: farmerData.name,
+        address: farmerData.address,
+        mobileNumber: farmerData.contact,
+        password: "123456", // Hardcoded default password
+        imageUrl: "",
+        farmerId: farmerData.accNo,
+      };
+
+      if (
+        farmerData.costPerBag !== undefined &&
+        farmerData.costPerBag !== null &&
+        !isNaN(Number(farmerData.costPerBag)) &&
+        Number(farmerData.costPerBag) > 0
+      ) {
+        payload.costPerBag = Number(farmerData.costPerBag);
+      }
+
+      return storeAdminApi.quickRegister(payload, adminInfo.token);
     },
     onSuccess: (data) => {
       toast.success(t("incomingOrder.success.farmerCreated"));

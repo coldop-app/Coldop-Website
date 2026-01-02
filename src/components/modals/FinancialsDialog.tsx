@@ -183,12 +183,16 @@ const FinancialsDialog: React.FC<FinancialsDialogProps> = ({
                             <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap">
                               <span
                                 className={`inline-flex items-center px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
-                                  entry.paymentType === "CREDIT"
+                                  entry.shedCost !== null && entry.shedCost !== undefined
+                                    ? "bg-orange-100 text-orange-800"
+                                    : entry.paymentType === "CREDIT"
                                     ? "bg-blue-100 text-blue-800"
                                     : "bg-purple-100 text-purple-800"
                                 }`}
                               >
-                                {entry.paymentType === "CREDIT"
+                                {entry.shedCost !== null && entry.shedCost !== undefined
+                                  ? "SHED"
+                                  : entry.paymentType === "CREDIT"
                                   ? "Payment Received"
                                   : "Payment Added"}
                               </span>
@@ -206,6 +210,13 @@ const FinancialsDialog: React.FC<FinancialsDialogProps> = ({
                             </td>
                             <td className="px-4 sm:px-6 py-3 sm:py-4">
                               <div className="max-w-xs sm:max-w-md">
+                                {entry.shedCost !== null && entry.shedCost !== undefined && (
+                                  <div className="mb-1">
+                                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-700 border border-orange-200">
+                                      Shed Cost: {formatCurrency(entry.shedCost)}
+                                    </span>
+                                  </div>
+                                )}
                                 {entry.remarks ? (
                                   <span className="text-xs sm:text-sm text-gray-700 break-words">
                                     {entry.remarks}

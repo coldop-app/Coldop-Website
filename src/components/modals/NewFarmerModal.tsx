@@ -83,9 +83,13 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
     if (field === "costPerBag") {
       const numericValue = value.replace(/[^0-9.]/g, "");
+      // Convert to number, ensuring it's a valid number or null
+      const numValue = numericValue && numericValue.trim() !== ""
+        ? parseFloat(numericValue)
+        : null;
       setFormData((prev) => ({
         ...prev,
-        costPerBag: numericValue ? Number(numericValue) : (null as any),
+        costPerBag: numValue !== null && !isNaN(numValue) ? numValue : (null as any),
       }));
       return;
     }
@@ -102,9 +106,7 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const validateAndSubmit = () => {
     // Validate that the farmer ID doesn't exist
     if (farmerIdsData?.data?.registeredFarmers?.includes(formData.accNo)) {
       setAccNoError(
@@ -124,9 +126,30 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
       return;
     }
 
+    // Ensure costPerBag is a valid number or undefined
+    let costPerBagValue: number | undefined;
+    if (
+      formData.costPerBag !== null &&
+      formData.costPerBag !== undefined &&
+      !isNaN(Number(formData.costPerBag))
+    ) {
+      const numValue = Number(formData.costPerBag);
+      // Only set if it's a valid positive number
+      if (numValue >= 0 && isFinite(numValue)) {
+        costPerBagValue = numValue;
+      }
+    }
 
+    // Prepare submission data with properly typed costPerBag
+    const submissionData: NewFarmerFormData = {
+      accNo: formData.accNo,
+      name: formData.name,
+      address: formData.address,
+      contact: formData.contact,
+      costPerBag: costPerBagValue ?? 0, // Default to 0 if undefined for type compatibility
+    };
 
-    onSubmit(formData);
+    onSubmit(submissionData);
     // Reset form data after submission
     setFormData({
       accNo: "",
@@ -135,6 +158,29 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
       contact: "",
       costPerBag: null as any,
     });
+  };
+
+  const handleKeyDown = (
+    e: React.KeyboardEvent<HTMLInputElement>,
+    nextFieldId?: string
+  ) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (nextFieldId) {
+        const nextField = document.getElementById(nextFieldId);
+        if (nextField) {
+          (nextField as HTMLInputElement).focus();
+        }
+      } else {
+        // If no next field, submit the form
+        validateAndSubmit();
+      }
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    validateAndSubmit();
   };
 
   if (!isOpen) return null;
@@ -232,9 +278,11 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
           <div>
             <label className="block text-sm font-medium mb-2">Acc No.:</label>
             <input
+              id="accNo-input"
               type="text"
               value={formData.accNo}
               onChange={(e) => handleChange("accNo", e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, "name-input")}
               className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
               placeholder="Enter acc no."
               required
@@ -248,9 +296,11 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
           <div>
             <label className="block text-sm font-medium mb-2">Name:</label>
             <input
+              id="name-input"
               type="text"
               value={formData.name}
               onChange={(e) => handleChange("name", e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, "address-input")}
               className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
               placeholder="Enter name"
               required
@@ -261,9 +311,11 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
           <div>
             <label className="block text-sm font-medium mb-2">Address:</label>
             <input
+              id="address-input"
               type="text"
               value={formData.address}
               onChange={(e) => handleChange("address", e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, "contact-input")}
               className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
               placeholder="Enter address"
               required
@@ -274,9 +326,11 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
           <div>
             <label className="block text-sm font-medium mb-2">Contact:</label>
             <input
+              id="contact-input"
               type="tel"
               value={formData.contact}
               onChange={(e) => handleChange("contact", e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e, "costPerBag-input")}
               className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
               placeholder="Enter 10-digit mobile no."
               pattern="[0-9]{10}"
@@ -294,9 +348,11 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
               Cost per Bag (₹):
             </label>
             <input
+              id="costPerBag-input"
               type="number"
               value={formData.costPerBag ?? ""}
               onChange={(e) => handleChange("costPerBag", e.target.value)}
+              onKeyDown={(e) => handleKeyDown(e)}
               className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
               placeholder="Enter cost per bag"
               min="0"

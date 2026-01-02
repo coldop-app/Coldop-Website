@@ -13,7 +13,7 @@ interface Farmer {
   mobileNumber?: string;
 }
 
-type PaymentType = "CREDIT" | "DEBIT";
+type PaymentType = "CREDIT" | "DEBIT" | "SHED";
 type CategoryType = "LABOUR" | "ELECTRICITY" | "TRANSPORT" | "SALARY" | "FESTIVAL" | "OTHER";
 
 interface FinancesFormData {

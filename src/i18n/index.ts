@@ -494,6 +494,7 @@ const resources = {
       myFinances: {
         title: "My Finances",
         addPayment: "Add Payment",
+        addExpense: "Add Expense",
         receivePayment: "Receive Payment",
         viewStock: "View Stock",
       },
@@ -1044,6 +1045,7 @@ const resources = {
       myFinances: {
         title: "मेरे वित्त",
         addPayment: "भुगतान जोड़ें",
+        addExpense: "व्यय जोड़ें",
         receivePayment: "भुगतान प्राप्त करें",
         viewStock: "स्टॉक देखें",
       },
@@ -1602,6 +1604,7 @@ const resources = {
       myFinances: {
         title: "ਮੇਰੇ ਵਿੱਤ",
         addPayment: "ਭੁਗਤਾਨ ਜੋੜੋ",
+        addExpense: "ਖਰਚਾ ਜੋੜੋ",
         receivePayment: "ਭੁਗਤਾਨ ਪ੍ਰਾਪਤ ਕਰੋ",
         viewStock: "ਸਟਾਕ ਦੇਖੋ",
       },
