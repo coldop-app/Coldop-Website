@@ -2,7 +2,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { BookOpen, Users, BarChart2, Settings, LogOut, PlayCircle } from "lucide-react";
+import { BookOpen, Users, BarChart2, Settings, LogOut, PlayCircle, Wallet } from "lucide-react";
 import { useWalkthrough } from "@/contexts/WalkthroughContext";
 
 interface SidebarProps {
@@ -18,6 +18,7 @@ const Sidebar = ({ className }: SidebarProps) => {
     { icon: BookOpen, labelKey: "erpFooter.daybook", href: "/erp/daybook" },
     { icon: Users, labelKey: "erpFooter.people", href: "/erp/people" },
     { icon: BarChart2, labelKey: "erpFooter.analytics", href: "/erp/analytics" },
+    { icon: Wallet, labelKey: "erpFooter.myfinances", href: "/erp/myfinances" },
     { icon: Settings, labelKey: "erpFooter.settings", href: "/erp/settings" },
   ];
 

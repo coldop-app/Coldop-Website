@@ -287,6 +287,7 @@ const resources = {
         daybook: "Daybook",
         people: "People",
         analytics: "Analytics",
+        myfinances: "My Finances",
         settings: "Settings"
       },
       daybook: {
@@ -883,6 +884,7 @@ const resources = {
         daybook: "डेबुक",
         people: "लोग",
         analytics: "विश्लेषण",
+        myfinances: "मेरे वित्त",
         settings: "सेटिंग्स"
       },
       daybook: {
@@ -1426,6 +1428,7 @@ const resources = {
         daybook: "डेबुक",
         people: "लोग",
         analytics: "विश्लेषण",
+        myfinances: "ਮੇਰੇ ਵਿੱਤ",
         settings: "सेटिंग्स"
       },
       daybook: {
