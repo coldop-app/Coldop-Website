@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BookOpen, FileText, Receipt, BarChart3, Calculator } from 'lucide-react';
 import TopBar from '@/components/common/Topbar/Topbar';
@@ -13,6 +13,16 @@ import ClosingBalances from './components/ClosingBalances';
 
 const MyFinancesScreen = () => {
   const [activeTab, setActiveTab] = useState('ledgers');
+
+  useEffect(() => {
+    const handleSwitchTab = (event: CustomEvent<string>) => {
+      setActiveTab(event.detail);
+    };
+    window.addEventListener('switchTab' as any, handleSwitchTab as EventListener);
+    return () => {
+      window.removeEventListener('switchTab' as any, handleSwitchTab as EventListener);
+    };
+  }, []);
 
   return (
     <>

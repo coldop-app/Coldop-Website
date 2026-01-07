@@ -1,30 +1,39 @@
-import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { storeAdminApi } from "@/lib/api/storeAdmin";
+import { accountingApi } from "@/lib/api/accounting";
 import { Card } from "@/components/ui/card";
 
-const formatCurrency = (amount: number) => {
-  return amount.toLocaleString("en-IN", {
+const format = (n: number) =>
+  n.toLocaleString("en-IN", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-};
+
+interface Ledger {
+  _id: string;
+  name: string;
+  type: string;
+  subType: string;
+  category: string;
+  openingBalance?: number;
+  closingBalance?: number;
+  balance?: number;
+}
 
 interface PnLRow {
   label: string;
-  amount: number | null;
-  highlight?: boolean;
+  amount: number;
+  highlight: boolean;
   isProfit?: boolean;
 }
 
 const TradingAndPLAccount = () => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
 
-  const { data, isLoading } = useQuery({
-    queryKey: ["tradingAndPL"],
-    queryFn: () => storeAdminApi.getTradingAndPL(adminInfo?.token || ""),
+  const { data: ledgersData, isLoading } = useQuery({
+    queryKey: ["ledgers"],
+    queryFn: () => accountingApi.getLedgers({}, adminInfo?.token || ""),
     enabled: !!adminInfo?.token,
   });
 
@@ -38,8 +47,9 @@ const TradingAndPLAccount = () => {
     );
   }
 
-  const tradingPL = data?.data;
-  if (!tradingPL) {
+  const ledgers: Ledger[] = ledgersData?.data || [];
+
+  if (ledgers.length === 0) {
     return (
       <Card className="p-6 bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="text-center py-8 text-gray-500">No data available</div>
@@ -47,254 +57,275 @@ const TradingAndPLAccount = () => {
     );
   }
 
-  const { tradingAccount, profitAndLoss } = tradingPL;
+  /* ================= TRADING ================= */
 
-  /* ------------------ P&L DATA PREP ------------------ */
-  const pnlDebit: PnLRow[] = [];
-  const pnlCredit: PnLRow[] = [];
+  // Get Stock in Hand ledger
+  const stockInHand = ledgers.find(
+    (l) => l.name === "Stock in Hand" && l.category === "Stock in Hand"
+  );
+  const openingStock = stockInHand?.openingBalance || 0;
+  const closingStock = stockInHand?.closingBalance || 0;
 
-  // Debit Side: Indirect Expenses + Net Profit (if any)
-  if (profitAndLoss.indirectExpenses.breakdown) {
-    profitAndLoss.indirectExpenses.breakdown.forEach((item: any) => {
-      pnlDebit.push({
-        label: item.name,
-        amount: item.balance,
-        highlight: false,
+  // Get income and expense ledgers
+  const incomeLedgers = ledgers.filter((l) => l.type === "Income");
+  const expenseLedgers = ledgers.filter((l) => l.type === "Expense");
+
+  // Aggregate by category
+  const incomeCategories: Array<{ subType: string; category: string; total: number }> = [];
+  const expenseCategories: Array<{ subType: string; category: string; total: number }> = [];
+
+  incomeLedgers.forEach((ledger) => {
+    const balance = ledger.balance || ledger.closingBalance || 0;
+    const existingCategory = incomeCategories.find(
+      (c) => c.subType === ledger.subType && c.category === ledger.category
+    );
+    if (existingCategory) {
+      existingCategory.total += balance;
+    } else {
+      incomeCategories.push({
+        subType: ledger.subType,
+        category: ledger.category,
+        total: balance,
       });
-    });
-  }
-
-  if (profitAndLoss.netProfit && profitAndLoss.netProfit > 0) {
-    pnlDebit.push({
-      label: "Net Profit Trfd. to Capital",
-      amount: profitAndLoss.netProfit,
-      highlight: true,
-      isProfit: true,
-    });
-  }
-
-  // Credit Side: Gross Profit + Indirect Income + Net Loss (if any)
-  pnlCredit.push({
-    label: "Gross Profit",
-    amount: profitAndLoss.grossProfit,
-    highlight: true,
-    isProfit: profitAndLoss.grossProfit > 0,
+    }
   });
 
-  if (profitAndLoss.indirectIncome.breakdown) {
-    profitAndLoss.indirectIncome.breakdown.forEach((item: any) => {
-      pnlCredit.push({
-        label: item.name,
-        amount: item.balance,
-        highlight: false,
+  expenseLedgers.forEach((ledger) => {
+    const balance = ledger.balance || ledger.closingBalance || 0;
+    const existingCategory = expenseCategories.find(
+      (c) => c.subType === ledger.subType && c.category === ledger.category
+    );
+    if (existingCategory) {
+      existingCategory.total += balance;
+    } else {
+      expenseCategories.push({
+        subType: ledger.subType,
+        category: ledger.category,
+        total: balance,
       });
-    });
-  }
+    }
+  });
 
-  if (profitAndLoss.netProfit && profitAndLoss.netProfit < 0) {
-    pnlCredit.push({
-      label: "Net Loss Trfd. to Capital",
-      amount: Math.abs(profitAndLoss.netProfit),
+  // Calculate sales and purchases
+  const sales = incomeCategories.filter((i) =>
+    i.category.toLowerCase().includes("sale")
+  );
+  const otherIncome = incomeCategories.filter(
+    (i) => !i.category.toLowerCase().includes("sale")
+  );
+
+  // Get purchases from Direct Expenses sub-type
+  const tradingExpenses = expenseCategories.filter(
+    (e) => e.subType === "Direct Expenses" && e.category === "Purchases"
+  );
+
+  const nonTradingExpenses = expenseCategories.filter(
+    (e) => !(e.subType === "Direct Expenses" && e.category === "Purchases")
+  );
+
+  const salesTotal = sales.reduce((s, i) => s + i.total, 0);
+  const purchaseTotal = tradingExpenses.reduce((s, e) => s + e.total, 0);
+
+  // Gross Profit/Loss = Sales + Closing Stock - Purchases - Opening Stock
+  const grossProfit = salesTotal + closingStock - purchaseTotal - openingStock;
+
+  /* ================= P & L ================= */
+
+  // Calculate Net Profit/Loss = Gross Profit/Gross Loss + Indirect Incomes - Indirect Expenses
+  const indirectIncomesTotal = otherIncome.reduce((s, i) => s + i.total, 0);
+  const indirectExpensesTotal = nonTradingExpenses.reduce((s, e) => s + e.total, 0);
+
+  // Net Profit/Loss = Gross Profit (or -Gross Loss) + Indirect Incomes - Indirect Expenses
+  const netProfitLoss = grossProfit + indirectIncomesTotal - indirectExpensesTotal;
+
+  // Debit Side = Gross Loss (if any) + Indirect Expenses + Net Profit (if any)
+  const pnlDebit: PnLRow[] = [
+    ...(grossProfit < 0 ? [{
+      label: "Gross Loss",
+      amount: Math.abs(grossProfit),
       highlight: true,
       isProfit: false,
-    });
-  }
+    }] : []),
+    ...nonTradingExpenses.map((e) => ({
+      label: e.category,
+      amount: e.total,
+      highlight: false,
+    })),
+    ...(netProfitLoss > 0 ? [{
+      label: `Net Profit Trfd. to Capital`,
+      amount: netProfitLoss,
+      highlight: true,
+      isProfit: true,
+    }] : []),
+  ];
+
+  // Credit Side = Gross Profit (if any) + Indirect Incomes + Net Loss (if any)
+  const pnlCredit: PnLRow[] = [
+    ...(grossProfit > 0 ? [{
+      label: "Gross Profit",
+      amount: grossProfit,
+      highlight: true,
+      isProfit: true,
+    }] : []),
+    ...otherIncome.map((i) => ({
+      label: i.category,
+      amount: i.total,
+      highlight: false,
+    })),
+    ...(netProfitLoss < 0 ? [{
+      label: `Net Loss Trfd. to Capital`,
+      amount: Math.abs(netProfitLoss),
+      highlight: true,
+      isProfit: false,
+    }] : []),
+  ];
 
   const maxRows = Math.max(pnlDebit.length, pnlCredit.length);
 
   // Calculate totals
-  const tradingDebitTotal =
-    tradingAccount.openingStock +
-    tradingAccount.purchases +
-    (tradingAccount.grossProfit > 0 ? tradingAccount.grossProfit : 0);
+  const tradingDebitTotal = openingStock + purchaseTotal + (grossProfit > 0 ? grossProfit : 0);
+  const tradingCreditTotal = salesTotal + closingStock + (grossProfit < 0 ? Math.abs(grossProfit) : 0);
 
-  const tradingCreditTotal =
-    tradingAccount.sales +
-    tradingAccount.closingStock +
-    (tradingAccount.grossProfit < 0 ? Math.abs(tradingAccount.grossProfit) : 0);
+  const debitTotal = pnlDebit.reduce((s, r) => s + r.amount, 0);
+  const creditTotal = pnlCredit.reduce((s, r) => s + r.amount, 0);
 
-  const pnlDebitTotal = pnlDebit.reduce(
-    (sum, row) => sum + (row.amount || 0),
-    0
-  );
-  const pnlCreditTotal = pnlCredit.reduce(
-    (sum, row) => sum + (row.amount || 0),
-    0
-  );
-
-  /* ------------------ RENDER ------------------ */
   return (
-    <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200">
-      <h2 className="text-3xl font-bold mb-8 text-center text-gray-900">
+    <div className="bg-white p-6 rounded-lg shadow-lg border border-gray-200">
+      <h2 className="text-3xl font-bold text-center mb-6 text-gray-800 border-b-2 border-gray-300 pb-3">
         Trading A/c and Profit & Loss A/c
       </h2>
 
       <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b-2 border-gray-900">
-              <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                Particulars
-              </th>
-              <th className="px-4 py-3 text-right font-semibold text-gray-900 border-l-2 border-dashed border-gray-400">
-                Amount
-              </th>
-              <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                Particulars
-              </th>
-              <th className="px-4 py-3 text-right font-semibold text-gray-900">
-                Amount
-              </th>
-            </tr>
-          </thead>
+        <table className="w-full border-collapse text-sm">
+        <thead>
+          <tr className="border-b-2 border-gray-800">
+            <th className="text-left px-3 py-2 w-1/2">Particulars</th>
+            <th className="text-right px-3 py-2 w-24 border-l border-dashed">
+              Amount
+            </th>
+            <th className="text-left px-3 py-2 w-1/2">Particulars</th>
+            <th className="text-right px-3 py-2 w-24">Amount</th>
+          </tr>
+        </thead>
 
-          <tbody>
-            {/* ================= TRADING ACCOUNT ================= */}
-            <tr className="bg-white border-t-2 border-b-2 border-gray-900">
+        <tbody>
+          {/* ================= TRADING ACCOUNT ================= */}
+          <tr className="bg-gray-100 border-y-2 border-gray-600">
+            <td colSpan={4} className="text-center font-bold py-2">
+              Trading Account
+            </td>
+          </tr>
+
+          {/* Opening Stock - Debit side */}
+          {openingStock > 0 && (
+            <tr>
+              <td className="px-3 py-1">Opening Stock</td>
+              <td className="px-3 py-1 text-right border-l border-dashed">
+                {format(openingStock)}
+              </td>
+              <td className="px-3 py-1"></td>
+              <td className="px-3 py-1 text-right"></td>
+            </tr>
+          )}
+
+          {/* Purchases - Debit side */}
+          <tr>
+            <td className="px-3 py-1">Purchases</td>
+            <td className="px-3 py-1 text-right border-l border-dashed">
+              {format(purchaseTotal)}
+            </td>
+            <td className="px-3 py-1">Sales</td>
+            <td className="px-3 py-1 text-right">{format(salesTotal)}</td>
+          </tr>
+
+          {/* Closing Stock - Credit side */}
+          {closingStock > 0 && (
+            <tr>
+              <td className="px-3 py-1"></td>
+              <td className="px-3 py-1 text-right border-l border-dashed"></td>
+              <td className="px-3 py-1">Closing Stock</td>
+              <td className="px-3 py-1 text-right">{format(closingStock)}</td>
+            </tr>
+          )}
+
+          {grossProfit >= 0 ? (
+            <tr className="border-b">
+              <td className="px-3 py-1 font-semibold">Gross Profit</td>
+              <td className={`px-3 py-1 text-right border-l border-dashed font-semibold text-green-600`}>
+                {format(grossProfit)}
+              </td>
+              <td className="px-3 py-1"></td>
+              <td className="px-3 py-1 text-right"></td>
+            </tr>
+          ) : (
+            <tr className="border-b">
+              <td className="px-3 py-1"></td>
+              <td className="px-3 py-1 text-right border-l border-dashed"></td>
+              <td className="px-3 py-1 font-semibold">Gross Loss</td>
+              <td className={`px-3 py-1 text-right font-semibold text-red-600`}>
+                {format(Math.abs(grossProfit))}
+              </td>
+            </tr>
+          )}
+
+          <tr className="bg-gray-100 border-t-2 border-gray-600 font-bold">
+            <td className="px-3 py-2">Total</td>
+            <td className="px-3 py-2 text-right border-l border-dashed">
+              {format(tradingDebitTotal)}
+            </td>
+            <td className="px-3 py-2">Total</td>
+            <td className="px-3 py-2 text-right">{format(tradingCreditTotal)}</td>
+          </tr>
+
+          {/* ================= P & L ACCOUNT ================= */}
+          <tr className="bg-gray-100 border-y-2 border-gray-600">
+            <td colSpan={4} className="text-center font-bold py-2">
+              Profit & Loss Account
+            </td>
+          </tr>
+
+          {Array.from({ length: maxRows }).map((_, i) => (
+            <tr key={i} className="border-b">
+              {/* Debit */}
+              <td className="px-3 py-1">{pnlDebit[i]?.label || ""}</td>
               <td
-                colSpan={4}
-                className="text-center font-bold py-3 text-gray-900"
+                className={`px-3 py-1 text-right border-l border-dashed ${
+                  pnlDebit[i]?.highlight
+                    ? pnlDebit[i]?.isProfit
+                      ? "font-semibold text-green-600"
+                      : "font-semibold text-red-600"
+                    : ""
+                }`}
               >
-                Trading Account
+                {pnlDebit[i] ? format(pnlDebit[i].amount) : ""}
               </td>
-            </tr>
 
-            {/* Opening Stock - Debit side */}
-            {tradingAccount.openingStock > 0 && (
-              <tr className="border-b border-gray-300">
-                <td className="px-4 py-2.5 text-gray-900">Opening Stock</td>
-                <td className="px-4 py-2.5 text-right border-l-2 border-dashed border-gray-400 text-gray-900">
-                  {formatCurrency(tradingAccount.openingStock)}
-                </td>
-                <td className="px-4 py-2.5"></td>
-                <td className="px-4 py-2.5 text-right"></td>
-              </tr>
-            )}
-
-            {/* Purchases - Debit side, Sales - Credit side */}
-            <tr className="border-b border-gray-300">
-              <td className="px-4 py-2.5 text-gray-900">Purchases</td>
-              <td className="px-4 py-2.5 text-right border-l-2 border-dashed border-gray-400 text-gray-900">
-                {formatCurrency(tradingAccount.purchases)}
-              </td>
-              <td className="px-4 py-2.5 text-gray-900">Sales</td>
-              <td className="px-4 py-2.5 text-right text-gray-900">
-                {formatCurrency(tradingAccount.sales)}
-              </td>
-            </tr>
-
-            {/* Closing Stock - Credit side */}
-            {tradingAccount.closingStock > 0 && (
-              <tr className="border-b border-gray-300">
-                <td className="px-4 py-2.5"></td>
-                <td className="px-4 py-2.5 text-right border-l-2 border-dashed border-gray-400"></td>
-                <td className="px-4 py-2.5 text-gray-900">Closing Stock</td>
-                <td className="px-4 py-2.5 text-right text-gray-900">
-                  {formatCurrency(tradingAccount.closingStock)}
-                </td>
-              </tr>
-            )}
-
-            {/* Gross Profit/Loss */}
-            {tradingAccount.grossProfit >= 0 ? (
-              <tr className="border-b border-gray-300">
-                <td className="px-4 py-2.5 font-semibold text-gray-900">
-                  Gross Profit
-                </td>
-                <td className="px-4 py-2.5 text-right border-l-2 border-dashed border-gray-400 font-semibold text-green-600">
-                  {formatCurrency(tradingAccount.grossProfit)}
-                </td>
-                <td className="px-4 py-2.5"></td>
-                <td className="px-4 py-2.5 text-right"></td>
-              </tr>
-            ) : (
-              <tr className="border-b border-gray-300">
-                <td className="px-4 py-2.5"></td>
-                <td className="px-4 py-2.5 text-right border-l-2 border-dashed border-gray-400"></td>
-                <td className="px-4 py-2.5 font-semibold text-gray-900">
-                  Gross Loss
-                </td>
-                <td className="px-4 py-2.5 text-right font-semibold text-red-600">
-                  {formatCurrency(Math.abs(tradingAccount.grossProfit))}
-                </td>
-              </tr>
-            )}
-
-            {/* Trading Account Total */}
-            <tr className="border-t-2 border-b-2 border-gray-900 bg-white">
-              <td className="px-4 py-3 font-bold text-gray-900">Total</td>
-              <td className="px-4 py-3 text-right border-l-2 border-dashed border-gray-400 font-bold text-gray-900">
-                {formatCurrency(tradingDebitTotal)}
-              </td>
-              <td className="px-4 py-3 font-bold text-gray-900">Total</td>
-              <td className="px-4 py-3 text-right font-bold text-gray-900">
-                {formatCurrency(tradingCreditTotal)}
-              </td>
-            </tr>
-
-            {/* ================= P & L ACCOUNT ================= */}
-            <tr className="bg-white border-t-2 border-b-2 border-gray-900">
+              {/* Credit */}
+              <td className="px-3 py-1">{pnlCredit[i]?.label || ""}</td>
               <td
-                colSpan={4}
-                className="text-center font-bold py-3 text-gray-900"
+                className={`px-3 py-1 text-right ${
+                  pnlCredit[i]?.highlight
+                    ? pnlCredit[i]?.isProfit
+                      ? "font-semibold text-green-600"
+                      : "font-semibold text-red-600"
+                    : ""
+                }`}
               >
-                Profit & Loss Account
+                {pnlCredit[i] ? format(pnlCredit[i].amount) : ""}
               </td>
             </tr>
+          ))}
 
-            {Array.from({ length: maxRows }).map((_, i) => (
-              <tr key={i} className="border-b border-gray-300">
-                {/* Debit Side */}
-                <td className="px-4 py-2.5 text-gray-900">
-                  {pnlDebit[i]?.label || ""}
-                </td>
-                <td
-                  className={`px-4 py-2.5 text-right border-l-2 border-dashed border-gray-400 ${
-                    pnlDebit[i]?.highlight
-                      ? pnlDebit[i]?.isProfit
-                        ? "font-semibold text-green-600"
-                        : "font-semibold text-red-600"
-                      : "text-gray-900"
-                  }`}
-                >
-                  {pnlDebit[i]?.amount != null
-                    ? formatCurrency(pnlDebit[i].amount)
-                    : ""}
-                </td>
-
-                {/* Credit Side */}
-                <td className="px-4 py-2.5 text-gray-900">
-                  {pnlCredit[i]?.label || ""}
-                </td>
-                <td
-                  className={`px-4 py-2.5 text-right ${
-                    pnlCredit[i]?.highlight
-                      ? pnlCredit[i]?.isProfit
-                        ? "font-semibold text-green-600"
-                        : "font-semibold text-red-600"
-                      : "text-gray-900"
-                  }`}
-                >
-                  {pnlCredit[i]?.amount != null
-                    ? formatCurrency(pnlCredit[i].amount)
-                    : ""}
-                </td>
-              </tr>
-            ))}
-
-            {/* P&L Account Total */}
-            <tr className="border-t-2 border-b-2 border-gray-900 bg-white">
-              <td className="px-4 py-3 font-bold text-gray-900">Total</td>
-              <td className="px-4 py-3 text-right border-l-2 border-dashed border-gray-400 font-bold text-gray-900">
-                {formatCurrency(pnlDebitTotal)}
-              </td>
-              <td className="px-4 py-3 font-bold text-gray-900">Total</td>
-              <td className="px-4 py-3 text-right font-bold text-gray-900">
-                {formatCurrency(pnlCreditTotal)}
-              </td>
-            </tr>
-          </tbody>
-        </table>
+          <tr className="bg-gray-100 border-t-2 border-gray-600 font-bold">
+            <td className="px-3 py-2">Total</td>
+            <td className="px-3 py-2 text-right border-l border-dashed">
+              {format(debitTotal)}
+            </td>
+            <td className="px-3 py-2">Total</td>
+            <td className="px-3 py-2 text-right">{format(creditTotal)}</td>
+          </tr>
+        </tbody>
+      </table>
       </div>
     </div>
   );

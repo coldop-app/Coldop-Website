@@ -1,32 +1,54 @@
-import React, { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store";
-import { storeAdminApi } from "@/lib/api/storeAdmin";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { accountingApi } from "@/lib/api/accounting";
+import { Plus, Check, X } from "lucide-react";
 import { CHART_OF_ACCOUNTS } from "../constants";
 import toast from "react-hot-toast";
 
-const LedgerForm = () => {
+const ledgerTypes = Object.keys(CHART_OF_ACCOUNTS);
+
+interface LedgerFormProps {
+  ledgerId?: string;
+  onSuccess?: () => void;
+  hideCard?: boolean;
+}
+
+const LedgerForm = ({ ledgerId, onSuccess, hideCard = false }: LedgerFormProps) => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const queryClient = useQueryClient();
+  const editingLedgerId = ledgerId || null;
 
-  const [formData, setFormData] = useState({
-    mainLedgerType: "",
+  const [newLedger, setNewLedger] = useState({
+    type: "",
     subType: "",
     category: "",
-    ledgerName: "",
-    openingBalance: "0.00",
+    name: "",
+    openingBalance: "",
+    closingBalance: "",
   });
+
+  const { data: ledgerData } = useQuery({
+    queryKey: ['ledger', ledgerId],
+    queryFn: () => accountingApi.getLedgerById(ledgerId!, adminInfo?.token || ''),
+    enabled: !!editingLedgerId && !!ledgerId && !!adminInfo?.token
+  });
+
+  // Populate form when ledger data is loaded
+  useEffect(() => {
+    if (ledgerData?.data && editingLedgerId) {
+      const ledger = ledgerData.data;
+      setNewLedger({
+        type: ledger.type || "",
+        subType: ledger.subType || "",
+        category: ledger.category || "",
+        name: ledger.name || "",
+        openingBalance: (ledger.openingBalance || 0).toString(),
+        closingBalance: (ledger.closingBalance || 0).toString(),
+      });
+    }
+  }, [ledgerData, editingLedgerId]);
 
   const createLedgerMutation = useMutation({
     mutationFn: (payload: {
@@ -35,197 +57,269 @@ const LedgerForm = () => {
       subType: string;
       category: string;
       openingBalance: number;
-    }) => storeAdminApi.createLedger(payload, adminInfo?.token || ""),
+      closingBalance?: number;
+    }) => accountingApi.createLedger(payload, adminInfo?.token || ""),
     onSuccess: () => {
       toast.success("Ledger created successfully");
-      setFormData({
-        mainLedgerType: "",
-        subType: "",
-        category: "",
-        ledgerName: "",
-        openingBalance: "0.00",
-      });
+      resetForm();
       queryClient.invalidateQueries({ queryKey: ["ledgers"] });
+      onSuccess?.();
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to create ledger");
+    onError: (error: unknown) => {
+      const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(errorMessage || "Failed to create ledger");
     },
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const updateLedgerMutation = useMutation({
+    mutationFn: (payload: {
+      name?: string;
+      openingBalance?: number;
+      closingBalance?: number;
+    }) => accountingApi.updateLedger(ledgerId!, payload, adminInfo?.token || ""),
+    onSuccess: () => {
+      toast.success("Ledger updated successfully");
+      resetForm();
+      queryClient.invalidateQueries({ queryKey: ["ledgers"] });
+      onSuccess?.();
+    },
+    onError: (error: unknown) => {
+      const errorMessage = (error as { response?: { data?: { message?: string } } })?.response?.data?.message;
+      toast.error(errorMessage || "Failed to update ledger");
+    },
+  });
 
-    if (
-      !formData.mainLedgerType ||
-      !formData.subType ||
-      !formData.category ||
-      !formData.ledgerName
-    ) {
+  const resetForm = () => {
+    setNewLedger({
+      type: "",
+      subType: "",
+      category: "",
+      name: "",
+      openingBalance: "",
+      closingBalance: "",
+    });
+  };
+
+  const onAddLedger = () => {
+    if (!newLedger.type || !newLedger.subType || !newLedger.category || !newLedger.name) {
       toast.error("Please complete all required fields");
       return;
     }
 
-    createLedgerMutation.mutate({
-      name: formData.ledgerName,
-      type: formData.mainLedgerType,
-      subType: formData.subType,
-      category: formData.category,
-      openingBalance: parseFloat(formData.openingBalance) || 0,
-    });
+    const payload: {
+      name: string;
+      type: string;
+      subType: string;
+      category: string;
+      openingBalance: number;
+      closingBalance?: number;
+    } = {
+      name: newLedger.name,
+      type: newLedger.type,
+      subType: newLedger.subType,
+      category: newLedger.category,
+      openingBalance: parseFloat(newLedger.openingBalance) || 0,
+    };
+
+    if (editingLedgerId) {
+      const updatePayload: {
+        name?: string;
+        openingBalance?: number;
+        closingBalance?: number;
+      } = {
+        name: payload.name,
+        openingBalance: payload.openingBalance,
+      };
+
+      // Only include closingBalance if category is "Stock in Hand"
+      if (ledgerData?.data?.category === "Stock in Hand" && newLedger.closingBalance) {
+        updatePayload.closingBalance = parseFloat(newLedger.closingBalance) || 0;
+      }
+
+      updateLedgerMutation.mutate(updatePayload);
+    } else {
+      createLedgerMutation.mutate(payload);
+    }
   };
 
-  const getSubTypes = () =>
-    formData.mainLedgerType
-      ? Object.keys(
-          CHART_OF_ACCOUNTS[
-            formData.mainLedgerType as keyof typeof CHART_OF_ACCOUNTS
-          ] || {}
-        )
-      : [];
+  const onCancelEdit = () => {
+    resetForm();
+    onSuccess?.();
+  };
 
-  const getCategories = () =>
-    formData.mainLedgerType && formData.subType
-      ? CHART_OF_ACCOUNTS[
-          formData.mainLedgerType as keyof typeof CHART_OF_ACCOUNTS
-        ]?.[formData.subType] || []
-      : [];
+  const isPending = createLedgerMutation.isPending || updateLedgerMutation.isPending;
+  const isLoading = !!editingLedgerId && !ledgerData;
 
-  return (
-    <Card className="bg-white rounded-xl border border-gray-100 shadow-sm">
-      <form onSubmit={handleSubmit} className="p-6 space-y-6">
-        {/* Header */}
-        <h2 className="text-xl font-semibold text-gray-900">
-          Create New Ledger
-        </h2>
-
-        {/* Single Row Form */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {/* Main Ledger Type */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Main Ledger Type
+  const formContent = (
+    <div className="bg-white p-6 rounded-lg shadow">
+      <h2 className="text-xl font-semibold mb-4">
+        {editingLedgerId ? "Edit Ledger" : "Create New Ledger"}
+      </h2>
+      <div className={`grid grid-cols-1 gap-4 ${(newLedger.name === "Stock in Hand" || ledgerData?.data?.category === "Stock in Hand") ? "md:grid-cols-6" : "md:grid-cols-5"}`}>
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Main Ledger Type
+          </label>
+          <select
+            value={newLedger.type}
+            onChange={(e) =>
+              setNewLedger({
+                ...newLedger,
+                type: e.target.value,
+                subType: "",
+                category: "",
+              })
+            }
+            className="w-full border rounded px-3 py-2"
+            disabled={!!editingLedgerId}
+          >
+            <option value="">Select type</option>
+            {ledgerTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Sub-Type</label>
+          <select
+            value={newLedger.subType}
+            onChange={(e) =>
+              setNewLedger({
+                ...newLedger,
+                subType: e.target.value,
+                category: "",
+              })
+            }
+            className="w-full border rounded px-3 py-2"
+            disabled={!newLedger.type}
+          >
+            <option value="">Select Sub-Type</option>
+            {newLedger.type &&
+              Object.keys(
+                (CHART_OF_ACCOUNTS as Record<string, Record<string, string[]>>)[newLedger.type] || {}
+              ).map((subType) => (
+                <option key={subType} value={subType}>
+                  {subType}
+                </option>
+              ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Category</label>
+          <select
+            value={newLedger.category}
+            onChange={(e) =>
+              setNewLedger({ ...newLedger, category: e.target.value })
+            }
+            className="w-full border rounded px-3 py-2"
+            disabled={!newLedger.subType}
+          >
+            <option value="">Select Category</option>
+            {newLedger.subType &&
+              newLedger.type &&
+              (
+                (CHART_OF_ACCOUNTS as Record<string, Record<string, string[]>>)[newLedger.type]?.[newLedger.subType] ||
+                []
+              ).map((category: string) => (
+                <option key={category} value={category}>
+                  {category}
+                </option>
+              ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Ledger Name</label>
+          <input
+            type="text"
+            placeholder="Ledger Name"
+            value={newLedger.name}
+            onChange={(e) =>
+              setNewLedger({ ...newLedger, name: e.target.value })
+            }
+            className="w-full border rounded px-3 py-2"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">
+            Opening Balance (₹)
+          </label>
+          <input
+            type="number"
+            placeholder="0.00"
+            value={newLedger.openingBalance}
+            onChange={(e) =>
+              setNewLedger({
+                ...newLedger,
+                openingBalance: e.target.value,
+              })
+            }
+            className="w-full border rounded px-3 py-2"
+            step="0.01"
+          />
+        </div>
+        {(newLedger.name === "Stock in Hand" || ledgerData?.data?.category === "Stock in Hand") && (
+          <div>
+            <label className="block text-sm font-medium mb-1">
+              Closing Balance (₹)
             </label>
-            <Select
-              value={formData.mainLedgerType}
-              onValueChange={(value) =>
-                setFormData({
-                  ...formData,
-                  mainLedgerType: value,
-                  subType: "",
-                  category: "",
+            <input
+              type="number"
+              placeholder="0.00"
+              value={newLedger.closingBalance || ""}
+              onChange={(e) =>
+                setNewLedger({
+                  ...newLedger,
+                  closingBalance: e.target.value,
                 })
               }
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(CHART_OF_ACCOUNTS).map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Sub-Type */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Sub-Type
-            </label>
-            <Select
-              value={formData.subType}
-              onValueChange={(value) =>
-                setFormData({ ...formData, subType: value, category: "" })
-              }
-              disabled={!formData.mainLedgerType}
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select Sub-Type" />
-              </SelectTrigger>
-              <SelectContent>
-                {getSubTypes().map((subType) => (
-                  <SelectItem key={subType} value={subType}>
-                    {subType}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Category */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Category
-            </label>
-            <Select
-              value={formData.category}
-              onValueChange={(value) =>
-                setFormData({ ...formData, category: value })
-              }
-              disabled={!formData.subType}
-            >
-              <SelectTrigger className="h-11">
-                <SelectValue placeholder="Select Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {getCategories().map((category) => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Ledger Name */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Ledger Name
-            </label>
-            <Input
-              className="h-11"
-              placeholder="Ledger Name"
-              value={formData.ledgerName}
-              onChange={(e) =>
-                setFormData({ ...formData, ledgerName: e.target.value })
-              }
-              required
-            />
-          </div>
-
-          {/* Opening Balance */}
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-gray-700">
-              Opening Balance (₹)
-            </label>
-            <Input
-              className="h-11"
-              type="number"
+              className="w-full border rounded px-3 py-2"
               step="0.01"
-              placeholder="0.00"
-              value={formData.openingBalance}
-              onChange={(e) =>
-                setFormData({ ...formData, openingBalance: e.target.value })
-              }
             />
           </div>
-        </div>
-
-        {/* Action Row */}
-        <div className="pt-2">
-          <Button
-            type="submit"
-            disabled={createLedgerMutation.isPending}
-            className="h-11 px-6"
+        )}
+      </div>
+      <div className="mt-4 flex gap-2">
+        <button
+          onClick={onAddLedger}
+          disabled={isPending || isLoading}
+          className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-primary text-white rounded-lg hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            "Loading..."
+          ) : isPending ? (
+            editingLedgerId ? "Updating..." : "Adding..."
+          ) : editingLedgerId ? (
+            <>
+              <Check className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+              Update Ledger
+            </>
+          ) : (
+            <>
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+              Add Ledger
+            </>
+          )}
+        </button>
+        {editingLedgerId && (
+          <button
+            onClick={onCancelEdit}
+            className="w-full sm:w-auto px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all duration-200 text-xs sm:text-sm lg:text-base font-medium inline-flex items-center justify-center gap-1 sm:gap-2 shadow-sm hover:shadow relative"
           >
-            {createLedgerMutation.isPending ? "Adding..." : "+ Add Ledger"}
-          </Button>
-        </div>
-      </form>
-    </Card>
+            <X className="h-3 w-3 sm:h-4 sm:w-4 lg:h-5 lg:w-5" />
+            Cancel
+          </button>
+        )}
+      </div>
+    </div>
   );
+
+  if (hideCard) {
+    return formContent;
+  }
+
+  return formContent;
 };
 
 export default LedgerForm;
