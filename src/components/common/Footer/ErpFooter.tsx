@@ -1,6 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { BookOpen, Users, BarChart2, Settings } from 'lucide-react';
+import { BookOpen, Users, BarChart2, Settings, Wallet } from 'lucide-react';
 
 const ErpFooter= () => {
   const { t } = useTranslation();
@@ -10,6 +10,7 @@ const ErpFooter= () => {
     { path: '/erp/daybook', labelKey: 'erpFooter.daybook', icon: BookOpen },
     { path: '/erp/people', labelKey: 'erpFooter.people', icon: Users },
     { path: '/erp/analytics', labelKey: 'erpFooter.analytics', icon: BarChart2 },
+    { path: '/erp/myfinances', labelKey: 'erpFooter.myfinances', icon: Wallet },
     { path: '/erp/settings', labelKey: 'erpFooter.settings', icon: Settings },
   ];
 
