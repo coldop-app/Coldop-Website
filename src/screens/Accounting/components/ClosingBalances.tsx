@@ -45,12 +45,15 @@ const ClosingBalances = () => {
 
   /* ------------------ CALCULATE NET PROFIT/LOSS ------------------ */
 
-  // Get Stock in Hand ledger
+  // Get Stock in Hand ledger (by category only)
   const stockInHand = ledgers.find(
-    (l) => l.name === "Stock in Hand" && l.category === "Stock in Hand"
+    (l) => l.category === "Stock in Hand"
   );
   const openingStock = stockInHand?.openingBalance || 0;
-  const closingStock = stockInHand?.closingBalance || 0;
+  // For Stock in Hand, always use closingBalance if defined (even if 0), otherwise use balance
+  const closingStock = stockInHand && stockInHand.closingBalance !== undefined
+    ? stockInHand.closingBalance
+    : (stockInHand?.balance || 0);
 
   // Get income and expense ledgers
   const incomeLedgers = ledgers.filter((l) => l.type === "Income");
@@ -108,7 +111,8 @@ const ClosingBalances = () => {
     }
     categoryGroups[key].ledgers.push(ledger);
     // For Stock in Hand, use closing balance if available
-    if (ledger.name === "Stock in Hand" && ledger.category === "Stock in Hand" && ledger.closingBalance !== undefined) {
+    const isStockInHand = ledger.category === "Stock in Hand";
+    if (isStockInHand && ledger.closingBalance !== undefined) {
       categoryGroups[key].total += ledger.closingBalance;
     } else {
       categoryGroups[key].total += ledger.balance || ledger.closingBalance || 0;
@@ -140,7 +144,8 @@ const ClosingBalances = () => {
     .filter((l) => l.type === "Asset")
     .reduce((sum, l) => {
       // For Stock in Hand, use closing balance if available
-      if (l.name === "Stock in Hand" && l.category === "Stock in Hand" && l.closingBalance !== undefined) {
+      const isStockInHand = l.category === "Stock in Hand";
+      if (isStockInHand && l.closingBalance !== undefined) {
         return sum + l.closingBalance;
       }
       return sum + (l.balance || l.closingBalance || 0);
@@ -213,7 +218,8 @@ const ClosingBalances = () => {
                           </tr>
                           {group.ledgers.map((ledger) => {
                             // For Stock in Hand, use closing balance if available
-                            const displayBalance = ledger.name === "Stock in Hand" && ledger.category === "Stock in Hand" && ledger.closingBalance !== undefined
+                            const isStockInHand = ledger.category === "Stock in Hand";
+                            const displayBalance = isStockInHand && ledger.closingBalance !== undefined
                               ? ledger.closingBalance
                               : (ledger.balance || ledger.closingBalance || 0);
 

@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { accountingApi } from '@/lib/api/accounting';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Search, Eye, Edit2, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import LedgerForm from './LedgerForm';
@@ -176,17 +176,22 @@ const LedgerList = () => {
 
       {/* Edit Ledger Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Edit Ledger</DialogTitle>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-0">
+          <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-200 bg-gray-50/50">
+            <DialogTitle className="text-2xl font-semibold text-gray-900">Edit Ledger</DialogTitle>
+            <DialogDescription className="text-sm text-gray-600 mt-1">
+              Update the ledger details below. Type, Sub-Type, and Category cannot be changed.
+            </DialogDescription>
           </DialogHeader>
-          {editingLedgerId && (
-            <LedgerForm
-              ledgerId={editingLedgerId}
-              onSuccess={handleEditSuccess}
-              hideCard={true}
-            />
-          )}
+          <div className="px-6 py-6">
+            {editingLedgerId && (
+              <LedgerForm
+                ledgerId={editingLedgerId}
+                onSuccess={handleEditSuccess}
+                hideCard={true}
+              />
+            )}
+          </div>
         </DialogContent>
       </Dialog>
     </>

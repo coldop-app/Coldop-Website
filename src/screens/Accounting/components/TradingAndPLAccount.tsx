@@ -59,12 +59,15 @@ const TradingAndPLAccount = () => {
 
   /* ================= TRADING ================= */
 
-  // Get Stock in Hand ledger
+  // Get Stock in Hand ledger (by category only)
   const stockInHand = ledgers.find(
-    (l) => l.name === "Stock in Hand" && l.category === "Stock in Hand"
+    (l) => l.category === "Stock in Hand"
   );
   const openingStock = stockInHand?.openingBalance || 0;
-  const closingStock = stockInHand?.closingBalance || 0;
+  // For Stock in Hand, always use closingBalance if defined (even if 0), otherwise use balance
+  const closingStock = stockInHand && stockInHand.closingBalance !== undefined
+    ? stockInHand.closingBalance
+    : (stockInHand?.balance || 0);
 
   // Get income and expense ledgers
   const incomeLedgers = ledgers.filter((l) => l.type === "Income");

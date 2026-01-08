@@ -151,11 +151,19 @@ const LedgerForm = ({ ledgerId, onSuccess, hideCard = false }: LedgerFormProps) 
   const isLoading = !!editingLedgerId && !ledgerData;
 
   const formContent = (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <h2 className="text-xl font-semibold mb-4">
-        {editingLedgerId ? "Edit Ledger" : "Create New Ledger"}
-      </h2>
-      <div className={`grid grid-cols-1 gap-4 ${(newLedger.name === "Stock in Hand" || ledgerData?.data?.category === "Stock in Hand") ? "md:grid-cols-6" : "md:grid-cols-5"}`}>
+    <div className={hideCard ? "" : "bg-white p-6 rounded-lg shadow"}>
+      {!hideCard && (
+        <h2 className="text-xl font-semibold mb-4">
+          {editingLedgerId ? "Edit Ledger" : "Create New Ledger"}
+        </h2>
+      )}
+      <div className={`grid grid-cols-1 gap-4 ${
+        editingLedgerId
+          ? "md:grid-cols-2"
+          : (newLedger.name === "Stock in Hand" || ledgerData?.data?.category === "Stock in Hand")
+            ? "md:grid-cols-6"
+            : "md:grid-cols-5"
+      }`}>
         <div>
           <label className="block text-sm font-medium mb-1">
             Main Ledger Type

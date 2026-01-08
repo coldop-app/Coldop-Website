@@ -84,12 +84,15 @@ const BalanceSheet = () => {
 
   /* ------------------ CALCULATE NET PROFIT/LOSS ------------------ */
 
-  // Get Stock in Hand ledger
+  // Get Stock in Hand ledger (by category only)
   const stockInHand = ledgers.find(
-    (l) => l.name === "Stock in Hand" && l.category === "Stock in Hand"
+    (l) => l.category === "Stock in Hand"
   );
   const openingStock = stockInHand?.openingBalance || 0;
-  const closingStock = stockInHand?.closingBalance || 0;
+  // For Stock in Hand, always use closingBalance if defined (even if 0), otherwise use balance
+  const closingStock = stockInHand && stockInHand.closingBalance !== undefined
+    ? stockInHand.closingBalance
+    : (stockInHand?.balance || 0);
 
   // Get income and expense ledgers
   const incomeLedgers = ledgers.filter((l) => l.type === "Income");
@@ -160,7 +163,11 @@ const BalanceSheet = () => {
   const assetCategories: Array<{ subType: string; category: string; total: number }> = [];
 
   assetLedgers.forEach((ledger) => {
-    const balance = ledger.balance || ledger.closingBalance || 0;
+    // For "Stock in Hand", use closingBalance if available to match profit calculation
+    const isStockInHand = ledger.category === "Stock in Hand";
+    const balance = isStockInHand && ledger.closingBalance !== undefined
+      ? ledger.closingBalance
+      : (ledger.balance || ledger.closingBalance || 0);
     if (!assetSubTypes[ledger.subType]) {
       assetSubTypes[ledger.subType] = 0;
     }
@@ -218,10 +225,10 @@ const BalanceSheet = () => {
       if (capitalAdditions > 0 || capitalDeletions > 0) {
         const netMovement = capitalAdditions - capitalDeletions;
         if (netMovement !== 0) {
-          liabilityRows.push({
+    liabilityRows.push({
             label: `${ledger.name} - ${netMovement > 0 ? "Add: Capital Introduced" : "Less: Capital Withdrawn"}`,
             amount: Math.abs(netMovement),
-          });
+    });
         } else {
           // Show both if they exist and net to zero
           if (capitalAdditions > 0) {
@@ -231,7 +238,7 @@ const BalanceSheet = () => {
             });
           }
           if (capitalDeletions > 0) {
-            liabilityRows.push({
+    liabilityRows.push({
               label: `${ledger.name} - Less: Capital Withdrawn`,
               amount: capitalDeletions,
             });
@@ -274,11 +281,11 @@ const BalanceSheet = () => {
     liabilityCategories
       .filter((c) => c.subType === subType)
       .forEach((c) => {
-        liabilityRows.push({
+      liabilityRows.push({
           label: c.category,
           amount: c.total,
-        });
       });
+    });
 
     liabilityRows.push({
       label: `Total ${subType}`,
@@ -305,7 +312,7 @@ const BalanceSheet = () => {
     if (indexB !== -1) return 1;
     // If neither is in the order array, maintain original order
     return 0;
-  });
+    });
 
   sortedAssetSubTypes.forEach(([subType, total]) => {
     assetRows.push({
@@ -317,11 +324,11 @@ const BalanceSheet = () => {
     assetCategories
       .filter((c) => c.subType === subType)
       .forEach((c) => {
-        assetRows.push({
+      assetRows.push({
           label: c.category,
           amount: c.total,
-        });
       });
+    });
 
     assetRows.push({
       label: `Total ${subType}`,
