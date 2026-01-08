@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, KeyboardEvent, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Plus, Loader2, X } from "lucide-react";
+import { Plus, Loader2, X, IndianRupee } from "lucide-react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
@@ -132,6 +132,7 @@ interface Farmer {
   name: string;
   address?: string;
   mobileNumber?: string;
+  costPerBag?: number;
 }
 
 const IncomingOrderFormContent = () => {
@@ -159,6 +160,7 @@ const IncomingOrderFormContent = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [isNewFarmerModalOpen, setIsNewFarmerModalOpen] = useState(false);
   const [selectedFarmer, setSelectedFarmer] = useState<Farmer | null>(null);
+  const [farmerCostPerBag, setFarmerCostPerBag] = useState<number | null>(null);
   const [firstCompleteLocation, setFirstCompleteLocation] =
     useState<BagLocation | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
@@ -233,6 +235,7 @@ const IncomingOrderFormContent = () => {
         farmerName: farmer.name,
         farmerId: farmer._id,
       }));
+      setFarmerCostPerBag(farmer.costPerBag || null);
     }
   }, [farmer]);
 
@@ -436,6 +439,13 @@ const IncomingOrderFormContent = () => {
     );
   };
 
+  // Calculate total rent
+  const calculateTotalRent = () => {
+    const totalBags = calculateTotal();
+    if (!farmerCostPerBag || totalBags === 0) return 0;
+    return totalBags * farmerCostPerBag;
+  };
+
   const nextStep = () => {
     // Validate step 1
     if (!formData.farmerName.trim()) {
@@ -539,6 +549,7 @@ const IncomingOrderFormContent = () => {
           password: "123456", // Hardcoded default password
           imageUrl: "",
           farmerId: farmerData.accNo,
+          costPerBag: farmerData.costPerBag,
         },
         adminInfo.token
       );
@@ -551,6 +562,7 @@ const IncomingOrderFormContent = () => {
         name: data.data.name,
         address: data.data.address || "",
         mobileNumber: data.data.mobileNumber,
+        costPerBag: data.data.costPerBag,
       };
       // Update form with new farmer
       setFormData((prev) => ({
@@ -703,6 +715,8 @@ const IncomingOrderFormContent = () => {
       farmerId: selectedFarmer._id,
     }));
     setSearchQuery(selectedFarmer.name);
+    setSelectedFarmer(selectedFarmer);
+    setFarmerCostPerBag(selectedFarmer.costPerBag || null);
     setShowDropdown(false);
     setHighlightedIndex(-1);
 
@@ -743,6 +757,7 @@ const IncomingOrderFormContent = () => {
         name: response.data.name,
         address: farmerData.address,
         mobileNumber: response.data.mobileNumber,
+        costPerBag: response.data.costPerBag,
       };
       // Update form with new farmer
       setFormData((prev) => ({
@@ -768,6 +783,7 @@ const IncomingOrderFormContent = () => {
 
   const clearSelectedFarmer = () => {
     setSelectedFarmer(null);
+    setFarmerCostPerBag(null);
     setSearchQuery("");
     setHighlightedIndex(-1);
     setFormData((prev) => ({
@@ -1124,7 +1140,7 @@ const IncomingOrderFormContent = () => {
                         {t("incomingOrder.farmer.preSelected")}
                       </span>
                     </div>
-                    {(farmer.mobileNumber || farmer.address) && (
+                    {(farmer.mobileNumber || farmer.address || farmer.costPerBag) && (
                       <div className="text-sm text-gray-600 space-y-1">
                         {farmer.mobileNumber && (
                           <div className="flex items-center gap-2">
@@ -1136,6 +1152,12 @@ const IncomingOrderFormContent = () => {
                           <div className="flex items-center gap-2">
                             <span>📍</span>
                             <span>{farmer.address}</span>
+                          </div>
+                        )}
+                        {farmer.costPerBag && (
+                          <div className="flex items-center gap-2">
+                            <IndianRupee size={14} className="text-primary" />
+                            <span>Cost per bag: ₹{farmer.costPerBag.toLocaleString('en-IN')}</span>
                           </div>
                         )}
                       </div>
@@ -1320,6 +1342,25 @@ const IncomingOrderFormContent = () => {
                       {calculateTotal()}
                     </span>
                   </div>
+
+                  {/* Total Rent Display */}
+                  {farmerCostPerBag && calculateTotal() > 0 && (
+                    <>
+                      <hr className="border-gray-300 mt-2" />
+                      <div className="flex items-center justify-between font-semibold">
+                        <div className="flex items-center gap-2">
+                          <IndianRupee size={16} className="text-primary" />
+                          <label className="text-sm">Total Rent</label>
+                        </div>
+                        <span className="text-lg text-primary font-bold">
+                          ₹{calculateTotalRent().toLocaleString('en-IN')}
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1 text-right">
+                        ({calculateTotal()} bags × ₹{farmerCostPerBag.toLocaleString('en-IN')} per bag)
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 
@@ -1493,6 +1534,26 @@ const IncomingOrderFormContent = () => {
                   rows={4}
                 />
               </div>
+
+              {/* Total Rent Summary - Step 2 */}
+              {farmerCostPerBag && calculateTotal() > 0 && (
+                <div className="border border-primary/20 rounded-lg p-4 bg-primary/5">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <IndianRupee size={20} className="text-primary" />
+                      <h3 className="text-lg font-bold text-gray-900">Total Rent</h3>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-2xl font-bold text-primary">
+                        ₹{calculateTotalRent().toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-sm text-gray-600 mt-1">
+                        {calculateTotal()} bags × ₹{farmerCostPerBag.toLocaleString('en-IN')} per bag
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4 flex gap-4">
                 <button

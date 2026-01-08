@@ -14,6 +14,7 @@ interface QuickRegisterCredentials {
   password: string;
   imageUrl: string;
   farmerId: string;
+  costPerBag?: number;
 }
 
 interface SignupCredentials {
@@ -90,6 +91,15 @@ interface CreateFarmerPayload {
   address: string;
   mobileNumber: string;
   coldStorageId: string;
+}
+
+interface UpdateFarmerPayload {
+  name?: string;
+  address?: string;
+  mobileNumber?: string;
+  imageUrl?: string;
+  costPerBag?: number;
+  password?: string;
 }
 
 interface UpdateProfilePayload {
@@ -439,6 +449,20 @@ export const storeAdminApi = {
   createFarmer: async (payload: CreateFarmerPayload, token: string) => {
     const response = await axios.post(
       `${BASE_URL}/api/store-admin/farmers`,
+      payload,
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      }
+    );
+    return response.data;
+  },
+
+  updateFarmer: async (farmerId: string, payload: UpdateFarmerPayload, token: string) => {
+    const response = await axios.put(
+      `${BASE_URL}/api/store-admin/farmers/${farmerId}`,
       payload,
       {
         headers: {

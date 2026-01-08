@@ -10,6 +10,7 @@ export interface NewFarmerFormData {
   name: string;
   address: string;
   contact: string;
+  costPerBag: number;
 }
 
 interface NewFarmerModalProps {
@@ -37,7 +38,8 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
     accNo: "",
     name: "",
     address: "",
-    contact: ""
+    contact: "",
+    costPerBag: 110
   });
   const [accNoError, setAccNoError] = useState<string>("");
 
@@ -54,10 +56,10 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
     []
   );
 
-  const handleChange = (field: keyof NewFarmerFormData, value: string) => {
+  const handleChange = (field: keyof NewFarmerFormData, value: string | number) => {
     // Handle numeric-only validation for accNo field
     if (field === 'accNo') {
-      const numericValue = value.replace(/[^0-9]/g, '');
+      const numericValue = value.toString().replace(/[^0-9]/g, '');
       setFormData(prev => ({ ...prev, [field]: numericValue }));
 
       // Debounced check for existing farmer ID
@@ -71,10 +73,18 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
 
     // Handle numeric-only validation and 10-digit limit for contact field
     if (field === 'contact') {
-      const numericValue = value.replace(/[^0-9]/g, '');
+      const numericValue = value.toString().replace(/[^0-9]/g, '');
       if (numericValue.length <= 10) {
         setFormData(prev => ({ ...prev, [field]: numericValue }));
       }
+      return;
+    }
+
+    // Handle numeric validation for costPerBag field
+    if (field === 'costPerBag') {
+      const numericValue = value.toString().replace(/[^0-9]/g, '');
+      const numValue = numericValue === '' ? 110 : parseInt(numericValue, 10);
+      setFormData(prev => ({ ...prev, [field]: numValue }));
       return;
     }
 
@@ -107,7 +117,8 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
       accNo: "",
       name: "",
       address: "",
-      contact: ""
+      contact: "",
+      costPerBag: 110
     });
   };
 
@@ -243,6 +254,24 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
             />
             <p className="text-xs text-muted-foreground mt-1">
               {formData.contact.length}/10 digits
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Cost Per Bag (₹):</label>
+            <input
+              type="number"
+              value={formData.costPerBag}
+              onChange={(e) => handleChange("costPerBag", e.target.value)}
+              className="w-full p-3 border border-border rounded-md bg-background focus:ring-2 focus:ring-primary focus:border-primary transition disabled:opacity-50"
+              placeholder="Enter cost per bag"
+              min="0"
+              step="1"
+              required
+              disabled={isLoading}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              Default: ₹110 per bag
             </p>
           </div>
 

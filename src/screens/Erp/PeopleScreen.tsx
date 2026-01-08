@@ -18,6 +18,7 @@ interface Farmer {
   farmerId: string;
   createdAt: string;
   imageUrl?: string;
+  costPerBag?: number;
 }
 
 interface ApiResponse {
@@ -72,7 +73,8 @@ const PeopleScreen = () => {
         mobileNumber: farmerData.contact,
         password: "123456", // Hardcoded default password
         imageUrl: "",
-        farmerId: farmerData.accNo
+        farmerId: farmerData.accNo,
+        costPerBag: farmerData.costPerBag
       }, adminInfo.token);
     },
     onSuccess: () => {
@@ -290,7 +292,8 @@ const PeopleScreen = () => {
                       mobileNumber: farmer.mobileNumber,
                       farmerId: farmer.farmerId,
                       createdAt: farmer.createdAt,
-                      imageUrl: farmer.imageUrl
+                      imageUrl: farmer.imageUrl,
+                      costPerBag: farmer.costPerBag
                     }
                   }
                 })}

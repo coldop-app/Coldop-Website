@@ -5,12 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Phone, MapPin, Package, ArrowDownCircle, ArrowUpCircle, FileText, AlertCircle } from 'lucide-react';
+import { Phone, MapPin, Package, ArrowDownCircle, ArrowUpCircle, FileText, AlertCircle, IndianRupee, Pencil } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
 import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
 import { Order, StoreAdmin } from '@/utils/types';
@@ -18,6 +18,8 @@ import { pdf, PDFDownloadLink } from '@react-pdf/renderer';
 // import FarmerReportPDF from '@/components/pdf/FarmerReportPDF';
 import KangReportPdf from '@/components/pdf/kang/KangReportPDF';
 import Loader from '@/components/common/Loader/Loader';
+import EditFarmerModal from '@/components/modals/EditFarmerModal';
+import { useQueryClient } from '@tanstack/react-query';
 
 // Add WebView interfaces
 interface WebViewPDFMessage {
@@ -45,6 +47,7 @@ interface Farmer {
   farmerId: string;
   createdAt: string;
   imageUrl?: string;
+  costPerBag?: number;
 }
 
 interface StockSummary {
@@ -105,7 +108,8 @@ const FarmerProfileScreen = () => {
   const location = useLocation();
   const { id } = useParams();
   const navigate = useNavigate();
-  const farmer = location.state?.farmer as Farmer;
+  const queryClient = useQueryClient();
+  const [farmer, setFarmer] = useState<Farmer | null>(location.state?.farmer as Farmer | null);
   console.log(farmer)
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo) as StoreAdmin | null;
   const [showOrders, setShowOrders] = useState(true); // Set to true by default
@@ -113,11 +117,19 @@ const FarmerProfileScreen = () => {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false); // Loading state for PDF generation
   const [pdfGenerationError, setPdfGenerationError] = useState<string | null>(null);
   const [pdfGenerationProgress, setPdfGenerationProgress] = useState(0);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   // Add new state for filters
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [sortBy, setSortBy] = useState<SortOrder>('latest');
   const [activeTab, setActiveTab] = useState<TabType>('current');
+
+  // Update farmer state when location.state changes
+  useEffect(() => {
+    if (location.state?.farmer) {
+      setFarmer(location.state.farmer as Farmer);
+    }
+  }, [location.state]);
 
   // Memoized PDF component to prevent unnecessary re-renders
   const MemoizedFarmerReportPDF = memo(KangReportPdf);
@@ -253,6 +265,12 @@ const FarmerProfileScreen = () => {
   const currentTotal = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, 'current');
   const initialTotal = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, 'initial');
   const outgoingTotal = calculateFarmerTotalBags(sortedStockSummary, allBagSizes, 'outgoing');
+
+  // Calculate total rent (initial bags * cost per bag)
+  const totalRent = useMemo(() => {
+    if (!farmer?.costPerBag || initialTotal === 0) return 0;
+    return initialTotal * farmer.costPerBag;
+  }, [initialTotal, farmer?.costPerBag]);
 
   const handleGenerateReport = useCallback(async () => {
     // WebView detection function
@@ -440,9 +458,20 @@ const FarmerProfileScreen = () => {
 
               {/* Name and Basic Info */}
               <div className="flex-1 w-full text-center lg:text-left">
-                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-2 tracking-tight">
-                  {farmer.name}
-                </h1>
+                <div className="flex items-center justify-center lg:justify-start gap-3 mb-2">
+                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 tracking-tight">
+                    {farmer.name}
+                  </h1>
+                  <Button
+                    onClick={() => setIsEditModalOpen(true)}
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 hover:bg-gray-100 rounded-full"
+                    title="Edit farmer information"
+                  >
+                    <Pencil className="h-4 w-4 text-gray-600" />
+                  </Button>
+                </div>
                 <p className="text-base sm:text-lg text-gray-600 mb-6 font-medium">
                   {t('farmerProfile.memberSince')} {new Date(farmer.createdAt).toLocaleDateString()}
                 </p>
@@ -616,6 +645,30 @@ const FarmerProfileScreen = () => {
                 </div>
               </div>
             </div>
+
+            {/* Total Rent Card - shown below the main grid */}
+            {farmer.costPerBag && (
+              <div className="mt-4 sm:mt-6">
+                <div className="bg-gray-50/50 border border-gray-100 rounded-xl p-4 hover:shadow-sm transition-all duration-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg">
+                      <IndianRupee size={18} className="text-primary" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
+                        Total Rent
+                      </div>
+                      <div className="font-bold text-2xl text-primary">
+                        ₹{totalRent.toLocaleString('en-IN')}
+                      </div>
+                      <div className="text-xs text-gray-500 mt-1">
+                        ({initialTotal} bags × ₹{farmer.costPerBag.toLocaleString('en-IN')} per bag)
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -823,6 +876,23 @@ const FarmerProfileScreen = () => {
           </div>
         )}
       </div>
+
+      {/* Edit Farmer Modal */}
+      <EditFarmerModal
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+        farmer={farmer}
+        token={adminInfo?.token || ''}
+        onSuccess={(updatedFarmer) => {
+          // Update the local farmer state with the updated data
+          setFarmer(updatedFarmer);
+
+          // Refetch farmer data to update the UI
+          queryClient.invalidateQueries({ queryKey: ['farmerStock', id, adminInfo?.token] });
+          queryClient.invalidateQueries({ queryKey: ['farmerOrders', id, adminInfo?.token] });
+          queryClient.invalidateQueries({ queryKey: ['farmers'] });
+        }}
+      />
     </>
   );
 };
