@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Image,
 } from "@react-pdf/renderer";
+import coldopLogo from "/coldop-logo.png";
 
 // Mock types - replace with your actual imports
 interface Order {
@@ -522,6 +523,32 @@ const KangReportPdf: React.FC<KangReportPdfProps> = ({
     return entries;
   }, [deliveryOrders, bagSizes]);
 
+  // Memoize bag size totals calculation for receipt entries
+  const receiptTotals = useMemo(() => {
+    const totals: { [key: string]: number } = {};
+    bagSizes.forEach((size) => {
+      totals[size] = receiptEntries.reduce((sum, entry) => {
+        const items = entry.quantitiesWithLocation[size] || [];
+        return sum + items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+      }, 0);
+    });
+    return totals;
+  }, [receiptEntries, bagSizes]);
+
+  // Memoize page splitting function
+  const splitEntriesIntoPages = useMemo(() => {
+    return (entries: LedgerEntry[]) => {
+      const pages: LedgerEntry[][] = [];
+      const entriesPerPage = 25; // Approximate number of entries that can fit on one page
+
+      for (let i = 0; i < entries.length; i += entriesPerPage) {
+        pages.push(entries.slice(i, i + entriesPerPage));
+      }
+
+      return pages;
+    };
+  }, []);
+
   const renderTableHeader = (isDeliveryTable: boolean = false) => (
     <View style={styles.tableHeader}>
       <View style={styles.colDate}>
@@ -654,6 +681,63 @@ const KangReportPdf: React.FC<KangReportPdfProps> = ({
     </View>
   );
 
+  // Helper function to render summary section
+  const renderSummary = () => (
+    <View style={styles.summaryContainer}>
+      <Text style={styles.summaryTitle}>Account Summary</Text>
+      <View style={styles.summaryTable}>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Receipt Transactions:</Text>
+          <Text style={styles.summaryValue}>{receiptOrders.length}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Delivery Transactions:</Text>
+          <Text style={styles.summaryValue}>{deliveryOrders.length}</Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Bags Received:</Text>
+          <Text style={styles.summaryValue}>
+            {receiptEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+        <View style={styles.summaryRow}>
+          <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
+          <Text style={styles.summaryValue}>
+            {deliveryEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+        <View style={[styles.summaryRow, { backgroundColor: "#D0D0D0" }]}>
+          <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
+          <Text style={styles.summaryValue}>
+            {receiptEntries.reduce((sum, entry) => sum + entry.total, 0) -
+              deliveryEntries.reduce((sum, entry) => sum + entry.total, 0)}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Helper function to render footer
+  const renderFooter = (pageNumber: number) => (
+    <>
+      <View style={styles.footer}>
+        <View style={styles.footerLeft}>
+          <Text style={styles.footerText}>
+            Authorized Signature: ____________________
+          </Text>
+        </View>
+        <View style={styles.footerCenter}>
+          <Image style={styles.logo} src={coldopLogo} />
+          <Text style={styles.poweredBy}>Powered by Coldop</Text>
+        </View>
+        <View style={styles.footerRight}>
+          <Text style={styles.footerText}>Date: {formatDate(new Date())}</Text>
+        </View>
+      </View>
+      <Text style={styles.pageNumber}>Page {pageNumber}</Text>
+    </>
+  );
+
   if (!orders || orders.length === 0) {
     return (
       <Document>
@@ -665,44 +749,92 @@ const KangReportPdf: React.FC<KangReportPdfProps> = ({
     );
   }
 
+  // Split entries into pages using memoized function
+  const receiptPages = splitEntriesIntoPages(receiptEntries);
+  const deliveryPages = splitEntriesIntoPages(deliveryEntries);
+
+  // Calculate total pages needed
+  const totalPages = Math.max(
+    1,
+    receiptPages.length + deliveryPages.length + 1
+  ); // +1 for summary page
+
   return (
     <Document>
+      {/* First page with header, farmer info, and first receipt table page */}
       <Page size="A4" style={styles.page}>
         {renderHeader()}
         {renderFarmerInfo()}
 
-        {receiptEntries.length > 0 && (
+        {/* First receipt table page */}
+        {receiptPages.length > 0 && (
           <View style={styles.ledgerContainer}>
             <Text style={styles.ledgerTitle}>Receipt Details</Text>
             <View style={styles.table}>
               {renderTableHeader(false)}
-              {receiptEntries
-                .slice(0, 15)
-                .map((entry, index) => renderTableRow(entry, index, false, 0))}
+              {receiptPages[0].map((entry, index) =>
+                renderTableRow(entry, index, false, 0)
+              )}
             </View>
           </View>
         )}
+
+        {renderFooter(1)}
       </Page>
 
-      {deliveryEntries.length > 0 && (
-        <Page size="A4" style={styles.page}>
+      {/* Additional receipt table pages */}
+      {receiptPages.slice(1).map((pageEntries, pageIndex) => (
+        <Page key={`receipt-${pageIndex + 2}`} size="A4" style={styles.page}>
           {renderHeader()}
+
           <View style={styles.ledgerContainer}>
-            <Text style={styles.ledgerTitle}>Delivery Details</Text>
+            <Text style={styles.ledgerTitle}>Receipt Details (continued)</Text>
+            <View style={styles.table}>
+              {renderTableHeader(false)}
+              {pageEntries.map((entry, index) =>
+                renderTableRow(entry, (pageIndex + 1) * 25 + index, false, 0)
+              )}
+            </View>
+          </View>
+
+          {renderFooter(pageIndex + 2)}
+        </Page>
+      ))}
+
+      {/* Delivery table pages */}
+      {deliveryPages.map((pageEntries, pageIndex) => (
+        <Page key={`delivery-${pageIndex + 1}`} size="A4" style={styles.page}>
+          {renderHeader()}
+
+          <View style={styles.ledgerContainer}>
+            <Text style={styles.ledgerTitle}>
+              {pageIndex === 0
+                ? "Delivery Details"
+                : "Delivery Details (continued)"}
+            </Text>
             <View style={styles.table}>
               {renderTableHeader(true)}
-              {deliveryEntries.slice(0, 15).map((entry, index) =>
+              {pageEntries.map((entry, index) =>
                 renderTableRow(
                   entry,
-                  index,
+                  pageIndex * 25 + index,
                   true,
                   receiptEntries.reduce((sum, e) => sum + e.total, 0)
                 )
               )}
             </View>
           </View>
+
+          {renderFooter(receiptPages.length + pageIndex + 1)}
         </Page>
-      )}
+      ))}
+
+      {/* Summary page */}
+      <Page size="A4" style={styles.page}>
+        {renderHeader()}
+        {renderSummary()}
+        {renderFooter(totalPages)}
+      </Page>
     </Document>
   );
 };
