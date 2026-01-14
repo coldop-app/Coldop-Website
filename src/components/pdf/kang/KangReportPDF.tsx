@@ -523,18 +523,6 @@ const KangReportPdf: React.FC<KangReportPdfProps> = ({
     return entries;
   }, [deliveryOrders, bagSizes]);
 
-  // Memoize bag size totals calculation for receipt entries
-  const receiptTotals = useMemo(() => {
-    const totals: { [key: string]: number } = {};
-    bagSizes.forEach((size) => {
-      totals[size] = receiptEntries.reduce((sum, entry) => {
-        const items = entry.quantitiesWithLocation[size] || [];
-        return sum + items.reduce((itemSum, item) => itemSum + item.quantity, 0);
-      }, 0);
-    });
-    return totals;
-  }, [receiptEntries, bagSizes]);
-
   // Memoize page splitting function
   const splitEntriesIntoPages = useMemo(() => {
     return (entries: LedgerEntry[]) => {
