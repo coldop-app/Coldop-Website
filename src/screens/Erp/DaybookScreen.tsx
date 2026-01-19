@@ -1,18 +1,20 @@
 import { useQuery } from '@tanstack/react-query';
 import TopBar from '@/components/common/Topbar/Topbar';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Search, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
-import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
 import { Order } from '@/utils/types';
 import { useTranslation } from 'react-i18next';
 import { useWalkthrough } from '@/contexts/WalkthroughContext';
 import Spotlight from '@/components/common/Spotlight/Spotlight';
 import GetReportsDialog from '@/components/reports/GetReportsDialog';
+
+// Lazy load ReceiptVoucherCard to reduce initial bundle size
+const ReceiptVoucherCard = lazy(() => import('@/components/vouchers/ReceiptVoucherCard'));
 
 interface PaginationMeta {
   currentPage: number;
@@ -884,7 +886,9 @@ const DaybookScreen = () => {
                           isFirstReceipt ? "incoming-voucher-card" : undefined
                         }
                       >
-                        <ReceiptVoucherCard order={order} />
+                        <Suspense fallback={<div className="animate-pulse bg-gray-100 rounded-lg h-32" />}>
+                          <ReceiptVoucherCard order={order} />
+                        </Suspense>
                       </div>
                     )}
                   </div>

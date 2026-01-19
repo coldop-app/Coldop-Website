@@ -12,13 +12,71 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useState, useMemo, useCallback, memo, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react';
 import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
-import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
 import { Order, StoreAdmin } from '@/utils/types';
-import { pdf, PDFDownloadLink } from '@react-pdf/renderer';
-// import FarmerReportPDF from '@/components/pdf/FarmerReportPDF';
-import KangReportPdf from '@/components/pdf/kang/KangReportPDF';
+
+// Lazy load ReceiptVoucherCard to reduce initial bundle size
+const ReceiptVoucherCard = lazy(() => import('@/components/vouchers/ReceiptVoucherCard'));
+
+// Component to handle PDF download link with lazy loading
+const PDFDownloadLinkFallback = ({ farmer, adminInfo, orders, t }: { farmer: Farmer; adminInfo: StoreAdmin; orders: Order[]; t: any }) => {
+  const [PDFDownloadLink, setPDFDownloadLink] = useState<any>(null);
+  const [KangReportPdf, setKangReportPdf] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // Dynamically load PDF components
+    Promise.all([
+      import('@react-pdf/renderer').then(m => m.PDFDownloadLink),
+      import('@/components/pdf/kang/KangReportPDF').then(m => m.default)
+    ]).then(([PDFLink, PDFComponent]) => {
+      setPDFDownloadLink(() => PDFLink);
+      setKangReportPdf(() => PDFComponent);
+      setIsLoading(false);
+    });
+  }, []);
+
+  if (isLoading || !PDFDownloadLink || !KangReportPdf) {
+    return (
+      <div className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white">
+        <Loader size="sm" className="mr-2" />
+        <span className="hidden sm:inline">{t('farmerProfile.generating')}</span>
+        <span className="sm:hidden">{t('farmerProfile.gen')}</span>
+      </div>
+    );
+  }
+
+  return (
+    <PDFDownloadLink
+      document={
+        <KangReportPdf
+          farmer={farmer}
+          adminInfo={adminInfo}
+          orders={orders}
+        />
+      }
+      fileName={`${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`}
+      className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200"
+    >
+      {({ loading }: { loading: boolean }) => (
+        loading ? (
+          <span className="flex items-center">
+            <Loader size="sm" className="mr-2" />
+            <span className="hidden sm:inline">{t('farmerProfile.generating')}</span>
+            <span className="sm:hidden">{t('farmerProfile.gen')}</span>
+          </span>
+        ) : (
+          <span className="flex items-center">
+            <FileText className="mr-2 h-4 w-4 text-gray-500" />
+            <span className="hidden sm:inline">{t('farmerProfile.fallbackDownload')}</span>
+            <span className="sm:hidden">{t('farmerProfile.download')}</span>
+          </span>
+        )
+      )}
+    </PDFDownloadLink>
+  );
+};
 import Loader from '@/components/common/Loader/Loader';
 import EditFarmerModal from '@/components/modals/EditFarmerModal';
 import { useQueryClient } from '@tanstack/react-query';
@@ -151,9 +209,6 @@ const FarmerProfileScreen = () => {
       setFarmer(location.state.farmer as Farmer);
     }
   }, [location.state]);
-
-  // Memoized PDF component to prevent unnecessary re-renders
-  const MemoizedFarmerReportPDF = memo(KangReportPdf);
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
     queryKey: ['farmerStock', id, adminInfo?.token, appliedDateRange.from, appliedDateRange.to],
@@ -386,8 +441,15 @@ const FarmerProfileScreen = () => {
       // Update progress
       setPdfGenerationProgress(20);
 
-      // Create memoized PDF component
-      const pdfDoc = <MemoizedFarmerReportPDF
+      // Dynamically import PDF library and component only when needed
+      const [{ pdf }, { default: KangReportPdf }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@/components/pdf/kang/KangReportPDF')
+      ]);
+      setPdfGenerationProgress(30);
+
+      // Create PDF component
+      const pdfDoc = <KangReportPdf
         farmer={farmer}
         adminInfo={adminInfo}
         orders={ordersData.data}
@@ -509,7 +571,7 @@ const FarmerProfileScreen = () => {
         setPdfGenerationProgress(0);
       }
     }
-  }, [adminInfo, farmer, ordersData?.data, MemoizedFarmerReportPDF]);
+  }, [adminInfo, farmer, ordersData?.data]);
 
   const handleViewFinancialLedger = useCallback(() => {
     if (!farmer || !ledgersData?.data) return;
@@ -641,33 +703,12 @@ const FarmerProfileScreen = () => {
                     )}
                   </Button>
                   {showPDFDownload && ordersData?.data && (
-                    <PDFDownloadLink
-                      document={
-                        <MemoizedFarmerReportPDF
-                          farmer={farmer}
-                          adminInfo={adminInfo!}
-                          orders={ordersData.data}
-                        />
-                      }
-                      fileName={`${farmer.name.replace(/\s+/g, '_')}_Report_${new Date().toISOString().split('T')[0]}.pdf`}
-                      className="w-full sm:w-auto inline-flex items-center justify-center px-4 sm:px-6 py-2.5 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200"
-                    >
-                      {({ loading }) => (
-                        loading ? (
-                          <span className="flex items-center">
-                            <Loader size="sm" className="mr-2" />
-                            <span className="hidden sm:inline">{t('farmerProfile.generating')}</span>
-                            <span className="sm:hidden">{t('farmerProfile.gen')}</span>
-                          </span>
-                        ) : (
-                          <span className="flex items-center">
-                            <FileText className="mr-2 h-4 w-4 text-gray-500" />
-                            <span className="hidden sm:inline">{t('farmerProfile.fallbackDownload')}</span>
-                            <span className="sm:hidden">{t('farmerProfile.download')}</span>
-                          </span>
-                        )
-                      )}
-                    </PDFDownloadLink>
+                    <PDFDownloadLinkFallback
+                      farmer={farmer}
+                      adminInfo={adminInfo!}
+                      orders={ordersData.data}
+                      t={t}
+                    />
                   )}
                 </div>
 
@@ -1055,7 +1096,9 @@ const FarmerProfileScreen = () => {
                       order.voucher.type === 'DELIVERY' ? (
                         <DeliveryVoucherCard key={order._id} order={order} />
                       ) : (
-                        <ReceiptVoucherCard key={order._id} order={order} />
+                        <Suspense key={order._id} fallback={<div className="animate-pulse bg-gray-100 rounded-lg h-32" />}>
+                          <ReceiptVoucherCard order={order} />
+                        </Suspense>
                       )
                     ))}
                   </div>

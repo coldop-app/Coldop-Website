@@ -13,8 +13,7 @@ import { SimpleDatePicker } from "@/components/ui/simple-date-picker";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { pdf } from "@react-pdf/renderer";
-import DailySummaryPDF from "@/components/pdf/DailySummaryPDF";
+// DailySummaryPDF will be dynamically imported when needed
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import { StoreAdmin } from "@/utils/types";
 import { Calendar, FileText } from "lucide-react";
@@ -104,6 +103,12 @@ const GetReportsDialog = ({ open, onOpenChange }: GetReportsDialogProps) => {
     try {
       const formattedStartDate = formatDateForAPI(startDate);
       const formattedEndDate = formatDateForAPI(endDate);
+
+      // Dynamically import PDF library and component only when needed
+      const [{ pdf }, { default: DailySummaryPDF }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("@/components/pdf/DailySummaryPDF")
+      ]);
 
       const pdfComponent = (
         <DailySummaryPDF

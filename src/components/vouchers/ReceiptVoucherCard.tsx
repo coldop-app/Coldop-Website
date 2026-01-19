@@ -10,8 +10,6 @@ interface BagSizeWithLocation extends BagSize {
 import { ChevronDown, ChevronUp, Pencil, Share2 } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { Printer } from 'lucide-react';
-import { PDFViewer, pdf } from '@react-pdf/renderer';
-import OrderVoucherPDF from '../pdf/OrderVoucherPDF';
 import * as ReactDOM from 'react-dom/client';
 import { toast } from 'react-hot-toast';
 
@@ -162,80 +160,93 @@ ${order.orderDetails.map(detail =>
       return;
     }
 
-    if (isWebView()) {
-      // Set loading state for WebView
-      setIsGeneratingPDF(true);
+    // Dynamically import PDF libraries only when needed
+    setIsGeneratingPDF(true);
+    
+    try {
+      const [{ pdf, PDFViewer }, { default: OrderVoucherPDF }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('../pdf/OrderVoucherPDF')
+      ]);
 
-      try {
-        console.log('Starting PDF generation for Receipt Voucher...');
+      if (isWebView()) {
+        // Set loading state for WebView
+        try {
+          console.log('Starting PDF generation for Receipt Voucher...');
 
-        const pdfDoc = <OrderVoucherPDF order={order} adminInfo={adminInfo} />;
+          const pdfDoc = <OrderVoucherPDF order={order} adminInfo={adminInfo} />;
 
-        // Generate PDF as blob
-        const pdfBlob = await pdf(pdfDoc).toBlob();
-        console.log('PDF blob generated, size:', pdfBlob.size, 'bytes');
+          // Generate PDF as blob
+          const pdfBlob = await pdf(pdfDoc).toBlob();
+          console.log('PDF blob generated, size:', pdfBlob.size, 'bytes');
 
-        // Convert blob to base64
-        const reader = new FileReader();
-        reader.onload = function() {
-          const base64Data = (reader.result as string).split(',')[1]; // Remove data:application/pdf;base64, prefix
+          // Convert blob to base64
+          const reader = new FileReader();
+          reader.onload = function() {
+            const base64Data = (reader.result as string).split(',')[1]; // Remove data:application/pdf;base64, prefix
 
-          const fileName = `Receipt_Voucher_${order.voucher.voucherNumber}_${new Date().toISOString().split('T')[0]}.pdf`;
+            const fileName = `Receipt_Voucher_${order.voucher.voucherNumber}_${new Date().toISOString().split('T')[0]}.pdf`;
 
-          const message: WebViewPDFMessage = {
-            type: 'OPEN_PDF_NATIVE',
-            title: `Receipt Voucher ${order.voucher.voucherNumber}`,
-            fileName: fileName,
-            pdfData: base64Data
+            const message: WebViewPDFMessage = {
+              type: 'OPEN_PDF_NATIVE',
+              title: `Receipt Voucher ${order.voucher.voucherNumber}`,
+              fileName: fileName,
+              pdfData: base64Data
+            };
+
+            window.ReactNativeWebView?.postMessage(JSON.stringify(message));
+            console.log('PDF data sent to React Native');
+
+            // Reset loading state after successful send
+            setIsGeneratingPDF(false);
           };
 
-          window.ReactNativeWebView?.postMessage(JSON.stringify(message));
-          console.log('PDF data sent to React Native');
+          reader.onerror = function() {
+            console.error('Error converting PDF to base64');
+            alert('Error preparing PDF for native viewer. Please try again.');
+            // Reset loading state on error
+            setIsGeneratingPDF(false);
+          };
 
-          // Reset loading state after successful send
-          setIsGeneratingPDF(false);
-        };
-
-        reader.onerror = function() {
-          console.error('Error converting PDF to base64');
-          alert('Error preparing PDF for native viewer. Please try again.');
+          reader.readAsDataURL(pdfBlob);
+        } catch (error) {
+          console.error('Error generating PDF:', error);
+          alert('Failed to generate PDF. Please try again.');
           // Reset loading state on error
           setIsGeneratingPDF(false);
-        };
+        }
+      } else {
+        // Handle printing in web browser (existing PDF functionality)
+        const printWindow = window.open('', '_blank');
+        if (printWindow && adminInfo) {
+          printWindow.document.write(`
+            <html>
+              <body>
+                <div id="root" style="height: 100vh;"></div>
+                <script>
+                  // Prevent the window from closing when React mounts
+                  window.onbeforeunload = null;
+                </script>
+              </body>
+            </html>
+          `);
 
-        reader.readAsDataURL(pdfBlob);
-      } catch (error) {
-        console.error('Error generating PDF:', error);
-        alert('Failed to generate PDF. Please try again.');
-        // Reset loading state on error
+          // Render PDF viewer in the new window
+          const root = printWindow.document.getElementById('root');
+          if (root) {
+            ReactDOM.createRoot(root).render(
+              <PDFViewer width="100%" height="100%">
+                <OrderVoucherPDF order={order} adminInfo={adminInfo} />
+              </PDFViewer>
+            );
+          }
+        }
         setIsGeneratingPDF(false);
       }
-    } else {
-      // Handle printing in web browser (existing PDF functionality)
-      const printWindow = window.open('', '_blank');
-      if (printWindow && adminInfo) {
-        printWindow.document.write(`
-          <html>
-            <body>
-              <div id="root" style="height: 100vh;"></div>
-              <script>
-                // Prevent the window from closing when React mounts
-                window.onbeforeunload = null;
-              </script>
-            </body>
-          </html>
-        `);
-
-        // Render PDF viewer in the new window
-        const root = printWindow.document.getElementById('root');
-        if (root) {
-          ReactDOM.createRoot(root).render(
-            <PDFViewer width="100%" height="100%">
-              <OrderVoucherPDF order={order} adminInfo={adminInfo} />
-            </PDFViewer>
-          );
-        }
-      }
+    } catch (error) {
+      console.error('Error loading PDF libraries:', error);
+      alert('Failed to load PDF functionality. Please try again.');
+      setIsGeneratingPDF(false);
     }
 
     /*
