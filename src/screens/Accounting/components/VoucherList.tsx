@@ -28,6 +28,15 @@ interface Voucher {
   narration: string;
 }
 
+interface DateRange {
+  from: string | null;
+  to: string | null;
+}
+
+interface VoucherListProps {
+  dateRange?: DateRange;
+}
+
 // Helper function to get ledger name by ID
 const getLedgerName = (
   ledgerId: string | { _id: string; name: string },
@@ -40,15 +49,24 @@ const getLedgerName = (
   return ledgerId.name;
 };
 
-const VoucherList = () => {
+const VoucherList = ({ dateRange }: VoucherListProps) => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const queryClient = useQueryClient();
   const [editingVoucherId, setEditingVoucherId] = useState<string | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const { data: vouchersData, isLoading } = useQuery({
-    queryKey: ['vouchers'],
-    queryFn: () => accountingApi.getVouchers({}, adminInfo?.token || ''),
+    queryKey: ['vouchers', dateRange?.from, dateRange?.to],
+    queryFn: () => {
+      const params: { from?: string; to?: string } = {};
+      if (dateRange?.from) {
+        params.from = dateRange.from;
+      }
+      if (dateRange?.to) {
+        params.to = dateRange.to;
+      }
+      return accountingApi.getVouchers(params, adminInfo?.token || '');
+    },
     enabled: !!adminInfo?.token
   });
 

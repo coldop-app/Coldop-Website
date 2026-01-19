@@ -28,12 +28,30 @@ interface PnLRow {
   isProfit?: boolean;
 }
 
-const TradingAndPLAccount = () => {
+interface DateRange {
+  from: string | null;
+  to: string | null;
+}
+
+interface TradingAndPLAccountProps {
+  dateRange?: DateRange;
+}
+
+const TradingAndPLAccount = ({ dateRange }: TradingAndPLAccountProps) => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
 
   const { data: ledgersData, isLoading } = useQuery({
-    queryKey: ["ledgers"],
-    queryFn: () => accountingApi.getLedgers({}, adminInfo?.token || ""),
+    queryKey: ["ledgers", dateRange?.from, dateRange?.to],
+    queryFn: () => {
+      const params: { from?: string; to?: string } = {};
+      if (dateRange?.from) {
+        params.from = dateRange.from;
+      }
+      if (dateRange?.to) {
+        params.to = dateRange.to;
+      }
+      return accountingApi.getLedgers(params, adminInfo?.token || "");
+    },
     enabled: !!adminInfo?.token,
   });
 

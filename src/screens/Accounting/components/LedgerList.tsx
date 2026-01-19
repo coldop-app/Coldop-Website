@@ -19,7 +19,16 @@ interface Ledger {
   closingBalance?: number;
 }
 
-const LedgerList = () => {
+interface DateRange {
+  from: string | null;
+  to: string | null;
+}
+
+interface LedgerListProps {
+  dateRange?: DateRange;
+}
+
+const LedgerList = ({ dateRange }: LedgerListProps) => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
@@ -27,8 +36,17 @@ const LedgerList = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const { data, isLoading } = useQuery({
-    queryKey: ['ledgers'],
-    queryFn: () => accountingApi.getLedgers({}, adminInfo?.token || ''),
+    queryKey: ['ledgers', dateRange?.from, dateRange?.to],
+    queryFn: () => {
+      const params: { from?: string; to?: string } = {};
+      if (dateRange?.from) {
+        params.from = dateRange.from;
+      }
+      if (dateRange?.to) {
+        params.to = dateRange.to;
+      }
+      return accountingApi.getLedgers(params, adminInfo?.token || '');
+    },
     enabled: !!adminInfo?.token
   });
 
@@ -180,7 +198,7 @@ const LedgerList = () => {
           <DialogHeader className="px-6 pt-6 pb-4 border-b border-gray-200 bg-gray-50/50">
             <DialogTitle className="text-2xl font-semibold text-gray-900">Edit Ledger</DialogTitle>
             <DialogDescription className="text-sm text-gray-600 mt-1">
-              Update the ledger details below. Type, Sub-Type, and Category cannot be changed.
+              Update the ledger details below. You can modify the type, sub-type, and category.
             </DialogDescription>
           </DialogHeader>
           <div className="px-6 py-6">

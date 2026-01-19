@@ -97,19 +97,46 @@ const getLedgerEntries = (
   return { debitEntries, creditEntries, ledger };
 };
 
-const LedgerView = () => {
+interface DateRange {
+  from: string | null;
+  to: string | null;
+}
+
+interface LedgerViewProps {
+  dateRange?: DateRange;
+}
+
+const LedgerView = ({ dateRange }: LedgerViewProps) => {
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const [selectedLedgerId, setSelectedLedgerId] = useState<string>('');
 
   const { data: ledgersData } = useQuery({
-    queryKey: ['ledgers'],
-    queryFn: () => accountingApi.getLedgers({}, adminInfo?.token || ''),
+    queryKey: ['ledgers', dateRange?.from, dateRange?.to],
+    queryFn: () => {
+      const params: { from?: string; to?: string } = {};
+      if (dateRange?.from) {
+        params.from = dateRange.from;
+      }
+      if (dateRange?.to) {
+        params.to = dateRange.to;
+      }
+      return accountingApi.getLedgers(params, adminInfo?.token || '');
+    },
     enabled: !!adminInfo?.token
   });
 
   const { data: vouchersData } = useQuery({
-    queryKey: ['vouchers'],
-    queryFn: () => accountingApi.getVouchers({}, adminInfo?.token || ''),
+    queryKey: ['vouchers', dateRange?.from, dateRange?.to],
+    queryFn: () => {
+      const params: { from?: string; to?: string } = {};
+      if (dateRange?.from) {
+        params.from = dateRange.from;
+      }
+      if (dateRange?.to) {
+        params.to = dateRange.to;
+      }
+      return accountingApi.getVouchers(params, adminInfo?.token || '');
+    },
     enabled: !!adminInfo?.token
   });
 

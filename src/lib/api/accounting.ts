@@ -2,7 +2,7 @@ import axios from "axios";
 import { BASE_URL } from "@/utils/const";
 
 export const accountingApi = {
-  getLedgers: async (params: { type?: string; search?: string }, token: string) => {
+  getLedgers: async (params: { type?: string; search?: string; from?: string; to?: string }, token: string) => {
     const response = await axios.get(
       `${BASE_URL}/api/accounting/ledgers`,
       {
@@ -51,6 +51,9 @@ export const accountingApi = {
 
   updateLedger: async (ledgerId: string, payload: {
     name?: string;
+    type?: string;
+    subType?: string;
+    category?: string;
     openingBalance?: number;
     closingBalance?: number;
   }, token: string) => {
@@ -97,6 +100,8 @@ export const accountingApi = {
     startDate?: string;
     endDate?: string;
     ledgerId?: string;
+    from?: string;
+    to?: string;
   }, token: string) => {
     const response = await axios.get(
       `${BASE_URL}/api/accounting/vouchers`,
@@ -191,10 +196,11 @@ export const accountingApi = {
     return response.data;
   },
 
-  getBalanceSheet: async (token: string) => {
+  getBalanceSheet: async (params: { from?: string; to?: string }, token: string) => {
     const response = await axios.get(
       `${BASE_URL}/api/accounting/reports/balance-sheet`,
       {
+        params,
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
