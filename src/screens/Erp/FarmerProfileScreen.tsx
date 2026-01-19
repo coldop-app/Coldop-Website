@@ -4,12 +4,14 @@ import { useSelector } from 'react-redux';
 import { useTranslation } from 'react-i18next';
 import { RootState } from '@/store';
 import { storeAdminApi } from '@/lib/api/storeAdmin';
+import { accountingApi } from '@/lib/api/accounting';
 import TopBar from '@/components/common/Topbar/Topbar';
-import { Phone, MapPin, Package, ArrowDownCircle, ArrowUpCircle, FileText, AlertCircle, IndianRupee, Pencil } from 'lucide-react';
+import { Phone, MapPin, Package, ArrowDownCircle, ArrowUpCircle, FileText, AlertCircle, IndianRupee, Pencil, Wallet, Percent, Receipt, BookOpen, Calendar, Filter } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { useState, useMemo, useCallback, memo, useEffect } from 'react';
 import DeliveryVoucherCard from '@/components/vouchers/DeliveryVoucherCard';
 import ReceiptVoucherCard from '@/components/vouchers/ReceiptVoucherCard';
@@ -20,6 +22,13 @@ import KangReportPdf from '@/components/pdf/kang/KangReportPDF';
 import Loader from '@/components/common/Loader/Loader';
 import EditFarmerModal from '@/components/modals/EditFarmerModal';
 import { useQueryClient } from '@tanstack/react-query';
+import BuyPotatoForm from '@/components/finances/BuyPotatoForm';
+import SellPotatoForm from '@/components/finances/SellPotatoForm';
+import ReceivePaymentForm from '@/components/finances/ReceivePaymentForm';
+import AddPaymentForm from '@/components/finances/AddPaymentForm';
+import AddDiscountForm from '@/components/finances/AddDiscountForm';
+import AddChargeForm from '@/components/finances/AddChargeForm';
+import { SimpleDatePicker } from '@/components/ui/simple-date-picker';
 
 // Add WebView interfaces
 interface WebViewPDFMessage {
@@ -118,11 +127,23 @@ const FarmerProfileScreen = () => {
   const [pdfGenerationError, setPdfGenerationError] = useState<string | null>(null);
   const [pdfGenerationProgress, setPdfGenerationProgress] = useState(0);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isFinancesDialogOpen, setIsFinancesDialogOpen] = useState(false);
+  const [isBuyPotatoDialogOpen, setIsBuyPotatoDialogOpen] = useState(false);
+  const [isSellPotatoDialogOpen, setIsSellPotatoDialogOpen] = useState(false);
+  const [isReceivePaymentDialogOpen, setIsReceivePaymentDialogOpen] = useState(false);
+  const [isAddPaymentDialogOpen, setIsAddPaymentDialogOpen] = useState(false);
+  const [isAddDiscountDialogOpen, setIsAddDiscountDialogOpen] = useState(false);
+  const [isAddChargeDialogOpen, setIsAddChargeDialogOpen] = useState(false);
 
   // Add new state for filters
   const [orderType, setOrderType] = useState<OrderType>('all');
   const [sortBy, setSortBy] = useState<SortOrder>('latest');
   const [activeTab, setActiveTab] = useState<TabType>('current');
+
+  // Date range filter state
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  const [toDate, setToDate] = useState<Date | undefined>(undefined);
+  const [appliedDateRange, setAppliedDateRange] = useState<{ from: string | null; to: string | null }>({ from: null, to: null });
 
   // Update farmer state when location.state changes
   useEffect(() => {
@@ -135,16 +156,79 @@ const FarmerProfileScreen = () => {
   const MemoizedFarmerReportPDF = memo(KangReportPdf);
 
   const { data: stockData, isLoading: isStockLoading } = useQuery({
-    queryKey: ['farmerStock', id, adminInfo?.token],
-    queryFn: () => storeAdminApi.getFarmerStockSummary(id || '', adminInfo?.token || ''),
+    queryKey: ['farmerStock', id, adminInfo?.token, appliedDateRange.from, appliedDateRange.to],
+    queryFn: () => {
+      const params: { from?: string; to?: string } = {};
+      if (appliedDateRange.from) {
+        params.from = appliedDateRange.from;
+      }
+      if (appliedDateRange.to) {
+        params.to = appliedDateRange.to;
+      }
+      return storeAdminApi.getFarmerStockSummary(id || '', params, adminInfo?.token || '');
+    },
     enabled: !!id && !!adminInfo?.token,
   });
 
   const { data: ordersData, isLoading: isOrdersLoading } = useQuery({
-    queryKey: ['farmerOrders', id, adminInfo?.token, orderType, sortBy],
-    queryFn: () => storeAdminApi.getFarmerOrders(id || '', adminInfo?.token || ''),
+    queryKey: ['farmerOrders', id, adminInfo?.token, orderType, sortBy, appliedDateRange.from, appliedDateRange.to],
+    queryFn: () => {
+      const params: { from?: string; to?: string } = {};
+      if (appliedDateRange.from) {
+        params.from = appliedDateRange.from;
+      }
+      if (appliedDateRange.to) {
+        params.to = appliedDateRange.to;
+      }
+      return storeAdminApi.getFarmerOrders(id || '', params, adminInfo?.token || '');
+    },
     enabled: !!id && !!adminInfo?.token,
   });
+
+  const { data: ledgersData } = useQuery({
+    queryKey: ['ledgers', adminInfo?.token],
+    queryFn: () => accountingApi.getLedgers({}, adminInfo?.token || ''),
+    enabled: !!adminInfo?.token,
+  });
+
+  // Format date for API
+  const formatDateForAPI = (date: Date | undefined): string | null => {
+    if (!date) return null;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Handle apply filters
+  const handleApplyFilters = () => {
+    const from = formatDateForAPI(fromDate);
+    const to = formatDateForAPI(toDate);
+
+    // If to date is provided, set time to end of day (23:59:59)
+    let toWithTime = null;
+    if (to && toDate) {
+      toWithTime = `${to}T23:59:59Z`;
+    }
+
+    // If from date is provided, set time to start of day (00:00:00)
+    let fromWithTime = null;
+    if (from && fromDate) {
+      fromWithTime = `${from}T00:00:00Z`;
+    }
+
+    setAppliedDateRange({
+      from: fromWithTime,
+      to: toWithTime,
+    });
+  };
+
+  // Handle clear filters
+  const handleClearFilters = () => {
+    setFromDate(undefined);
+    setToDate(undefined);
+    setAppliedDateRange({ from: null, to: null });
+  };
 
   // Filter orders based on type
   const filteredOrders = useMemo(() => {
@@ -427,6 +511,36 @@ const FarmerProfileScreen = () => {
     }
   }, [adminInfo, farmer, ordersData?.data, MemoizedFarmerReportPDF]);
 
+  const handleViewFinancialLedger = useCallback(() => {
+    if (!farmer || !ledgersData?.data) return;
+
+    // Find the farmer's ledger by matching the name
+    const farmerLedger = ledgersData.data.find(
+      (ledger: { name: string; _id: string }) =>
+        ledger.name.toLowerCase() === farmer.name.toLowerCase()
+    );
+
+    if (!farmerLedger) {
+      // If ledger not found, still navigate but show a message
+      navigate('/erp/myfinances');
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('switchTab', { detail: 'ledger-view' }));
+      }, 100);
+      return;
+    }
+
+    // Navigate to myfinances page
+    navigate('/erp/myfinances');
+
+    // Switch to ledger view tab and then open the ledger
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('switchTab', { detail: 'ledger-view' }));
+      setTimeout(() => {
+        window.dispatchEvent(new CustomEvent('viewLedger', { detail: farmerLedger._id }));
+      }, 100);
+    }, 100);
+  }, [farmer, ledgersData?.data, navigate]);
+
   if (!farmer) {
     return (
       <>
@@ -478,25 +592,24 @@ const FarmerProfileScreen = () => {
 
                 {/* Action Buttons Row */}
                 <div className="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 mb-6">
-                  <div className="flex gap-2 w-full sm:w-auto">
-                    <Button
-                      onClick={() => navigate(`/erp/incoming-order`, { state: { farmer } })}
-                      className="flex-1 sm:flex-initial bg-primary hover:bg-primary/90 text-white border-0 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
-                    >
-                      <ArrowDownCircle className="mr-2 h-4 w-4" />
-                      <span className="hidden sm:inline">{t('farmerProfile.incomingOrder')}</span>
-                      <span className="sm:hidden">{t('daybook.incoming')}</span>
-                    </Button>
-                    <Button
-                      onClick={() => navigate(`/erp/outgoing-order`, { state: { farmer } })}
-                      variant="outline"
-                      className="flex-1 sm:flex-initial bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
-                    >
-                      <ArrowUpCircle className="mr-2 h-4 w-4 text-primary" />
-                      <span className="hidden sm:inline">{t('farmerProfile.outgoingOrder')}</span>
-                      <span className="sm:hidden">{t('daybook.outgoing')}</span>
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={() => setIsFinancesDialogOpen(true)}
+                    variant="outline"
+                    className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
+                  >
+                    <Wallet className="mr-2 h-4 w-4 text-primary" />
+                    <span className="hidden sm:inline">Finances</span>
+                    <span className="sm:hidden">Finances</span>
+                  </Button>
+                  <Button
+                    onClick={handleViewFinancialLedger}
+                    variant="outline"
+                    className="w-full sm:w-auto bg-white hover:bg-gray-50 border border-gray-200 text-gray-700 hover:text-gray-900 shadow-sm hover:shadow-md transition-all duration-200 px-4 sm:px-6 py-2.5 font-medium"
+                  >
+                    <BookOpen className="mr-2 h-4 w-4 text-primary" />
+                    <span className="hidden sm:inline">View Financial Ledger</span>
+                    <span className="sm:hidden">Financial Ledger</span>
+                  </Button>
                   <Button
                     onClick={handleGenerateReport}
                     variant="outline"
@@ -522,8 +635,8 @@ const FarmerProfileScreen = () => {
                     ) : (
                       <>
                         <FileText className="mr-2 h-4 w-4 text-primary" />
-                        <span className="hidden sm:inline">{t('farmerProfile.viewReport')}</span>
-                        <span className="sm:hidden">{t('farmerProfile.report')}</span>
+                        <span className="hidden sm:inline">View Stock Ledger</span>
+                        <span className="sm:hidden">Stock Ledger</span>
                       </>
                     )}
                   </Button>
@@ -666,6 +779,80 @@ const FarmerProfileScreen = () => {
                       </div>
                     </div>
                   </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Date Range Filter Section */}
+        <Card className="border border-gray-200 shadow-sm">
+          <CardHeader className="px-4 sm:px-6 py-3 sm:py-4 pb-3">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5 text-gray-600" />
+              <CardTitle className="text-base sm:text-lg font-semibold text-gray-900">
+                Filter by Date Range
+              </CardTitle>
+            </div>
+            <p className="text-xs sm:text-sm text-gray-600 mt-1">
+              Filter stock summary and orders by selecting a date range
+            </p>
+          </CardHeader>
+          <CardContent className="px-4 sm:px-6 pb-4 sm:pb-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-end">
+              <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    From Date
+                  </label>
+                  <SimpleDatePicker
+                    value={fromDate}
+                    onChange={setFromDate}
+                    placeholder="DD.MM.YYYY"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-xs sm:text-sm font-medium text-gray-700 flex items-center gap-1.5">
+                    <Calendar className="w-4 h-4" />
+                    To Date
+                  </label>
+                  <SimpleDatePicker
+                    value={toDate}
+                    onChange={setToDate}
+                    placeholder="DD.MM.YYYY"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2 w-full sm:w-auto">
+                <Button
+                  onClick={handleApplyFilters}
+                  className="flex-1 sm:flex-none text-sm"
+                  variant="default"
+                  size="default"
+                >
+                  Apply Filters
+                </Button>
+                <Button
+                  onClick={handleClearFilters}
+                  className="flex-1 sm:flex-none text-sm"
+                  variant="outline"
+                  size="default"
+                >
+                  Clear
+                </Button>
+              </div>
+            </div>
+            {(appliedDateRange.from || appliedDateRange.to) && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="text-xs sm:text-sm font-medium text-blue-900 mb-1">Active Filters:</div>
+                <div className="text-xs text-blue-700 space-y-0.5">
+                  {appliedDateRange.from && (
+                    <div>From: {new Date(appliedDateRange.from).toLocaleDateString()}</div>
+                  )}
+                  {appliedDateRange.to && (
+                    <div>To: {new Date(appliedDateRange.to).toLocaleDateString()}</div>
+                  )}
                 </div>
               </div>
             )}
@@ -820,32 +1007,34 @@ const FarmerProfileScreen = () => {
           <div className="mt-4 sm:mt-6 space-y-4 sm:space-y-6">
             <Card>
               <CardHeader className="px-3 sm:px-4 md:px-6 py-3 sm:py-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
-                    <Package className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary" />
-                    {t('farmerProfile.ordersHistory')}
-                  </CardTitle>
+                <div className="flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                      <Package className="h-4 w-4 sm:h-5 sm:w-5 md:h-6 md:w-6 text-primary" />
+                      {t('farmerProfile.ordersHistory')}
+                    </CardTitle>
 
-                  {/* Filters Row */}
-                  <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                    <select
-                      value={orderType}
-                      onChange={(e) => setOrderType(e.target.value as OrderType)}
-                      className="w-full sm:w-[150px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all duration-200"
-                    >
-                      <option value="all">{t('daybook.allOrders')}</option>
-                      <option value="incoming">{t('daybook.incoming')}</option>
-                      <option value="outgoing">{t('daybook.outgoing')}</option>
-                    </select>
+                    {/* Filters Row */}
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                      <select
+                        value={orderType}
+                        onChange={(e) => setOrderType(e.target.value as OrderType)}
+                        className="w-full sm:w-[150px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all duration-200"
+                      >
+                        <option value="all">{t('daybook.allOrders')}</option>
+                        <option value="incoming">{t('daybook.incoming')}</option>
+                        <option value="outgoing">{t('daybook.outgoing')}</option>
+                      </select>
 
-                    <select
-                      value={sortBy}
-                      onChange={(e) => setSortBy(e.target.value as SortOrder)}
-                      className="w-full sm:w-[150px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all duration-200"
-                    >
-                      <option value="latest">{t('daybook.latestFirst')}</option>
-                      <option value="oldest">{t('daybook.oldestFirst')}</option>
-                    </select>
+                      <select
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value as SortOrder)}
+                        className="w-full sm:w-[150px] px-3 py-2 border border-gray-200 rounded-lg bg-gray-50/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm transition-all duration-200"
+                      >
+                        <option value="latest">{t('daybook.latestFirst')}</option>
+                        <option value="oldest">{t('daybook.oldestFirst')}</option>
+                      </select>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -892,6 +1081,166 @@ const FarmerProfileScreen = () => {
           queryClient.invalidateQueries({ queryKey: ['farmerOrders', id, adminInfo?.token] });
           queryClient.invalidateQueries({ queryKey: ['farmers'] });
         }}
+      />
+
+      {/* Finances Dialog */}
+      <Dialog open={isFinancesDialogOpen} onOpenChange={setIsFinancesDialogOpen}>
+        <DialogContent className="max-w-2xl w-[calc(100%-2rem)] sm:w-full">
+          <DialogHeader className="pb-2 sm:pb-4">
+            <DialogTitle className="text-lg sm:text-xl">Finances</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-2 sm:gap-4 mt-2 sm:mt-4">
+            {/* Buy Potato Card */}
+            <Card
+              className="cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-primary/50 active:scale-95"
+              onClick={() => {
+                setIsFinancesDialogOpen(false);
+                setIsBuyPotatoDialogOpen(true);
+              }}
+            >
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-3">
+                  <div className="p-2 sm:p-3 bg-blue-100 rounded-full">
+                    <ArrowDownCircle className="h-5 w-5 sm:h-8 sm:w-8 text-blue-600" />
+                  </div>
+                  <h3 className="text-xs sm:text-lg font-semibold text-gray-900 leading-tight">Buy Potato</h3>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Sell Potato Card */}
+            <Card
+              className="cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-primary/50 active:scale-95"
+              onClick={() => {
+                setIsFinancesDialogOpen(false);
+                setIsSellPotatoDialogOpen(true);
+              }}
+            >
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-3">
+                  <div className="p-2 sm:p-3 bg-green-100 rounded-full">
+                    <ArrowUpCircle className="h-5 w-5 sm:h-8 sm:w-8 text-green-600" />
+                  </div>
+                  <h3 className="text-xs sm:text-lg font-semibold text-gray-900 leading-tight">Sell Potato</h3>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Receive Payment Card */}
+            <Card
+              className="cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-primary/50 active:scale-95"
+              onClick={() => {
+                setIsFinancesDialogOpen(false);
+                setIsReceivePaymentDialogOpen(true);
+              }}
+            >
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-3">
+                  <div className="p-2 sm:p-3 bg-purple-100 rounded-full">
+                    <IndianRupee className="h-5 w-5 sm:h-8 sm:w-8 text-purple-600" />
+                  </div>
+                  <h3 className="text-xs sm:text-lg font-semibold text-gray-900 leading-tight">Receive Payment</h3>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Add Payment Card */}
+            <Card
+              className="cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-primary/50 active:scale-95"
+              onClick={() => {
+                setIsFinancesDialogOpen(false);
+                setIsAddPaymentDialogOpen(true);
+              }}
+            >
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-3">
+                  <div className="p-2 sm:p-3 bg-orange-100 rounded-full">
+                    <Wallet className="h-5 w-5 sm:h-8 sm:w-8 text-orange-600" />
+                  </div>
+                  <h3 className="text-xs sm:text-lg font-semibold text-gray-900 leading-tight">Add Payment</h3>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Add Discount Card */}
+            <Card
+              className="cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-primary/50 active:scale-95"
+              onClick={() => {
+                setIsFinancesDialogOpen(false);
+                setIsAddDiscountDialogOpen(true);
+              }}
+            >
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-3">
+                  <div className="p-2 sm:p-3 bg-teal-100 rounded-full">
+                    <Percent className="h-5 w-5 sm:h-8 sm:w-8 text-teal-600" />
+                  </div>
+                  <h3 className="text-xs sm:text-lg font-semibold text-gray-900 leading-tight">Add Discount</h3>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Add Charge Card */}
+            <Card
+              className="cursor-pointer hover:shadow-md transition-all duration-200 border border-gray-200 hover:border-primary/50 active:scale-95"
+              onClick={() => {
+                setIsFinancesDialogOpen(false);
+                setIsAddChargeDialogOpen(true);
+              }}
+            >
+              <CardContent className="p-3 sm:p-6">
+                <div className="flex flex-col items-center text-center space-y-1.5 sm:space-y-3">
+                  <div className="p-2 sm:p-3 bg-indigo-100 rounded-full">
+                    <Receipt className="h-5 w-5 sm:h-8 sm:w-8 text-indigo-600" />
+                  </div>
+                  <h3 className="text-xs sm:text-lg font-semibold text-gray-900 leading-tight">Add Charge</h3>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Buy Potato Dialog */}
+      <BuyPotatoForm
+        isOpen={isBuyPotatoDialogOpen}
+        onClose={() => setIsBuyPotatoDialogOpen(false)}
+        farmer={farmer}
+      />
+
+      {/* Sell Potato Dialog */}
+      <SellPotatoForm
+        isOpen={isSellPotatoDialogOpen}
+        onClose={() => setIsSellPotatoDialogOpen(false)}
+        farmer={farmer}
+      />
+
+      {/* Receive Payment Dialog */}
+      <ReceivePaymentForm
+        isOpen={isReceivePaymentDialogOpen}
+        onClose={() => setIsReceivePaymentDialogOpen(false)}
+        farmer={farmer}
+      />
+
+      {/* Add Payment Dialog */}
+      <AddPaymentForm
+        isOpen={isAddPaymentDialogOpen}
+        onClose={() => setIsAddPaymentDialogOpen(false)}
+        farmer={farmer}
+      />
+
+      {/* Add Discount Dialog */}
+      <AddDiscountForm
+        isOpen={isAddDiscountDialogOpen}
+        onClose={() => setIsAddDiscountDialogOpen(false)}
+        farmer={farmer}
+      />
+
+      {/* Add Charge Dialog */}
+      <AddChargeForm
+        isOpen={isAddChargeDialogOpen}
+        onClose={() => setIsAddChargeDialogOpen(false)}
+        farmer={farmer}
       />
     </>
   );

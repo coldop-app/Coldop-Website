@@ -14,7 +14,8 @@ export const CHART_OF_ACCOUNTS = {
   Expense: {
     "Direct Expenses": ["Purchases"],
     "Operating Expenses": ["Rent", "Salaries", "Utilities", "Supplies", "Depreciation"],
-    "Non-Operating Expenses": ["Interest Expense", "Loss on Sale", "Miscellaneous"]
+    "Non-Operating Expenses": ["Interest Expense", "Loss on Sale", "Miscellaneous"],
+    "Other Expense": ["Discount"]
   },
   Equity: {
     "Capital & Reserves": ["Capital", "Reserves & Surplus", "Retained Earnings"]

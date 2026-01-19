@@ -74,6 +74,9 @@ const LedgerForm = ({ ledgerId, onSuccess, hideCard = false }: LedgerFormProps) 
   const updateLedgerMutation = useMutation({
     mutationFn: (payload: {
       name?: string;
+      type?: string;
+      subType?: string;
+      category?: string;
       openingBalance?: number;
       closingBalance?: number;
     }) => accountingApi.updateLedger(ledgerId!, payload, adminInfo?.token || ""),
@@ -124,12 +127,26 @@ const LedgerForm = ({ ledgerId, onSuccess, hideCard = false }: LedgerFormProps) 
     if (editingLedgerId) {
       const updatePayload: {
         name?: string;
+        type?: string;
+        subType?: string;
+        category?: string;
         openingBalance?: number;
         closingBalance?: number;
       } = {
         name: payload.name,
         openingBalance: payload.openingBalance,
       };
+
+      // Include type, subType, and category if they have changed
+      if (newLedger.type) {
+        updatePayload.type = newLedger.type;
+      }
+      if (newLedger.subType) {
+        updatePayload.subType = newLedger.subType;
+      }
+      if (newLedger.category) {
+        updatePayload.category = newLedger.category;
+      }
 
       // Only include closingBalance if category is "Stock in Hand"
       if (ledgerData?.data?.category === "Stock in Hand" && newLedger.closingBalance) {
@@ -179,7 +196,6 @@ const LedgerForm = ({ ledgerId, onSuccess, hideCard = false }: LedgerFormProps) 
               })
             }
             className="w-full border rounded px-3 py-2"
-            disabled={!!editingLedgerId}
           >
             <option value="">Select type</option>
             {ledgerTypes.map((type) => (

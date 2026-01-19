@@ -332,10 +332,11 @@ export const storeAdminApi = {
     return response.data;
   },
 
-  getFarmerStockSummary: async (farmerId: string, token: string) => {
+  getFarmerStockSummary: async (farmerId: string, params: { from?: string; to?: string }, token: string) => {
     const response = await axios.get(
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/stock-summary`,
       {
+        params,
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -486,10 +487,11 @@ export const storeAdminApi = {
     return response.data;
   },
 
-  getFarmerOrders: async (farmerId: string, token: string) => {
+  getFarmerOrders: async (farmerId: string, params: { from?: string; to?: string }, token: string) => {
     const response = await axios.get(
       `${BASE_URL}/api/store-admin/farmers/${farmerId}/orders`,
       {
+        params,
         headers: {
           'Authorization': `Bearer ${token}`
         }

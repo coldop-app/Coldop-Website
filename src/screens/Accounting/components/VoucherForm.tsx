@@ -3,8 +3,9 @@ import { useMutation, useQueryClient, useQuery } from '@tanstack/react-query';
 import { useSelector } from 'react-redux';
 import { RootState } from '@/store';
 import { accountingApi } from '@/lib/api/accounting';
-import { Plus, Check, X } from 'lucide-react';
+import { Plus, Check, X, TrendingDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import GeneralExpenseForm from '@/components/finances/GeneralExpenseForm';
 
 const voucherTypes = ['Journal'];
 
@@ -26,6 +27,7 @@ const VoucherForm = ({ voucherId, onSuccess, hideCard = false }: VoucherFormProp
   const adminInfo = useSelector((state: RootState) => state.auth.adminInfo);
   const queryClient = useQueryClient();
   const editingVoucherId = voucherId || null;
+  const [isGeneralExpenseOpen, setIsGeneralExpenseOpen] = useState(false);
   const [newVoucher, setNewVoucher] = useState({
     type: 'Journal',
     date: new Date().toISOString().split('T')[0],
@@ -150,9 +152,22 @@ const VoucherForm = ({ voucherId, onSuccess, hideCard = false }: VoucherFormProp
 
   const formContent = (
     <div className="bg-white p-6 rounded-lg shadow">
-      <h2 className="text-xl font-semibold mb-4">
-        {editingVoucherId ? "Edit Voucher Entry" : "Create Voucher Entry"}
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-semibold">
+          {editingVoucherId ? "Edit Voucher Entry" : "Create Voucher Entry"}
+        </h2>
+        {!editingVoucherId && (
+          <button
+            onClick={() => setIsGeneralExpenseOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all duration-200 font-medium text-sm sm:text-base"
+            title="Add General Expense"
+          >
+            <TrendingDown className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="hidden sm:inline">General Expense</span>
+            <span className="sm:hidden">Expense</span>
+          </button>
+        )}
+      </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Voucher Type</label>
@@ -290,10 +305,26 @@ const VoucherForm = ({ voucherId, onSuccess, hideCard = false }: VoucherFormProp
   );
 
   if (hideCard) {
-    return formContent;
+    return (
+      <>
+        {formContent}
+        <GeneralExpenseForm
+          isOpen={isGeneralExpenseOpen}
+          onClose={() => setIsGeneralExpenseOpen(false)}
+        />
+      </>
+    );
   }
 
-  return formContent;
+  return (
+    <>
+      {formContent}
+      <GeneralExpenseForm
+        isOpen={isGeneralExpenseOpen}
+        onClose={() => setIsGeneralExpenseOpen(false)}
+      />
+    </>
+  );
 };
 
 export default VoucherForm;
