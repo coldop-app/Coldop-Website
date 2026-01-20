@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { useTranslation } from "react-i18next";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
+import { accountingApi } from "@/lib/api/accounting";
 import { RootState } from "@/store";
 import { StoreAdmin } from "@/utils/types";
 import Loader from "@/components/common/Loader/Loader";
@@ -106,6 +107,9 @@ interface CreateOrderPayload {
   voucherNumber: number;
   dateOfSubmission: string;
   remarks: string;
+  debitLedger: string;
+  creditLedger: string;
+  amount: number;
   orderDetails: {
     variety: string;
     bagSizes: {
@@ -621,6 +625,33 @@ const IncomingOrderFormContent = () => {
     // Use the receipt number from our query
     const voucherNumber = receiptData?.receiptNumber || 1;
 
+    // Find the farmer's ledger by matching the farmer name
+    const farmerLedger = ledgersData?.data?.find(
+      (ledger: { name: string; _id: string }) => {
+        const farmerName = selectedFarmer?.name || formData.farmerName;
+        return ledger.name.toLowerCase() === farmerName.toLowerCase();
+      }
+    );
+
+    // Find the Store Rent ledger
+    const storeRentLedger = ledgersData?.data?.find(
+      (ledger: { name: string; _id: string }) =>
+        ledger.name === "Store Rent"
+    );
+
+    if (!farmerLedger) {
+      toast.error("Farmer ledger not found. Please ensure the farmer has a ledger.");
+      return;
+    }
+
+    if (!storeRentLedger) {
+      toast.error("Store Rent ledger not found. Please ensure the Store Rent ledger exists.");
+      return;
+    }
+
+    // Calculate the amount from total rent
+    const amount = calculateTotalRent();
+
     // Prepare order data according to API structure
     const orderData: CreateOrderPayload = {
       coldStorageId: adminInfo?._id || "",
@@ -628,6 +659,9 @@ const IncomingOrderFormContent = () => {
       voucherNumber: voucherNumber,
       dateOfSubmission: formData.dateOfSubmission,
       remarks: formData.remarks,
+      debitLedger: farmerLedger._id,
+      creditLedger: storeRentLedger._id,
+      amount: amount,
       orderDetails: [
         {
           variety: formData.variety,
@@ -892,6 +926,13 @@ const IncomingOrderFormContent = () => {
     queryKey: ["receiptNumber", "incoming"],
     queryFn: () =>
       storeAdminApi.getReceiptNumber("incoming", adminInfo?.token || ""),
+    enabled: !!adminInfo?.token,
+  });
+
+  // Query for ledgers
+  const { data: ledgersData } = useQuery({
+    queryKey: ["ledgers", adminInfo?.token],
+    queryFn: () => accountingApi.getLedgers({}, adminInfo?.token || ""),
     enabled: !!adminInfo?.token,
   });
 
