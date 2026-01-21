@@ -83,8 +83,15 @@ const NewFarmerModal: React.FC<NewFarmerModalProps> = ({
     // Handle numeric validation for costPerBag field
     if (field === 'costPerBag') {
       const numericValue = value.toString().replace(/[^0-9]/g, '');
-      const numValue = numericValue === '' ? 110 : parseInt(numericValue, 10);
-      setFormData(prev => ({ ...prev, [field]: numValue }));
+      // Allow 0 as a valid value
+      // If empty, set to 0 temporarily to allow user to clear and enter 0
+      // Default of 110 is only used on initialization/reset, not during editing
+      if (numericValue === '') {
+        setFormData(prev => ({ ...prev, [field]: 0 }));
+      } else {
+        const numValue = parseInt(numericValue, 10);
+        setFormData(prev => ({ ...prev, [field]: numValue }));
+      }
       return;
     }
 
