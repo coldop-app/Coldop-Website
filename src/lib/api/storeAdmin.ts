@@ -84,6 +84,7 @@ interface OutgoingOrderDetail {
 interface CreateOutgoingOrderPayload {
   orders: OutgoingOrderDetail[];
   remarks: string;
+  dateOfExtraction: string;
 }
 
 interface CreateFarmerPayload {

@@ -16,6 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { DatePickerDDMMYY } from "@/components/ui/date-picker-ddmmyy";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -74,6 +75,54 @@ const getBagSizeFieldName = (bagSize: string): string => {
   return bagSize.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 };
 
+// Helper function to format date as DD.MM.YY
+const formatDateDDMMYY = (date: Date | undefined): string => {
+  if (!date) {
+    return "";
+  }
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear().toString().slice(-2);
+  return `${day}.${month}.${year}`;
+};
+
+// Helper function to parse date string (DD.MM.YY or ISO format) to Date object
+const parseDateString = (dateString: string | undefined): Date | undefined => {
+  if (!dateString) {
+    return new Date(); // Default to today if no date
+  }
+
+  // Try to parse DD.MM.YY format first
+  const ddmmyyMatch = dateString.match(/^(\d{2})\.(\d{2})\.(\d{2})$/);
+  if (ddmmyyMatch) {
+    const [, day, month, year] = ddmmyyMatch;
+    const fullYear = parseInt(year) < 50 ? 2000 + parseInt(year) : 1900 + parseInt(year);
+    const date = new Date(fullYear, parseInt(month) - 1, parseInt(day));
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Try to parse DD.MM.YYYY format
+  const ddmmyyyyMatch = dateString.match(/^(\d{2})\.(\d{2})\.(\d{4})$/);
+  if (ddmmyyyyMatch) {
+    const [, day, month, year] = ddmmyyyyMatch;
+    const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    if (!isNaN(date.getTime())) {
+      return date;
+    }
+  }
+
+  // Try to parse ISO format
+  const isoDate = new Date(dateString);
+  if (!isNaN(isoDate.getTime())) {
+    return isoDate;
+  }
+
+  // If all parsing fails, return today's date
+  return new Date();
+};
+
 interface BagLocation {
   chamber: string;
   floor: string;
@@ -98,6 +147,7 @@ interface FormData {
   bagLocations: { [key: string]: BagLocation }; // Key is bag size field name
   remarks: string;
   variety: string;
+  dateOfSubmission: Date | undefined;
 }
 
 
@@ -170,6 +220,7 @@ const EditIncomingOrderFormContent = ({
       bagLocations,
       remarks: order.remarks || "",
       variety: orderDetail.variety,
+      dateOfSubmission: parseDateString(order.dateOfSubmission),
     };
   });
 
@@ -372,6 +423,10 @@ const EditIncomingOrderFormContent = ({
       toast.error(t("editIncomingOrder.errors.selectVariety"));
       return;
     }
+    if (!formData.dateOfSubmission) {
+      toast.error("Please select a date of submission");
+      return;
+    }
     if (calculateTotal() === 0) {
       toast.error(t("editIncomingOrder.errors.enterQuantity"));
       return;
@@ -496,9 +551,15 @@ const EditIncomingOrderFormContent = ({
         ? getCombinedLocation(getBagSizeFieldName(bagSizesWithQuantities[0]))
         : "";
 
+      // Validate date of submission
+      if (!formData.dateOfSubmission) {
+        toast.error("Please select a date of submission");
+        return;
+      }
+
       const payload: UpdateIncomingOrderPayload = {
         remarks: formData.remarks,
-        dateOfSubmission: order.dateOfSubmission || new Date().toISOString(), // Provide default value
+        dateOfSubmission: formatDateDDMMYY(formData.dateOfSubmission),
         fulfilled: order.fulfilled || false,
         orderDetails: [
           {
@@ -673,6 +734,23 @@ const EditIncomingOrderFormContent = ({
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              {/* Date of Submission */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {t("incomingOrder.dateOfSubmission.label") || "Date of Submission"}
+                </label>
+                <DatePickerDDMMYY
+                  value={formData.dateOfSubmission}
+                  onChange={(date) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      dateOfSubmission: date,
+                    }));
+                  }}
+                  placeholder="DD.MM.YY or click calendar"
+                />
               </div>
 
               {/* Quantities Section */}

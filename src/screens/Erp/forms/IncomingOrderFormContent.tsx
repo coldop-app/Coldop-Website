@@ -18,6 +18,7 @@ import NewFarmerModal, {
 } from "@/components/modals/NewFarmerModal";
 import { useWalkthrough } from "@/contexts/WalkthroughContext";
 import Spotlight from "@/components/common/Spotlight/Spotlight";
+import { DatePickerDDMMYY } from "@/components/ui/date-picker-ddmmyy";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -79,6 +80,17 @@ const getBagSizeFieldName = (bagSize: string): string => {
   return bagSize.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
 };
 
+// Helper function to format date as DD.MM.YY
+const formatDateDDMMYY = (date: Date | undefined): string => {
+  if (!date) {
+    return "";
+  }
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear().toString().slice(-2);
+  return `${day}.${month}.${year}`;
+};
+
 interface BagLocation {
   chamber: string;
   floor: string;
@@ -97,7 +109,7 @@ interface FormData {
 
   // Additional fields for API
   voucherNumber: number;
-  dateOfSubmission: string;
+  dateOfSubmission: Date | undefined;
   variety: string;
 }
 
@@ -176,7 +188,7 @@ const IncomingOrderFormContent = () => {
     bagLocations: {},
     remarks: "",
     voucherNumber: 0,
-    dateOfSubmission: new Date().toISOString().split("T")[0],
+    dateOfSubmission: new Date(),
     variety: "",
   });
 
@@ -460,6 +472,10 @@ const IncomingOrderFormContent = () => {
       toast.error(t("incomingOrder.errors.selectVariety"));
       return;
     }
+    if (!formData.dateOfSubmission) {
+      toast.error("Please select a date of submission");
+      return;
+    }
     if (calculateTotal() === 0) {
       toast.error(t("incomingOrder.errors.enterQuantity"));
       return;
@@ -518,7 +534,7 @@ const IncomingOrderFormContent = () => {
         bagLocations: {},
         remarks: "",
         voucherNumber: 0,
-        dateOfSubmission: new Date().toISOString().split("T")[0],
+        dateOfSubmission: new Date(),
         variety: "",
       });
       setCurrentStep(1);
@@ -652,12 +668,18 @@ const IncomingOrderFormContent = () => {
     // Calculate the amount from total rent
     const amount = calculateTotalRent();
 
+    // Validate date of submission
+    if (!formData.dateOfSubmission) {
+      toast.error("Please select a date of submission");
+      return;
+    }
+
     // Prepare order data according to API structure
     const orderData: CreateOrderPayload = {
       coldStorageId: adminInfo?._id || "",
       farmerId: formData.farmerId || "temp-farmer-id",
       voucherNumber: voucherNumber,
-      dateOfSubmission: formData.dateOfSubmission,
+      dateOfSubmission: formatDateDDMMYY(formData.dateOfSubmission),
       remarks: formData.remarks,
       debitLedger: farmerLedger._id,
       creditLedger: storeRentLedger._id,
@@ -1314,6 +1336,23 @@ const IncomingOrderFormContent = () => {
                 }}
                 token={adminInfo?.token || ""}
               />
+
+              {/* Date of Submission */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  {t("incomingOrder.dateOfSubmission.label") || "Date of Submission"}
+                </label>
+                <DatePickerDDMMYY
+                  value={formData.dateOfSubmission}
+                  onChange={(date) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      dateOfSubmission: date,
+                    }));
+                  }}
+                  placeholder="DD.MM.YY or click calendar"
+                />
+              </div>
 
               {/* Quantities Section */}
               <div

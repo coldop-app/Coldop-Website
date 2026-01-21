@@ -19,6 +19,7 @@ import {
 import debounce from "lodash/debounce";
 import { useWalkthrough } from "@/contexts/WalkthroughContext";
 import Spotlight from "@/components/common/Spotlight/Spotlight";
+import { DatePickerDDMMYY } from "@/components/ui/date-picker-ddmmyy";
 
 // Custom scrollbar styles
 const scrollbarStyles = `
@@ -97,6 +98,7 @@ interface FormData {
   farmerId: string;
   variety: string;
   remarks: string;
+  dateOfExtraction: Date | undefined;
 }
 
 interface BagSizeQuantity {
@@ -152,6 +154,7 @@ interface CreateOutgoingOrderPayload {
     }[];
   }[];
   remarks: string;
+  dateOfExtraction: string;
 }
 
 interface ApiError {
@@ -161,6 +164,17 @@ interface ApiError {
     };
   };
 }
+
+// Helper function to format date as DD.MM.YY
+const formatDateDDMMYY = (date: Date | undefined): string => {
+  if (!date) {
+    return "";
+  }
+  const day = date.getDate().toString().padStart(2, "0");
+  const month = (date.getMonth() + 1).toString().padStart(2, "0");
+  const year = date.getFullYear().toString().slice(-2);
+  return `${day}.${month}.${year}`;
+};
 
 const sortBagSizes = (adminPreferences: string[] | undefined) => {
   if (!adminPreferences) {
@@ -233,7 +247,8 @@ const OutgoingOrderFormContent = () => {
     farmerName: farmer?.name || "",
     farmerId: farmer?._id || "",
     variety: "",
-    remarks: ""
+    remarks: "",
+    dateOfExtraction: new Date()
   });
 
   // Fetch farmer's incoming orders
@@ -588,7 +603,8 @@ const OutgoingOrderFormContent = () => {
 
     return {
       orders: orderDetails,
-      remarks: formData.remarks
+      remarks: formData.remarks,
+      dateOfExtraction: formatDateDDMMYY(formData.dateOfExtraction)
     };
   };
 
@@ -931,6 +947,23 @@ const OutgoingOrderFormContent = () => {
                   </div>
                 </div>
 
+                {/* Date of Extraction */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    {t('outgoingOrder.dateOfExtraction.label') || "Date of Extraction"}
+                  </label>
+                  <DatePickerDDMMYY
+                    value={formData.dateOfExtraction}
+                    onChange={(date) => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        dateOfExtraction: date,
+                      }));
+                    }}
+                    placeholder="DD.MM.YY or click calendar"
+                  />
+                </div>
+
                 {formData.farmerId && (
                   <div className="space-y-3">
                     {/* Orders Table */}
@@ -1243,6 +1276,10 @@ const OutgoingOrderFormContent = () => {
       toast.error(t('outgoingOrder.errors.selectVariety'));
       return;
     }
+    if (!formData.dateOfExtraction) {
+      toast.error("Please select a date of extraction");
+      return;
+    }
                       setCurrentStep(2);
                       // Advance walkthrough step if active
                       if (isWalkthroughActive && walkthroughStep === 'outgoing-continue-button') {
@@ -1325,6 +1362,11 @@ const OutgoingOrderFormContent = () => {
                       id="outgoing-create-button"
                       type="button"
                       onClick={() => {
+                        // Validate date of extraction
+                        if (!formData.dateOfExtraction) {
+                          toast.error("Please select a date of extraction");
+                          return;
+                        }
                         const requestBody = generateOutgoingOrderRequestBody();
                         console.log('Outgoing Order Request Body:', JSON.stringify(requestBody, null, 2));
                         createOrderMutation.mutate(requestBody);
