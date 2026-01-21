@@ -29,6 +29,7 @@ interface SignupCredentials {
   imageUrl: string;
   isVerified: boolean;
   isMobile: boolean;
+  showFinances?: boolean;
   preferences: {
     bagSizes: string[];
   };

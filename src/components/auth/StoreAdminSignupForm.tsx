@@ -9,6 +9,7 @@ import { setCredentials } from "@/slices/authSlice";
 import { storeAdminApi } from "@/lib/api/storeAdmin";
 import axios from "axios";
 import { DEFAULT_LOGO } from "@/utils/const";
+import { Switch } from "@/components/ui/switch";
 
 interface AnimatedFormStepProps {
   isVisible: boolean;
@@ -67,7 +68,8 @@ const StoreAdminSignupForm = () => {
     capacity: "",
 
     // Preferences
-    bagSizes: ["ration", "seed", "number-12", "goli", "cut-tok"]
+    bagSizes: ["ration", "seed", "number-12", "goli", "cut-tok"],
+    showFinances: false
   });
   const [newBagSize, setNewBagSize] = useState("");
   const [editingBagSize, setEditingBagSize] = useState<string | null>(null);
@@ -280,6 +282,7 @@ const StoreAdminSignupForm = () => {
         imageUrl: data.imageUrl || "",
         isVerified: false,
         isMobile: true,
+        showFinances: data.showFinances,
         preferences: {
           bagSizes: data.bagSizes.map(size => size.charAt(0).toUpperCase() + size.slice(1))
         }
@@ -975,6 +978,18 @@ const StoreAdminSignupForm = () => {
         <AnimatedFormStep isVisible={currentStep === 3}>
           {currentStep === 3 && (
             <div className="space-y-6">
+              <div>
+                <label className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium">Finances</span>
+                  <Switch
+                    checked={formData.showFinances}
+                    onCheckedChange={(checked) => {
+                      setFormData(prev => ({ ...prev, showFinances: checked }));
+                    }}
+                  />
+                </label>
+              </div>
+
               <div>
                 <h3 className="text-lg font-medium mb-3">Bag Size Preferences</h3>
                 <p className="text-sm text-muted-foreground mb-4">
