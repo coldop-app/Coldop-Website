@@ -3,9 +3,23 @@ import path from "path"
 import react from '@vitejs/plugin-react-swc'
 import tailwindcss from '@tailwindcss/vite'
 
+// Plugin to remove preload links for react-pdf chunk
+const removeReactPdfPreload = () => {
+  return {
+    name: 'remove-react-pdf-preload',
+    transformIndexHtml(html: string) {
+      // Remove modulepreload links for react-pdf chunk
+      return html.replace(
+        /<link[^>]*rel="modulepreload"[^>]*react-pdf[^>]*>/gi,
+        ''
+      )
+    },
+  }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), removeReactPdfPreload()],
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -15,10 +29,10 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: (id) => {
-          // Explicitly exclude @react-pdf/renderer from manual chunking
-          // This ensures it's only loaded via dynamic imports, not preloaded
+          // Create a separate chunk for react-pdf so it's only loaded when needed
+          // This prevents it from being included in the main bundle
           if (id.includes('@react-pdf/renderer') || id.includes('react-pdf')) {
-            return undefined; // Let dynamic imports handle it, don't create manual chunk
+            return 'react-pdf';
           }
           
           // Only chunk other vendor libraries
