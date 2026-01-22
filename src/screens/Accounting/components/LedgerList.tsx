@@ -103,8 +103,8 @@ const LedgerList = ({ dateRange }: LedgerListProps) => {
 
   if (isLoading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Ledger List</h2>
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Ledger List</h2>
         <div className="text-center py-8 text-gray-500">Loading ledgers...</div>
       </div>
     );
@@ -112,10 +112,10 @@ const LedgerList = ({ dateRange }: LedgerListProps) => {
 
   return (
     <>
-      <div className="bg-white p-6 rounded-lg shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-semibold">Ledger List</h2>
-          <div className="relative w-64">
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold">Ledger List</h2>
+          <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
@@ -126,69 +126,71 @@ const LedgerList = ({ dateRange }: LedgerListProps) => {
             />
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 text-left">Ledger Name</th>
-                <th className="px-4 py-2 text-left">Type</th>
-                <th className="px-4 py-2 text-left">Sub-Type</th>
-                <th className="px-4 py-2 text-left">Category</th>
-                <th className="px-4 py-2 text-right">Balance (₹)</th>
-                <th className="px-4 py-2 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLedgers.length === 0 ? (
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+            <table className="w-full text-xs sm:text-sm">
+              <thead className="bg-gray-100">
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
-                    No ledgers found
-                  </td>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap">Ledger Name</th>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap hidden sm:table-cell">Type</th>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap hidden md:table-cell">Sub-Type</th>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap hidden md:table-cell">Category</th>
+                  <th className="px-2 sm:px-4 py-2 text-right whitespace-nowrap">Balance (₹)</th>
+                  <th className="px-2 sm:px-4 py-2 text-center whitespace-nowrap">Action</th>
                 </tr>
-              ) : (
-                filteredLedgers.map((ledger) => (
-                  <tr key={ledger._id} className="border-b hover:bg-gray-50">
-                    <td className="px-4 py-2">{ledger.name}</td>
-                    <td className="px-4 py-2">{ledger.type}</td>
-                    <td className="px-4 py-2">{ledger.subType}</td>
-                    <td className="px-4 py-2">{ledger.category}</td>
-                    <td className="px-4 py-2 text-right font-medium">
-                      {(ledger.balance || 0).toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td className="px-4 py-2 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => onViewLedger(ledger._id)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="View Ledger"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onEditLedger(ledger)}
-                          className="text-green-600 hover:text-green-800"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onDeleteLedger(ledger._id, ledger.name)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                          disabled={deleteLedgerMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {filteredLedgers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-gray-500">
+                      No ledgers found
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  filteredLedgers.map((ledger) => (
+                    <tr key={ledger._id} className="border-b hover:bg-gray-50">
+                      <td className="px-2 sm:px-4 py-2 max-w-[150px] sm:max-w-none truncate sm:truncate-none">{ledger.name}</td>
+                      <td className="px-2 sm:px-4 py-2 hidden sm:table-cell">{ledger.type}</td>
+                      <td className="px-2 sm:px-4 py-2 hidden md:table-cell">{ledger.subType}</td>
+                      <td className="px-2 sm:px-4 py-2 hidden md:table-cell">{ledger.category}</td>
+                      <td className="px-2 sm:px-4 py-2 text-right font-medium whitespace-nowrap">
+                        {(ledger.balance || 0).toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 text-center whitespace-nowrap">
+                        <div className="flex gap-1 sm:gap-2 justify-center">
+                          <button
+                            onClick={() => onViewLedger(ledger._id)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="View Ledger"
+                          >
+                            <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => onEditLedger(ledger)}
+                            className="text-green-600 hover:text-green-800"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => onDeleteLedger(ledger._id, ledger.name)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Delete"
+                            disabled={deleteLedgerMutation.isPending}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

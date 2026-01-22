@@ -151,9 +151,9 @@ const VoucherForm = ({ voucherId, onSuccess, hideCard = false }: VoucherFormProp
   const isPending = createVoucherMutation.isPending || updateVoucherMutation.isPending;
 
   const formContent = (
-    <div className="bg-white p-6 rounded-lg shadow">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold">
+    <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-0 mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">
           {editingVoucherId ? "Edit Voucher Entry" : "Create Voucher Entry"}
         </h2>
         {!editingVoucherId && (
@@ -168,7 +168,7 @@ const VoucherForm = ({ voucherId, onSuccess, hideCard = false }: VoucherFormProp
           </button>
         )}
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
         <div>
           <label className="block text-sm font-medium mb-1">Voucher Type</label>
           <select

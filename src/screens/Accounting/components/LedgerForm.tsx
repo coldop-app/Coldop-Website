@@ -168,13 +168,13 @@ const LedgerForm = ({ ledgerId, onSuccess, hideCard = false }: LedgerFormProps) 
   const isLoading = !!editingLedgerId && !ledgerData;
 
   const formContent = (
-    <div className={hideCard ? "" : "bg-white p-6 rounded-lg shadow"}>
+    <div className={hideCard ? "" : "bg-white p-4 sm:p-6 rounded-lg shadow"}>
       {!hideCard && (
-        <h2 className="text-xl font-semibold mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">
           {editingLedgerId ? "Edit Ledger" : "Create New Ledger"}
         </h2>
       )}
-      <div className={`grid grid-cols-1 gap-4 ${
+      <div className={`grid grid-cols-1 gap-3 sm:gap-4 ${
         editingLedgerId
           ? "md:grid-cols-2"
           : (newLedger.name === "Stock in Hand" || ledgerData?.data?.category === "Stock in Hand")

@@ -110,8 +110,8 @@ const VoucherList = ({ dateRange }: VoucherListProps) => {
 
   if (isLoading) {
     return (
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Voucher History</h2>
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Voucher History</h2>
         <div className="text-center py-8 text-gray-500">Loading vouchers...</div>
       </div>
     );
@@ -119,80 +119,82 @@ const VoucherList = ({ dateRange }: VoucherListProps) => {
 
   return (
     <>
-      <div className="bg-white p-6 rounded-lg shadow">
-        <h2 className="text-xl font-semibold mb-4">Voucher History</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="px-4 py-2 text-left">Date</th>
-                <th className="px-4 py-2 text-left">Type</th>
-                <th className="px-4 py-2 text-left">Debit/Receipt</th>
-                <th className="px-4 py-2 text-left">Credit/Payment</th>
-                <th className="px-4 py-2 text-right">Amount (₹)</th>
-                <th className="px-4 py-2 text-left">Narration</th>
-                <th className="px-4 py-2 text-center">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {vouchers.length === 0 ? (
+      <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">Voucher History</h2>
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <div className="inline-block min-w-full align-middle px-4 sm:px-0">
+            <table className="w-full text-xs sm:text-sm">
+              <thead className="bg-gray-100">
                 <tr>
-                  <td
-                    colSpan={7}
-                    className="px-4 py-8 text-center text-gray-500"
-                  >
-                    No vouchers created yet
-                  </td>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap">Date</th>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap">Type</th>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap">Debit/Receipt</th>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap">Credit/Payment</th>
+                  <th className="px-2 sm:px-4 py-2 text-right whitespace-nowrap">Amount (₹)</th>
+                  <th className="px-2 sm:px-4 py-2 text-left whitespace-nowrap hidden md:table-cell">Narration</th>
+                  <th className="px-2 sm:px-4 py-2 text-center whitespace-nowrap">Actions</th>
                 </tr>
-              ) : (
-                vouchers.map((voucher) => (
-                  <tr
-                    key={voucher._id}
-                    className={`border-b hover:bg-gray-50 ${
-                      editingVoucherId === voucher._id ? "bg-yellow-50" : ""
-                    }`}
-                  >
-                    <td className="px-4 py-2">{formatDate(voucher.date)}</td>
-                    <td className="px-4 py-2">{voucher.type}</td>
-                    <td className="px-4 py-2">
-                      {getLedgerName(voucher.debitLedger, ledgers)}
-                    </td>
-                    <td className="px-4 py-2">
-                      {getLedgerName(voucher.creditLedger, ledgers)}
-                    </td>
-                    <td className="px-4 py-2 text-right font-medium">
-                      {voucher.amount.toLocaleString("en-IN", {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </td>
-                    <td className="px-4 py-2 text-gray-600">
-                      {voucher.narration || '-'}
-                    </td>
-                    <td className="px-4 py-2 text-center">
-                      <div className="flex gap-2 justify-center">
-                        <button
-                          onClick={() => onEditVoucher(voucher)}
-                          className="text-green-600 hover:text-green-800"
-                          title="Edit"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => onDeleteVoucher(voucher._id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                          disabled={deleteVoucherMutation.isPending}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
+              </thead>
+              <tbody>
+                {vouchers.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={7}
+                      className="px-4 py-8 text-center text-gray-500"
+                    >
+                      No vouchers created yet
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  vouchers.map((voucher) => (
+                    <tr
+                      key={voucher._id}
+                      className={`border-b hover:bg-gray-50 ${
+                        editingVoucherId === voucher._id ? "bg-yellow-50" : ""
+                      }`}
+                    >
+                      <td className="px-2 sm:px-4 py-2 whitespace-nowrap">{formatDate(voucher.date)}</td>
+                      <td className="px-2 sm:px-4 py-2 whitespace-nowrap">{voucher.type}</td>
+                      <td className="px-2 sm:px-4 py-2 max-w-[120px] sm:max-w-none truncate sm:truncate-none">
+                        {getLedgerName(voucher.debitLedger, ledgers)}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 max-w-[120px] sm:max-w-none truncate sm:truncate-none">
+                        {getLedgerName(voucher.creditLedger, ledgers)}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 text-right font-medium whitespace-nowrap">
+                        {voucher.amount.toLocaleString("en-IN", {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        })}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 text-gray-600 hidden md:table-cell">
+                        {voucher.narration || '-'}
+                      </td>
+                      <td className="px-2 sm:px-4 py-2 text-center whitespace-nowrap">
+                        <div className="flex gap-1 sm:gap-2 justify-center">
+                          <button
+                            onClick={() => onEditVoucher(voucher)}
+                            className="text-green-600 hover:text-green-800"
+                            title="Edit"
+                          >
+                            <Edit2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                          <button
+                            onClick={() => onDeleteVoucher(voucher._id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Delete"
+                            disabled={deleteVoucherMutation.isPending}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
