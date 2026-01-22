@@ -14,6 +14,7 @@ import StockTrendChart from '@/components/charts/StockTrendChart';
 import VarietyDistributionChart from '@/components/charts/VarietyDistributionChart';
 import TopFarmersChart from '@/components/charts/TopFarmersChart';
 import StockSummaryTable from '@/components/common/StockSummaryTable';
+import LocationAnallytics from '@/components/analytics/LocationAnallytics';
 import { formatNumber } from '@/lib/utils';
 
 // Define types locally for now
@@ -460,6 +461,9 @@ const ColdStorageSummaryScreen = () => {
             </div>
           </CardContent>
         </Card>
+
+        {/* Location Analytics */}
+        <LocationAnallytics />
 
         {/* Stock Trend Chart */}
         <StockTrendChart data={stockTrend} currentStock={totalBags} />
