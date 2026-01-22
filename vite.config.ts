@@ -34,30 +34,30 @@ export default defineConfig({
           if (id.includes('@react-pdf/renderer') || id.includes('react-pdf')) {
             return 'react-pdf';
           }
-          
+
           // Only chunk other vendor libraries
           if (id.includes('node_modules')) {
             // React and core libraries
             if (id.includes('react') && (id.includes('/react/') || id.includes('/react-dom/') || id.includes('/react-router-dom/'))) {
               return 'react-vendor';
             }
-            
+
             // React Query
             if (id.includes('@tanstack/react-query')) {
               return 'react-query';
             }
-            
+
             // UI libraries
             if (id.includes('lucide-react')) {
               return 'ui-vendor';
             }
-            
+
             // Redux
             if (id.includes('react-redux') || id.includes('@reduxjs/toolkit')) {
               return 'redux-vendor';
             }
           }
-          
+
           // Return undefined for everything else
           return undefined;
         },

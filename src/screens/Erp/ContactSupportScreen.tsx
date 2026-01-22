@@ -3,10 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Mail, Phone, MessageSquare, ChevronDown, ChevronUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import toast from "react-hot-toast";
-import Loader from "@/components/common/Loader/Loader";
 
 const FAQs = [
   {
@@ -29,30 +25,7 @@ const FAQs = [
 
 const ContactSupportScreen = () => {
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
-  const [formData, setFormData] = useState({
-    subject: "",
-    message: "",
-    priority: "medium"
-  });
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    try {
-      // Add your API call here to submit the support ticket
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulated API call
-      toast.success("Support ticket submitted successfully!");
-      setFormData({ subject: "", message: "", priority: "medium" });
-    } catch (error) {
-      toast.error("Failed to submit support ticket");
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   return (
     <div className="container max-w-4xl mx-auto p-6">
@@ -86,7 +59,7 @@ const ContactSupportScreen = () => {
                   <div>
                     <h3 className="font-medium">Email Support</h3>
                     <p className="text-sm text-muted-foreground">
-                      support@coldop.com
+                      coldopapp@gmail.com
                     </p>
                   </div>
                 </div>
@@ -100,73 +73,12 @@ const ContactSupportScreen = () => {
                   <div>
                     <h3 className="font-medium">Phone Support</h3>
                     <p className="text-sm text-muted-foreground">
-                      +91 1234567890
+                      +91 9877069258
                     </p>
                   </div>
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Support Ticket Form */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-xl">Submit a Support Ticket</CardTitle>
-            <CardDescription>
-              Fill out the form below and we'll get back to you as soon as possible
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="subject">Subject</Label>
-                <Input
-                  id="subject"
-                  value={formData.subject}
-                  onChange={(e) => setFormData(prev => ({ ...prev, subject: e.target.value }))}
-                  placeholder="Enter the subject of your inquiry"
-                  required
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="priority">Priority</Label>
-                <select
-                  id="priority"
-                  value={formData.priority}
-                  onChange={(e) => setFormData(prev => ({ ...prev, priority: e.target.value }))}
-                  className="w-full p-2 rounded-md border border-input bg-background"
-                >
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="message">Message</Label>
-                <textarea
-                  id="message"
-                  value={formData.message}
-                  onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                  className="w-full min-h-[150px] rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                  placeholder="Describe your issue in detail"
-                  required
-                />
-              </div>
-
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader size="sm" className="mr-2" />
-                    Submitting...
-                  </>
-                ) : (
-                  "Submit Ticket"
-                )}
-              </Button>
-            </form>
           </CardContent>
         </Card>
 

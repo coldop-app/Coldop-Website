@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { UserCircle, CreditCard, HelpCircle } from "lucide-react";
+import { UserCircle, HelpCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import TopBar from "@/components/common/Topbar/Topbar";
 import { useTranslation } from "react-i18next";
@@ -17,14 +17,6 @@ const SettingsScreen = () => {
       path: "/erp/settings/profile",
       iconBg: "bg-blue-50 text-blue-500",
       borderColor: "border-blue-100"
-    },
-    {
-      title: t('settings.options.billing.title'),
-      description: t('settings.options.billing.description'),
-      icon: CreditCard,
-      path: "/erp/settings/billing",
-      iconBg: "bg-green-50 text-green-500",
-      borderColor: "border-green-100"
     },
     {
       title: t('settings.options.support.title'),
