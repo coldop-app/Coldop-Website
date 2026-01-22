@@ -21,15 +21,15 @@ const SignInModal = ({ isOpen, onClose, isMobileApp=false }: SignInModalProps) =
 
   return isMobileApp ? (
       <div className="min-h-screen bg-white flex flex-col">
-        {/* Header */} 
-        
-        
+        {/* Header */}
+
+
         {/* Main Content */}
         <div className="flex-1  mx-2  p-8 flex flex-col items-center">
                      <h1 className="text-2xl font-medium text-gray-800 mb-12 text-center">
              Pick your role
            </h1>
-          
+
                      {/* Store Manager Option */}
            <Link
              to="/login/store-admin"
@@ -38,9 +38,9 @@ const SignInModal = ({ isOpen, onClose, isMobileApp=false }: SignInModalProps) =
            >
                          {/* Store manager image */}
              <div className="w-full h-48 rounded-lg mb-6 overflow-hidden">
-               <img 
-                 src="/store-owner.png" 
-                 alt="Store Manager" 
+               <img
+                 src="/store-owner.png"
+                 alt="Store Manager"
                  className="w-full h-full object-cover"
                />
              </div>
@@ -57,14 +57,14 @@ const SignInModal = ({ isOpen, onClose, isMobileApp=false }: SignInModalProps) =
                </div>
              )} */}
            </Link>
-          
+
           {/* OR Divider */}
           <div className="flex items-center w-full max-w-sm mb-4">
             <div className="flex-1 h-px bg-gray-300"></div>
                          <span className="px-4 text-gray-500 text-xs font-normal">or</span>
             <div className="flex-1 h-px bg-gray-300"></div>
           </div>
-          
+
                      {/* Farmer Option */}
            <Link
              to="/login/farmer"
@@ -72,13 +72,13 @@ const SignInModal = ({ isOpen, onClose, isMobileApp=false }: SignInModalProps) =
              onClick={onClose}
            >
             {/* "Currently in progress" label */}
-           
-            
+
+
                          {/* Farmer image */}
              <div className="w-full h-48 rounded-lg mb-6 overflow-hidden">
-               <img 
-                 src="/farmer.png" 
-                 alt="Farmer" 
+               <img
+                 src="/farmer.png"
+                 alt="Farmer"
                  className="w-full h-full object-cover"
                />
              </div>
@@ -95,8 +95,8 @@ const SignInModal = ({ isOpen, onClose, isMobileApp=false }: SignInModalProps) =
                </div>
              )} */}
            </Link>
-          
-          
+
+
         </div>
       </div>
     ) : (

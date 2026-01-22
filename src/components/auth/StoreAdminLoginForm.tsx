@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
@@ -111,15 +111,6 @@ const StoreAdminLoginForm = () => {
           )}
         </button>
       </form>
-
-      <div className="mt-6 text-center">
-        <p className="text-sm text-muted-foreground">
-          {t('storeAdminLogin.noAccount')}{" "}
-          <Link to="/signup/store-admin" className="text-green-600 hover:underline font-medium">
-            {t('storeAdminLogin.signUp')}
-          </Link>
-        </p>
-      </div>
     </div>
   );
 };
