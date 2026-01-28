@@ -8,7 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { StoreAdmin } from '@/utils/types';
 import { formatNumber } from '@/lib/utils';
-import { MapPin, ChevronRight, Users } from 'lucide-react';
+import { MapPin, ChevronRight, Users, Receipt } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface LocationData {
   chamber: string;
@@ -19,6 +26,7 @@ interface LocationData {
   bagSize: string;
   farmerId: string;
   farmerName: string;
+  receiptVoucherNo: number;
 }
 
 interface ChamberSummary {
@@ -62,6 +70,26 @@ interface FarmerGroup {
   }[];
 }
 
+interface QuantityBreakdown {
+  row: string;
+  variety: string;
+  bagSize: string;
+  totalQuantity: number;
+}
+
+interface VoucherBreakdown {
+  voucherNo: number;
+  quantity: number;
+}
+
+interface FarmerQuantityBreakdown {
+  farmerId: string;
+  farmerName: string;
+  quantity: number;
+  receiptVoucherNos: number[];
+  voucherBreakdown: VoucherBreakdown[];
+}
+
 // Helper function to parse location string
 const parseLocation = (location: string | undefined): { chamber: string; floor: string; row: string } => {
   if (!location) return { chamber: '', floor: '', row: '' };
@@ -101,6 +129,8 @@ const LocationAnallytics = () => {
   const [selectedFloor, setSelectedFloor] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'location' | 'farmer'>('location');
   const [selectedFarmer, setSelectedFarmer] = useState<string | null>(null);
+  const [selectedQuantityBreakdown, setSelectedQuantityBreakdown] = useState<QuantityBreakdown | null>(null);
+  const [isBreakdownDialogOpen, setIsBreakdownDialogOpen] = useState(false);
 
   // Fetch incoming orders
   const { data: ordersData, isLoading } = useQuery({
@@ -148,6 +178,7 @@ const LocationAnallytics = () => {
                   bagSize: bagSize.size,
                   farmerId,
                   farmerName,
+                  receiptVoucherNo: order.voucher?.voucherNumber || 0,
                 });
               }
             }
@@ -345,6 +376,64 @@ const LocationAnallytics = () => {
     return breakdown;
   }, [farmers, selectedFarmer]);
 
+  // Get farmer breakdown for selected quantity (row, variety, bagSize)
+  const quantityFarmerBreakdown = useMemo(() => {
+    if (!selectedQuantityBreakdown || !selectedChamber || !selectedFloor) return [];
+
+    // Filter location data to match the selected criteria
+    const matchingLocations = allLocationData.filter((loc) => {
+      return (
+        loc.chamber === selectedChamber &&
+        loc.floor === selectedFloor &&
+        loc.row === selectedQuantityBreakdown.row &&
+        loc.variety === selectedQuantityBreakdown.variety &&
+        loc.bagSize === selectedQuantityBreakdown.bagSize
+      );
+    });
+
+    // Group by farmer
+    const grouped = groupBy(matchingLocations, (loc) => loc.farmerId || 'Unknown');
+
+    const breakdown: FarmerQuantityBreakdown[] = Object.entries(grouped).map(([farmerId, locs]) => {
+      const locArray = locs as LocationData[];
+      if (!locArray || locArray.length === 0) {
+        return { farmerId, farmerName: 'Unknown', quantity: 0, receiptVoucherNos: [], voucherBreakdown: [] };
+      }
+      const farmerName = locArray[0].farmerName;
+      const quantity = locArray.reduce((sum, loc) => sum + loc.quantity, 0);
+      // Collect unique receipt voucher numbers for this farmer
+      const receiptVoucherNos = Array.from(new Set(locArray.map(loc => loc.receiptVoucherNo).filter(no => no > 0))).sort((a, b) => a - b);
+      
+      // Create voucher breakdown - group by voucher number and sum quantities
+      const voucherGrouped = groupBy(locArray, (loc) => loc.receiptVoucherNo.toString());
+      const voucherBreakdown: VoucherBreakdown[] = Object.entries(voucherGrouped)
+        .map(([voucherNoStr, voucherLocs]) => {
+          const voucherLocsArray = voucherLocs as LocationData[];
+          const voucherNo = parseInt(voucherNoStr, 10);
+          const voucherQuantity = voucherLocsArray.reduce((sum, loc) => sum + loc.quantity, 0);
+          return { voucherNo, quantity: voucherQuantity };
+        })
+        .filter(vb => vb.voucherNo > 0)
+        .sort((a, b) => a.voucherNo - b.voucherNo);
+      
+      return {
+        farmerId,
+        farmerName,
+        quantity,
+        receiptVoucherNos,
+        voucherBreakdown,
+      };
+    });
+
+    // Sort by quantity descending, then by farmer name
+    return breakdown.sort((a, b) => {
+      if (b.quantity !== a.quantity) {
+        return b.quantity - a.quantity;
+      }
+      return a.farmerName.localeCompare(b.farmerName);
+    });
+  }, [selectedQuantityBreakdown, selectedChamber, selectedFloor, allLocationData]);
+
   if (isLoading) {
     return (
       <Card className="bg-white shadow-sm">
@@ -531,7 +620,19 @@ const LocationAnallytics = () => {
                               )}
                               <td className="px-4 py-3 text-sm text-gray-700">{detail.variety}</td>
                               <td className="px-4 py-3 text-sm text-gray-700">{detail.bagSize}</td>
-                              <td className="px-4 py-3 text-sm text-gray-700 text-right">
+                              <td
+                                className="px-4 py-3 text-sm text-gray-700 text-right cursor-pointer hover:bg-blue-50 hover:text-blue-700 transition-colors"
+                                onClick={() => {
+                                  setSelectedQuantityBreakdown({
+                                    row: group.row,
+                                    variety: detail.variety,
+                                    bagSize: detail.bagSize,
+                                    totalQuantity: detail.quantity,
+                                  });
+                                  setIsBreakdownDialogOpen(true);
+                                }}
+                                title="Click to see farmer breakdown"
+                              >
                                 {formatNumber(detail.quantity)}
                               </td>
                               {detailIndex === 0 && (
@@ -697,6 +798,117 @@ const LocationAnallytics = () => {
             </div>
           )
         )}
+
+        {/* Farmer Breakdown Dialog */}
+        <Dialog open={isBreakdownDialogOpen} onOpenChange={setIsBreakdownDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Farmer Breakdown</DialogTitle>
+              <DialogDescription>
+                {selectedQuantityBreakdown && (
+                  <>
+                    Breakdown of {formatNumber(selectedQuantityBreakdown.totalQuantity)} bags
+                    {' '}for Row {selectedQuantityBreakdown.row}, Variety {selectedQuantityBreakdown.variety},
+                    {' '}Bag Size {selectedQuantityBreakdown.bagSize}
+                    {selectedChamber && selectedFloor && (
+                      <> at Chamber {selectedChamber}, Floor {selectedFloor}</>
+                    )}
+                  </>
+                )}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="mt-4">
+              {/* Voucher Bifurcation Table */}
+              {quantityFarmerBreakdown.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <p>No farmer data available for this quantity</p>
+                </div>
+              ) : (
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-700 mb-3">
+                    Voucher Bifurcation - How the quantities are split by receipt vouchers
+                  </h3>
+                  <div className="overflow-x-auto border border-gray-200 rounded-lg">
+                    <table className="w-full">
+                      <thead className="bg-gray-50 border-b">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Farmer Name
+                          </th>
+                          <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Receipt Voucher No.
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            Quantity (Bags)
+                          </th>
+                          <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                            % of Farmer Total
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {quantityFarmerBreakdown.flatMap((farmer) => {
+                          if (farmer.voucherBreakdown.length === 0) {
+                            return (
+                              <tr key={`${farmer.farmerId}-no-vouchers`} className="hover:bg-gray-50">
+                                <td className="px-4 py-3 text-sm font-medium text-gray-900">{farmer.farmerName}</td>
+                                <td className="px-4 py-3 text-sm text-gray-400">-</td>
+                                <td className="px-4 py-3 text-sm text-gray-400 text-right">-</td>
+                                <td className="px-4 py-3 text-sm text-gray-400 text-right">-</td>
+                              </tr>
+                            );
+                          }
+                          return farmer.voucherBreakdown.map((voucher, idx) => {
+                            const voucherPercentage = farmer.quantity > 0
+                              ? ((voucher.quantity / farmer.quantity) * 100).toFixed(1)
+                              : '0.0';
+                            return (
+                              <tr key={`${farmer.farmerId}-${voucher.voucherNo}-${idx}`} className="hover:bg-gray-50">
+                                {idx === 0 && (
+                                  <td
+                                    rowSpan={farmer.voucherBreakdown.length}
+                                    className="px-4 py-3 text-sm font-medium text-gray-900 align-top border-r"
+                                  >
+                                    {farmer.farmerName}
+                                  </td>
+                                )}
+                                <td className="px-4 py-3 text-sm">
+                                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-purple-50 text-purple-700 border border-purple-200 text-xs font-medium">
+                                    <Receipt className="w-3 h-3" />
+                                    {voucher.voucherNo}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-700 text-right">
+                                  {formatNumber(voucher.quantity)}
+                                </td>
+                                <td className="px-4 py-3 text-sm text-gray-700 text-right">
+                                  {voucherPercentage}%
+                                </td>
+                              </tr>
+                            );
+                          });
+                        })}
+                      </tbody>
+                      <tfoot className="bg-gray-50 border-t-2">
+                        <tr>
+                          <td colSpan={2} className="px-4 py-3 text-sm font-semibold text-gray-900 text-right">
+                            Grand Total:
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                            {selectedQuantityBreakdown && formatNumber(selectedQuantityBreakdown.totalQuantity)}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold text-gray-900 text-right">
+                            100.0%
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
