@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-02-17
+
+### Added
+
+- **TanStack Router** – File-based routing with `@tanstack/react-router` and `@tanstack/router-plugin` (Vite)
+- **Router setup** – `src/router.tsx` with `createRouter`, type registration; `src/main.tsx` uses `RouterProvider`
+- **Routes** – `src/routes/__root.tsx` (layout + devtools), `index`, `about`, `faq`, `case-studies`, `support`, `store-admin/login`
+- **Route tree** – Generated `src/routeTree.gen.ts` (plugin regenerates on dev/build)
+- **.vscode/settings.json** – Read-only and exclude `routeTree.gen.ts` from search/watcher per TanStack Router docs
+- **Dependencies** – `@tanstack/react-router`, `@tanstack/react-router-devtools`, `@tanstack/react-query`; dev: `@tanstack/router-plugin`
+
+### Changed
+
+- **vite.config.ts** – Added `tanstackRouter` plugin (before React plugin) with `target: 'react'`, `autoCodeSplitting: true`
+- **src/main.tsx** – Replaced direct `<App />` with `<RouterProvider router={router} />`
+
+---
+
 ## [0.2.0] - 2025-02-17
 
 ### Added
