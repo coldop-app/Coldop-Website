@@ -14,7 +14,9 @@ import { Route as FaqRouteImport } from './routes/faq'
 import { Route as CaseStudiesRouteImport } from './routes/case-studies'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as StoreAdminLoginRouteImport } from './routes/store-admin/login'
+import { Route as StoreAdminAuthenticatedRouteImport } from './routes/store-admin/_authenticated'
+import { Route as StoreAdminLoginIndexRouteImport } from './routes/store-admin/login/index'
+import { Route as StoreAdminAuthenticatedDaybookIndexRouteImport } from './routes/store-admin/_authenticated/daybook/index'
 
 const SupportRoute = SupportRouteImport.update({
   id: '/support',
@@ -41,11 +43,22 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const StoreAdminLoginRoute = StoreAdminLoginRouteImport.update({
-  id: '/store-admin/login',
-  path: '/store-admin/login',
+const StoreAdminAuthenticatedRoute = StoreAdminAuthenticatedRouteImport.update({
+  id: '/store-admin/_authenticated',
+  path: '/store-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreAdminLoginIndexRoute = StoreAdminLoginIndexRouteImport.update({
+  id: '/store-admin/login/',
+  path: '/store-admin/login/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const StoreAdminAuthenticatedDaybookIndexRoute =
+  StoreAdminAuthenticatedDaybookIndexRouteImport.update({
+    id: '/daybook/',
+    path: '/daybook/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -53,7 +66,9 @@ export interface FileRoutesByFullPath {
   '/case-studies': typeof CaseStudiesRoute
   '/faq': typeof FaqRoute
   '/support': typeof SupportRoute
-  '/store-admin/login': typeof StoreAdminLoginRoute
+  '/store-admin': typeof StoreAdminAuthenticatedRouteWithChildren
+  '/store-admin/login/': typeof StoreAdminLoginIndexRoute
+  '/store-admin/daybook/': typeof StoreAdminAuthenticatedDaybookIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -61,7 +76,9 @@ export interface FileRoutesByTo {
   '/case-studies': typeof CaseStudiesRoute
   '/faq': typeof FaqRoute
   '/support': typeof SupportRoute
-  '/store-admin/login': typeof StoreAdminLoginRoute
+  '/store-admin': typeof StoreAdminAuthenticatedRouteWithChildren
+  '/store-admin/login': typeof StoreAdminLoginIndexRoute
+  '/store-admin/daybook': typeof StoreAdminAuthenticatedDaybookIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -70,7 +87,9 @@ export interface FileRoutesById {
   '/case-studies': typeof CaseStudiesRoute
   '/faq': typeof FaqRoute
   '/support': typeof SupportRoute
-  '/store-admin/login': typeof StoreAdminLoginRoute
+  '/store-admin/_authenticated': typeof StoreAdminAuthenticatedRouteWithChildren
+  '/store-admin/login/': typeof StoreAdminLoginIndexRoute
+  '/store-admin/_authenticated/daybook/': typeof StoreAdminAuthenticatedDaybookIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -80,7 +99,9 @@ export interface FileRouteTypes {
     | '/case-studies'
     | '/faq'
     | '/support'
-    | '/store-admin/login'
+    | '/store-admin'
+    | '/store-admin/login/'
+    | '/store-admin/daybook/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -88,7 +109,9 @@ export interface FileRouteTypes {
     | '/case-studies'
     | '/faq'
     | '/support'
+    | '/store-admin'
     | '/store-admin/login'
+    | '/store-admin/daybook'
   id:
     | '__root__'
     | '/'
@@ -96,7 +119,9 @@ export interface FileRouteTypes {
     | '/case-studies'
     | '/faq'
     | '/support'
-    | '/store-admin/login'
+    | '/store-admin/_authenticated'
+    | '/store-admin/login/'
+    | '/store-admin/_authenticated/daybook/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -105,7 +130,8 @@ export interface RootRouteChildren {
   CaseStudiesRoute: typeof CaseStudiesRoute
   FaqRoute: typeof FaqRoute
   SupportRoute: typeof SupportRoute
-  StoreAdminLoginRoute: typeof StoreAdminLoginRoute
+  StoreAdminAuthenticatedRoute: typeof StoreAdminAuthenticatedRouteWithChildren
+  StoreAdminLoginIndexRoute: typeof StoreAdminLoginIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -145,15 +171,44 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/store-admin/login': {
-      id: '/store-admin/login'
-      path: '/store-admin/login'
-      fullPath: '/store-admin/login'
-      preLoaderRoute: typeof StoreAdminLoginRouteImport
+    '/store-admin/_authenticated': {
+      id: '/store-admin/_authenticated'
+      path: '/store-admin'
+      fullPath: '/store-admin'
+      preLoaderRoute: typeof StoreAdminAuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/store-admin/login/': {
+      id: '/store-admin/login/'
+      path: '/store-admin/login'
+      fullPath: '/store-admin/login/'
+      preLoaderRoute: typeof StoreAdminLoginIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/store-admin/_authenticated/daybook/': {
+      id: '/store-admin/_authenticated/daybook/'
+      path: '/daybook'
+      fullPath: '/store-admin/daybook/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedDaybookIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
     }
   }
 }
+
+interface StoreAdminAuthenticatedRouteChildren {
+  StoreAdminAuthenticatedDaybookIndexRoute: typeof StoreAdminAuthenticatedDaybookIndexRoute
+}
+
+const StoreAdminAuthenticatedRouteChildren: StoreAdminAuthenticatedRouteChildren =
+  {
+    StoreAdminAuthenticatedDaybookIndexRoute:
+      StoreAdminAuthenticatedDaybookIndexRoute,
+  }
+
+const StoreAdminAuthenticatedRouteWithChildren =
+  StoreAdminAuthenticatedRoute._addFileChildren(
+    StoreAdminAuthenticatedRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -161,7 +216,8 @@ const rootRouteChildren: RootRouteChildren = {
   CaseStudiesRoute: CaseStudiesRoute,
   FaqRoute: FaqRoute,
   SupportRoute: SupportRoute,
-  StoreAdminLoginRoute: StoreAdminLoginRoute,
+  StoreAdminAuthenticatedRoute: StoreAdminAuthenticatedRouteWithChildren,
+  StoreAdminLoginIndexRoute: StoreAdminLoginIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

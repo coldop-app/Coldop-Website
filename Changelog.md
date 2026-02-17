@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2026-02-17
+
+### Fixed
+
+- **Store admin auth context** – Resolved `TypeError: Cannot read properties of undefined (reading 'isAuthenticated')` in route `beforeLoad` by providing router context from the auth store: router now receives `context.auth` from an `InnerApp` wrapper that reads `useStore` and passes `{ auth: { isAuthenticated, admin, token } }` into `RouterProvider`. Added optional chaining (`context.auth?.isAuthenticated`) in login and authenticated routes as a guard, and `router.invalidate()` after login/logout so route loaders see the updated auth state.
+
+---
+
 ## [0.3.0] - 2026-02-17
 
 ### Added
