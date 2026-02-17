@@ -2,7 +2,7 @@
 
 import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useStoreAdminLogout } from '@/services/store-admin/auth/useStoreAdminLogin';
+import { useStoreAdminLogout } from '@/services/store-admin/auth/useStoreAdminLogout';
 import { cn } from '@/lib/utils'; // optional, if you have a className utility
 
 interface LogoutButtonProps {

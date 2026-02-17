@@ -7,7 +7,7 @@ import AppBottomNav from '@/components/app-bottom-nav';
 export const Route = createFileRoute('/store-admin/_authenticated')({
   beforeLoad: async ({ context, location }) => {
     // Check if user is authenticated
-    if (!context.auth?.isAuthenticated) {
+    if (!context.auth.isAuthenticated) {
       throw redirect({
         to: '/store-admin/login',
         search: {

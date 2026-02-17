@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-02-17
+
+### Added
+
+- **Store admin app** – Full store-admin dashboard with authenticated layout and sidebar navigation
+- **Daybook** – Daybook view with incoming/outgoing gate-pass cards, detail rows, and search
+- **Incoming / Outgoing** – Routes and forms for incoming and outgoing gate passes with create/edit flows
+- **People** – People management with farmer list and per-farmer storage link detail (`/people/$farmerStorageLinkId`)
+- **My Finances** – Finances dashboard (balance sheet, vouchers, ledgers)
+- **Analytics** – Analytics route and storage summary
+- **Edit history** – Edit history view and `useGetEditHistory` integration
+- **Services** – Incoming/outgoing gate-pass hooks, accounting (vouchers, ledgers, balance sheet), analytics, preferences, and store-admin functions (daybook search, farmers, gate passes, voucher number, edit history)
+- **UI components** – Alert dialog, badge, calendar, chart, checkbox, collapsible, command, data-table, dialog, item, pagination, popover, progress, spinner, table, tabs
+- **PDF** – PDF utilities/module
+- **Types** – `farmer.ts`, `ledger.ts`
+- **Zustand** – Demo store (`useBearStore`) and zustand route
+
+### Changed
+
+- **Router** – Removed standalone `src/router.tsx`; routing driven by file-based route tree
+- **Routes** – Removed `about`, `case-studies`, `faq`, `support`; index and store-admin routes updated; new authenticated child routes: `analytics`, `daybook`, `edit-history`, `incoming`, `my-finances`, `outgoing`, `people`
+- **App / main** – App layout and main entry updated for new structure and auth context
+- **Daybook** – Expanded daybook component with new subcomponents and cards
+- **Auth** – Store admin login/logout hooks refactored; authenticated layout and login route adjustments
+- **UI** – Updates to avatar, button, dropdown-menu, empty, field, input, label, separator, sheet, sidebar, skeleton, sonner, tooltip; `lib/utils` tweaks
+- **Dependencies** – Added TanStack Form, Table, React PDF, axios, cmdk, date-fns, react-day-picker, recharts, usehooks-ts, zod, zustand; lockfile updated
+
+### Removed
+
+- **Routes** – `src/router.tsx`, `about`, `case-studies`, `faq`, `support`
+
+---
+
 ## [0.3.2] - 2026-02-17
 
 ### Changed

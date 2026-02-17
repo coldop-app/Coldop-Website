@@ -9,38 +9,29 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as SupportRouteImport } from './routes/support'
-import { Route as FaqRouteImport } from './routes/faq'
-import { Route as CaseStudiesRouteImport } from './routes/case-studies'
-import { Route as AboutRouteImport } from './routes/about'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ZustandIndexRouteImport } from './routes/zustand/index'
 import { Route as StoreAdminAuthenticatedRouteImport } from './routes/store-admin/_authenticated'
 import { Route as StoreAdminLoginIndexRouteImport } from './routes/store-admin/login/index'
+import { Route as StoreAdminAuthenticatedPeopleIndexRouteImport } from './routes/store-admin/_authenticated/people/index'
+import { Route as StoreAdminAuthenticatedOutgoingIndexRouteImport } from './routes/store-admin/_authenticated/outgoing/index'
+import { Route as StoreAdminAuthenticatedMyFinancesIndexRouteImport } from './routes/store-admin/_authenticated/my-finances/index'
+import { Route as StoreAdminAuthenticatedIncomingIndexRouteImport } from './routes/store-admin/_authenticated/incoming/index'
+import { Route as StoreAdminAuthenticatedEditHistoryIndexRouteImport } from './routes/store-admin/_authenticated/edit-history/index'
 import { Route as StoreAdminAuthenticatedDaybookIndexRouteImport } from './routes/store-admin/_authenticated/daybook/index'
+import { Route as StoreAdminAuthenticatedAnalyticsIndexRouteImport } from './routes/store-admin/_authenticated/analytics/index'
+import { Route as StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRouteImport } from './routes/store-admin/_authenticated/people/$farmerStorageLinkId/index'
+import { Route as StoreAdminAuthenticatedOutgoingEditIdIndexRouteImport } from './routes/store-admin/_authenticated/outgoing/edit/$id/index'
+import { Route as StoreAdminAuthenticatedIncomingEditIdIndexRouteImport } from './routes/store-admin/_authenticated/incoming/edit/$id/index'
 
-const SupportRoute = SupportRouteImport.update({
-  id: '/support',
-  path: '/support',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const FaqRoute = FaqRouteImport.update({
-  id: '/faq',
-  path: '/faq',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CaseStudiesRoute = CaseStudiesRouteImport.update({
-  id: '/case-studies',
-  path: '/case-studies',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AboutRoute = AboutRouteImport.update({
-  id: '/about',
-  path: '/about',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ZustandIndexRoute = ZustandIndexRouteImport.update({
+  id: '/zustand/',
+  path: '/zustand/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const StoreAdminAuthenticatedRoute = StoreAdminAuthenticatedRouteImport.update({
@@ -53,122 +44,188 @@ const StoreAdminLoginIndexRoute = StoreAdminLoginIndexRouteImport.update({
   path: '/store-admin/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreAdminAuthenticatedPeopleIndexRoute =
+  StoreAdminAuthenticatedPeopleIndexRouteImport.update({
+    id: '/people/',
+    path: '/people/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
+const StoreAdminAuthenticatedOutgoingIndexRoute =
+  StoreAdminAuthenticatedOutgoingIndexRouteImport.update({
+    id: '/outgoing/',
+    path: '/outgoing/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
+const StoreAdminAuthenticatedMyFinancesIndexRoute =
+  StoreAdminAuthenticatedMyFinancesIndexRouteImport.update({
+    id: '/my-finances/',
+    path: '/my-finances/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
+const StoreAdminAuthenticatedIncomingIndexRoute =
+  StoreAdminAuthenticatedIncomingIndexRouteImport.update({
+    id: '/incoming/',
+    path: '/incoming/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
+const StoreAdminAuthenticatedEditHistoryIndexRoute =
+  StoreAdminAuthenticatedEditHistoryIndexRouteImport.update({
+    id: '/edit-history/',
+    path: '/edit-history/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
 const StoreAdminAuthenticatedDaybookIndexRoute =
   StoreAdminAuthenticatedDaybookIndexRouteImport.update({
     id: '/daybook/',
     path: '/daybook/',
     getParentRoute: () => StoreAdminAuthenticatedRoute,
   } as any)
+const StoreAdminAuthenticatedAnalyticsIndexRoute =
+  StoreAdminAuthenticatedAnalyticsIndexRouteImport.update({
+    id: '/analytics/',
+    path: '/analytics/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
+const StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute =
+  StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRouteImport.update({
+    id: '/people/$farmerStorageLinkId/',
+    path: '/people/$farmerStorageLinkId/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
+const StoreAdminAuthenticatedOutgoingEditIdIndexRoute =
+  StoreAdminAuthenticatedOutgoingEditIdIndexRouteImport.update({
+    id: '/outgoing/edit/$id/',
+    path: '/outgoing/edit/$id/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
+const StoreAdminAuthenticatedIncomingEditIdIndexRoute =
+  StoreAdminAuthenticatedIncomingEditIdIndexRouteImport.update({
+    id: '/incoming/edit/$id/',
+    path: '/incoming/edit/$id/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/case-studies': typeof CaseStudiesRoute
-  '/faq': typeof FaqRoute
-  '/support': typeof SupportRoute
   '/store-admin': typeof StoreAdminAuthenticatedRouteWithChildren
+  '/zustand/': typeof ZustandIndexRoute
   '/store-admin/login/': typeof StoreAdminLoginIndexRoute
+  '/store-admin/analytics/': typeof StoreAdminAuthenticatedAnalyticsIndexRoute
   '/store-admin/daybook/': typeof StoreAdminAuthenticatedDaybookIndexRoute
+  '/store-admin/edit-history/': typeof StoreAdminAuthenticatedEditHistoryIndexRoute
+  '/store-admin/incoming/': typeof StoreAdminAuthenticatedIncomingIndexRoute
+  '/store-admin/my-finances/': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
+  '/store-admin/outgoing/': typeof StoreAdminAuthenticatedOutgoingIndexRoute
+  '/store-admin/people/': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/people/$farmerStorageLinkId/': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
+  '/store-admin/incoming/edit/$id/': typeof StoreAdminAuthenticatedIncomingEditIdIndexRoute
+  '/store-admin/outgoing/edit/$id/': typeof StoreAdminAuthenticatedOutgoingEditIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/case-studies': typeof CaseStudiesRoute
-  '/faq': typeof FaqRoute
-  '/support': typeof SupportRoute
   '/store-admin': typeof StoreAdminAuthenticatedRouteWithChildren
+  '/zustand': typeof ZustandIndexRoute
   '/store-admin/login': typeof StoreAdminLoginIndexRoute
+  '/store-admin/analytics': typeof StoreAdminAuthenticatedAnalyticsIndexRoute
   '/store-admin/daybook': typeof StoreAdminAuthenticatedDaybookIndexRoute
+  '/store-admin/edit-history': typeof StoreAdminAuthenticatedEditHistoryIndexRoute
+  '/store-admin/incoming': typeof StoreAdminAuthenticatedIncomingIndexRoute
+  '/store-admin/my-finances': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
+  '/store-admin/outgoing': typeof StoreAdminAuthenticatedOutgoingIndexRoute
+  '/store-admin/people': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/people/$farmerStorageLinkId': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
+  '/store-admin/incoming/edit/$id': typeof StoreAdminAuthenticatedIncomingEditIdIndexRoute
+  '/store-admin/outgoing/edit/$id': typeof StoreAdminAuthenticatedOutgoingEditIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/about': typeof AboutRoute
-  '/case-studies': typeof CaseStudiesRoute
-  '/faq': typeof FaqRoute
-  '/support': typeof SupportRoute
   '/store-admin/_authenticated': typeof StoreAdminAuthenticatedRouteWithChildren
+  '/zustand/': typeof ZustandIndexRoute
   '/store-admin/login/': typeof StoreAdminLoginIndexRoute
+  '/store-admin/_authenticated/analytics/': typeof StoreAdminAuthenticatedAnalyticsIndexRoute
   '/store-admin/_authenticated/daybook/': typeof StoreAdminAuthenticatedDaybookIndexRoute
+  '/store-admin/_authenticated/edit-history/': typeof StoreAdminAuthenticatedEditHistoryIndexRoute
+  '/store-admin/_authenticated/incoming/': typeof StoreAdminAuthenticatedIncomingIndexRoute
+  '/store-admin/_authenticated/my-finances/': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
+  '/store-admin/_authenticated/outgoing/': typeof StoreAdminAuthenticatedOutgoingIndexRoute
+  '/store-admin/_authenticated/people/': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/_authenticated/people/$farmerStorageLinkId/': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
+  '/store-admin/_authenticated/incoming/edit/$id/': typeof StoreAdminAuthenticatedIncomingEditIdIndexRoute
+  '/store-admin/_authenticated/outgoing/edit/$id/': typeof StoreAdminAuthenticatedOutgoingEditIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/about'
-    | '/case-studies'
-    | '/faq'
-    | '/support'
     | '/store-admin'
+    | '/zustand/'
     | '/store-admin/login/'
+    | '/store-admin/analytics/'
     | '/store-admin/daybook/'
+    | '/store-admin/edit-history/'
+    | '/store-admin/incoming/'
+    | '/store-admin/my-finances/'
+    | '/store-admin/outgoing/'
+    | '/store-admin/people/'
+    | '/store-admin/people/$farmerStorageLinkId/'
+    | '/store-admin/incoming/edit/$id/'
+    | '/store-admin/outgoing/edit/$id/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/about'
-    | '/case-studies'
-    | '/faq'
-    | '/support'
     | '/store-admin'
+    | '/zustand'
     | '/store-admin/login'
+    | '/store-admin/analytics'
     | '/store-admin/daybook'
+    | '/store-admin/edit-history'
+    | '/store-admin/incoming'
+    | '/store-admin/my-finances'
+    | '/store-admin/outgoing'
+    | '/store-admin/people'
+    | '/store-admin/people/$farmerStorageLinkId'
+    | '/store-admin/incoming/edit/$id'
+    | '/store-admin/outgoing/edit/$id'
   id:
     | '__root__'
     | '/'
-    | '/about'
-    | '/case-studies'
-    | '/faq'
-    | '/support'
     | '/store-admin/_authenticated'
+    | '/zustand/'
     | '/store-admin/login/'
+    | '/store-admin/_authenticated/analytics/'
     | '/store-admin/_authenticated/daybook/'
+    | '/store-admin/_authenticated/edit-history/'
+    | '/store-admin/_authenticated/incoming/'
+    | '/store-admin/_authenticated/my-finances/'
+    | '/store-admin/_authenticated/outgoing/'
+    | '/store-admin/_authenticated/people/'
+    | '/store-admin/_authenticated/people/$farmerStorageLinkId/'
+    | '/store-admin/_authenticated/incoming/edit/$id/'
+    | '/store-admin/_authenticated/outgoing/edit/$id/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AboutRoute: typeof AboutRoute
-  CaseStudiesRoute: typeof CaseStudiesRoute
-  FaqRoute: typeof FaqRoute
-  SupportRoute: typeof SupportRoute
   StoreAdminAuthenticatedRoute: typeof StoreAdminAuthenticatedRouteWithChildren
+  ZustandIndexRoute: typeof ZustandIndexRoute
   StoreAdminLoginIndexRoute: typeof StoreAdminLoginIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/support': {
-      id: '/support'
-      path: '/support'
-      fullPath: '/support'
-      preLoaderRoute: typeof SupportRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/faq': {
-      id: '/faq'
-      path: '/faq'
-      fullPath: '/faq'
-      preLoaderRoute: typeof FaqRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/case-studies': {
-      id: '/case-studies'
-      path: '/case-studies'
-      fullPath: '/case-studies'
-      preLoaderRoute: typeof CaseStudiesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/about': {
-      id: '/about'
-      path: '/about'
-      fullPath: '/about'
-      preLoaderRoute: typeof AboutRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/zustand/': {
+      id: '/zustand/'
+      path: '/zustand'
+      fullPath: '/zustand/'
+      preLoaderRoute: typeof ZustandIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/store-admin/_authenticated': {
@@ -185,6 +242,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreAdminLoginIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/store-admin/_authenticated/people/': {
+      id: '/store-admin/_authenticated/people/'
+      path: '/people'
+      fullPath: '/store-admin/people/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedPeopleIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
+    '/store-admin/_authenticated/outgoing/': {
+      id: '/store-admin/_authenticated/outgoing/'
+      path: '/outgoing'
+      fullPath: '/store-admin/outgoing/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedOutgoingIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
+    '/store-admin/_authenticated/my-finances/': {
+      id: '/store-admin/_authenticated/my-finances/'
+      path: '/my-finances'
+      fullPath: '/store-admin/my-finances/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedMyFinancesIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
+    '/store-admin/_authenticated/incoming/': {
+      id: '/store-admin/_authenticated/incoming/'
+      path: '/incoming'
+      fullPath: '/store-admin/incoming/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedIncomingIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
+    '/store-admin/_authenticated/edit-history/': {
+      id: '/store-admin/_authenticated/edit-history/'
+      path: '/edit-history'
+      fullPath: '/store-admin/edit-history/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedEditHistoryIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
     '/store-admin/_authenticated/daybook/': {
       id: '/store-admin/_authenticated/daybook/'
       path: '/daybook'
@@ -192,17 +284,72 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreAdminAuthenticatedDaybookIndexRouteImport
       parentRoute: typeof StoreAdminAuthenticatedRoute
     }
+    '/store-admin/_authenticated/analytics/': {
+      id: '/store-admin/_authenticated/analytics/'
+      path: '/analytics'
+      fullPath: '/store-admin/analytics/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedAnalyticsIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
+    '/store-admin/_authenticated/people/$farmerStorageLinkId/': {
+      id: '/store-admin/_authenticated/people/$farmerStorageLinkId/'
+      path: '/people/$farmerStorageLinkId'
+      fullPath: '/store-admin/people/$farmerStorageLinkId/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
+    '/store-admin/_authenticated/outgoing/edit/$id/': {
+      id: '/store-admin/_authenticated/outgoing/edit/$id/'
+      path: '/outgoing/edit/$id'
+      fullPath: '/store-admin/outgoing/edit/$id/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedOutgoingEditIdIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
+    '/store-admin/_authenticated/incoming/edit/$id/': {
+      id: '/store-admin/_authenticated/incoming/edit/$id/'
+      path: '/incoming/edit/$id'
+      fullPath: '/store-admin/incoming/edit/$id/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedIncomingEditIdIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
   }
 }
 
 interface StoreAdminAuthenticatedRouteChildren {
+  StoreAdminAuthenticatedAnalyticsIndexRoute: typeof StoreAdminAuthenticatedAnalyticsIndexRoute
   StoreAdminAuthenticatedDaybookIndexRoute: typeof StoreAdminAuthenticatedDaybookIndexRoute
+  StoreAdminAuthenticatedEditHistoryIndexRoute: typeof StoreAdminAuthenticatedEditHistoryIndexRoute
+  StoreAdminAuthenticatedIncomingIndexRoute: typeof StoreAdminAuthenticatedIncomingIndexRoute
+  StoreAdminAuthenticatedMyFinancesIndexRoute: typeof StoreAdminAuthenticatedMyFinancesIndexRoute
+  StoreAdminAuthenticatedOutgoingIndexRoute: typeof StoreAdminAuthenticatedOutgoingIndexRoute
+  StoreAdminAuthenticatedPeopleIndexRoute: typeof StoreAdminAuthenticatedPeopleIndexRoute
+  StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute: typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
+  StoreAdminAuthenticatedIncomingEditIdIndexRoute: typeof StoreAdminAuthenticatedIncomingEditIdIndexRoute
+  StoreAdminAuthenticatedOutgoingEditIdIndexRoute: typeof StoreAdminAuthenticatedOutgoingEditIdIndexRoute
 }
 
 const StoreAdminAuthenticatedRouteChildren: StoreAdminAuthenticatedRouteChildren =
   {
+    StoreAdminAuthenticatedAnalyticsIndexRoute:
+      StoreAdminAuthenticatedAnalyticsIndexRoute,
     StoreAdminAuthenticatedDaybookIndexRoute:
       StoreAdminAuthenticatedDaybookIndexRoute,
+    StoreAdminAuthenticatedEditHistoryIndexRoute:
+      StoreAdminAuthenticatedEditHistoryIndexRoute,
+    StoreAdminAuthenticatedIncomingIndexRoute:
+      StoreAdminAuthenticatedIncomingIndexRoute,
+    StoreAdminAuthenticatedMyFinancesIndexRoute:
+      StoreAdminAuthenticatedMyFinancesIndexRoute,
+    StoreAdminAuthenticatedOutgoingIndexRoute:
+      StoreAdminAuthenticatedOutgoingIndexRoute,
+    StoreAdminAuthenticatedPeopleIndexRoute:
+      StoreAdminAuthenticatedPeopleIndexRoute,
+    StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute:
+      StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute,
+    StoreAdminAuthenticatedIncomingEditIdIndexRoute:
+      StoreAdminAuthenticatedIncomingEditIdIndexRoute,
+    StoreAdminAuthenticatedOutgoingEditIdIndexRoute:
+      StoreAdminAuthenticatedOutgoingEditIdIndexRoute,
   }
 
 const StoreAdminAuthenticatedRouteWithChildren =
@@ -212,11 +359,8 @@ const StoreAdminAuthenticatedRouteWithChildren =
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AboutRoute: AboutRoute,
-  CaseStudiesRoute: CaseStudiesRoute,
-  FaqRoute: FaqRoute,
-  SupportRoute: SupportRoute,
   StoreAdminAuthenticatedRoute: StoreAdminAuthenticatedRouteWithChildren,
+  ZustandIndexRoute: ZustandIndexRoute,
   StoreAdminLoginIndexRoute: StoreAdminLoginIndexRoute,
 }
 export const routeTree = rootRouteImport

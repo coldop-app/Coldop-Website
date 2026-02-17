@@ -1,7 +1,7 @@
 import { createFileRoute, Link, redirect } from '@tanstack/react-router';
 
 import LoginForm from '@/components/auth/login';
-import { useStoreAdminLogin } from '@/services/store-admin/auth/useStoreAdminLogout';
+import { useStoreAdminLogin } from '@/services/store-admin/auth/useStoreAdminLogin';
 
 export const Route = createFileRoute('/store-admin/login/')({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => {
@@ -11,7 +11,7 @@ export const Route = createFileRoute('/store-admin/login/')({
   },
   beforeLoad: ({ context }) => {
     // If user is already authenticated, redirect to daybook
-    if (context.auth?.isAuthenticated) {
+    if (context.auth.isAuthenticated) {
       throw redirect({
         to: '/store-admin/daybook',
         replace: true,

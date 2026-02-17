@@ -1,27 +1,50 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import { RouterProvider } from '@tanstack/react-router'
-import { router } from './router'
-import { useStore } from '@/stores/store'
-import './index.css'
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { RouterProvider, createRouter } from '@tanstack/react-router';
+import { useStore } from '@/stores/store';
+import './index.css';
 
-function InnerApp() {
-  const admin = useStore((state) => state.admin)
-  const token = useStore((state) => state.token)
-  const auth = {
-    isAuthenticated: !!(admin && token),
-    admin,
-    token,
+// Import the generated route tree
+import { routeTree } from './routeTree.gen';
+
+// Create a new router instance with context
+const router = createRouter({
+  routeTree,
+  context: {
+    // auth will initially be undefined
+    // We'll be passing down the auth state from within a React component
+    auth: undefined!,
+  },
+});
+
+// Register the router instance for type safety
+declare module '@tanstack/react-router' {
+  interface Register {
+    router: typeof router;
   }
-  return <RouterProvider router={router} context={{ auth }} />
 }
 
-const rootElement = document.getElementById('root')!
-if (!rootElement.innerHTML) {
-  const root = createRoot(rootElement)
-  root.render(
-    <StrictMode>
-      <InnerApp />
-    </StrictMode>,
-  )
+// Inner component that provides auth context to the router
+function InnerApp() {
+  const { admin, token } = useStore();
+  const isAuthenticated = !!(admin && token);
+
+  return (
+    <RouterProvider
+      router={router}
+      context={{
+        auth: {
+          isAuthenticated,
+          admin,
+          token,
+        },
+      }}
+    />
+  );
 }
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <InnerApp />
+  </StrictMode>
+);
