@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.7] - 2026-02-19
+
+### Added
+
+- **Advanced Analytics – Location drill-down** – Location tab: view unique chambers, then select a chamber to see floors (with checkboxes), then “View orders” to see orders table; **Current / Initial** quantity tabs above Location/Farmer so all quantities (chamber totals, floor totals, table) follow the selected type
+- **Chamber & floor aggregations** – Each chamber card shows aggregated total (current or initial quantity) for that chamber; floors view shows chamber total and per-floor totals next to each floor
+- **Object.groupBy types** – `src/object-groupby.d.ts` type declaration for ES2024 `Object.groupBy` used in analytics grouping
+
+### Changed
+
+- **Advanced Analytics – Location tab** – Replaced flat chamber list with drill-down: chambers → floors (multi-select) → orders table; orders table columns: IGP #, Date, Variety, Farmer, Row, Bag, quantity (Chamber and Floor columns removed as they are fixed by the drill-down selection)
+
+---
+
 ## [0.4.6] - 2026-02-19
 
 ### Added
