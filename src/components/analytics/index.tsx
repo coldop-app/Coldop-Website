@@ -1,5 +1,5 @@
 import { memo, useMemo, useState, useCallback } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { Link, useNavigate } from '@tanstack/react-router';
 
 import {
   Item,
@@ -11,7 +11,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Package, RefreshCw, Wheat, Ruler, User } from 'lucide-react';
+import {
+  BarChart3,
+  LineChart,
+  Package,
+  RefreshCw,
+  Wheat,
+  Ruler,
+  User,
+} from 'lucide-react';
 import { useGetStorageSummary } from '@/services/analytics/useGetStorageSummary';
 import { useGetTopFarmers } from '@/services/analytics/useGetTopFarmers';
 import { StorageSummaryTable } from '@/components/analytics/storage-summary-table';
@@ -335,6 +343,17 @@ const AnalyticsPage = memo(function AnalyticsPage() {
                 controlledTab={mode}
                 onCellClick={handleStockSummaryCellClick}
               />
+
+              {/* Advanced Analytics CTA */}
+              <Link
+                to="/store-admin/analytics/advanced"
+                className="font-custom group flex items-center justify-center gap-2.5 rounded-xl border border-border/80 bg-muted/30 px-5 py-3.5 shadow-sm transition-all hover:border-primary/40 hover:bg-muted/50 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+              >
+                <LineChart className="text-primary h-5 w-5 shrink-0 transition-transform group-hover:scale-105" />
+                <span className="text-sm font-semibold text-foreground">
+                  Advanced Analytics
+                </span>
+              </Link>
 
               <CapacityUtilisation
                 currentQuantity={

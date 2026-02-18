@@ -327,18 +327,6 @@ const VarietyBreakdownScreen = () => {
               </Card>
             </div>
 
-            {/* Charts: Size-wise (bar) + Farmer-wise (donut) */}
-            <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-2">
-              <SizeWiseDistributionChart
-                data={sizeWiseChartData}
-                quantityType={quantityType}
-              />
-              <FarmerWiseShareChart
-                data={farmerWiseChartData}
-                quantityType={quantityType}
-              />
-            </div>
-
             {/* Farmer quantity table */}
             <FarmerQuantityTable
               rows={tableRows}
@@ -354,6 +342,18 @@ const VarietyBreakdownScreen = () => {
                 selectedBagSize !== TAB_VALUE_ALL ? selectedBagSize : undefined
               }
             />
+
+            {/* Charts: Size-wise (bar) + Farmer-wise (donut) */}
+            <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-2">
+              <SizeWiseDistributionChart
+                data={sizeWiseChartData}
+                quantityType={quantityType}
+              />
+              <FarmerWiseShareChart
+                data={farmerWiseChartData}
+                quantityType={quantityType}
+              />
+            </div>
           </>
         )}
       </div>
