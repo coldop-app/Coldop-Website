@@ -126,3 +126,69 @@ export interface UpdateFarmerStorageLinkApiResponse {
   };
   message: string;
 }
+
+/** Request body for POST /farmer-storage-link/check */
+export interface CheckFarmerMobileInput {
+  mobileNumber: string;
+}
+
+/** Farmer as returned in check farmer mobile response (when farmer exists) */
+export interface CheckFarmerMobileResponseFarmer {
+  _id: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+  imageUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** API response for POST /farmer-storage-link/check */
+export interface CheckFarmerMobileApiResponse {
+  success: boolean;
+  message: string;
+  data?: {
+    farmer?: CheckFarmerMobileResponseFarmer | null;
+  } | null;
+}
+
+/** Request body for POST /farmer-storage-link/link-farmer-to-store */
+export interface LinkFarmerToStoreInput {
+  farmerId: string;
+  accountNumber: number;
+  costPerBag: number;
+  openingBalance?: number;
+}
+
+/** Farmer as returned in link-farmer-to-store 200 response */
+export interface LinkFarmerToStoreResponseFarmer {
+  _id: string;
+  name: string;
+  address: string;
+  mobileNumber: string;
+  imageUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Farmer-storage link as returned in link-farmer-to-store 200 response */
+export interface LinkFarmerToStoreResponseLink {
+  _id: string;
+  farmerId: string;
+  coldStorageId: string;
+  accountNumber: number;
+  isActive: boolean;
+  costPerBag?: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** API response for POST /farmer-storage-link/link-farmer-to-store (200) */
+export interface LinkFarmerToStoreApiResponse {
+  success: boolean;
+  message: string;
+  data: {
+    farmer: LinkFarmerToStoreResponseFarmer;
+    farmerStorageLink: LinkFarmerToStoreResponseLink;
+  };
+}

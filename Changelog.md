@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2] - 2026-02-18
+
+### Added
+
+- **Store admin – Check farmer mobile** – `useCheckFarmerMobileNumber` hook to check if a farmer already exists by mobile number (POST `/farmer-storage-link/check`), with error handling and toasts
+- **Store admin – Link farmer to store** – `useLinkFarmerAndColdStorage` hook to link an existing farmer to the current cold storage (POST `/farmer-storage-link/link-farmer-to-store`), with status-specific error messages
+- **Farmer types** – Types for check-mobile and link-farmer-to-store APIs: `CheckFarmerMobileInput`, `CheckFarmerMobileApiResponse`, `CheckFarmerMobileResponseFarmer`, `LinkFarmerToStoreInput`, `LinkFarmerToStoreApiResponse`, and related response types
+
+### Changed
+
+- **Add farmer modal** – Two-step flow: debounced mobile check (with spinner) to detect existing farmers; if farmer exists, show “Link to this store” with account number and cost-per-bag; if not, keep existing quick-add form; uses `useCheckFarmerMobileNumber` and `useLinkFarmerAndColdStorage`; validation and used-account-number handling for link flow
+
+---
+
 ## [0.4.1] - 2026-02-18
 
 ### Added

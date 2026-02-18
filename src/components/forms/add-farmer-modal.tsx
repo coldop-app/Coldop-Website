@@ -1,7 +1,8 @@
+import debounce from 'lodash/debounce';
 import { memo, useState, useMemo, useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
 import * as z from 'zod';
-import { Info, Plus } from 'lucide-react';
+import { Info, Loader2, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -15,6 +16,12 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
   Field,
   FieldError,
   FieldGroup,
@@ -26,9 +33,18 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
+import { useCheckFarmerMobileNumber } from '@/services/store-admin/functions/useCheckFarmerMobileNumber';
+import { useLinkFarmerAndColdStorage } from '@/services/store-admin/functions/useLinkFarmerAndColdStorage';
 import { useQuickAddFarmer } from '@/services/store-admin/functions/useQuickAddFarmer';
 import { useStore } from '@/stores/store';
-import type { FarmerStorageLink } from '@/types/farmer';
+import type {
+  CheckFarmerMobileResponseFarmer,
+  FarmerStorageLink,
+} from '@/types/farmer';
+
+const MOBILE_DEBOUNCE_MS = 400;
+const INDIAN_MOBILE_REGEX = /^[6-9]\d{9}$/;
 
 type FieldErrors = Array<{ message?: string } | undefined>;
 
@@ -37,13 +53,23 @@ interface AddFarmerModalProps {
   onFarmerAdded?: () => void;
 }
 
+type MobileCheckStatus = 'idle' | 'checking' | 'exists' | 'available';
+
 export const AddFarmerModal = memo(function AddFarmerModal({
   links = [],
   onFarmerAdded,
 }: AddFarmerModalProps) {
   const { mutate: quickAddFarmer, isPending } = useQuickAddFarmer();
+  const { mutate: checkMobile, isPending: isCheckingMobile } =
+    useCheckFarmerMobileNumber();
+  const { mutate: linkFarmer, isPending: isLinking } =
+    useLinkFarmerAndColdStorage();
   const { coldStorage, admin } = useStore();
   const [isOpen, setIsOpen] = useState(false);
+  const [mobileCheckResult, setMobileCheckResult] = useState<{
+    status: MobileCheckStatus;
+    farmer?: CheckFarmerMobileResponseFarmer | null;
+  }>({ status: 'idle' });
 
   /* ----------------------------------
      Used numbers (from links)
@@ -186,9 +212,72 @@ export const AddFarmerModal = memo(function AddFarmerModal({
     }
   }, [isOpen, nextAccountNumber, form]);
 
+  /* Debounced mobile check with lodash debounce: only after user enters all 10 digits */
+  const debouncedMobileCheck = useMemo(
+    () =>
+      debounce(
+        (
+          mobileValue: string,
+          checkMobileFn: typeof checkMobile,
+          usedMobiles: string[]
+        ) => {
+          if (
+            mobileValue.length !== 10 ||
+            !INDIAN_MOBILE_REGEX.test(mobileValue) ||
+            usedMobiles.includes(mobileValue)
+          ) {
+            return;
+          }
+          setMobileCheckResult({ status: 'checking' });
+          checkMobileFn(
+            { mobileNumber: mobileValue },
+            {
+              onSuccess: (data) => {
+                const farmer = data.data?.farmer ?? undefined;
+                setMobileCheckResult({
+                  status: farmer ? 'exists' : 'available',
+                  farmer: farmer ?? null,
+                });
+              },
+              onError: () => {
+                setMobileCheckResult({ status: 'idle' });
+              },
+            }
+          );
+        },
+        MOBILE_DEBOUNCE_MS
+      ),
+    []
+  );
+
+  useEffect(() => {
+    return () => {
+      debouncedMobileCheck.cancel();
+    };
+  }, [debouncedMobileCheck]);
+
+  const scheduleMobileCheck = useMemo(() => {
+    return (mobileValue: string) => {
+      if (
+        mobileValue.length !== 10 ||
+        !INDIAN_MOBILE_REGEX.test(mobileValue) ||
+        usedMobileNumbers.includes(mobileValue)
+      ) {
+        debouncedMobileCheck.cancel();
+        setMobileCheckResult({ status: 'idle' });
+        return;
+      }
+      debouncedMobileCheck(mobileValue, checkMobile, usedMobileNumbers);
+    };
+  }, [checkMobile, usedMobileNumbers, debouncedMobileCheck]);
+
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (!open) form.reset();
+    if (!open) {
+      form.reset();
+      setMobileCheckResult({ status: 'idle' });
+      debouncedMobileCheck.cancel();
+    }
   };
 
   /* ----------------------------------
@@ -311,30 +400,163 @@ export const AddFarmerModal = memo(function AddFarmerModal({
             <form.Field
               name="mobileNumber"
               children={(field) => {
+                const value = field.state.value;
                 const isInvalid =
                   field.state.meta.isTouched && !field.state.meta.isValid;
+                const showExists =
+                  mobileCheckResult.status === 'exists' &&
+                  mobileCheckResult.farmer;
+                const invalidOrExists = isInvalid && !showExists;
 
                 return (
-                  <Field data-invalid={isInvalid}>
+                  <Field data-invalid={invalidOrExists}>
                     <FieldLabel htmlFor={field.name}>Mobile Number</FieldLabel>
 
                     <Input
                       id={field.name}
                       name={field.name}
                       type="tel"
-                      value={field.state.value}
+                      value={value}
                       onBlur={field.handleBlur}
-                      onChange={(e) =>
-                        field.handleChange(
-                          e.target.value.replace(/\D/g, '').slice(0, 10)
-                        )
-                      }
+                      onChange={(e) => {
+                        const next = e.target.value
+                          .replace(/\D/g, '')
+                          .slice(0, 10);
+                        field.handleChange(next);
+                        scheduleMobileCheck(next);
+                      }}
                       placeholder="Enter 10-digit mobile number"
                       maxLength={10}
-                      aria-invalid={isInvalid}
+                      aria-invalid={invalidOrExists}
                     />
 
-                    {isInvalid && (
+                    {isCheckingMobile && mobileCheckResult.status === 'checking' && (
+                      <p className="text-muted-foreground flex items-center gap-1.5 text-xs">
+                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        Checking...
+                      </p>
+                    )}
+
+                    {showExists && mobileCheckResult.farmer && (
+                      <div className="space-y-3">
+                        <Card className="py-4">
+                          <CardHeader className="pb-2">
+                            <CardTitle className="text-sm font-medium">
+                              Farmer already exists in system.
+                            </CardTitle>
+                          </CardHeader>
+                          <CardContent className="space-y-1.5 text-sm">
+                            <p>
+                              <span className="text-muted-foreground">
+                                Name:
+                              </span>{' '}
+                              {mobileCheckResult.farmer.name}
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">
+                                Mobile:
+                              </span>{' '}
+                              {mobileCheckResult.farmer.mobileNumber}
+                            </p>
+                            <p>
+                              <span className="text-muted-foreground">
+                                Address:
+                              </span>{' '}
+                              {mobileCheckResult.farmer.address}
+                            </p>
+                          </CardContent>
+                        </Card>
+                        <p className="text-muted-foreground text-sm">
+                          Do you want to link this farmer to your store? (enter cost per bag and opening balance)
+                        </p>
+                        <form.Subscribe
+                          selector={(state: {
+                            values: {
+                              accountNumber: string;
+                              costPerBag: string;
+                              openingBalance: string;
+                            };
+                          }) => ({
+                            accountNumber: state.values.accountNumber ?? '',
+                            costPerBag: state.values.costPerBag ?? '',
+                            openingBalance: state.values.openingBalance ?? '',
+                          })}
+                        >
+                          {({ accountNumber, costPerBag, openingBalance }) => {
+                            const accountTrim = String(accountNumber).trim();
+                            const costTrim = String(costPerBag).trim();
+                            const openingTrim = String(openingBalance).trim();
+                            const hasCostPerBag =
+                              costTrim !== '' &&
+                              !Number.isNaN(Number(costTrim)) &&
+                              Number(costTrim) >= 0;
+                            const hasOpeningBalance =
+                              openingTrim !== '' &&
+                              !Number.isNaN(Number(openingTrim));
+                            const hasValidAccountNumber =
+                              accountTrim !== '' &&
+                              !Number.isNaN(Number(accountTrim)) &&
+                              Number(accountTrim) > 0 &&
+                              !usedAccountNumbers.includes(accountTrim);
+                            const canLink =
+                              hasCostPerBag &&
+                              hasOpeningBalance &&
+                              hasValidAccountNumber;
+                            return (
+                              <Button
+                                type="button"
+                                variant="default"
+                                size="sm"
+                                disabled={!canLink || isLinking}
+                                onClick={() => {
+                                  const farmer = mobileCheckResult.farmer;
+                                  if (!farmer) return;
+                                  const farmerName = farmer.name;
+                                  linkFarmer(
+                                    {
+                                      farmerId: farmer._id,
+                                      accountNumber: Number(accountTrim),
+                                      costPerBag: Number(costTrim),
+                                      openingBalance:
+                                        openingTrim === ''
+                                          ? 0
+                                          : Number(openingTrim),
+                                    },
+                                    {
+                                      onSuccess: () => {
+                                        form.reset();
+                                        setIsOpen(false);
+                                        setMobileCheckResult({
+                                          status: 'idle',
+                                        });
+                                        onFarmerAdded?.();
+                                        toast.success(
+                                          'Farmer linked successfully',
+                                          {
+                                            description: `${farmerName} has been linked to your store.`,
+                                          }
+                                        );
+                                      },
+                                    }
+                                  );
+                                }}
+                              >
+                                {isLinking ? 'Linking...' : 'Yes'}
+                              </Button>
+                            );
+                          }}
+                        </form.Subscribe>
+                      </div>
+                    )}
+
+                    {mobileCheckResult.status === 'available' &&
+                      value.length === 10 && (
+                        <p className="text-muted-foreground text-xs">
+                          Number available
+                        </p>
+                      )}
+
+                    {isInvalid && !showExists && (
                       <FieldError
                         errors={field.state.meta.errors as FieldErrors}
                       />
@@ -493,7 +715,11 @@ export const AddFarmerModal = memo(function AddFarmerModal({
 
             <Button
               type="submit"
-              disabled={isPending}
+              disabled={
+                isPending ||
+                isCheckingMobile ||
+                mobileCheckResult.status === 'exists'
+              }
               className="font-custom w-full sm:w-auto"
             >
               {isPending ? 'Adding...' : 'Add Farmer'}
