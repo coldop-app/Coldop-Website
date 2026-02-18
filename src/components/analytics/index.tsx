@@ -16,6 +16,7 @@ import { StorageSummaryTable } from '@/components/analytics/storage-summary-tabl
 import { useStore } from '@/stores/store';
 import CapacityUtilisation from './capacity-utilisation';
 import SizeDistributionChart from './size-distribution-chart';
+import TopFarmersChart from './top-farmers-chart';
 import VarietyDistribution from './variety-distribution';
 
 type AnalyticsMode = 'current' | 'initial' | 'outgoing';
@@ -312,6 +313,8 @@ const AnalyticsPage = memo(function AnalyticsPage() {
                 stockSummary={data.stockSummary}
                 quantityType={mode}
               />
+
+              <TopFarmersChart quantityType={mode} />
             </div>
           ) : null}
         </div>
