@@ -60,6 +60,7 @@ import type {
 import { useSearchDaybook } from '@/services/store-admin/functions/useSearchDaybook';
 import IncomingGatePassCard from '@/components/daybook/incoming-gate-pass-card';
 import OutgoingGatePassCard from '@/components/daybook/outgoing-gate-pass-card';
+import { GetReportsDialog } from '@/components/daybook/get-reports-dialog';
 
 /* ------------------------------------------------------------------ */
 /* Fake Data */
@@ -139,6 +140,7 @@ const DaybookPage = memo(function DaybookPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchReceipt, setSearchReceipt] = useState('');
+  const [reportsDialogOpen, setReportsDialogOpen] = useState(false);
 
   const { data, isLoading, isError, error, isFetching, refetch } =
     useGetDaybook({
@@ -375,12 +377,10 @@ const DaybookPage = memo(function DaybookPage() {
               <Button
                 variant="secondary"
                 className="font-custom h-10 w-full gap-2 sm:w-auto"
-                asChild
+                onClick={() => setReportsDialogOpen(true)}
               >
-                <a href="#">
-                  <FileText className="h-4 w-4 shrink-0" />
-                  Get Reports
-                </a>
+                <FileText className="h-4 w-4 shrink-0" />
+                Get Reports
               </Button>
             </div>
           </ItemFooter>
@@ -515,6 +515,11 @@ const DaybookPage = memo(function DaybookPage() {
             </Pagination>
           </Item>
         )}
+
+        <GetReportsDialog
+          open={reportsDialogOpen}
+          onOpenChange={setReportsDialogOpen}
+        />
       </div>
     </main>
   );

@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.3] - 2026-02-18
+
+### Added
+
+- **Daybook – Get reports** – Get reports dialog with date range and “group by farmers” option; fetches report data via `useGetReports` and opens daily report PDF in a new tab, with loading/success/error toasts
+- **Daily report PDF** – `DailyReportPdf` component for date-range daily reports (incoming/outgoing rows, size columns, receipt/delivery tables, optional farmer-grouped layout)
+- **Analytics** – `useGetReports` hook for GET `/analytics/get-reports` with types for report data (flat and grouped by farmer); `useVarietyBreakdown` hook for variety breakdown
+
+### Changed
+
+- **Daybook** – Integrated Get reports dialog (button to open dialog and generate/view daily report PDF)
+
+---
+
 ## [0.4.2] - 2026-02-18
 
 ### Added
