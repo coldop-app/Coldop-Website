@@ -484,12 +484,10 @@ export const IncomingGatePassPdf = memo(function IncomingGatePassPdf({
 
         {/* Footer */}
         <View style={styles.footer} fixed>
-          {coldStorage?.imageUrl ? (
-            <Image
-              src={coldStorage.imageUrl}
-              style={{ width: 24, height: 24 }}
-            />
-          ) : null}
+          <Image
+            src="https://res.cloudinary.com/dakh64xhy/image/upload/v1753172868/profile_pictures/lhdlzskpe2gj8dq8jvzl.png"
+            style={{ width: 24, height: 24 }}
+          />
           <Text style={styles.footerText}>Powered By Coldop</Text>
         </View>
       </Page>

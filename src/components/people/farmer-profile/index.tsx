@@ -44,12 +44,14 @@ import type {
   OutgoingGatePassEntry,
 } from '@/services/store-admin/functions/useGetDaybook';
 import { useGetFarmerGatePasses } from '@/services/store-admin/functions/useGetFarmerGatePasses';
+import { format } from 'date-fns';
 import { formatDateToISO } from '@/lib/helpers';
 import { DatePicker } from '@/components/forms/date-picker';
 import IncomingGatePassCard from '@/components/daybook/incoming-gate-pass-card';
 import OutgoingGatePassCard from '@/components/daybook/outgoing-gate-pass-card';
 import { useStore } from '@/stores/store';
 import { FarmerStockSummaryTable } from '@/components/people/farmer-profile/farmer-stock-summary-table';
+import { Spinner } from '@/components/ui/spinner';
 import {
   Dialog,
   DialogContent,
@@ -131,6 +133,8 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
   const [addDiscountDialogOpen, setAddDiscountDialogOpen] = useState(false);
   const [addChargeDialogOpen, setAddChargeDialogOpen] = useState(false);
+  const [isGeneratingStockLedgerPdf, setIsGeneratingStockLedgerPdf] =
+    useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [orderFilter, setOrderFilter] = useState<OrderFilter>('all');
   const [sortOrder, setSortOrder] = useState<SortOrder>('latest');
@@ -185,6 +189,61 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const pagination = gatePassesData?.pagination;
 
   const preferences = useStore((s) => s.preferences);
+
+  const coldStorage = useStore((s) => s.coldStorage);
+  const admin = useStore((s) => s.admin);
+
+  const handleViewStockLedgerPdf = async () => {
+    if (!link) return;
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(
+        '<html><body style="font-family:sans-serif;padding:2rem;text-align:center;color:#666;">Generating PDF…</body></html>'
+      );
+    }
+    setIsGeneratingStockLedgerPdf(true);
+    try {
+      const [{ pdf }, { FarmerReportPdf }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@/pdf/FarmerReportPdf'),
+      ]);
+      const reportDate = format(new Date(), 'dd/MM/yyyy');
+      const blob = await pdf(
+        <FarmerReportPdf
+          companyName={coldStorage?.name ?? 'Cold Storage'}
+          farmer={{
+            accountNumber: link.accountNumber,
+            name: link.farmerId.name,
+            address: link.farmerId.address ?? '',
+            mobileNumber: link.farmerId.mobileNumber ?? '',
+          }}
+          storeAdmin={admin ? { name: admin.name } : undefined}
+          reportDate={reportDate}
+          incoming={incoming}
+          outgoing={outgoing}
+          sizeColumns={sizes}
+        />
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      if (printWindow) {
+        printWindow.location.href = url;
+      } else {
+        window.location.href = url;
+      }
+      setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      toast.success('PDF opened in new tab', {
+        duration: 3000,
+        description: 'Farmer report is ready to view or print.',
+      });
+    } catch {
+      if (printWindow) printWindow.close();
+      toast.error('Could not generate PDF', {
+        description: 'Please try again.',
+      });
+    } finally {
+      setIsGeneratingStockLedgerPdf(false);
+    }
+  };
   const sizes = useMemo(
     () => preferences?.commodities?.[0]?.sizes ?? [],
     [preferences?.commodities]
@@ -305,7 +364,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="outline"
-                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
+                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
                   onClick={() => setFinancesDialogOpen(true)}
                 >
                   <Wallet className="text-primary h-4 w-4" />
@@ -467,7 +526,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 </Dialog>
                 <Button
                   variant="outline"
-                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
+                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
                   asChild
                 >
                   <Link
@@ -485,9 +544,15 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 </Button>
                 <Button
                   variant="outline"
-                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
+                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
+                  onClick={handleViewStockLedgerPdf}
+                  disabled={isGeneratingStockLedgerPdf}
                 >
-                  <FileText className="text-primary h-4 w-4" />
+                  {isGeneratingStockLedgerPdf ? (
+                    <Spinner className="h-4 w-4" />
+                  ) : (
+                    <FileText className="text-primary h-4 w-4" />
+                  )}
                   View Stock Ledger
                 </Button>
               </div>
@@ -666,9 +731,6 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     fullWidth
                   />
                 </div>
-                <span className="font-custom text-muted-foreground hidden text-sm sm:inline">
-                  to
-                </span>
                 <div className="w-full min-w-0 sm:w-auto sm:min-w-32">
                   <DatePicker
                     id="voucher-date-to"
