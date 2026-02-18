@@ -21,6 +21,9 @@ export interface Preferences {
   /** Whether financial data should be visible */
   showFinances: boolean;
 
+  /** Labour cost (number) */
+  labourCost: number;
+
   /** Custom, user-defined fields for future customisations */
   customFields?: Record<string, unknown>;
 
