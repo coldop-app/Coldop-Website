@@ -22,6 +22,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { GeneralExpenseModal } from './general-expense-modal';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -241,21 +242,10 @@ const VoucherTab = memo(function VoucherTab() {
             General Expense
           </Button>
         </div>
-        <Dialog
+        <GeneralExpenseModal
           open={generalExpenseDialogOpen}
           onOpenChange={setGeneralExpenseDialogOpen}
-        >
-          <DialogContent className="font-custom sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>General Expense</DialogTitle>
-            </DialogHeader>
-            <p className="font-custom text-sm leading-relaxed text-gray-600">
-              Use this option to record general business expenses that are not
-              tied to a specific voucher or farmer. You can add details such as
-              category, amount, and narration.
-            </p>
-          </DialogContent>
-        </Dialog>
+        />
       </div>
       <AlertDialog
         open={!!voucherToDelete}
