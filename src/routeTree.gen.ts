@@ -21,6 +21,7 @@ import { Route as StoreAdminAuthenticatedEditHistoryIndexRouteImport } from './r
 import { Route as StoreAdminAuthenticatedDaybookIndexRouteImport } from './routes/store-admin/_authenticated/daybook/index'
 import { Route as StoreAdminAuthenticatedAnalyticsIndexRouteImport } from './routes/store-admin/_authenticated/analytics/index'
 import { Route as StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRouteImport } from './routes/store-admin/_authenticated/people/$farmerStorageLinkId/index'
+import { Route as StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRouteImport } from './routes/store-admin/_authenticated/analytics/variety-breakdown/index'
 import { Route as StoreAdminAuthenticatedOutgoingEditIdIndexRouteImport } from './routes/store-admin/_authenticated/outgoing/edit/$id/index'
 import { Route as StoreAdminAuthenticatedIncomingEditIdIndexRouteImport } from './routes/store-admin/_authenticated/incoming/edit/$id/index'
 
@@ -92,6 +93,12 @@ const StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute =
     path: '/people/$farmerStorageLinkId/',
     getParentRoute: () => StoreAdminAuthenticatedRoute,
   } as any)
+const StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute =
+  StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRouteImport.update({
+    id: '/analytics/variety-breakdown/',
+    path: '/analytics/variety-breakdown/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
 const StoreAdminAuthenticatedOutgoingEditIdIndexRoute =
   StoreAdminAuthenticatedOutgoingEditIdIndexRouteImport.update({
     id: '/outgoing/edit/$id/',
@@ -117,6 +124,7 @@ export interface FileRoutesByFullPath {
   '/store-admin/my-finances/': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
   '/store-admin/outgoing/': typeof StoreAdminAuthenticatedOutgoingIndexRoute
   '/store-admin/people/': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/analytics/variety-breakdown/': typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute
   '/store-admin/people/$farmerStorageLinkId/': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
   '/store-admin/incoming/edit/$id/': typeof StoreAdminAuthenticatedIncomingEditIdIndexRoute
   '/store-admin/outgoing/edit/$id/': typeof StoreAdminAuthenticatedOutgoingEditIdIndexRoute
@@ -133,6 +141,7 @@ export interface FileRoutesByTo {
   '/store-admin/my-finances': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
   '/store-admin/outgoing': typeof StoreAdminAuthenticatedOutgoingIndexRoute
   '/store-admin/people': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/analytics/variety-breakdown': typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute
   '/store-admin/people/$farmerStorageLinkId': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
   '/store-admin/incoming/edit/$id': typeof StoreAdminAuthenticatedIncomingEditIdIndexRoute
   '/store-admin/outgoing/edit/$id': typeof StoreAdminAuthenticatedOutgoingEditIdIndexRoute
@@ -150,6 +159,7 @@ export interface FileRoutesById {
   '/store-admin/_authenticated/my-finances/': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
   '/store-admin/_authenticated/outgoing/': typeof StoreAdminAuthenticatedOutgoingIndexRoute
   '/store-admin/_authenticated/people/': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/_authenticated/analytics/variety-breakdown/': typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute
   '/store-admin/_authenticated/people/$farmerStorageLinkId/': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
   '/store-admin/_authenticated/incoming/edit/$id/': typeof StoreAdminAuthenticatedIncomingEditIdIndexRoute
   '/store-admin/_authenticated/outgoing/edit/$id/': typeof StoreAdminAuthenticatedOutgoingEditIdIndexRoute
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/store-admin/my-finances/'
     | '/store-admin/outgoing/'
     | '/store-admin/people/'
+    | '/store-admin/analytics/variety-breakdown/'
     | '/store-admin/people/$farmerStorageLinkId/'
     | '/store-admin/incoming/edit/$id/'
     | '/store-admin/outgoing/edit/$id/'
@@ -184,6 +195,7 @@ export interface FileRouteTypes {
     | '/store-admin/my-finances'
     | '/store-admin/outgoing'
     | '/store-admin/people'
+    | '/store-admin/analytics/variety-breakdown'
     | '/store-admin/people/$farmerStorageLinkId'
     | '/store-admin/incoming/edit/$id'
     | '/store-admin/outgoing/edit/$id'
@@ -200,6 +212,7 @@ export interface FileRouteTypes {
     | '/store-admin/_authenticated/my-finances/'
     | '/store-admin/_authenticated/outgoing/'
     | '/store-admin/_authenticated/people/'
+    | '/store-admin/_authenticated/analytics/variety-breakdown/'
     | '/store-admin/_authenticated/people/$farmerStorageLinkId/'
     | '/store-admin/_authenticated/incoming/edit/$id/'
     | '/store-admin/_authenticated/outgoing/edit/$id/'
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRouteImport
       parentRoute: typeof StoreAdminAuthenticatedRoute
     }
+    '/store-admin/_authenticated/analytics/variety-breakdown/': {
+      id: '/store-admin/_authenticated/analytics/variety-breakdown/'
+      path: '/analytics/variety-breakdown'
+      fullPath: '/store-admin/analytics/variety-breakdown/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
     '/store-admin/_authenticated/outgoing/edit/$id/': {
       id: '/store-admin/_authenticated/outgoing/edit/$id/'
       path: '/outgoing/edit/$id'
@@ -323,6 +343,7 @@ interface StoreAdminAuthenticatedRouteChildren {
   StoreAdminAuthenticatedMyFinancesIndexRoute: typeof StoreAdminAuthenticatedMyFinancesIndexRoute
   StoreAdminAuthenticatedOutgoingIndexRoute: typeof StoreAdminAuthenticatedOutgoingIndexRoute
   StoreAdminAuthenticatedPeopleIndexRoute: typeof StoreAdminAuthenticatedPeopleIndexRoute
+  StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute: typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute
   StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute: typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
   StoreAdminAuthenticatedIncomingEditIdIndexRoute: typeof StoreAdminAuthenticatedIncomingEditIdIndexRoute
   StoreAdminAuthenticatedOutgoingEditIdIndexRoute: typeof StoreAdminAuthenticatedOutgoingEditIdIndexRoute
@@ -344,6 +365,8 @@ const StoreAdminAuthenticatedRouteChildren: StoreAdminAuthenticatedRouteChildren
       StoreAdminAuthenticatedOutgoingIndexRoute,
     StoreAdminAuthenticatedPeopleIndexRoute:
       StoreAdminAuthenticatedPeopleIndexRoute,
+    StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute:
+      StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute,
     StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute:
       StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute,
     StoreAdminAuthenticatedIncomingEditIdIndexRoute:

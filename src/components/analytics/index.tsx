@@ -1,4 +1,5 @@
-import { memo, useMemo, useState } from 'react';
+import { memo, useMemo, useState, useCallback } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 
 import {
   Item,
@@ -10,8 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart3, Package, RefreshCw, Wheat, Ruler } from 'lucide-react';
+import { BarChart3, Package, RefreshCw, Wheat, Ruler, User } from 'lucide-react';
 import { useGetStorageSummary } from '@/services/analytics/useGetStorageSummary';
+import { useGetTopFarmers } from '@/services/analytics/useGetTopFarmers';
 import { StorageSummaryTable } from '@/components/analytics/storage-summary-table';
 import { useStore } from '@/stores/store';
 import CapacityUtilisation from './capacity-utilisation';
@@ -22,9 +24,21 @@ import VarietyDistribution from './variety-distribution';
 type AnalyticsMode = 'current' | 'initial' | 'outgoing';
 
 const AnalyticsPage = memo(function AnalyticsPage() {
+  const navigate = useNavigate();
   const [mode, setMode] = useState<AnalyticsMode>('current');
   const { data, isLoading, error, refetch, isFetching } =
     useGetStorageSummary();
+  const { data: topFarmersData } = useGetTopFarmers();
+
+  const handleStockSummaryCellClick = useCallback(
+    (variety: string, bagSize: string) => {
+      navigate({
+        to: '/store-admin/analytics/variety-breakdown',
+        search: { variety, bagSize },
+      });
+    },
+    [navigate]
+  );
   const totalCapacity = useStore((s) => s.coldStorage?.capacity);
   const preferenceSizes = useStore(
     (s) => s.preferences?.commodities?.[0]?.sizes ?? []
@@ -162,6 +176,21 @@ const AnalyticsPage = memo(function AnalyticsPage() {
             }
           : null;
 
+  /** Top farmer by current quantity, initial quantity, or quantity removed (outgoing) per tab. */
+  const topFarmerDisplay = (() => {
+    if (!topFarmersData) return null;
+    const series =
+      mode === 'current'
+        ? topFarmersData.byCurrentQuantity
+        : mode === 'initial'
+          ? topFarmersData.byInitialQuantity
+          : topFarmersData.byQuantityRemoved;
+    const first = series?.[0];
+    return first && first.value > 0
+      ? { name: first.name, quantity: first.value }
+      : null;
+  })();
+
   return (
     <main className="mx-auto max-w-7xl p-2 sm:p-4 lg:p-6">
       <div className="space-y-6">
@@ -212,6 +241,7 @@ const AnalyticsPage = memo(function AnalyticsPage() {
               <Tabs
                 value={mode}
                 onValueChange={(v) => setMode(v as AnalyticsMode)}
+                className="w-full"
               >
                 <TabsList className="font-custom grid h-9 w-full grid-cols-3">
                   <TabsTrigger value="current">Current</TabsTrigger>
@@ -278,6 +308,24 @@ const AnalyticsPage = memo(function AnalyticsPage() {
                     </p>
                   </CardContent>
                 </Card>
+                <Card className="border-border rounded-xl shadow-sm">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="font-custom text-muted-foreground text-sm font-medium">
+                      Top farmer
+                    </CardTitle>
+                    <User className="text-muted-foreground h-4 w-4" />
+                  </CardHeader>
+                  <CardContent>
+                    <p className="font-custom text-foreground text-lg font-semibold">
+                      {topFarmerDisplay?.name ?? '—'}
+                    </p>
+                    <p className="font-custom text-muted-foreground text-xs tabular-nums">
+                      {topFarmerDisplay != null
+                        ? `${topFarmerDisplay.quantity.toLocaleString('en-IN')} bags`
+                        : 'No data'}
+                    </p>
+                  </CardContent>
+                </Card>
               </div>
 
               {/* Summary table (synced with page tab) */}
@@ -285,6 +333,7 @@ const AnalyticsPage = memo(function AnalyticsPage() {
                 stockSummary={data.stockSummary}
                 sizes={sizesForTable}
                 controlledTab={mode}
+                onCellClick={handleStockSummaryCellClick}
               />
 
               <CapacityUtilisation

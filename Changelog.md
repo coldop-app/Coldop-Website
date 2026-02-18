@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4] - 2026-02-18
+
+### Added
+
+- **Analytics – Variety breakdown** – New route and screen at `/store-admin/analytics/variety-breakdown`; storage summary table cells are clickable and navigate with `variety` and `bagSize`; variety breakdown shows size-wise distribution chart, farmer-wise share chart, and farmer quantity table (current/initial/outgoing tabs); uses `useVarietyBreakdown` and new components under `variety-breakdown/` (SizeWiseDistributionChart, FarmerWiseShareChart, FarmerQuantityTable)
+
+### Changed
+
+- **Analytics** – Storage summary table supports optional `onCellClick(variety, bagSize)`; analytics page wires cell click to navigate to variety breakdown; variety distribution accepts `quantityType` prop to align with analytics mode (current/initial/outgoing)
+
+---
+
 ## [0.4.3] - 2026-02-18
 
 ### Added

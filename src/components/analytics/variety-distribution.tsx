@@ -99,7 +99,7 @@ const VarietyDistribution = memo(function VarietyDistribution({
 
   if (pieData.length === 0) {
     return (
-      <Card className="border-border rounded-xl shadow-sm">
+      <Card className="border-border min-w-0 w-full overflow-hidden rounded-xl shadow-sm">
         <CardHeader className="pb-2">
           <h3 className="font-custom text-foreground text-base font-semibold sm:text-lg">
             Variety Distribution
@@ -118,20 +118,20 @@ const VarietyDistribution = memo(function VarietyDistribution({
   }
 
   return (
-    <Card className="border-border rounded-xl shadow-sm">
+    <Card className="border-border min-w-0 w-full overflow-hidden rounded-xl shadow-sm">
       <CardHeader className="pb-2">
         <h3 className="font-custom text-foreground text-base font-semibold sm:text-lg">
           Variety Distribution
         </h3>
-        <p className="font-custom text-muted-foreground text-xs">
+        <p className="font-custom text-muted-foreground text-xs sm:text-sm">
           {QUANTITY_TYPE_SUBTITLE[quantityType]}
         </p>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="mx-auto h-[260px] w-full max-w-[400px] sm:h-[280px]">
+      <CardContent className="min-w-0 space-y-4 sm:space-y-6">
+        <div className="min-h-[220px] w-full min-w-0 sm:h-[280px] md:mx-auto md:max-w-[400px]">
           <ChartContainer
             config={chartConfig}
-            className="h-full w-full [&_.recharts-wrapper]:h-full! [&_.recharts-wrapper]:w-full!"
+            className="h-full min-h-[220px] w-full min-w-0 [&_.recharts-wrapper]:h-full! [&_.recharts-wrapper]:w-full! sm:min-h-0"
           >
             <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
               <ChartTooltip
@@ -166,19 +166,22 @@ const VarietyDistribution = memo(function VarietyDistribution({
           </ChartContainer>
         </div>
 
-        <div className="space-y-2">
-          <h4 className="font-custom text-foreground text-sm font-semibold">
+        <div className="min-w-0 space-y-2">
+          <h4 className="font-custom text-foreground text-sm font-semibold sm:text-base">
             Variety Distribution & Insights
           </h4>
-          <ul className="font-custom text-muted-foreground grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
+          <ul className="font-custom text-muted-foreground grid grid-cols-1 gap-1.5 text-xs sm:grid-cols-2 sm:text-sm lg:grid-cols-3">
             {pieData.map((item) => (
-              <li key={item.name} className="flex items-center gap-2">
+              <li
+                key={item.name}
+                className="flex min-w-0 items-center gap-2"
+              >
                 <span
                   className="h-2.5 w-2.5 shrink-0 rounded-full"
                   style={{ backgroundColor: item.fill }}
                   aria-hidden
                 />
-                <span className="text-foreground">
+                <span className="min-w-0 text-foreground">
                   {item.name}: {item.value.toLocaleString('en-IN')} bags (
                   {item.percentage.toFixed(1)}%)
                 </span>
