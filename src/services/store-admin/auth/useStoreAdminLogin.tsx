@@ -129,6 +129,10 @@ export const useStoreAdminLogin = () => {
             commodities: preferencesFromApi.commodities ?? [],
             reportFormat: preferencesFromApi.reportFormat ?? 'default',
             showFinances: preferencesFromApi.showFinances ?? true,
+            labourCost:
+              typeof preferencesFromApi.labourCost === 'number'
+                ? preferencesFromApi.labourCost
+                : 0,
             customFields: preferencesFromApi.customFields,
             createdAt: preferencesFromApi.createdAt,
             updatedAt: preferencesFromApi.updatedAt,
