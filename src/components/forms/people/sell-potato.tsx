@@ -19,7 +19,7 @@ import { DatePicker } from '@/components/forms/date-picker';
 
 type FieldErrors = Array<{ message?: string } | undefined>;
 
-const POTATO_PURCHASE_LEDGER_NAME = 'Potato Purchase';
+const POTATO_SALES_LEDGER_NAME = 'Potato Sales';
 
 export interface SellPotatoFormProps {
   onSuccess?: () => void;
@@ -39,23 +39,23 @@ const SellPotatoForm = memo(function SellPotatoForm({
   const { mutate: createVoucher, isPending } = useCreateVoucher();
   const { data: ledgers, isLoading: isLoadingLedgers } = useGetAllLedgers();
 
-  const { potatoPurchaseLedger, farmerLedger } = useMemo(() => {
+  const { potatoSalesLedger, farmerLedger } = useMemo(() => {
     const list = ledgers ?? [];
     const potato =
       list.find(
         (l) =>
-          l.name === POTATO_PURCHASE_LEDGER_NAME && (l.isSystemLedger ?? true)
-      ) ?? list.find((l) => l.name === POTATO_PURCHASE_LEDGER_NAME);
+          l.name === POTATO_SALES_LEDGER_NAME && (l.isSystemLedger ?? true)
+      ) ?? list.find((l) => l.name === POTATO_SALES_LEDGER_NAME);
     const farmer = defaultFarmerStorageLinkId
       ? list.find((l) => l.farmerStorageLinkId === defaultFarmerStorageLinkId)
       : null;
     return {
-      potatoPurchaseLedger: potato ?? null,
+      potatoSalesLedger: potato ?? null,
       farmerLedger: farmer ?? null,
     };
   }, [ledgers, defaultFarmerStorageLinkId]);
 
-  const canSubmit = Boolean(potatoPurchaseLedger) && Boolean(farmerLedger);
+  const canSubmit = Boolean(potatoSalesLedger) && Boolean(farmerLedger);
 
   const form = useForm({
     defaultValues: {
@@ -64,11 +64,11 @@ const SellPotatoForm = memo(function SellPotatoForm({
       narration: '',
     },
     onSubmit: async ({ value }) => {
-      if (!potatoPurchaseLedger || !farmerLedger) return;
+      if (!potatoSalesLedger || !farmerLedger) return;
       const payload: CreateVoucherBody = {
         date: formatDateToISO(value.date),
         debitLedger: farmerLedger._id,
-        creditLedger: potatoPurchaseLedger._id,
+        creditLedger: potatoSalesLedger._id,
         amount: value.amount,
         narration: value.narration || undefined,
         farmerStorageLinkId: defaultFarmerStorageLinkId ?? undefined,
@@ -110,7 +110,7 @@ const SellPotatoForm = memo(function SellPotatoForm({
               <p className="font-custom text-foreground mt-0.5 text-sm leading-tight font-bold sm:mt-1.5 sm:text-lg">
                 {isLoadingLedgers
                   ? 'Loading…'
-                  : (potatoPurchaseLedger?.name ?? 'Potato Purchase')}
+                  : (potatoSalesLedger?.name ?? 'Potato Sales')}
               </p>
             </div>
           </div>
@@ -121,8 +121,8 @@ const SellPotatoForm = memo(function SellPotatoForm({
         <p className="font-custom text-destructive text-xs sm:text-sm">
           {!farmerLedger
             ? 'Farmer ledger not found.'
-            : !potatoPurchaseLedger
-              ? 'Potato Purchase ledger not found.'
+            : !potatoSalesLedger
+              ? 'Potato Sales ledger not found.'
               : 'Ledgers unavailable.'}
         </p>
       )}

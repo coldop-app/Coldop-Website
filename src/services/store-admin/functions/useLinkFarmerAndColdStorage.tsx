@@ -2,10 +2,12 @@ import { useMutation } from '@tanstack/react-query';
 import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import storeAdminAxiosClient from '@/lib/axios';
+import { queryClient } from '@/lib/queryClient';
 import type {
   LinkFarmerToStoreInput,
   LinkFarmerToStoreApiResponse,
 } from '@/types/farmer';
+import { ledgersKeys } from '@/services/accounting/ledgers/useGetAllLedgers';
 
 /** API error shape (400/401/404/409): { success, error: { code, message } } */
 type LinkFarmerToStoreApiError = {
@@ -61,6 +63,10 @@ export function useLinkFarmerAndColdStorage() {
           payload
         );
       return data;
+    },
+
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ledgersKeys.all });
     },
 
     onError: (error: AxiosError<LinkFarmerToStoreApiError>) => {

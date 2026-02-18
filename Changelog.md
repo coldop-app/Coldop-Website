@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.6] - 2026-02-19
+
+### Added
+
+- **Ledger balance computation** – `computeLedgerBalancesFromVouchers` in `src/services/accounting/computeLedgerBalances.ts` computes closing balance per ledger from opening balance and vouchers (Asset/Expense: opening + debits − credits; Liability/Income/Equity: opening − debits + credits)
+- **Ledger types & chart of accounts** – `chartOfAccounts`, `LEDGER_OPTIONS`, and related types in `src/types/ledger.ts` for structured subType and category options (Fixed Assets, Current Assets, Direct/Operating/Non-Operating Expenses, etc.)
+
+### Changed
+
+- **Balance sheet** – Uses `computeLedgerBalancesFromVouchers` for all ledger balances (stock in hand, sales, purchases, equity, liabilities, assets) so totals are consistent with voucher data
+- **Closing balances tab** – Uses computed balances from vouchers instead of `balance`/`closingBalance` on ledger
+- **Trading & P&L** – Uses computed ledger balances for sales, purchases, and other income/expense totals
+- **Ledger create / edit forms** – Sub type and category are now SearchSelector dropdowns driven by `LEDGER_OPTIONS`; type change clears subType and category; category options depend on selected subType
+- **Ledger view tab** – Aligned with computed balance logic where relevant
+- **Voucher hooks** – `useCreateVoucher`, `useUpdateVoucher`, `useDeleteVoucher` invalidate ledgers query on success so balance sheet and related views refresh
+- **Store admin** – `useLinkFarmerAndColdStorage` and `useQuickAddFarmer` invalidate farmers/ledgers as needed
+- **Sell potato form** – Minor updates for consistency
+
+---
+
 ## [0.4.5] - 2026-02-18
 
 ### Changed

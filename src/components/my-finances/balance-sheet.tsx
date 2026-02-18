@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import type { Ledger } from '@/services/accounting/ledgers/useGetAllLedgers';
 import { useGetAllLedgers } from '@/services/accounting/ledgers/useGetAllLedgers';
+import { computeLedgerBalancesFromVouchers } from '@/services/accounting/computeLedgerBalances';
 import type { Voucher } from '@/services/accounting/vouchers/useGetAllVouchers';
 import { useGetAllVouchers } from '@/services/accounting/vouchers/useGetAllVouchers';
 
@@ -52,14 +53,15 @@ function buildBalanceSheetRows(
   const liabilityRows: BSRow[] = [];
   const assetRows: BSRow[] = [];
 
+  const balanceMap = computeLedgerBalancesFromVouchers(ledgers, vouchers);
+  const getBalance = (ledger: Ledger) => balanceMap.get(ledger._id) ?? 0;
+
   /* ------------------ CALCULATE NET PROFIT/LOSS ------------------ */
 
   const stockInHand = ledgers.find((l) => l.category === 'Stock in Hand');
   const openingStock = stockInHand?.openingBalance ?? 0;
   const closingStock =
-    stockInHand != null && stockInHand.closingBalance !== undefined
-      ? (stockInHand.closingBalance ?? 0)
-      : (stockInHand?.balance ?? 0);
+    stockInHand != null ? getBalance(stockInHand) : 0;
 
   const incomeLedgers = ledgers.filter((l) => l.type === 'Income');
   const expenseLedgers = ledgers.filter((l) => l.type === 'Expense');
@@ -78,23 +80,20 @@ function buildBalanceSheetRows(
     (e) => !(e.subType === 'Direct Expenses' && e.category === 'Purchases')
   );
 
-  const salesTotal = sales.reduce(
-    (s, l) => s + (l.balance ?? l.closingBalance ?? 0),
-    0
-  );
+  const salesTotal = sales.reduce((s, l) => s + getBalance(l), 0);
   const purchaseTotal = tradingExpenses.reduce(
-    (s, l) => s + (l.balance ?? l.closingBalance ?? 0),
+    (s, l) => s + getBalance(l),
     0
   );
 
   const grossProfit = salesTotal + closingStock - purchaseTotal - openingStock;
 
   const indirectIncomesTotal = otherIncome.reduce(
-    (s, l) => s + (l.balance ?? l.closingBalance ?? 0),
+    (s, l) => s + getBalance(l),
     0
   );
   const indirectExpensesTotal = nonTradingExpenses.reduce(
-    (s, l) => s + (l.balance ?? l.closingBalance ?? 0),
+    (s, l) => s + getBalance(l),
     0
   );
   const netProfitLoss =
@@ -113,7 +112,7 @@ function buildBalanceSheetRows(
   }> = [];
 
   liabilityLedgers.forEach((ledger) => {
-    const balance = ledger.balance ?? ledger.closingBalance ?? 0;
+    const balance = getBalance(ledger);
     liabilitySubTypes[ledger.subType] =
       (liabilitySubTypes[ledger.subType] ?? 0) + balance;
     const existing = liabilityCategories.find(
@@ -139,11 +138,7 @@ function buildBalanceSheetRows(
   }> = [];
 
   assetLedgers.forEach((ledger) => {
-    const isStockInHand = ledger.category === 'Stock in Hand';
-    const balance =
-      isStockInHand && ledger.closingBalance !== undefined
-        ? (ledger.closingBalance ?? 0)
-        : (ledger.balance ?? ledger.closingBalance ?? 0);
+    const balance = getBalance(ledger);
     assetSubTypes[ledger.subType] =
       (assetSubTypes[ledger.subType] ?? 0) + balance;
     const existing = assetCategories.find(
@@ -216,10 +211,8 @@ function buildBalanceSheetRows(
     }
 
     const totalCapital =
-      equityLedgers.reduce(
-        (sum, ledger) => sum + (ledger.balance ?? ledger.closingBalance ?? 0),
-        0
-      ) + netProfitLoss;
+      equityLedgers.reduce((sum, ledger) => sum + getBalance(ledger), 0) +
+      netProfitLoss;
 
     liabilityRows.push({
       label: 'Total Capital',
@@ -283,7 +276,7 @@ function buildBalanceSheetRows(
   /* ------------------ TOTALS ------------------ */
 
   const totalEquity = equityLedgers.reduce(
-    (sum, ledger) => sum + (ledger.balance ?? ledger.closingBalance ?? 0),
+    (sum, ledger) => sum + getBalance(ledger),
     0
   );
   const totalLiabilities = Object.values(liabilitySubTypes).reduce(

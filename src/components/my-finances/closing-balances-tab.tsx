@@ -11,6 +11,8 @@ import {
 } from '@/components/ui/table';
 import type { Ledger } from '@/services/accounting/ledgers/useGetAllLedgers';
 import { useGetAllLedgers } from '@/services/accounting/ledgers/useGetAllLedgers';
+import { computeLedgerBalancesFromVouchers } from '@/services/accounting/computeLedgerBalances';
+import { useGetAllVouchers } from '@/services/accounting/vouchers/useGetAllVouchers';
 
 /* -------------------------------------------------------------------------- */
 /* Types                                                                      */
@@ -48,15 +50,6 @@ const formatCurrency = (amount: number) =>
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
-
-/** For Stock in Hand use closingBalance when defined (even if 0); else balance || closingBalance || 0 */
-function getDisplayBalance(ledger: Ledger): number {
-  const isStockInHand = ledger.category === 'Stock in Hand';
-  if (isStockInHand && ledger.closingBalance !== undefined) {
-    return ledger.closingBalance ?? 0;
-  }
-  return ledger.balance || ledger.closingBalance || 0;
-}
 
 /* -------------------------------------------------------------------------- */
 /* Component                                                                  */
@@ -103,21 +96,24 @@ const ClosingBalancesTab = memo(function ClosingBalancesTab({
 
   const {
     data: ledgers = [],
-    isLoading,
+    isLoading: ledgersLoading,
     isError,
     error,
   } = useGetAllLedgers(params);
+  const { data: vouchers = [], isLoading: vouchersLoading } =
+    useGetAllVouchers(params);
+  const isLoading = ledgersLoading || vouchersLoading;
 
   const computed = useMemo(() => {
     if (ledgers.length === 0) return null;
 
-    // Stock in Hand: use closingBalance when defined (even if 0), otherwise use balance
+    const balanceMap = computeLedgerBalancesFromVouchers(ledgers, vouchers);
+    const getBalance = (ledger: Ledger) => balanceMap.get(ledger._id) ?? 0;
+
     const stockInHand = ledgers.find((l) => l.category === 'Stock in Hand');
     const openingStock = stockInHand?.openingBalance ?? 0;
     const closingStock =
-      stockInHand != null && stockInHand.closingBalance !== undefined
-        ? (stockInHand.closingBalance ?? 0)
-        : (stockInHand?.balance ?? 0);
+      stockInHand != null ? getBalance(stockInHand) : 0;
 
     const incomeLedgers = ledgers.filter((l) => l.type === 'Income');
     const expenseLedgers = ledgers.filter((l) => l.type === 'Expense');
@@ -136,12 +132,9 @@ const ClosingBalancesTab = memo(function ClosingBalancesTab({
       (e) => !(e.subType === 'Direct Expenses' && e.category === 'Purchases')
     );
 
-    const salesTotal = sales.reduce(
-      (s, l) => s + (l.balance || l.closingBalance || 0),
-      0
-    );
+    const salesTotal = sales.reduce((s, l) => s + getBalance(l), 0);
     const purchaseTotal = tradingExpenses.reduce(
-      (s, l) => s + (l.balance || l.closingBalance || 0),
+      (s, l) => s + getBalance(l),
       0
     );
 
@@ -149,11 +142,11 @@ const ClosingBalancesTab = memo(function ClosingBalancesTab({
       salesTotal + closingStock - purchaseTotal - openingStock;
 
     const indirectIncomesTotal = otherIncome.reduce(
-      (s, l) => s + (l.balance || l.closingBalance || 0),
+      (s, l) => s + getBalance(l),
       0
     );
     const indirectExpensesTotal = nonTradingExpenses.reduce(
-      (s, l) => s + (l.balance || l.closingBalance || 0),
+      (s, l) => s + getBalance(l),
       0
     );
     const netProfitLoss =
@@ -172,14 +165,7 @@ const ClosingBalancesTab = memo(function ClosingBalancesTab({
         };
       }
       categoryGroups[key].ledgers.push(ledger);
-      // For Stock in Hand, use closing balance if available; else balance || closingBalance || 0
-      const isStockInHand = ledger.category === 'Stock in Hand';
-      if (isStockInHand && ledger.closingBalance !== undefined) {
-        categoryGroups[key].total += ledger.closingBalance ?? 0;
-      } else {
-        categoryGroups[key].total +=
-          ledger.balance || ledger.closingBalance || 0;
-      }
+      categoryGroups[key].total += getBalance(ledger);
     });
 
     const groupedByType: Record<string, CategoryGroup[]> = {};
@@ -190,24 +176,17 @@ const ClosingBalancesTab = memo(function ClosingBalancesTab({
       groupedByType[group.type].push(group);
     });
 
-    // Total assets: for Stock in Hand use closing balance if available; else balance || closingBalance || 0
     const totalAssets = ledgers
       .filter((l) => l.type === 'Asset')
-      .reduce((sum, l) => {
-        const isStockInHand = l.category === 'Stock in Hand';
-        if (isStockInHand && l.closingBalance !== undefined) {
-          return sum + (l.closingBalance ?? 0);
-        }
-        return sum + (l.balance || l.closingBalance || 0);
-      }, 0);
+      .reduce((sum, l) => sum + getBalance(l), 0);
 
     const totalLiabilitiesAndEquity =
       ledgers
         .filter((l) => l.type === 'Liability')
-        .reduce((sum, l) => sum + (l.balance || l.closingBalance || 0), 0) +
+        .reduce((sum, l) => sum + getBalance(l), 0) +
       ledgers
         .filter((l) => l.type === 'Equity')
-        .reduce((sum, l) => sum + (l.balance || l.closingBalance || 0), 0) +
+        .reduce((sum, l) => sum + getBalance(l), 0) +
       netProfitLoss;
 
     const isBalanced = Math.abs(totalAssets - totalLiabilitiesAndEquity) < 0.01;
@@ -218,8 +197,9 @@ const ClosingBalancesTab = memo(function ClosingBalancesTab({
       totalAssets,
       totalLiabilitiesAndEquity,
       isBalanced,
+      getBalance,
     };
-  }, [ledgers]);
+  }, [ledgers, vouchers]);
 
   if (isLoading) {
     return (
@@ -269,6 +249,7 @@ const ClosingBalancesTab = memo(function ClosingBalancesTab({
     totalAssets,
     totalLiabilitiesAndEquity,
     isBalanced,
+    getBalance,
   } = computed;
 
   return (
@@ -332,7 +313,7 @@ const ClosingBalancesTab = memo(function ClosingBalancesTab({
                           </TableCell>
                         </TableRow>
                         {group.ledgers.map((ledger) => {
-                          const displayBalance = getDisplayBalance(ledger);
+                          const displayBalance = getBalance(ledger);
                           return (
                             <TableRow
                               key={ledger._id}

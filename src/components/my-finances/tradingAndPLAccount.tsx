@@ -10,6 +10,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import type { Ledger } from '@/services/accounting/ledgers/useGetAllLedgers';
+import { computeLedgerBalancesFromVouchers } from '@/services/accounting/computeLedgerBalances';
+import { useGetAllVouchers } from '@/services/accounting/vouchers/useGetAllVouchers';
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -46,21 +48,26 @@ export interface TradingAndPLAccountProps {
 
 const TradingAndPLAccount = memo(function TradingAndPLAccount({
   ledgers,
-  isLoading,
-  error,
+  isLoading: ledgersLoading,
+  error: ledgersError,
 }: TradingAndPLAccountProps) {
+  const { data: vouchers = [], isLoading: vouchersLoading } =
+    useGetAllVouchers();
+  const isLoading = ledgersLoading || vouchersLoading;
+  const error = ledgersError;
+
   const computed = useMemo(() => {
     if (ledgers.length === 0) {
       return null;
     }
 
-    // Stock in Hand: use closingBalance when defined (even if 0), otherwise use balance
+    const balanceMap = computeLedgerBalancesFromVouchers(ledgers, vouchers);
+    const getBalance = (ledger: Ledger) => balanceMap.get(ledger._id) ?? 0;
+
     const stockInHand = ledgers.find((l) => l.category === 'Stock in Hand');
     const openingStock = stockInHand?.openingBalance ?? 0;
     const closingStock =
-      stockInHand != null && stockInHand.closingBalance !== undefined
-        ? (stockInHand.closingBalance ?? 0)
-        : (stockInHand?.balance ?? 0);
+      stockInHand != null ? getBalance(stockInHand) : 0;
 
     const incomeLedgers = ledgers.filter((l) => l.type === 'Income');
     const expenseLedgers = ledgers.filter((l) => l.type === 'Expense');
@@ -77,7 +84,7 @@ const TradingAndPLAccount = memo(function TradingAndPLAccount({
     }> = [];
 
     incomeLedgers.forEach((ledger) => {
-      const balance = ledger.balance || ledger.closingBalance || 0;
+      const balance = getBalance(ledger);
       const existing = incomeCategories.find(
         (c) => c.subType === ledger.subType && c.category === ledger.category
       );
@@ -93,7 +100,7 @@ const TradingAndPLAccount = memo(function TradingAndPLAccount({
     });
 
     expenseLedgers.forEach((ledger) => {
-      const balance = ledger.balance || ledger.closingBalance || 0;
+      const balance = getBalance(ledger);
       const existing = expenseCategories.find(
         (c) => c.subType === ledger.subType && c.category === ledger.category
       );
@@ -214,7 +221,7 @@ const TradingAndPLAccount = memo(function TradingAndPLAccount({
       debitTotal,
       creditTotal,
     };
-  }, [ledgers]);
+  }, [ledgers, vouchers]);
 
   if (isLoading) {
     return (

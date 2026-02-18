@@ -1,5 +1,6 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import type { CreateLedgerBody } from '@/services/accounting/ledgers/useCreateLedger';
+import { LEDGER_OPTIONS } from '@/types/ledger';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,6 +28,10 @@ export interface LedgerCreateFormProps {
   isPending: boolean;
 }
 
+function toOption(s: string): Option<string> {
+  return { value: s, label: s, searchableText: s };
+}
+
 const LedgerCreateForm = memo(function LedgerCreateForm({
   form,
   setForm,
@@ -34,6 +39,20 @@ const LedgerCreateForm = memo(function LedgerCreateForm({
   onCancel,
   isPending,
 }: LedgerCreateFormProps) {
+  const subTypeOptions = useMemo(() => {
+    const typeOptions = LEDGER_OPTIONS[form.type];
+    return Object.keys(typeOptions).map(toOption);
+  }, [form.type]);
+
+  const categoryOptions = useMemo(() => {
+    const typeOptions = LEDGER_OPTIONS[form.type] as Record<
+      string,
+      readonly string[]
+    >;
+    const list = form.subType ? typeOptions[form.subType] ?? [] : [];
+    return list.map(toOption);
+  }, [form.type, form.subType]);
+
   return (
     <form onSubmit={onSubmit} className="font-custom flex flex-col gap-4 pt-2">
       <div className="space-y-2">
@@ -61,6 +80,8 @@ const LedgerCreateForm = memo(function LedgerCreateForm({
             setForm((prev) => ({
               ...prev,
               type: (v || 'Asset') as CreateLedgerBody['type'],
+              subType: '',
+              category: '',
             }))
           }
           buttonClassName="font-custom focus-visible:ring-primary w-full justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
@@ -68,28 +89,34 @@ const LedgerCreateForm = memo(function LedgerCreateForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="ledger-subType">Sub type</Label>
-        <Input
+        <SearchSelector<string>
           id="ledger-subType"
-          placeholder="e.g. Current Asset"
+          options={subTypeOptions}
+          placeholder="Select sub type..."
+          searchPlaceholder="Search sub type..."
           value={form.subType}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, subType: e.target.value }))
+          onSelect={(v) =>
+            setForm((prev) => ({
+              ...prev,
+              subType: v ?? '',
+              category: '',
+            }))
           }
-          className="font-custom focus-visible:ring-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          required
+          buttonClassName="font-custom focus-visible:ring-primary w-full justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="ledger-category">Category</Label>
-        <Input
+        <SearchSelector<string>
           id="ledger-category"
-          placeholder="e.g. Cash"
+          options={categoryOptions}
+          placeholder="Select category..."
+          searchPlaceholder="Search category..."
           value={form.category}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, category: e.target.value }))
+          onSelect={(v) =>
+            setForm((prev) => ({ ...prev, category: v ?? '' }))
           }
-          className="font-custom focus-visible:ring-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          required
+          buttonClassName="font-custom focus-visible:ring-primary w-full justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
         />
       </div>
       <div className="space-y-2">
@@ -130,7 +157,7 @@ const LedgerCreateForm = memo(function LedgerCreateForm({
         <Button
           type="submit"
           className="font-custom focus-visible:ring-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          disabled={isPending}
+          disabled={isPending || !form.subType || !form.category}
         >
           {isPending ? 'Creating…' : 'Create'}
         </Button>

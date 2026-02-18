@@ -230,16 +230,16 @@ const LedgerViewTab = memo(function LedgerViewTab({
       l.type,
       l.openingBalance ?? 0
     );
+    const openingBalance = l.openingBalance ?? 0;
+    // Closing balance must be derived from the same running balance as the table
+    // so header and footer match the last row's balance and Dr/Cr
     const balance =
-      l.name === 'Stock in Hand' &&
-      l.category === 'Stock in Hand' &&
-      l.closingBalance != null
-        ? l.closingBalance
-        : (l.balance ?? l.closingBalance ?? 0);
+      entriesWithBalance.length > 0
+        ? entriesWithBalance[entriesWithBalance.length - 1]!.runningBalance
+        : openingBalance;
     const isDebitBalance = ['Asset', 'Expense'].includes(l.type)
       ? balance >= 0
       : balance < 0;
-    const openingBalance = l.openingBalance ?? 0;
     return {
       ledger: l,
       balance,

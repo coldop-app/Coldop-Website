@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import * as z from 'zod';
 import { queryClient } from '@/lib/queryClient';
 import storeAdminAxiosClient from '@/lib/axios';
+import { ledgersKeys } from '../ledgers/useGetAllLedgers';
 import { vouchersKeys } from './useGetAllVouchers';
 
 /* -------------------------------------------------
@@ -133,6 +134,7 @@ export function useUpdateVoucher() {
             : undefined,
       });
       void queryClient.invalidateQueries({ queryKey: vouchersKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ledgersKeys.all });
     },
 
     onError: (error: AxiosError<UpdateVoucherApiError> | Error) => {

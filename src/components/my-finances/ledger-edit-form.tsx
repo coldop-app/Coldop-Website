@@ -1,6 +1,7 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import type { Ledger } from '@/services/accounting/ledgers/useGetAllLedgers';
 import type { UpdateLedgerBody } from '@/services/accounting/ledgers/useUpdateLedger';
+import { LEDGER_OPTIONS } from '@/types/ledger';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -20,6 +21,10 @@ const LEDGER_TYPES: UpdateLedgerBody['type'][] = [
 const LEDGER_TYPE_OPTIONS: Option<UpdateLedgerBody['type']>[] =
   LEDGER_TYPES.map((t) => ({ value: t, label: t, searchableText: t }));
 
+function toOption(s: string): Option<string> {
+  return { value: s, label: s, searchableText: s };
+}
+
 export interface LedgerEditFormProps {
   ledger: Ledger | null;
   form: UpdateLedgerBody;
@@ -38,6 +43,20 @@ const LedgerEditForm = memo(function LedgerEditForm({
   isPending,
 }: LedgerEditFormProps) {
   const disabled = ledger?.isSystemLedger ?? false;
+
+  const subTypeOptions = useMemo(() => {
+    const typeOptions = LEDGER_OPTIONS[form.type];
+    return Object.keys(typeOptions).map(toOption);
+  }, [form.type]);
+
+  const categoryOptions = useMemo(() => {
+    const typeOptions = LEDGER_OPTIONS[form.type] as Record<
+      string,
+      readonly string[]
+    >;
+    const list = form.subType ? typeOptions[form.subType] ?? [] : [];
+    return list.map(toOption);
+  }, [form.type, form.subType]);
 
   return (
     <form onSubmit={onSubmit} className="font-custom flex flex-col gap-4 pt-2">
@@ -67,6 +86,8 @@ const LedgerEditForm = memo(function LedgerEditForm({
             setForm((prev) => ({
               ...prev,
               type: (v || 'Asset') as UpdateLedgerBody['type'],
+              subType: '',
+              category: '',
             }))
           }
           buttonClassName="font-custom focus-visible:ring-primary w-full justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
@@ -75,29 +96,35 @@ const LedgerEditForm = memo(function LedgerEditForm({
       </div>
       <div className="space-y-2">
         <Label htmlFor="edit-ledger-subType">Sub type</Label>
-        <Input
+        <SearchSelector<string>
           id="edit-ledger-subType"
-          placeholder="e.g. Current Asset"
+          options={subTypeOptions}
+          placeholder="Select sub type..."
+          searchPlaceholder="Search sub type..."
           value={form.subType}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, subType: e.target.value }))
+          onSelect={(v) =>
+            setForm((prev) => ({
+              ...prev,
+              subType: v ?? '',
+              category: '',
+            }))
           }
-          className="font-custom focus-visible:ring-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          required
+          buttonClassName="font-custom focus-visible:ring-primary w-full justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={disabled}
         />
       </div>
       <div className="space-y-2">
         <Label htmlFor="edit-ledger-category">Category</Label>
-        <Input
+        <SearchSelector<string>
           id="edit-ledger-category"
-          placeholder="e.g. Cash"
+          options={categoryOptions}
+          placeholder="Select category..."
+          searchPlaceholder="Search category..."
           value={form.category}
-          onChange={(e) =>
-            setForm((prev) => ({ ...prev, category: e.target.value }))
+          onSelect={(v) =>
+            setForm((prev) => ({ ...prev, category: v ?? '' }))
           }
-          className="font-custom focus-visible:ring-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          required
+          buttonClassName="font-custom focus-visible:ring-primary w-full justify-between focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
           disabled={disabled}
         />
       </div>
@@ -139,7 +166,7 @@ const LedgerEditForm = memo(function LedgerEditForm({
         <Button
           type="submit"
           className="font-custom focus-visible:ring-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-          disabled={isPending}
+          disabled={isPending || !form.subType || !form.category}
         >
           {isPending ? 'Saving…' : 'Save'}
         </Button>

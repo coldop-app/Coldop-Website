@@ -3,6 +3,7 @@ import { AxiosError } from 'axios';
 import { toast } from 'sonner';
 import { queryClient } from '@/lib/queryClient';
 import storeAdminAxiosClient from '@/lib/axios';
+import { ledgersKeys } from '../ledgers/useGetAllLedgers';
 import { vouchersKeys } from './useGetAllVouchers';
 
 /* -------------------------------------------------
@@ -78,6 +79,7 @@ export function useDeleteVoucher() {
     onSuccess: (data) => {
       toast.success(data.message ?? 'Voucher deleted');
       void queryClient.invalidateQueries({ queryKey: vouchersKeys.all });
+      void queryClient.invalidateQueries({ queryKey: ledgersKeys.all });
     },
 
     onError: (error: AxiosError<DeleteVoucherApiError> | Error) => {

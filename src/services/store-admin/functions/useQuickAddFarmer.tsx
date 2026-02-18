@@ -7,6 +7,7 @@ import type {
   QuickRegisterFarmerInput,
   QuickRegisterFarmerApiResponse,
 } from '@/types/farmer';
+import { ledgersKeys } from '@/services/accounting/ledgers/useGetAllLedgers';
 import { farmerStorageLinksKeys } from './useGetAllFarmers';
 
 /** API error shape (400, 404, 409): { success, error: { code, message } } */
@@ -72,6 +73,7 @@ export function useQuickAddFarmer() {
             : undefined,
         });
         queryClient.invalidateQueries({ queryKey: farmerStorageLinksKeys.all });
+        queryClient.invalidateQueries({ queryKey: ledgersKeys.all });
       } else {
         toast.error(DEFAULT_ERROR_MESSAGE, {
           description: data.message ?? undefined,
