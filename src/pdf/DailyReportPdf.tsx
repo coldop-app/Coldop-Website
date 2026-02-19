@@ -44,12 +44,12 @@ interface DeliveryRow {
   runningTotal: number;
 }
 
-/** Format location for display below quantity, e.g. "(1 2 1)" */
+/** Format location for display below quantity, e.g. "(1-2-1)" */
 function locDisplay(loc: { chamber?: string; floor?: string; row?: string }): string {
   const c = loc?.chamber ?? '';
   const f = loc?.floor ?? '';
   const r = loc?.row ?? '';
-  const s = [c, f, r].filter(Boolean).join(' ').trim();
+  const s = [c, f, r].filter(Boolean).join('-').trim();
   return s ? `(${s})` : '';
 }
 

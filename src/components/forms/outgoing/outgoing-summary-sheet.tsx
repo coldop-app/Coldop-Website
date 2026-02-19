@@ -15,6 +15,19 @@ import type { CreateOutgoingGatePassBody } from '@/services/outgoing-gate-pass/u
 /*                                  Helpers                                   */
 /* -------------------------------------------------------------------------- */
 
+/** Format allocation location (chamber, floor, row) for display. */
+function formatExtractionLocation(loc: {
+  chamber?: string;
+  floor?: string;
+  row?: string;
+}): string {
+  if (!loc) return '—';
+  const parts = [loc.chamber, loc.floor, loc.row]
+    .map((s) => (s ?? '').trim())
+    .filter(Boolean);
+  return parts.length ? parts.join(' - ') : '—';
+}
+
 /** Format ISO or dd.mm.yyyy to "Jan 18, 2026" */
 function formatDateLong(dateStr: string): string {
   if (!dateStr?.trim()) return '—';
@@ -64,12 +77,14 @@ const SummaryMetaRow = memo(function SummaryMetaRow({
 }) {
   return (
     <div className="flex items-center gap-3">
-      {Icon && <Icon className="h-4 w-4 shrink-0 text-zinc-400" aria-hidden />}
+      {Icon && (
+        <Icon className="text-muted-foreground h-4 w-4 shrink-0" aria-hidden />
+      )}
       <div className="min-w-0">
-        <p className="font-custom text-[11px] font-medium tracking-wide text-zinc-400 uppercase">
+        <p className="text-muted-foreground font-custom text-[11px] font-medium tracking-wide uppercase">
           {label}
         </p>
-        <p className="font-custom truncate text-sm font-medium text-white">
+        <p className="font-custom text-foreground truncate text-sm font-medium">
           {value}
         </p>
       </div>
@@ -101,19 +116,19 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
         side="right"
         className="flex w-full flex-col border-0 p-0 sm:max-w-lg"
       >
-        <div className="flex min-h-0 flex-1 flex-col bg-zinc-900">
-          <SheetHeader className="border-zinc-700/60 px-4 py-4 sm:px-6">
-            <SheetTitle className="font-custom text-lg font-bold text-white sm:text-xl">
+        <div className="bg-background flex min-h-0 flex-1 flex-col">
+          <SheetHeader className="border-border px-4 py-4 sm:px-6">
+            <SheetTitle className="font-custom text-foreground text-lg font-bold sm:text-xl">
               Outgoing Gate Pass Summary
             </SheetTitle>
-            <SheetDescription className="font-custom text-sm text-zinc-400">
+            <SheetDescription className="font-custom text-muted-foreground text-sm">
               Review before creating outgoing gate pass
             </SheetDescription>
           </SheetHeader>
 
           {pendingPayload ? (
             <>
-              <div className="flex flex-wrap gap-x-6 gap-y-3 border-b border-zinc-700/60 px-4 py-3 sm:px-6">
+              <div className="border-border flex flex-wrap gap-x-6 gap-y-3 border-b px-4 py-3 sm:px-6">
                 <SummaryMetaRow
                   label="Voucher"
                   value={`#${pendingPayload.gatePassNo}`}
@@ -152,8 +167,8 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
               </div>
 
               <div className="flex-1 overflow-y-auto px-4 py-5 sm:px-6">
-                <div className="mb-6 overflow-hidden rounded-xl border border-zinc-600/50 bg-zinc-800/60">
-                  <h3 className="font-custom mt-3 mb-2 px-4 text-sm font-semibold text-zinc-300">
+                <div className="border-border bg-muted/80 mb-6 overflow-hidden rounded-xl border shadow-lg">
+                  <h3 className="font-custom text-foreground mt-3 mb-2 px-4 text-sm font-semibold">
                     Incoming gate passes
                   </h3>
                   {pendingPayload.incomingGatePasses.map((entry, idx) => {
@@ -164,19 +179,19 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                     return (
                       <div
                         key={entry.incomingGatePassId}
-                        className="mx-4 mb-4 overflow-hidden rounded-lg bg-zinc-800/80"
+                        className="border-border/80 bg-muted/80 mx-4 mb-4 overflow-hidden rounded-lg"
                       >
-                        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-zinc-600/50 px-3 py-3 sm:px-4">
+                        <div className="border-border/80 flex flex-wrap items-start justify-between gap-4 border-b px-3 py-3 sm:px-4">
                           <div>
-                            <p className="font-custom text-base font-bold text-white">
+                            <p className="font-custom text-foreground text-base font-bold">
                               Incoming voucher #{idx + 1}
                               {entry.variety?.trim() && (
-                                <span className="font-custom ml-2 font-normal text-zinc-400">
+                                <span className="text-muted-foreground font-custom ml-2 font-normal">
                                   ({entry.variety.trim()})
                                 </span>
                               )}
                             </p>
-                            <p className="font-custom mt-0.5 text-xs text-zinc-400">
+                            <p className="text-muted-foreground font-custom mt-0.5 text-xs">
                               {entryBags} bag
                               {entryBags !== 1 ? 's' : ''} allocated
                             </p>
@@ -186,10 +201,13 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                           <table className="font-custom w-full border-collapse text-sm">
                             <thead>
                               <tr>
-                                <th className="border-b border-zinc-600/50 py-2 pr-3 text-left text-[10px] font-medium tracking-wide text-zinc-400 uppercase">
+                                <th className="border-border/80 text-muted-foreground border-b py-2 pr-3 text-left text-[10px] font-medium tracking-wide uppercase">
                                   Size
                                 </th>
-                                <th className="border-b border-zinc-600/50 px-2 py-2 text-right text-[10px] font-medium tracking-wide text-zinc-400 uppercase">
+                                <th className="border-border/80 text-muted-foreground border-b px-2 py-2 text-left text-[10px] font-medium tracking-wide uppercase">
+                                  Extraction location
+                                </th>
+                                <th className="border-border/80 text-muted-foreground border-b px-2 py-2 text-right text-[10px] font-medium tracking-wide uppercase">
                                   Allocated
                                 </th>
                               </tr>
@@ -197,10 +215,15 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                             <tbody>
                               {entry.allocations.map((alloc, allocIdx) => (
                                 <tr key={`${alloc.size}-${allocIdx}`}>
-                                  <td className="border-b border-zinc-600/40 py-2 pr-3 font-medium text-white">
+                                  <td className="border-border/80 text-foreground border-b py-2 pr-3 font-medium">
                                     {alloc.size}
                                   </td>
-                                  <td className="text-primary border-b border-zinc-600/40 px-2 py-2 text-right font-medium">
+                                  <td className="border-border/80 text-foreground border-b px-2 py-2">
+                                    {formatExtractionLocation(
+                                      alloc.location ?? {}
+                                    )}
+                                  </td>
+                                  <td className="text-primary border-border/80 border-b px-2 py-2 text-right font-medium">
                                     {Number(alloc.quantityToAllocate).toFixed(
                                       1
                                     )}
@@ -215,20 +238,20 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                   })}
 
                   {pendingPayload.remarks?.trim() && (
-                    <div className="mx-4 mb-4 rounded-lg bg-zinc-800/60 px-3 py-2 sm:px-4">
-                      <p className="font-custom text-[10px] font-medium tracking-wide text-zinc-400 uppercase">
+                    <div className="bg-muted/60 mx-4 mb-4 rounded-lg px-3 py-2 sm:px-4">
+                      <p className="text-muted-foreground text-[10px] font-medium tracking-wide uppercase">
                         Remarks
                       </p>
-                      <p className="font-custom mt-1 text-xs text-zinc-300">
+                      <p className="font-custom text-foreground mt-1 text-sm">
                         {pendingPayload.remarks}
                       </p>
                     </div>
                   )}
                 </div>
 
-                <div className="mt-5 rounded-xl bg-zinc-800/80 px-4 py-4 shadow-lg sm:px-5">
+                <div className="bg-muted/80 mt-5 rounded-xl px-4 py-4 shadow-lg sm:px-5">
                   <div className="flex items-center justify-between">
-                    <span className="font-custom text-base font-bold text-white sm:text-lg">
+                    <span className="font-custom text-foreground text-base font-bold sm:text-lg">
                       Grand Total
                     </span>
                     <span className="font-custom text-primary text-xl font-bold sm:text-2xl">
@@ -238,12 +261,12 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                 </div>
               </div>
 
-              <SheetFooter className="border-t border-zinc-700/60 bg-zinc-800/90 px-4 py-4 sm:px-6">
+              <SheetFooter className="border-border bg-muted/50 border-t px-4 py-4 sm:px-6">
                 <div className="flex w-full flex-col gap-3 sm:flex-row">
                   <Button
                     type="button"
                     variant="outline"
-                    className="font-custom w-full border-zinc-600 bg-transparent text-zinc-200 hover:bg-zinc-700 hover:text-white sm:w-auto"
+                    className="font-custom border-border text-foreground hover:bg-muted hover:text-foreground w-full bg-transparent sm:w-auto"
                     onClick={() => onOpenChange(false)}
                     disabled={isSubmitting}
                   >
@@ -270,7 +293,7 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
             </>
           ) : (
             <div className="flex flex-1 items-center justify-center px-4 py-8">
-              <p className="font-custom text-center text-sm text-zinc-400">
+              <p className="text-muted-foreground font-custom text-center text-sm">
                 No summary available. Use Review to build the outgoing order.
               </p>
             </div>

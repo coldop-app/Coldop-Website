@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.8] - 2026-02-19
+
+### Added
+
+- **Outgoing summary sheet – Extraction location** – Allocations table now shows an "Extraction location" column (chamber - floor - row) for each size row, with formatted display and fallback "—" when empty
+
+### Changed
+
+- **PDF reports – Location format** – Daily report and farmer report PDFs now display location as hyphen-separated `(chamber-floor-row)`, e.g. `(1-2-1)` instead of space-separated
+- **Outgoing summary sheet** – Switched to semantic theme tokens (foreground, muted-foreground, border, muted) for consistent theming and dark/light support
+
+---
+
 ## [0.4.7] - 2026-02-19
 
 ### Added
