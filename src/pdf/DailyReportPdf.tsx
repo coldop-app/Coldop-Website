@@ -20,15 +20,15 @@ export interface DailyReportPdfProps {
   sizeColumns: string[];
 }
 
+/** Per-size list of (quantity, location) for one gate pass row */
+type SizeQtyLocList = Record<string, { qty: number; loc: string }[]>;
+
 interface ReceiptRow {
   date: string;
   voucher: string;
   variety: string;
   ac?: string;
-  chamber: string;
-  floor: string;
-  row: string;
-  sizeQtys: Record<string, number>;
+  sizeQtys: SizeQtyLocList;
   rowTotal: number;
   runningTotal: number;
   remarks: string;
@@ -39,19 +39,18 @@ interface DeliveryRow {
   voucher: string;
   variety: string;
   ac?: string;
-  chamber: string;
-  floor: string;
-  row: string;
-  sizeQtys: Record<string, number>;
+  sizeQtys: SizeQtyLocList;
   rowTotal: number;
   runningTotal: number;
 }
 
-function locKey(loc: { chamber?: string; floor?: string; row?: string }): string {
+/** Format location for display below quantity, e.g. "(1 2 1)" */
+function locDisplay(loc: { chamber?: string; floor?: string; row?: string }): string {
   const c = loc?.chamber ?? '';
   const f = loc?.floor ?? '';
   const r = loc?.row ?? '';
-  return `${c}|${f}|${r}`;
+  const s = [c, f, r].filter(Boolean).join(' ').trim();
+  return s ? `(${s})` : '';
 }
 
 function formatPdfDate(iso: string): string {
@@ -98,43 +97,30 @@ function buildReceiptRows(
       ? String(entry.farmerStorageLinkId?.accountNumber ?? '')
       : undefined;
 
-    const byLoc = new Map<string, { size: string; qty: number }[]>();
-    for (const bag of entry.bagSizes) {
-      const key = locKey(bag.location ?? {});
-      if (!byLoc.has(key)) byLoc.set(key, []);
-      byLoc.get(key)!.push({ size: bag.name, qty: bag.initialQuantity ?? 0 });
-    }
-
-    const locations = Array.from(byLoc.entries()).sort(([a], [b]) =>
-      a.localeCompare(b)
+    const sizeQtys: SizeQtyLocList = sizeColumns.reduce(
+      (acc, col) => ({ ...acc, [col]: [] }),
+      {} as SizeQtyLocList
     );
-    let firstInVoucher = true;
-    for (const [key, sizeList] of locations) {
-      const [c, f, r] = key.split('|');
-      const sizeQtys: Record<string, number> = sizeColumns.reduce(
-        (acc, col) => ({
-          ...acc,
-          [col]: sizeList.filter((x) => x.size === col).reduce((s, x) => s + x.qty, 0),
-        }),
-        {} as Record<string, number>
-      );
-      const rowTotal = sizeList.reduce((s, { qty }) => s + qty, 0);
-      runningTotal += rowTotal;
-      rows.push({
-        date: dateStr,
-        voucher: voucherStr,
-        variety,
-        ...(includeAc && acStr !== undefined ? { ac: acStr } : {}),
-        chamber: c,
-        floor: f,
-        row: r,
-        sizeQtys,
-        rowTotal,
-        runningTotal,
-        remarks: firstInVoucher ? remarks : '-',
-      });
-      firstInVoucher = false;
+    let rowTotal = 0;
+    for (const bag of entry.bagSizes) {
+      const size = bag.name;
+      const qty = bag.initialQuantity ?? 0;
+      const loc = locDisplay(bag.location ?? {});
+      if (!sizeQtys[size]) sizeQtys[size] = [];
+      sizeQtys[size].push({ qty, loc });
+      rowTotal += qty;
     }
+    runningTotal += rowTotal;
+    rows.push({
+      date: dateStr,
+      voucher: voucherStr,
+      variety,
+      ...(includeAc && acStr !== undefined ? { ac: acStr } : {}),
+      sizeQtys,
+      rowTotal,
+      runningTotal,
+      remarks,
+    });
   }
   return rows;
 }
@@ -162,58 +148,29 @@ function buildDeliveryRows(
       : undefined;
     const orderDetails = entry.orderDetails ?? [];
 
-    const byLoc = new Map<string, { size: string; qty: number }[]>();
-    for (const od of orderDetails) {
-      const key = locKey(od.location ?? {});
-      if (!byLoc.has(key)) byLoc.set(key, []);
-      byLoc.get(key)!.push({ size: od.size, qty: od.quantityIssued ?? 0 });
-    }
-
-    if (byLoc.size === 0) {
-      const rowTotal = orderDetails.reduce((s, d) => s + (d.quantityIssued ?? 0), 0);
-      runningTotal -= rowTotal;
-      rows.push({
-        date: dateStr,
-        voucher: voucherStr,
-        variety,
-        ...(includeAc && acStr !== undefined ? { ac: acStr } : {}),
-        chamber: '-',
-        floor: '-',
-        row: '-',
-        sizeQtys: sizeColumns.reduce((acc, col) => {
-          acc[col] = orderDetails.filter((d) => d.size === col).reduce((s, d) => s + (d.quantityIssued ?? 0), 0);
-          return acc;
-        }, {} as Record<string, number>),
-        rowTotal,
-        runningTotal,
-      });
-      continue;
-    }
-
-    const locations = Array.from(byLoc.entries()).sort(([a], [b]) =>
-      a.localeCompare(b)
+    const sizeQtys: SizeQtyLocList = sizeColumns.reduce(
+      (acc, col) => ({ ...acc, [col]: [] }),
+      {} as SizeQtyLocList
     );
-    for (const [key, sizeList] of locations) {
-      const [c, f, r] = key.split('|');
-      const sizeQtys: Record<string, number> = {};
-      for (const col of sizeColumns) {
-        sizeQtys[col] = sizeList.filter((x) => x.size === col).reduce((s, x) => s + x.qty, 0);
-      }
-      const rowTotal = sizeList.reduce((s, x) => s + x.qty, 0);
-      runningTotal -= rowTotal;
-      rows.push({
-        date: dateStr,
-        voucher: voucherStr,
-        variety,
-        ...(includeAc && acStr !== undefined ? { ac: acStr } : {}),
-        chamber: c,
-        floor: f,
-        row: r,
-        sizeQtys,
-        rowTotal,
-        runningTotal,
-      });
+    let rowTotal = 0;
+    for (const od of orderDetails) {
+      const size = od.size;
+      const qty = od.quantityIssued ?? 0;
+      const loc = locDisplay(od.location ?? {});
+      if (!sizeQtys[size]) sizeQtys[size] = [];
+      sizeQtys[size].push({ qty, loc });
+      rowTotal += qty;
     }
+    runningTotal -= rowTotal;
+    rows.push({
+      date: dateStr,
+      voucher: voucherStr,
+      variety,
+      ...(includeAc && acStr !== undefined ? { ac: acStr } : {}),
+      sizeQtys,
+      rowTotal,
+      runningTotal,
+    });
   }
   return rows;
 }
@@ -320,6 +277,16 @@ const styles = StyleSheet.create({
   },
   cellLast: {
     borderRightWidth: 0,
+  },
+  cellQtyLoc: {
+    paddingVertical: 1,
+  },
+  cellQtyLocBlock: {
+    marginBottom: 4,
+  },
+  cellLocText: {
+    fontSize: 6,
+    color: '#444',
   },
   cellTotal: {
     backgroundColor: '#F5F5F5',
@@ -428,12 +395,12 @@ const styles = StyleSheet.create({
 
 const receiptTableCols = (includeAc: boolean) =>
   includeAc
-    ? ['DATE', 'VOUCHER', 'A/c', 'VARIETY', 'CH', 'FL', 'ROW']
-    : ['DATE', 'VOUCHER', 'VARIETY', 'CH', 'FL', 'ROW'];
+    ? ['DATE', 'VOUCHER', 'A/c', 'VARIETY']
+    : ['DATE', 'VOUCHER', 'VARIETY'];
 const deliveryTableCols = (includeAc: boolean) =>
   includeAc
-    ? ['DATE', 'VOUCHER', 'A/c', 'VARIETY', 'CH', 'FL', 'ROW']
-    : ['DATE', 'VOUCHER', 'VARIETY', 'CH', 'FL', 'ROW'];
+    ? ['DATE', 'VOUCHER', 'A/c', 'VARIETY']
+    : ['DATE', 'VOUCHER', 'VARIETY'];
 
 function cellWidth(col: string): string {
   if (col === 'VARIETY') return '14%';
@@ -442,7 +409,7 @@ function cellWidth(col: string): string {
   if (col === 'A/c') return '6%';
   if (col === 'TOTAL' || col === 'G.TOTAL') return '8%';
   if (col === 'REMARKS') return '8%';
-  return '6%';
+  return '8%';
 }
 
 /* ------------------------------------------------------------------ */
@@ -469,7 +436,12 @@ function FarmerBlockPage({
   const receiptTotalsBySize = sizeColumns.reduce(
     (acc, col) => ({
       ...acc,
-      [col]: receiptRows.reduce((s, r) => s + (r.sizeQtys[col] ?? 0), 0),
+      [col]: receiptRows.reduce(
+        (s, r) =>
+          s +
+          (r.sizeQtys[col] ?? []).reduce((sum, x) => sum + x.qty, 0),
+        0
+      ),
     }),
     {} as Record<string, number>
   );
@@ -536,20 +508,37 @@ function FarmerBlockPage({
           </View>
           {receiptRows.map((r, idx) => (
             <View
-              key={`${r.date}-${r.voucher}-${r.chamber}-${r.floor}-${r.row}-${idx}`}
+              key={`${r.date}-${r.voucher}-${idx}`}
               style={styles.tableRow}
             >
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>{r.chamber}</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>{r.floor}</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>{r.row}</Text>
-              {sizeColumns.map((col) => (
-                <Text key={col} style={[styles.cell, { width: '6%' }]}>
-                  {r.sizeQtys[col] ? String(r.sizeQtys[col]) : '-'}
-                </Text>
-              ))}
+              {sizeColumns.map((col) => {
+                const list = r.sizeQtys[col] ?? [];
+                return (
+                  <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
+                    {list.length === 0 ? (
+                      <Text>-</Text>
+                    ) : (
+                      list.map((item, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.cellQtyLocBlock,
+                            i === list.length - 1 ? { marginBottom: 0 } : {},
+                          ]}
+                        >
+                          <Text>{item.qty}</Text>
+                          {item.loc ? (
+                            <Text style={styles.cellLocText}>{item.loc}</Text>
+                          ) : null}
+                        </View>
+                      ))
+                    )}
+                  </View>
+                );
+              })}
               <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{r.rowTotal}</Text>
               <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{r.runningTotal}</Text>
               <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>{r.remarks}</Text>
@@ -560,11 +549,8 @@ function FarmerBlockPage({
               <Text style={[styles.cell, { width: '10%' }]}>TOTAL</Text>
               <Text style={[styles.cell, { width: '8%' }]}>-</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>-</Text>
               {sizeColumns.map((col) => (
-                <Text key={col} style={[styles.cell, { width: '6%' }]}>
+                <Text key={col} style={[styles.cell, { width: '8%' }]}>
                   {receiptTotalsBySize[col] ?? 0}
                 </Text>
               ))}
@@ -601,11 +587,8 @@ function FarmerBlockPage({
               <Text style={[styles.cell, { width: '10%' }]}>OPENING</Text>
               <Text style={[styles.cell, { width: '8%' }]}>BALANCE</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>-</Text>
               {sizeColumns.map((col) => (
-                <Text key={col} style={[styles.cell, { width: '6%' }]}>
+                <Text key={col} style={[styles.cell, { width: '8%' }]}>
                   {receiptTotalsBySize[col] ?? 0}
                 </Text>
               ))}
@@ -615,20 +598,37 @@ function FarmerBlockPage({
           )}
           {deliveryRows.map((r, idx) => (
             <View
-              key={`${r.date}-${r.voucher}-${r.chamber}-${r.floor}-${r.row}-${idx}`}
+              key={`${r.date}-${r.voucher}-${idx}`}
               style={styles.tableRow}
             >
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>{r.chamber}</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>{r.floor}</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>{r.row}</Text>
-              {sizeColumns.map((col) => (
-                <Text key={col} style={[styles.cell, { width: '6%' }]}>
-                  {r.sizeQtys[col] ? String(r.sizeQtys[col]) : '-'}
-                </Text>
-              ))}
+              {sizeColumns.map((col) => {
+                const list = r.sizeQtys[col] ?? [];
+                return (
+                  <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
+                    {list.length === 0 ? (
+                      <Text>-</Text>
+                    ) : (
+                      list.map((item, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.cellQtyLocBlock,
+                            i === list.length - 1 ? { marginBottom: 0 } : {},
+                          ]}
+                        >
+                          <Text>{item.qty}</Text>
+                          {item.loc ? (
+                            <Text style={styles.cellLocText}>{item.loc}</Text>
+                          ) : null}
+                        </View>
+                      ))
+                    )}
+                  </View>
+                );
+              })}
               <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{r.rowTotal}</Text>
               <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>{r.runningTotal}</Text>
             </View>
@@ -708,7 +708,12 @@ function FlatReportPage({
   const receiptTotalsBySize = sizeColumns.reduce(
     (acc, col) => ({
       ...acc,
-      [col]: receiptRows.reduce((s, r) => s + (r.sizeQtys[col] ?? 0), 0),
+      [col]: receiptRows.reduce(
+        (s, r) =>
+          s +
+          (r.sizeQtys[col] ?? []).reduce((sum, x) => sum + x.qty, 0),
+        0
+      ),
     }),
     {} as Record<string, number>
   );
@@ -749,21 +754,38 @@ function FlatReportPage({
           </View>
           {receiptRows.map((r, idx) => (
             <View
-              key={`${r.date}-${r.voucher}-${r.ac}-${r.chamber}-${idx}`}
+              key={`${r.date}-${r.voucher}-${r.ac}-${idx}`}
               style={styles.tableRow}
             >
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
               <Text style={[styles.cell, { width: '6%' }]}>{r.ac ?? '-'}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>{r.chamber}</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>{r.floor}</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>{r.row}</Text>
-              {sizeColumns.map((col) => (
-                <Text key={col} style={[styles.cell, { width: '6%' }]}>
-                  {r.sizeQtys[col] ? String(r.sizeQtys[col]) : '-'}
-                </Text>
-              ))}
+              {sizeColumns.map((col) => {
+                const list = r.sizeQtys[col] ?? [];
+                return (
+                  <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
+                    {list.length === 0 ? (
+                      <Text>-</Text>
+                    ) : (
+                      list.map((item, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.cellQtyLocBlock,
+                            i === list.length - 1 ? { marginBottom: 0 } : {},
+                          ]}
+                        >
+                          <Text>{item.qty}</Text>
+                          {item.loc ? (
+                            <Text style={styles.cellLocText}>{item.loc}</Text>
+                          ) : null}
+                        </View>
+                      ))
+                    )}
+                  </View>
+                );
+              })}
               <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{r.rowTotal}</Text>
               <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{r.runningTotal}</Text>
               <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>{r.remarks}</Text>
@@ -775,11 +797,8 @@ function FlatReportPage({
               <Text style={[styles.cell, { width: '8%' }]}>-</Text>
               <Text style={[styles.cell, { width: '6%' }]}>-</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>-</Text>
               {sizeColumns.map((col) => (
-                <Text key={col} style={[styles.cell, { width: '6%' }]}>
+                <Text key={col} style={[styles.cell, { width: '8%' }]}>
                   {receiptTotalsBySize[col] ?? 0}
                 </Text>
               ))}
@@ -817,11 +836,8 @@ function FlatReportPage({
               <Text style={[styles.cell, { width: '8%' }]}>BALANCE</Text>
               <Text style={[styles.cell, { width: '6%' }]}>-</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>-</Text>
               {sizeColumns.map((col) => (
-                <Text key={col} style={[styles.cell, { width: '6%' }]}>
+                <Text key={col} style={[styles.cell, { width: '8%' }]}>
                   {receiptTotalsBySize[col] ?? 0}
                 </Text>
               ))}
@@ -831,21 +847,38 @@ function FlatReportPage({
           )}
           {deliveryRows.map((r, idx) => (
             <View
-              key={`${r.date}-${r.voucher}-${r.ac}-${r.chamber}-${idx}`}
+              key={`${r.date}-${r.voucher}-${r.ac}-${idx}`}
               style={styles.tableRow}
             >
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
               <Text style={[styles.cell, { width: '6%' }]}>{r.ac ?? '-'}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>{r.chamber}</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>{r.floor}</Text>
-              <Text style={[styles.cell, { width: '5%' }]}>{r.row}</Text>
-              {sizeColumns.map((col) => (
-                <Text key={col} style={[styles.cell, { width: '6%' }]}>
-                  {r.sizeQtys[col] ? String(r.sizeQtys[col]) : '-'}
-                </Text>
-              ))}
+              {sizeColumns.map((col) => {
+                const list = r.sizeQtys[col] ?? [];
+                return (
+                  <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
+                    {list.length === 0 ? (
+                      <Text>-</Text>
+                    ) : (
+                      list.map((item, i) => (
+                        <View
+                          key={i}
+                          style={[
+                            styles.cellQtyLocBlock,
+                            i === list.length - 1 ? { marginBottom: 0 } : {},
+                          ]}
+                        >
+                          <Text>{item.qty}</Text>
+                          {item.loc ? (
+                            <Text style={styles.cellLocText}>{item.loc}</Text>
+                          ) : null}
+                        </View>
+                      ))
+                    )}
+                  </View>
+                );
+              })}
               <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{r.rowTotal}</Text>
               <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>{r.runningTotal}</Text>
             </View>
