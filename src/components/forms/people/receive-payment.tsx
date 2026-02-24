@@ -235,7 +235,6 @@ const ReceivePaymentForm = memo(function ReceivePaymentForm({
                     const n = v === '' ? 0 : parseFloat(v);
                     field.handleChange(Number.isNaN(n) ? 0 : n);
                   }}
-                  onWheel={(e) => e.currentTarget.blur()}
                   onKeyDown={(e) => {
                     if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
                       e.preventDefault();

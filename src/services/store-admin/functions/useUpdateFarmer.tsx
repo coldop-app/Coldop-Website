@@ -76,7 +76,7 @@ export function useUpdateFarmer() {
             ? `${data.data.farmer.name} updated`
             : undefined,
         });
-        queryClient.invalidateQueries({ queryKey: farmerStorageLinksKeys.all });
+        void queryClient.refetchQueries({ queryKey: farmerStorageLinksKeys.all });
       } else {
         toast.error(DEFAULT_ERROR_MESSAGE, {
           description: data.message ?? undefined,

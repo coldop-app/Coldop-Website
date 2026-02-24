@@ -28,6 +28,7 @@ interface ReceiptRow {
   voucher: string;
   variety: string;
   ac?: string;
+  farmerName?: string;
   sizeQtys: SizeQtyLocList;
   rowTotal: number;
   runningTotal: number;
@@ -39,6 +40,7 @@ interface DeliveryRow {
   voucher: string;
   variety: string;
   ac?: string;
+  farmerName?: string;
   sizeQtys: SizeQtyLocList;
   rowTotal: number;
   runningTotal: number;
@@ -96,6 +98,9 @@ function buildReceiptRows(
     const acStr = includeAc
       ? String(entry.farmerStorageLinkId?.accountNumber ?? '')
       : undefined;
+    const farmerName = includeAc
+      ? (entry.farmerStorageLinkId?.farmerId?.name ?? '')
+      : undefined;
 
     const sizeQtys: SizeQtyLocList = sizeColumns.reduce(
       (acc, col) => ({ ...acc, [col]: [] }),
@@ -115,7 +120,7 @@ function buildReceiptRows(
       date: dateStr,
       voucher: voucherStr,
       variety,
-      ...(includeAc && acStr !== undefined ? { ac: acStr } : {}),
+      ...(includeAc && acStr !== undefined ? { ac: acStr, farmerName } : {}),
       sizeQtys,
       rowTotal,
       runningTotal,
@@ -146,6 +151,9 @@ function buildDeliveryRows(
     const acStr = includeAc
       ? String(entry.farmerStorageLinkId?.accountNumber ?? '')
       : undefined;
+    const farmerName = includeAc
+      ? (entry.farmerStorageLinkId?.farmerId?.name ?? '')
+      : undefined;
     const orderDetails = entry.orderDetails ?? [];
 
     const sizeQtys: SizeQtyLocList = sizeColumns.reduce(
@@ -166,7 +174,7 @@ function buildDeliveryRows(
       date: dateStr,
       voucher: voucherStr,
       variety,
-      ...(includeAc && acStr !== undefined ? { ac: acStr } : {}),
+      ...(includeAc && acStr !== undefined ? { ac: acStr, farmerName } : {}),
       sizeQtys,
       rowTotal,
       runningTotal,
@@ -395,11 +403,11 @@ const styles = StyleSheet.create({
 
 const receiptTableCols = (includeAc: boolean) =>
   includeAc
-    ? ['DATE', 'VOUCHER', 'A/c', 'VARIETY']
+    ? ['DATE', 'VOUCHER', 'A/c', 'Name', 'VARIETY']
     : ['DATE', 'VOUCHER', 'VARIETY'];
 const deliveryTableCols = (includeAc: boolean) =>
   includeAc
-    ? ['DATE', 'VOUCHER', 'A/c', 'VARIETY']
+    ? ['DATE', 'VOUCHER', 'A/c', 'Name', 'VARIETY']
     : ['DATE', 'VOUCHER', 'VARIETY'];
 
 function cellWidth(col: string): string {
@@ -407,6 +415,7 @@ function cellWidth(col: string): string {
   if (col === 'DATE') return '10%';
   if (col === 'VOUCHER') return '8%';
   if (col === 'A/c') return '6%';
+  if (col === 'Name') return '12%';
   if (col === 'TOTAL' || col === 'G.TOTAL') return '8%';
   if (col === 'REMARKS') return '8%';
   return '8%';
@@ -745,6 +754,7 @@ function FlatReportPage({
                   ...(col === 'TOTAL' ? [styles.cellTotal] : []),
                   ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
                   ...(col === 'REMARKS' ? [styles.cellRemarks] : []),
+                  ...(col === 'Name' || col === 'VARIETY' ? [styles.cellLeft] : []),
                   { width: cellWidth(col) },
                 ]}
               >
@@ -759,7 +769,8 @@ function FlatReportPage({
             >
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>{r.ac ?? '-'}</Text>
+              <Text style={[styles.cell, { width: cellWidth('A/c') }]}>{r.ac ?? '-'}</Text>
+              <Text style={[styles.cellLeft, { width: cellWidth('Name') }]}>{r.farmerName ?? '-'}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
               {sizeColumns.map((col) => {
                 const list = r.sizeQtys[col] ?? [];
@@ -795,7 +806,8 @@ function FlatReportPage({
             <View style={[styles.tableRow, styles.rowTotals]}>
               <Text style={[styles.cell, { width: '10%' }]}>TOTAL</Text>
               <Text style={[styles.cell, { width: '8%' }]}>-</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>-</Text>
+              <Text style={[styles.cell, { width: cellWidth('A/c') }]}>-</Text>
+              <Text style={[styles.cellLeft, { width: cellWidth('Name') }]}>-</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
               {sizeColumns.map((col) => (
                 <Text key={col} style={[styles.cell, { width: '8%' }]}>
@@ -819,7 +831,7 @@ function FlatReportPage({
                 key={col}
                 style={[
                   styles.cell,
-                  ...(col === 'VARIETY' ? [styles.cellLeft] : []),
+                  ...(col === 'VARIETY' || col === 'Name' ? [styles.cellLeft] : []),
                   ...(i === delCols.length - 1 ? [styles.cellLast] : []),
                   ...(col === 'TOTAL' ? [styles.cellTotal] : []),
                   ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
@@ -834,7 +846,8 @@ function FlatReportPage({
             <View style={[styles.tableRow, styles.rowBalance]}>
               <Text style={[styles.cell, { width: '10%' }]}>OPENING</Text>
               <Text style={[styles.cell, { width: '8%' }]}>BALANCE</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>-</Text>
+              <Text style={[styles.cell, { width: cellWidth('A/c') }]}>-</Text>
+              <Text style={[styles.cellLeft, { width: cellWidth('Name') }]}>-</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
               {sizeColumns.map((col) => (
                 <Text key={col} style={[styles.cell, { width: '8%' }]}>
@@ -852,7 +865,8 @@ function FlatReportPage({
             >
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
-              <Text style={[styles.cell, { width: '6%' }]}>{r.ac ?? '-'}</Text>
+              <Text style={[styles.cell, { width: cellWidth('A/c') }]}>{r.ac ?? '-'}</Text>
+              <Text style={[styles.cellLeft, { width: cellWidth('Name') }]}>{r.farmerName ?? '-'}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
               {sizeColumns.map((col) => {
                 const list = r.sizeQtys[col] ?? [];

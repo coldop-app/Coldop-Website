@@ -72,7 +72,7 @@ export function useQuickAddFarmer() {
             ? `Account for ${data.data.farmer.name} created`
             : undefined,
         });
-        queryClient.invalidateQueries({ queryKey: farmerStorageLinksKeys.all });
+        void queryClient.refetchQueries({ queryKey: farmerStorageLinksKeys.all });
         queryClient.invalidateQueries({ queryKey: ledgersKeys.all });
       } else {
         toast.error(DEFAULT_ERROR_MESSAGE, {
