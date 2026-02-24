@@ -165,6 +165,7 @@ const SellPotatoForm = memo(function SellPotatoForm({
                   placeholder="Enter amount"
                   value={numValue === 0 ? '' : numValue}
                   onBlur={field.handleBlur}
+                  onWheel={(e) => e.currentTarget.blur()}
                   onChange={(e) => {
                     const v = e.target.value;
                     const n = v === '' ? 0 : parseFloat(v);

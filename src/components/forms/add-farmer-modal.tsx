@@ -651,6 +651,7 @@ export const AddFarmerModal = memo(function AddFarmerModal({
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
+                      onWheel={(e) => e.currentTarget.blur()}
                       placeholder="0"
                       aria-invalid={isInvalid}
                     />
@@ -687,6 +688,7 @@ export const AddFarmerModal = memo(function AddFarmerModal({
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
+                      onWheel={(e) => e.currentTarget.blur()}
                       placeholder="0"
                       aria-invalid={isInvalid}
                     />

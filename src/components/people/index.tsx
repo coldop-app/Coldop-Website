@@ -223,7 +223,7 @@ interface FarmerCardProps {
 
 const FarmerCard = memo(function FarmerCard({ link }: FarmerCardProps) {
   const navigate = useNavigate();
-  const { farmerId, accountNumber, isActive } = link;
+  const { farmerId, accountNumber, isActive, costPerBag } = link;
 
   const handleClick = () => {
     navigate({
@@ -277,6 +277,11 @@ const FarmerCard = memo(function FarmerCard({ link }: FarmerCardProps) {
               <MapPin className="mt-0.5 h-4 w-4 shrink-0" />
               <span>{farmerId.address}</span>
             </div>
+            {costPerBag != null && (
+              <div className="font-custom text-foreground pt-1 font-medium">
+                ₹{costPerBag}/bag
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

@@ -1,4 +1,4 @@
-import { memo, useState, useEffect } from 'react';
+import { memo, useState, useEffect, useRef } from 'react';
 import {
   Dialog,
   DialogClose,
@@ -47,16 +47,21 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
     String(link.costPerBag ?? '')
   );
   const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
+  const prevOpenRef = useRef(false);
 
   useEffect(() => {
-    if (open) {
-      setName(link.farmerId.name);
-      setAddress(link.farmerId.address);
-      setMobileNumber(link.farmerId.mobileNumber);
-      setAccountNumber(String(link.accountNumber ?? ''));
-      setOpeningBalance('');
-      setCostPerBag(String(link.costPerBag ?? ''));
-      setErrors({});
+    const justOpened = open && !prevOpenRef.current;
+    prevOpenRef.current = open;
+    if (justOpened) {
+      queueMicrotask(() => {
+        setName(link.farmerId.name);
+        setAddress(link.farmerId.address);
+        setMobileNumber(link.farmerId.mobileNumber);
+        setAccountNumber(String(link.accountNumber ?? ''));
+        setOpeningBalance('');
+        setCostPerBag(String(link.costPerBag ?? ''));
+        setErrors({});
+      });
     }
   }, [open, link]);
 
@@ -215,6 +220,7 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
                 step={0.01}
                 value={costPerBag}
                 onChange={(e) => setCostPerBag(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0"
                 aria-invalid={!!errors.costPerBag}
                 className="font-custom"
@@ -236,6 +242,7 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
                 step={0.01}
                 value={openingBalance}
                 onChange={(e) => setOpeningBalance(e.target.value)}
+                onWheel={(e) => e.currentTarget.blur()}
                 placeholder="0"
                 aria-invalid={!!errors.openingBalance}
                 className="font-custom"

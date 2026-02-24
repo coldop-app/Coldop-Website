@@ -170,6 +170,7 @@ export function GeneralExpenseModal({
                   amount: Number.isNaN(n) ? 0 : n,
                 }));
               }}
+              onWheel={(e) => e.currentTarget.blur()}
               className="font-custom focus-visible:ring-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
               required
             />
