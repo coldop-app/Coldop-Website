@@ -36,9 +36,7 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
   onUpdated,
 }: EditFarmerDialogProps) {
   const { mutate: updateFarmer, isPending } = useUpdateFarmer();
-  const [name, setName] = useState(link.farmerId.name);
   const [address, setAddress] = useState(link.farmerId.address);
-  const [mobileNumber, setMobileNumber] = useState(link.farmerId.mobileNumber);
   const [accountNumber, setAccountNumber] = useState(
     String(link.accountNumber ?? '')
   );
@@ -54,9 +52,7 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
     prevOpenRef.current = open;
     if (justOpened) {
       queueMicrotask(() => {
-        setName(link.farmerId.name);
         setAddress(link.farmerId.address);
-        setMobileNumber(link.farmerId.mobileNumber);
         setAccountNumber(String(link.accountNumber ?? ''));
         setOpeningBalance('');
         setCostPerBag(String(link.costPerBag ?? ''));
@@ -67,17 +63,9 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
 
   const validate = (): boolean => {
     const next: Partial<Record<string, string>> = {};
-    const nameTrim = name.trim();
-    if (nameTrim.length < 2) {
-      next.name = 'Name must be at least 2 characters';
-    }
     const addressTrim = address.trim();
     if (addressTrim.length < 1) {
       next.address = 'Address is required';
-    }
-    if (!/^[6-9]\d{9}$/.test(mobileNumber)) {
-      next.mobileNumber =
-        'Mobile number must be a valid 10-digit Indian number (6–9)';
     }
     const accNum = Number(accountNumber);
     if (Number.isNaN(accNum) || accNum < 1) {
@@ -102,9 +90,9 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
     updateFarmer(
       {
         farmerStorageLinkId: link._id,
-        name: name.trim(),
+        name: link.farmerId.name,
         address: address.trim(),
-        mobileNumber: mobileNumber.trim(),
+        mobileNumber: link.farmerId.mobileNumber,
         accountNumber: Number(accountNumber),
         costPerBag: costPerBag.trim() ? Number(costPerBag) : undefined,
         openingBalance: openingBalance.trim()
@@ -135,24 +123,6 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
           </DialogHeader>
 
           <FieldGroup className="mt-4 grid gap-3 sm:mt-6 sm:gap-4">
-            <Field data-invalid={!!errors.name}>
-              <FieldLabel htmlFor="edit-farmer-name">Name</FieldLabel>
-              <Input
-                id="edit-farmer-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                onBlur={() =>
-                  errors.name && setErrors((p) => ({ ...p, name: undefined }))
-                }
-                placeholder="Farmer name"
-                aria-invalid={!!errors.name}
-                className="font-custom"
-              />
-              {errors.name && (
-                <FieldError errors={[{ message: errors.name }] as FieldErrors} />
-              )}
-            </Field>
-
             <Field data-invalid={!!errors.address}>
               <FieldLabel htmlFor="edit-farmer-address">Address</FieldLabel>
               <Input
@@ -166,27 +136,6 @@ const EditFarmerDialog = memo(function EditFarmerDialog({
               {errors.address && (
                 <FieldError
                   errors={[{ message: errors.address }] as FieldErrors}
-                />
-              )}
-            </Field>
-
-            <Field data-invalid={!!errors.mobileNumber}>
-              <FieldLabel htmlFor="edit-farmer-mobile">Mobile Number</FieldLabel>
-              <Input
-                id="edit-farmer-mobile"
-                type="tel"
-                value={mobileNumber}
-                onChange={(e) =>
-                  setMobileNumber(e.target.value.replace(/\D/g, '').slice(0, 10))
-                }
-                placeholder="10-digit mobile number"
-                maxLength={10}
-                aria-invalid={!!errors.mobileNumber}
-                className="font-custom"
-              />
-              {errors.mobileNumber && (
-                <FieldError
-                  errors={[{ message: errors.mobileNumber }] as FieldErrors}
                 />
               )}
             </Field>
