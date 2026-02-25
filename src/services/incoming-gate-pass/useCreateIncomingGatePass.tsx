@@ -35,6 +35,8 @@ export const createIncomingGatePassBodySchema = z.object({
   remarks: z.string().max(500).optional().default(''),
   manualParchiNumber: z.string().trim().optional(),
   amount: z.number().min(0).optional(),
+  stockFilter: z.string().trim().optional(),
+  customMarka: z.string().trim().optional(),
 });
 
 export type CreateIncomingGatePassBody = z.infer<

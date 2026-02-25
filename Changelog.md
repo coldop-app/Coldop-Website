@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.9] - 2026-02-25
+
+### Added
+
+- **Incoming gate pass – Stock filter & custom marka** – Optional "Stock Filter" (OWNED/FARMER) and "Custom Marka" fields on incoming create/edit forms, visible only for specific admin mobile numbers; daybook incoming card shows Stock and uses custom marka as Lot No when set; create/update APIs and daybook types include `stockFilter` and `customMarka`
+
+---
+
 ## [0.4.8] - 2026-02-19
 
 ### Added

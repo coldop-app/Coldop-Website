@@ -29,6 +29,9 @@ export const EditIncomingForm = memo(function EditIncomingForm({
         remarks: payload.remarks,
         bagSizes: payload.bagSizes,
         amount: payload.amount,
+        stockFilter: payload.stockFilter,
+        customMarka: payload.customMarka,
+        manualParchiNumber: payload.manualParchiNumber,
       },
     });
   };

@@ -101,6 +101,8 @@ export interface IncomingGatePassEntry {
   status: string;
   remarks: string;
   manualParchiNumber?: string;
+  stockFilter?: string;
+  customMarka?: string;
   createdAt: string;
 }
 
@@ -151,6 +153,8 @@ export interface DaybookEntry {
   status: string;
   remarks: string;
   manualParchiNumber?: string;
+  stockFilter?: string;
+  customMarka?: string;
   createdAt: string;
 }
 

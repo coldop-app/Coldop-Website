@@ -31,6 +31,9 @@ export const updateIncomingGatePassBodySchema = z.object({
   remarks: z.string().max(500).optional(),
   bagSizes: z.array(bagSizeSchema).optional(),
   amount: z.number().min(0).optional(),
+  stockFilter: z.string().trim().optional(),
+  customMarka: z.string().trim().optional(),
+  manualParchiNumber: z.string().trim().optional(),
 });
 
 export type UpdateIncomingGatePassBody = z.infer<

@@ -33,6 +33,7 @@ import {
   type QuantityRow,
 } from '@/components/forms/incoming/incoming-summary-sheet';
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
+import { useStore } from '@/stores/store';
 import { Plus, Trash2 } from 'lucide-react';
 
 const DEFAULT_LOCATION = { chamber: '', floor: '', row: '' };
@@ -60,6 +61,8 @@ export type IncomingFormSubmitPayload = {
   remarks: string;
   manualParchiNumber?: string;
   amount?: number;
+  stockFilter?: string;
+  customMarka?: string;
 };
 
 export interface IncomingFormBaseProps {
@@ -84,6 +87,10 @@ export const IncomingFormBase = memo(function IncomingFormBase({
   isLoadingVoucher = false,
 }: IncomingFormBaseProps) {
   const isEditMode = mode === 'edit';
+  const admin = useStore((s) => s.admin);
+  const allowedNumbers = ['9217100041', '9877741375'];
+  const showSpecialFields =
+    admin?.mobileNumber != null && allowedNumbers.includes(admin.mobileNumber);
 
   const {
     data: farmerLinks,
@@ -110,6 +117,12 @@ export const IncomingFormBase = memo(function IncomingFormBase({
       searchableText: v,
     }));
   }, [preferences]);
+
+  /** Stock filter options (shown only for specific account) */
+  const stockFilterOptions: Option<string>[] = [
+    { value: 'OWNED', label: 'OWNED', searchableText: 'OWNED' },
+    { value: 'FARMER', label: 'FARMER', searchableText: 'FARMER' },
+  ];
 
   const farmerOptions: Option<string>[] = useMemo(() => {
     if (!farmerLinks) return [];
@@ -165,6 +178,8 @@ export const IncomingFormBase = memo(function IncomingFormBase({
           ),
           remarks: z.string().max(500).default(''),
           manualGatePassNumber: z.union([z.number(), z.undefined()]),
+          stockFilter: z.string().trim().optional(),
+          customMarka: z.string().trim().optional(),
         })
         .refine(
           (data) => {
@@ -277,6 +292,8 @@ export const IncomingFormBase = memo(function IncomingFormBase({
       locationBySize,
       remarks: editEntry.remarks ?? '',
       manualGatePassNumber: undefined as number | undefined,
+      stockFilter: editEntry.stockFilter ?? '',
+      customMarka: editEntry.customMarka ?? '',
     };
   }, [editEntry, quantitySizes, defaultSizeQuantities]);
 
@@ -293,6 +310,8 @@ export const IncomingFormBase = memo(function IncomingFormBase({
         locationBySize: {} as Record<string, LocationEntry>,
         remarks: '',
         manualGatePassNumber: undefined as number | undefined,
+        stockFilter: '',
+        customMarka: '',
       };
 
   const [step, setStep] = useState<1 | 2>(1);
@@ -311,6 +330,8 @@ export const IncomingFormBase = memo(function IncomingFormBase({
       locationBySize: {} as Record<string, LocationEntry>,
       remarks: '',
       manualGatePassNumber: undefined as number | undefined,
+      stockFilter: '',
+      customMarka: '',
     },
     validators: {
       onSubmit: formSchema as never,
@@ -373,6 +394,8 @@ export const IncomingFormBase = memo(function IncomingFormBase({
         remarks: value.remarks?.trim() ?? '',
         manualParchiNumber: value.manualParchiNumber?.trim() || undefined,
         amount: amount > 0 ? amount : undefined,
+        stockFilter: value.stockFilter?.trim() || undefined,
+        customMarka: value.customMarka?.trim() || undefined,
       };
 
       if (!isEditMode && !openSheetRef.current) {
@@ -625,6 +648,52 @@ export const IncomingFormBase = memo(function IncomingFormBase({
                   );
                 }}
               />
+
+              {showSpecialFields && (
+                <>
+                  <form.Field
+                    name="stockFilter"
+                    children={(field) => (
+                      <Field>
+                        <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                          Stock Filter
+                          <span className="font-custom text-muted-foreground ml-1 font-normal">
+                            (optional)
+                          </span>
+                        </FieldLabel>
+                        <SearchSelector
+                          options={stockFilterOptions}
+                          onSelect={(v) => field.handleChange(v)}
+                          value={field.state.value ?? ''}
+                          buttonClassName="w-full justify-between"
+                          placeholder="Select stock filter"
+                          emptyMessage="No option selected"
+                        />
+                      </Field>
+                    )}
+                  />
+                  <form.Field
+                    name="customMarka"
+                    children={(field) => (
+                      <Field>
+                        <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                          Custom Marka
+                          <span className="font-custom text-muted-foreground ml-1 font-normal">
+                            (optional)
+                          </span>
+                        </FieldLabel>
+                        <Input
+                          value={field.state.value ?? ''}
+                          onBlur={field.handleBlur}
+                          onChange={(e) => field.handleChange(e.target.value)}
+                          placeholder="Custom marka"
+                          className="font-custom"
+                        />
+                      </Field>
+                    )}
+                  />
+                </>
+              )}
 
               <form.Field
                 name="sizeQuantities"

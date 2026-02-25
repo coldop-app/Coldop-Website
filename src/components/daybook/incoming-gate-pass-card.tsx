@@ -54,9 +54,14 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
 
   const coldStorage = useStore((s) => s.coldStorage);
+  const admin = useStore((s) => s.admin);
   const preferenceSizes = useStore(
     (s) => s.preferences?.commodities?.[0]?.sizes ?? []
   );
+
+  const allowedNumbers = ['9217100041', '9877741375'];
+  const showSpecialFields =
+    admin?.mobileNumber != null && allowedNumbers.includes(admin.mobileNumber);
 
   /** Bag sizes in table order: same as store preferences, then any extras. */
   const bagSizesOrdered = useMemo(() => {
@@ -137,14 +142,24 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
     (s, b) => s + b.currentQuantity,
     0
   );
-  const lotNo =
+  const generatedLotNo =
     totalInitial > 0
       ? `${entry.gatePassNo}/${totalInitial}`
       : `${entry.gatePassNo}/—`;
+  const lotNo =
+    showSpecialFields &&
+    entry.customMarka != null &&
+    entry.customMarka.trim() !== ''
+      ? entry.customMarka
+      : generatedLotNo;
 
   const variety = entry.variety ?? '—';
   const truckNumber = entry.truckNumber ?? '—';
   const status = (entry.status ?? '—').replace(/_/g, ' ');
+  const stockFilterDisplay =
+    showSpecialFields && entry.stockFilter != null && entry.stockFilter !== ''
+      ? entry.stockFilter.replace(/_/g, ' ')
+      : null;
 
   return (
     <Card className="border-border/40 hover:border-primary/30 overflow-hidden pt-0 shadow-sm transition-all duration-200 hover:shadow-md">
@@ -195,6 +210,9 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
           <DetailRow label="Variety" value={variety} icon={Package} />
           <DetailRow label="Lot No" value={lotNo} />
           <DetailRow label="Truck No" value={truckNumber} icon={Truck} />
+          {stockFilterDisplay != null && (
+            <DetailRow label="Stock" value={stockFilterDisplay} />
+          )}
         </div>
 
         <div className="border-border/50 flex w-full items-center justify-between border-t pt-4">

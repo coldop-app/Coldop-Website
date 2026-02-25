@@ -28,6 +28,8 @@ export const CreateIncomingForm = memo(function CreateIncomingForm() {
       remarks: payload.remarks,
       manualParchiNumber: payload.manualParchiNumber,
       amount: payload.amount,
+      stockFilter: payload.stockFilter,
+      customMarka: payload.customMarka,
     });
   };
 
