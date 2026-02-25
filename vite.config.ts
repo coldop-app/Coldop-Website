@@ -12,13 +12,9 @@ export default defineConfig({
       output: {
         codeSplitting: {
           groups: [
-            // Isolate react-pdf (only loaded when generating PDFs)
-            {
-              name: 'react-pdf',
-              test: /node_modules[\\/]@react-pdf/,
-              priority: 50,
-              maxSize: 250_000,
-            },
+            // Do NOT isolate @react-pdf in its own chunk: it breaks in production
+            // ("re is not a function" – React.createElement ref). PDF code is only
+            // loaded via dynamic import() when generating PDFs.
             // Split main vendor into smaller chunks to stay under 500 kB and avoid the warning
             {
               name: 'react-vendor',
