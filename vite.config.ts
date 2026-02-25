@@ -8,44 +8,9 @@ import path from 'path'
 export default defineConfig({
   build: {
     chunkSizeWarningLimit: 600,
-    rolldownOptions: {
-      output: {
-        codeSplitting: {
-          groups: [
-            // Do NOT isolate @react-pdf in its own chunk: it breaks in production
-            // ("re is not a function" – React.createElement ref). PDF code is only
-            // loaded via dynamic import() when generating PDFs.
-            // Split main vendor into smaller chunks to stay under 500 kB and avoid the warning
-            {
-              name: 'react-vendor',
-              test: /node_modules[\\/]react(-dom)?[\\/]/,
-              priority: 40,
-            },
-            {
-              name: 'tanstack',
-              test: /node_modules[\\/]@tanstack[\\/]/,
-              priority: 35,
-            },
-            {
-              name: 'recharts',
-              test: /node_modules[\\/]recharts[\\/]/,
-              priority: 35,
-            },
-            {
-              name: 'radix',
-              test: /node_modules[\\/]@radix-ui[\\/]/,
-              priority: 35,
-            },
-            {
-              name: 'vendor',
-              test: /node_modules/,
-              priority: 10,
-              maxSize: 450_000, // target ~450KB so no chunk triggers the 500 kB warning
-            },
-          ],
-        },
-      },
-    },
+    // No custom codeSplitting groups: splitting React/vendor into separate chunks
+    // causes "Re is not a function" in production (broken React refs across chunks).
+    // Rely on default Rolldown chunking so the app runs correctly on Netlify/Render.
   },
   plugins: [
     tanstackRouter({
