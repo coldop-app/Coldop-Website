@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
 
 /* ------------------------------------------------------------------ */
 /* Types */
@@ -14,6 +15,7 @@ export interface FarmerReportPdfFarmer {
 
 export interface FarmerReportPdfStoreAdmin {
   name?: string;
+  mobileNumber?: string;
 }
 
 export interface FarmerReportPdfProps {
@@ -33,6 +35,7 @@ interface ReceiptRow {
   date: string;
   voucher: string;
   variety: string;
+  customMarka: string;
   sizeQtys: SizeQtyLocList;
   rowTotal: number;
   runningTotal: number;
@@ -43,6 +46,7 @@ interface DeliveryRow {
   date: string;
   voucher: string;
   variety: string;
+  customMarka: string;
   sizeQtys: SizeQtyLocList;
   rowTotal: number;
   runningTotal: number;
@@ -79,6 +83,7 @@ function buildReceiptRows(
   for (const entry of sorted) {
     if (entry.type !== 'RECEIPT' || !entry.bagSizes?.length) continue;
     const variety = entry.variety ?? '-';
+    const customMarka = entry.customMarka ?? '-';
     const remarks = entry.remarks ?? '-';
     const dateStr = formatPdfDate(entry.date);
     const voucherStr = String(entry.gatePassNo ?? '');
@@ -101,6 +106,7 @@ function buildReceiptRows(
       date: dateStr,
       voucher: voucherStr,
       variety,
+      customMarka,
       sizeQtys,
       rowTotal,
       runningTotal,
@@ -124,6 +130,7 @@ function buildDeliveryRows(
   for (const entry of sorted) {
     if (entry.type !== 'DELIVERY') continue;
     const variety = entry.variety ?? '-';
+    const customMarka = entry.customMarka ?? '-';
     const dateStr = formatPdfDate(entry.date);
     const voucherStr = String(entry.gatePassNo ?? '');
     const orderDetails = entry.orderDetails ?? [];
@@ -146,6 +153,7 @@ function buildDeliveryRows(
       date: dateStr,
       voucher: voucherStr,
       variety,
+      customMarka,
       sizeQtys,
       rowTotal,
       runningTotal,
@@ -371,11 +379,14 @@ const styles = StyleSheet.create({
 export function FarmerReportPdf({
   companyName,
   farmer,
+  storeAdmin,
   reportDate,
   incoming,
   outgoing,
   sizeColumns,
 }: FarmerReportPdfProps) {
+  const showSpecialFields = shouldShowSpecialFields(storeAdmin?.mobileNumber);
+
   const receiptRows = buildReceiptRows(incoming, sizeColumns);
   const totalReceived = receiptRows.reduce((s, r) => s + r.rowTotal, 0);
   const receiptTotalsBySize = sizeColumns.reduce(
@@ -395,23 +406,12 @@ export function FarmerReportPdf({
   const totalDelivered = outgoing.reduce((s, e) => s + totalBagsOutgoing(e), 0);
   const closingBalance = openingTotal - totalDelivered;
 
-  const receiptTableCols = [
-    'DATE',
-    'VOUCHER',
-    'VARIETY',
-    ...sizeColumns,
-    'TOTAL',
-    'G.TOTAL',
-    'REMARKS',
-  ];
-  const deliveryTableCols = [
-    'DATE',
-    'VOUCHER',
-    'VARIETY',
-    ...sizeColumns,
-    'TOTAL',
-    'G.TOTAL',
-  ];
+  const receiptTableCols = showSpecialFields
+    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...sizeColumns, 'TOTAL', 'REMARKS']
+    : ['DATE', 'VOUCHER', 'VARIETY', ...sizeColumns, 'TOTAL', 'G.TOTAL', 'REMARKS'];
+  const deliveryTableCols = showSpecialFields
+    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...sizeColumns, 'TOTAL']
+    : ['DATE', 'VOUCHER', 'VARIETY', ...sizeColumns, 'TOTAL', 'G.TOTAL'];
 
   return (
     <Document>
@@ -467,9 +467,10 @@ export function FarmerReportPdf({
                     ...(col === 'TOTAL' ? [styles.cellTotal] : []),
                     ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
                     ...(col === 'REMARKS' ? [styles.cellRemarks] : []),
+                    ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
                     {
                       width:
-                        col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : col === 'REMARKS' ? '8%' : '8%',
+                        col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'CUSTOM MARKA' ? '10%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : col === 'REMARKS' ? '8%' : '8%',
                     },
                   ]}
                 >
@@ -485,6 +486,9 @@ export function FarmerReportPdf({
                 <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                 <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
                 <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+                {showSpecialFields && (
+                  <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
+                )}
                 {sizeColumns.map((col) => {
                   const list = r.sizeQtys[col] ?? [];
                   return (
@@ -513,9 +517,11 @@ export function FarmerReportPdf({
                 <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
                   {r.rowTotal}
                 </Text>
-                <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
-                  {r.runningTotal}
-                </Text>
+                {!showSpecialFields && (
+                  <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
+                    {r.runningTotal}
+                  </Text>
+                )}
                 <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
                   {r.remarks}
                 </Text>
@@ -526,6 +532,9 @@ export function FarmerReportPdf({
                 <Text style={[styles.cell, { width: '10%' }]}>TOTAL</Text>
                 <Text style={[styles.cell, { width: '8%' }]}>-</Text>
                 <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+                {showSpecialFields && (
+                  <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
+                )}
                 {sizeColumns.map((col) => (
                   <Text key={col} style={[styles.cell, { width: '8%' }]}>
                     {receiptTotalsBySize[col] ?? 0}
@@ -534,9 +543,11 @@ export function FarmerReportPdf({
                 <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
                   {totalReceived}
                 </Text>
-                <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
-                  {totalReceived}
-                </Text>
+                {!showSpecialFields && (
+                  <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
+                    {totalReceived}
+                  </Text>
+                )}
                 <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
                   -
                 </Text>
@@ -559,9 +570,10 @@ export function FarmerReportPdf({
                     ...(i === deliveryTableCols.length - 1 ? [styles.cellLast] : []),
                     ...(col === 'TOTAL' ? [styles.cellTotal] : []),
                     ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
+                    ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
                     {
                       width:
-                        col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : '8%',
+                        col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'CUSTOM MARKA' ? '10%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : '8%',
                     },
                   ]}
                 >
@@ -574,17 +586,22 @@ export function FarmerReportPdf({
                 <Text style={[styles.cell, { width: '10%' }]}>OPENING</Text>
                 <Text style={[styles.cell, { width: '8%' }]}>BALANCE</Text>
                 <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+                {showSpecialFields && (
+                  <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
+                )}
                 {sizeColumns.map((col) => (
                   <Text key={col} style={[styles.cell, { width: '8%' }]}>
                     {receiptTotalsBySize[col] ?? 0}
                   </Text>
                 ))}
-                <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
+                <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
                   {openingTotal}
                 </Text>
-                <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
-                  {openingTotal}
-                </Text>
+                {!showSpecialFields && (
+                  <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                    {openingTotal}
+                  </Text>
+                )}
               </View>
             )}
             {deliveryRows.map((r, idx) => (
@@ -595,6 +612,9 @@ export function FarmerReportPdf({
                 <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                 <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
                 <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+                {showSpecialFields && (
+                  <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
+                )}
                 {sizeColumns.map((col) => {
                   const list = r.sizeQtys[col] ?? [];
                   return (
@@ -620,12 +640,14 @@ export function FarmerReportPdf({
                     </View>
                   );
                 })}
-                <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
+                <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
                   {r.rowTotal}
                 </Text>
-                <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
-                  {r.runningTotal}
-                </Text>
+                {!showSpecialFields && (
+                  <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                    {r.runningTotal}
+                  </Text>
+                )}
               </View>
             ))}
           </View>

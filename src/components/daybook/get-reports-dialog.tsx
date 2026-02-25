@@ -49,6 +49,7 @@ export function GetReportsDialog({
   const userTriggeredFetchRef = useRef(false);
 
   const coldStorage = useStore((s) => s.coldStorage);
+  const admin = useStore((s) => s.admin);
   const sizeColumns = useStore((s) => s.preferences?.commodities?.[0]?.sizes ?? []);
 
   const reportQuery = useGetReports(reportParams, { enabled: !!reportParams });
@@ -121,6 +122,7 @@ export function GetReportsDialog({
           dateRangeLabel={dateRangeLabel}
           data={data}
           sizeColumns={sizeColumns.length > 0 ? sizeColumns : ['Ration', 'Goli', 'Cut-tok']}
+          admin={admin ? { mobileNumber: admin.mobileNumber } : undefined}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);

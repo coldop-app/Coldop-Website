@@ -217,7 +217,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
             address: link.farmerId.address ?? '',
             mobileNumber: link.farmerId.mobileNumber ?? '',
           }}
-          storeAdmin={admin ? { name: admin.name } : undefined}
+          storeAdmin={admin ? { name: admin.name, mobileNumber: admin.mobileNumber } : undefined}
           reportDate={reportDate}
           incoming={incoming}
           outgoing={outgoing}

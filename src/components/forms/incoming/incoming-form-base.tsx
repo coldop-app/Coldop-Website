@@ -34,6 +34,7 @@ import {
 } from '@/components/forms/incoming/incoming-summary-sheet';
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
 import { useStore } from '@/stores/store';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
 import { Plus, Trash2 } from 'lucide-react';
 
 const DEFAULT_LOCATION = { chamber: '', floor: '', row: '' };
@@ -88,9 +89,7 @@ export const IncomingFormBase = memo(function IncomingFormBase({
 }: IncomingFormBaseProps) {
   const isEditMode = mode === 'edit';
   const admin = useStore((s) => s.admin);
-  const allowedNumbers = ['9217100041', '9877741375'];
-  const showSpecialFields =
-    admin?.mobileNumber != null && allowedNumbers.includes(admin.mobileNumber);
+  const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
 
   const {
     data: farmerLinks,

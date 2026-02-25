@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useStore } from '@/stores/store';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
 import {
   Table,
   TableBody,
@@ -59,9 +60,7 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
     (s) => s.preferences?.commodities?.[0]?.sizes ?? []
   );
 
-  const allowedNumbers = ['9217100041', '9877741375'];
-  const showSpecialFields =
-    admin?.mobileNumber != null && allowedNumbers.includes(admin.mobileNumber);
+  const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
 
   /** Bag sizes in table order: same as store preferences, then any extras. */
   const bagSizesOrdered = useMemo(() => {

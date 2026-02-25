@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.10] - 2026-02-25
+
+### Added
+
+- **Special fields configuration** – `src/lib/special-fields.ts`: centralized allowed mobile numbers and `shouldShowSpecialFields(mobileNumber)` for custom marka, stock filter, and PDF special-layout visibility
+
+### Changed
+
+- **Incoming form & daybook card** – Replaced inline allowed-numbers check with `shouldShowSpecialFields(admin?.mobileNumber)` from `@/lib/special-fields`
+- **Daily report PDF** – Accepts optional `admin` prop; when admin mobile is allowed, receipt/delivery tables show "Custom Marka" column and rows include custom marka; G.TOTAL column hidden when special fields are shown
+- **Farmer report PDF** – Store admin now includes `mobileNumber` so PDF can show custom marka column for allowed admins
+- **Get reports dialog** – Passes admin (mobileNumber) to DailyReportPdf for special-fields-aware layout
+- **Farmer profile** – Passes store admin mobile number to FarmerReportPdf for special-fields visibility
+
+---
+
 ## [0.4.9] - 2026-02-25
 
 ### Added

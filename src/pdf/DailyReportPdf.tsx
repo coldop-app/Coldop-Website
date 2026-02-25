@@ -1,5 +1,6 @@
 import { Document, Page, Text, View, StyleSheet, Image } from '@react-pdf/renderer';
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
 import type {
   GetReportsData,
   GetReportsDataGrouped,
@@ -13,11 +14,16 @@ import type { IncomingGatePassEntry } from '@/services/store-admin/functions/use
 /* Types */
 /* ------------------------------------------------------------------ */
 
+export interface DailyReportPdfAdmin {
+  mobileNumber?: string;
+}
+
 export interface DailyReportPdfProps {
   companyName: string;
   dateRangeLabel: string;
   data: GetReportsData;
   sizeColumns: string[];
+  admin?: DailyReportPdfAdmin | null;
 }
 
 /** Per-size list of (quantity, location) for one gate pass row */
@@ -29,6 +35,7 @@ interface ReceiptRow {
   variety: string;
   ac?: string;
   farmerName?: string;
+  customMarka?: string;
   sizeQtys: SizeQtyLocList;
   rowTotal: number;
   runningTotal: number;
@@ -41,6 +48,7 @@ interface DeliveryRow {
   variety: string;
   ac?: string;
   farmerName?: string;
+  customMarka?: string;
   sizeQtys: SizeQtyLocList;
   rowTotal: number;
   runningTotal: number;
@@ -80,7 +88,7 @@ function toDaybookEntryOutgoing(e: ReportOutgoingEntry): DaybookEntry {
 function buildReceiptRows(
   incoming: DaybookEntry[],
   sizeColumns: string[],
-  options?: { includeAcColumn: boolean }
+  options?: { includeAcColumn: boolean; includeCustomMarka?: boolean }
 ): ReceiptRow[] {
   const rows: ReceiptRow[] = [];
   let runningTotal = 0;
@@ -88,6 +96,7 @@ function buildReceiptRows(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
   const includeAc = options?.includeAcColumn ?? false;
+  const includeCustomMarka = options?.includeCustomMarka ?? false;
 
   for (const entry of sorted) {
     if (entry.type !== 'RECEIPT' || !entry.bagSizes?.length) continue;
@@ -101,6 +110,7 @@ function buildReceiptRows(
     const farmerName = includeAc
       ? (entry.farmerStorageLinkId?.farmerId?.name ?? '')
       : undefined;
+    const customMarka = includeCustomMarka ? (entry.customMarka ?? '-') : undefined;
 
     const sizeQtys: SizeQtyLocList = sizeColumns.reduce(
       (acc, col) => ({ ...acc, [col]: [] }),
@@ -121,6 +131,7 @@ function buildReceiptRows(
       voucher: voucherStr,
       variety,
       ...(includeAc && acStr !== undefined ? { ac: acStr, farmerName } : {}),
+      ...(includeCustomMarka ? { customMarka } : {}),
       sizeQtys,
       rowTotal,
       runningTotal,
@@ -134,7 +145,7 @@ function buildDeliveryRows(
   outgoing: DaybookEntry[],
   sizeColumns: string[],
   openingTotal: number,
-  options?: { includeAcColumn: boolean }
+  options?: { includeAcColumn: boolean; includeCustomMarka?: boolean }
 ): DeliveryRow[] {
   const rows: DeliveryRow[] = [];
   let runningTotal = openingTotal;
@@ -142,6 +153,7 @@ function buildDeliveryRows(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
   const includeAc = options?.includeAcColumn ?? false;
+  const includeCustomMarka = options?.includeCustomMarka ?? false;
 
   for (const entry of sorted) {
     if (entry.type !== 'DELIVERY') continue;
@@ -153,6 +165,9 @@ function buildDeliveryRows(
       : undefined;
     const farmerName = includeAc
       ? (entry.farmerStorageLinkId?.farmerId?.name ?? '')
+      : undefined;
+    const customMarka = includeCustomMarka
+      ? ((entry as DaybookEntry & { customMarka?: string }).customMarka ?? '-')
       : undefined;
     const orderDetails = entry.orderDetails ?? [];
 
@@ -175,6 +190,7 @@ function buildDeliveryRows(
       voucher: voucherStr,
       variety,
       ...(includeAc && acStr !== undefined ? { ac: acStr, farmerName } : {}),
+      ...(includeCustomMarka ? { customMarka } : {}),
       sizeQtys,
       rowTotal,
       runningTotal,
@@ -401,14 +417,18 @@ const styles = StyleSheet.create({
   },
 });
 
-const receiptTableCols = (includeAc: boolean) =>
-  includeAc
+function receiptTableBaseCols(includeAc: boolean, showSpecialFields: boolean): string[] {
+  const base = includeAc
     ? ['DATE', 'VOUCHER', 'A/c', 'Name', 'VARIETY']
     : ['DATE', 'VOUCHER', 'VARIETY'];
-const deliveryTableCols = (includeAc: boolean) =>
-  includeAc
+  return showSpecialFields ? [...base, 'CUSTOM MARKA'] : base;
+}
+function deliveryTableBaseCols(includeAc: boolean, showSpecialFields: boolean): string[] {
+  const base = includeAc
     ? ['DATE', 'VOUCHER', 'A/c', 'Name', 'VARIETY']
     : ['DATE', 'VOUCHER', 'VARIETY'];
+  return showSpecialFields ? [...base, 'CUSTOM MARKA'] : base;
+}
 
 function cellWidth(col: string): string {
   if (col === 'VARIETY') return '14%';
@@ -416,6 +436,7 @@ function cellWidth(col: string): string {
   if (col === 'VOUCHER') return '8%';
   if (col === 'A/c') return '6%';
   if (col === 'Name') return '12%';
+  if (col === 'CUSTOM MARKA') return '10%';
   if (col === 'TOTAL' || col === 'G.TOTAL') return '8%';
   if (col === 'REMARKS') return '8%';
   return '8%';
@@ -431,16 +452,21 @@ function FarmerBlockPage({
   block,
   sizeColumns,
   pageIndex,
+  showSpecialFields,
 }: {
   companyName: string;
   dateRangeLabel: string;
   block: ReportFarmerBlock;
   sizeColumns: string[];
   pageIndex: number;
+  showSpecialFields: boolean;
 }) {
   const incoming = block.incoming.map(toDaybookEntryIncoming);
   const outgoing = block.outgoing.map(toDaybookEntryOutgoing);
-  const receiptRows = buildReceiptRows(incoming, sizeColumns, { includeAcColumn: false });
+  const receiptRows = buildReceiptRows(incoming, sizeColumns, {
+    includeAcColumn: false,
+    includeCustomMarka: showSpecialFields,
+  });
   const totalReceived = receiptRows.reduce((s, r) => s + r.rowTotal, 0);
   const receiptTotalsBySize = sizeColumns.reduce(
     (acc, col) => ({
@@ -455,12 +481,26 @@ function FarmerBlockPage({
     {} as Record<string, number>
   );
   const openingTotal = totalReceived;
-  const deliveryRows = buildDeliveryRows(outgoing, sizeColumns, openingTotal, { includeAcColumn: false });
+  const deliveryRows = buildDeliveryRows(outgoing, sizeColumns, openingTotal, {
+    includeAcColumn: false,
+    includeCustomMarka: showSpecialFields,
+  });
   const totalDelivered = outgoing.reduce((s, entry) => s + totalBagsOutgoing(entry), 0);
   const closingBalance = openingTotal - totalDelivered;
   const includeAc = false;
-  const recCols = [...receiptTableCols(includeAc), ...sizeColumns, 'TOTAL', 'G.TOTAL', 'REMARKS'];
-  const delCols = [...deliveryTableCols(includeAc), ...sizeColumns, 'TOTAL', 'G.TOTAL'];
+  const recCols = [
+    ...receiptTableBaseCols(includeAc, showSpecialFields),
+    ...sizeColumns,
+    'TOTAL',
+    ...(showSpecialFields ? [] : ['G.TOTAL']),
+    'REMARKS',
+  ];
+  const delCols = [
+    ...deliveryTableBaseCols(includeAc, showSpecialFields),
+    ...sizeColumns,
+    'TOTAL',
+    ...(showSpecialFields ? [] : ['G.TOTAL']),
+  ];
   const farmer = block.farmer;
 
   return (
@@ -508,6 +548,7 @@ function FarmerBlockPage({
                   ...(col === 'TOTAL' ? [styles.cellTotal] : []),
                   ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
                   ...(col === 'REMARKS' ? [styles.cellRemarks] : []),
+                  ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
                   { width: cellWidth(col) },
                 ]}
               >
@@ -523,6 +564,11 @@ function FarmerBlockPage({
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+              {showSpecialFields && (
+                <Text style={[styles.cellLeft, { width: cellWidth('CUSTOM MARKA') }]}>
+                  {r.customMarka ?? '-'}
+                </Text>
+              )}
               {sizeColumns.map((col) => {
                 const list = r.sizeQtys[col] ?? [];
                 return (
@@ -548,9 +594,15 @@ function FarmerBlockPage({
                   </View>
                 );
               })}
-              <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{r.rowTotal}</Text>
-              <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{r.runningTotal}</Text>
-              <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>{r.remarks}</Text>
+              <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
+                {r.rowTotal}
+              </Text>
+              {!showSpecialFields && (
+                <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{r.runningTotal}</Text>
+              )}
+              <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
+                {r.remarks}
+              </Text>
             </View>
           ))}
           {receiptRows.length > 0 && (
@@ -558,13 +610,18 @@ function FarmerBlockPage({
               <Text style={[styles.cell, { width: '10%' }]}>TOTAL</Text>
               <Text style={[styles.cell, { width: '8%' }]}>-</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+              {showSpecialFields && (
+                <Text style={[styles.cellLeft, { width: cellWidth('CUSTOM MARKA') }]}>-</Text>
+              )}
               {sizeColumns.map((col) => (
                 <Text key={col} style={[styles.cell, { width: '8%' }]}>
                   {receiptTotalsBySize[col] ?? 0}
                 </Text>
               ))}
               <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{totalReceived}</Text>
-              <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{totalReceived}</Text>
+              {!showSpecialFields && (
+                <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{totalReceived}</Text>
+              )}
               <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>-</Text>
             </View>
           )}
@@ -584,6 +641,7 @@ function FarmerBlockPage({
                   ...(i === delCols.length - 1 ? [styles.cellLast] : []),
                   ...(col === 'TOTAL' ? [styles.cellTotal] : []),
                   ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
+                  ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
                   { width: cellWidth(col) },
                 ]}
               >
@@ -596,13 +654,22 @@ function FarmerBlockPage({
               <Text style={[styles.cell, { width: '10%' }]}>OPENING</Text>
               <Text style={[styles.cell, { width: '8%' }]}>BALANCE</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+              {showSpecialFields && (
+                <Text style={[styles.cellLeft, { width: cellWidth('CUSTOM MARKA') }]}>-</Text>
+              )}
               {sizeColumns.map((col) => (
                 <Text key={col} style={[styles.cell, { width: '8%' }]}>
                   {receiptTotalsBySize[col] ?? 0}
                 </Text>
               ))}
-              <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{openingTotal}</Text>
-              <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>{openingTotal}</Text>
+              <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                {openingTotal}
+              </Text>
+              {!showSpecialFields && (
+                <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                  {openingTotal}
+                </Text>
+              )}
             </View>
           )}
           {deliveryRows.map((r, idx) => (
@@ -613,6 +680,11 @@ function FarmerBlockPage({
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+              {showSpecialFields && (
+                <Text style={[styles.cellLeft, { width: cellWidth('CUSTOM MARKA') }]}>
+                  {r.customMarka ?? '-'}
+                </Text>
+              )}
               {sizeColumns.map((col) => {
                 const list = r.sizeQtys[col] ?? [];
                 return (
@@ -638,8 +710,14 @@ function FarmerBlockPage({
                   </View>
                 );
               })}
-              <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{r.rowTotal}</Text>
-              <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>{r.runningTotal}</Text>
+              <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                {r.rowTotal}
+              </Text>
+              {!showSpecialFields && (
+                <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                  {r.runningTotal}
+                </Text>
+              )}
             </View>
           ))}
         </View>
@@ -702,17 +780,22 @@ function FlatReportPage({
   incoming: incomingList,
   outgoing: outgoingList,
   sizeColumns,
+  showSpecialFields,
 }: {
   companyName: string;
   dateRangeLabel: string;
   incoming: IncomingGatePassEntry[];
   outgoing: ReportOutgoingEntry[];
   sizeColumns: string[];
+  showSpecialFields: boolean;
 }) {
   const incoming = incomingList.map(toDaybookEntryIncoming);
   const outgoing = outgoingList.map(toDaybookEntryOutgoing);
   const includeAc = true;
-  const receiptRows = buildReceiptRows(incoming, sizeColumns, { includeAcColumn: true });
+  const receiptRows = buildReceiptRows(incoming, sizeColumns, {
+    includeAcColumn: true,
+    includeCustomMarka: showSpecialFields,
+  });
   const totalReceived = receiptRows.reduce((s, r) => s + r.rowTotal, 0);
   const receiptTotalsBySize = sizeColumns.reduce(
     (acc, col) => ({
@@ -726,11 +809,25 @@ function FlatReportPage({
     }),
     {} as Record<string, number>
   );
-  const deliveryRows = buildDeliveryRows(outgoing, sizeColumns, totalReceived, { includeAcColumn: true });
+  const deliveryRows = buildDeliveryRows(outgoing, sizeColumns, totalReceived, {
+    includeAcColumn: true,
+    includeCustomMarka: showSpecialFields,
+  });
   const totalDelivered = outgoing.reduce((s, e) => s + totalBagsOutgoing(e), 0);
   const closingBalance = totalReceived - totalDelivered;
-  const recCols = [...receiptTableCols(includeAc), ...sizeColumns, 'TOTAL', 'G.TOTAL', 'REMARKS'];
-  const delCols = [...deliveryTableCols(includeAc), ...sizeColumns, 'TOTAL', 'G.TOTAL'];
+  const recCols = [
+    ...receiptTableBaseCols(includeAc, showSpecialFields),
+    ...sizeColumns,
+    'TOTAL',
+    ...(showSpecialFields ? [] : ['G.TOTAL']),
+    'REMARKS',
+  ];
+  const delCols = [
+    ...deliveryTableBaseCols(includeAc, showSpecialFields),
+    ...sizeColumns,
+    'TOTAL',
+    ...(showSpecialFields ? [] : ['G.TOTAL']),
+  ];
 
   return (
     <Page size="A4" style={styles.page}>
@@ -754,7 +851,7 @@ function FlatReportPage({
                   ...(col === 'TOTAL' ? [styles.cellTotal] : []),
                   ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
                   ...(col === 'REMARKS' ? [styles.cellRemarks] : []),
-                  ...(col === 'Name' || col === 'VARIETY' ? [styles.cellLeft] : []),
+                  ...(col === 'Name' || col === 'VARIETY' || col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
                   { width: cellWidth(col) },
                 ]}
               >
@@ -772,6 +869,11 @@ function FlatReportPage({
               <Text style={[styles.cell, { width: cellWidth('A/c') }]}>{r.ac ?? '-'}</Text>
               <Text style={[styles.cellLeft, { width: cellWidth('Name') }]}>{r.farmerName ?? '-'}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+              {showSpecialFields && (
+                <Text style={[styles.cellLeft, { width: cellWidth('CUSTOM MARKA') }]}>
+                  {r.customMarka ?? '-'}
+                </Text>
+              )}
               {sizeColumns.map((col) => {
                 const list = r.sizeQtys[col] ?? [];
                 return (
@@ -798,7 +900,9 @@ function FlatReportPage({
                 );
               })}
               <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{r.rowTotal}</Text>
-              <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{r.runningTotal}</Text>
+              {!showSpecialFields && (
+                <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{r.runningTotal}</Text>
+              )}
               <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>{r.remarks}</Text>
             </View>
           ))}
@@ -809,13 +913,18 @@ function FlatReportPage({
               <Text style={[styles.cell, { width: cellWidth('A/c') }]}>-</Text>
               <Text style={[styles.cellLeft, { width: cellWidth('Name') }]}>-</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+              {showSpecialFields && (
+                <Text style={[styles.cellLeft, { width: cellWidth('CUSTOM MARKA') }]}>-</Text>
+              )}
               {sizeColumns.map((col) => (
                 <Text key={col} style={[styles.cell, { width: '8%' }]}>
                   {receiptTotalsBySize[col] ?? 0}
                 </Text>
               ))}
               <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{totalReceived}</Text>
-              <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{totalReceived}</Text>
+              {!showSpecialFields && (
+                <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{totalReceived}</Text>
+              )}
               <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>-</Text>
             </View>
           )}
@@ -831,7 +940,7 @@ function FlatReportPage({
                 key={col}
                 style={[
                   styles.cell,
-                  ...(col === 'VARIETY' || col === 'Name' ? [styles.cellLeft] : []),
+                  ...(col === 'VARIETY' || col === 'Name' || col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
                   ...(i === delCols.length - 1 ? [styles.cellLast] : []),
                   ...(col === 'TOTAL' ? [styles.cellTotal] : []),
                   ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
@@ -849,13 +958,22 @@ function FlatReportPage({
               <Text style={[styles.cell, { width: cellWidth('A/c') }]}>-</Text>
               <Text style={[styles.cellLeft, { width: cellWidth('Name') }]}>-</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+              {showSpecialFields && (
+                <Text style={[styles.cellLeft, { width: cellWidth('CUSTOM MARKA') }]}>-</Text>
+              )}
               {sizeColumns.map((col) => (
                 <Text key={col} style={[styles.cell, { width: '8%' }]}>
                   {receiptTotalsBySize[col] ?? 0}
                 </Text>
               ))}
-              <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{totalReceived}</Text>
-              <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>{totalReceived}</Text>
+              <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                {totalReceived}
+              </Text>
+              {!showSpecialFields && (
+                <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                  {totalReceived}
+                </Text>
+              )}
             </View>
           )}
           {deliveryRows.map((r, idx) => (
@@ -868,6 +986,11 @@ function FlatReportPage({
               <Text style={[styles.cell, { width: cellWidth('A/c') }]}>{r.ac ?? '-'}</Text>
               <Text style={[styles.cellLeft, { width: cellWidth('Name') }]}>{r.farmerName ?? '-'}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+              {showSpecialFields && (
+                <Text style={[styles.cellLeft, { width: cellWidth('CUSTOM MARKA') }]}>
+                  {r.customMarka ?? '-'}
+                </Text>
+              )}
               {sizeColumns.map((col) => {
                 const list = r.sizeQtys[col] ?? [];
                 return (
@@ -893,8 +1016,14 @@ function FlatReportPage({
                   </View>
                 );
               })}
-              <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{r.rowTotal}</Text>
-              <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>{r.runningTotal}</Text>
+              <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                {r.rowTotal}
+              </Text>
+              {!showSpecialFields && (
+                <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                  {r.runningTotal}
+                </Text>
+              )}
             </View>
           ))}
         </View>
@@ -952,7 +1081,10 @@ export function DailyReportPdf({
   dateRangeLabel,
   data,
   sizeColumns,
+  admin,
 }: DailyReportPdfProps) {
+  const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
+
   if (isReportsDataGrouped(data)) {
     const grouped = data as GetReportsDataGrouped;
     if (grouped.farmers.length === 0) {
@@ -981,6 +1113,7 @@ export function DailyReportPdf({
             block={block}
             sizeColumns={sizeColumns}
             pageIndex={i}
+            showSpecialFields={showSpecialFields}
           />
         ))}
       </Document>
@@ -996,6 +1129,7 @@ export function DailyReportPdf({
         incoming={flatData.incoming}
         outgoing={flatData.outgoing}
         sizeColumns={sizeColumns}
+        showSpecialFields={showSpecialFields}
       />
     </Document>
   );
