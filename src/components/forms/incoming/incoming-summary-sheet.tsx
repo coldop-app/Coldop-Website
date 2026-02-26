@@ -18,6 +18,9 @@ import {
   Loader2,
 } from 'lucide-react';
 
+import { shouldShowSpecialFields } from '@/lib/special-fields';
+import { useStore } from '@/stores/store';
+
 /* -------------------------------------------------------------------------- */
 /*                                   Types                                    */
 /* -------------------------------------------------------------------------- */
@@ -39,6 +42,8 @@ export interface IncomingSummaryFormValues {
   locationBySize: Record<string, LocationEntry>;
   remarks?: string;
   manualGatePassNumber?: number;
+  customMarka?: string;
+  stockFilter?: string;
 }
 
 export interface QuantityRow {
@@ -143,13 +148,15 @@ export const IncomingSummarySheet = memo(function IncomingSummarySheet({
   variety,
   formValues,
   quantityRows,
-  sizeOrder: _sizeOrder,
   totalRent,
   isPending,
   isLoadingVoucher,
   gatePassNo,
   onSubmit,
 }: IncomingSummarySheetProps) {
+  const admin = useStore((s) => s.admin);
+  const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
+
   const totalBags = quantityRows.reduce(
     (sum, row) => sum + (row.quantity ?? 0),
     0
@@ -235,6 +242,18 @@ export const IncomingSummarySheet = memo(function IncomingSummarySheet({
                     <SummaryMetaRow
                       label="Manual Parchi"
                       value={formValues.manualParchiNumber}
+                    />
+                  )}
+                  {showSpecialFields && formValues.stockFilter?.trim() && (
+                    <SummaryMetaRow
+                      label="Stock Filter"
+                      value={formValues.stockFilter}
+                    />
+                  )}
+                  {showSpecialFields && formValues.customMarka?.trim() && (
+                    <SummaryMetaRow
+                      label="Custom Marka"
+                      value={formValues.customMarka}
                     />
                   )}
                 </div>

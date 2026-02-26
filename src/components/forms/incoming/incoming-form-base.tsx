@@ -1205,7 +1205,10 @@ export const IncomingFormBase = memo(function IncomingFormBase({
       {!isEditMode && (
         <IncomingSummarySheet
           open={summaryOpen}
-          onOpenChange={setSummaryOpen}
+          onOpenChange={(open) => {
+            if (!open) openSheetRef.current = false;
+            setSummaryOpen(open);
+          }}
           voucherNumberDisplay={voucherNumberDisplay}
           farmerDisplayName={farmerDisplayName}
           variety={formValues.variety}
