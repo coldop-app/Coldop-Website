@@ -26,6 +26,8 @@ export interface FarmerReportPdfProps {
   incoming: DaybookEntry[];
   outgoing: DaybookEntry[];
   sizeColumns: string[];
+  /** When true, group receipt and delivery tables by variety (only when not using special fields layout). */
+  groupByVariety?: boolean;
 }
 
 /** Per-size list of (quantity, location) for one gate pass row */
@@ -72,10 +74,11 @@ function formatPdfDate(iso: string): string {
 
 function buildReceiptRows(
   incoming: DaybookEntry[],
-  sizeColumns: string[]
+  sizeColumns: string[],
+  startingRunningTotal = 0
 ): ReceiptRow[] {
   const rows: ReceiptRow[] = [];
-  let runningTotal = 0;
+  let runningTotal = startingRunningTotal;
   const sorted = [...incoming].sort(
     (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
   );
@@ -129,7 +132,7 @@ function buildDeliveryRows(
 
   for (const entry of sorted) {
     if (entry.type !== 'DELIVERY') continue;
-    const variety = entry.variety ?? '-';
+    const variety = getOutgoingEntryVariety(entry);
     const customMarka = entry.customMarka ?? '-';
     const dateStr = formatPdfDate(entry.date);
     const voucherStr = String(entry.gatePassNo ?? '');
@@ -165,6 +168,36 @@ function buildDeliveryRows(
 function totalBagsOutgoing(entry: DaybookEntry): number {
   const orderDetails = entry.orderDetails ?? [];
   return orderDetails.reduce((s, d) => s + (d.quantityIssued ?? 0), 0);
+}
+
+/**
+ * Derive display variety for an outgoing (DELIVERY) entry – same logic as outgoing-gate-pass-card:
+ * from incomingGatePassEntries, else incomingGatePassSnapshots, else top-level entry.variety.
+ */
+function getOutgoingEntryVariety(entry: DaybookEntry): string {
+  const incomingEntries = entry.incomingGatePassEntries ?? [];
+  if (incomingEntries.length > 0) {
+    const varieties = [
+      ...new Set(
+        incomingEntries
+          .map((e) => e.variety?.trim())
+          .filter((v): v is string => Boolean(v))
+      ),
+    ];
+    return varieties.length > 0 ? varieties.join(', ') : '-';
+  }
+  const snapshots = entry.incomingGatePassSnapshots ?? [];
+  if (snapshots.length > 0) {
+    const varieties = [
+      ...new Set(
+        snapshots
+          .map((s) => s.variety?.trim())
+          .filter((v): v is string => Boolean(v))
+      ),
+    ];
+    return varieties.length > 0 ? varieties.join(', ') : '-';
+  }
+  return entry.variety?.trim() ?? '-';
 }
 
 /* ------------------------------------------------------------------ */
@@ -225,6 +258,12 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: 6,
     textTransform: 'uppercase',
+  },
+  varietySubtitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    marginTop: 8,
+    marginBottom: 4,
   },
   table: {
     borderWidth: 1,
@@ -376,6 +415,20 @@ const styles = StyleSheet.create({
   },
 });
 
+/** Group incoming (RECEIPT) entries by variety using Object.groupBy. */
+function groupIncomingByVariety(
+  entries: DaybookEntry[]
+): Record<string, DaybookEntry[]> {
+  return Object.groupBy(entries, (entry) => String(entry.variety ?? '-')) as Record<string, DaybookEntry[]>;
+}
+
+/** Group outgoing (DELIVERY) entries by derived variety (from snapshots/entries). */
+function groupOutgoingByVariety(
+  entries: DaybookEntry[]
+): Record<string, DaybookEntry[]> {
+  return Object.groupBy(entries, getOutgoingEntryVariety) as Record<string, DaybookEntry[]>;
+}
+
 export function FarmerReportPdf({
   companyName,
   farmer,
@@ -384,6 +437,7 @@ export function FarmerReportPdf({
   incoming,
   outgoing,
   sizeColumns,
+  groupByVariety = false,
 }: FarmerReportPdfProps) {
   const showSpecialFields = shouldShowSpecialFields(storeAdmin?.mobileNumber);
 
@@ -405,6 +459,12 @@ export function FarmerReportPdf({
   const deliveryRows = buildDeliveryRows(outgoing, sizeColumns, openingTotal);
   const totalDelivered = outgoing.reduce((s, e) => s + totalBagsOutgoing(e), 0);
   const closingBalance = openingTotal - totalDelivered;
+
+  const incomingByVariety = groupByVariety ? groupIncomingByVariety(incoming) : null;
+  const outgoingByVariety = groupByVariety ? groupOutgoingByVariety(outgoing) : null;
+  const varietyKeys = groupByVariety
+    ? [...new Set([...Object.keys(incomingByVariety ?? {}), ...Object.keys(outgoingByVariety ?? {})])].sort()
+    : [];
 
   const receiptTableCols = showSpecialFields
     ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...sizeColumns, 'TOTAL', 'REMARKS']
@@ -452,205 +512,501 @@ export function FarmerReportPdf({
           </View>
         </View>
 
-        {/* Receipt Table */}
+        {/* Receipt Table(s) */}
         <View style={styles.ledgerContainer}>
           <Text style={styles.ledgerTitle}>Receipt Details</Text>
-          <View style={styles.table}>
-            <View style={styles.tableHeaderRow}>
-              {receiptTableCols.map((col, i) => (
-                <Text
-                  key={col}
-                  style={[
-                    styles.cell,
-                    ...(col === 'VARIETY' ? [styles.cellLeft] : []),
-                    ...(i === receiptTableCols.length - 1 ? [styles.cellLast] : []),
-                    ...(col === 'TOTAL' ? [styles.cellTotal] : []),
-                    ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
-                    ...(col === 'REMARKS' ? [styles.cellRemarks] : []),
-                    ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
-                    {
-                      width:
-                        col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'CUSTOM MARKA' ? '10%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : col === 'REMARKS' ? '8%' : '8%',
-                    },
-                  ]}
-                >
-                  {col}
-                </Text>
-              ))}
-            </View>
-            {receiptRows.map((r, idx) => (
-              <View
-                key={`${r.date}-${r.voucher}-${idx}`}
-                style={styles.tableRow}
-              >
-                <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
-                <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
-                <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
-                {showSpecialFields && (
-                  <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
-                )}
-                {sizeColumns.map((col) => {
-                  const list = r.sizeQtys[col] ?? [];
-                  return (
-                    <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
-                      {list.length === 0 ? (
-                        <Text>-</Text>
-                      ) : (
-                        list.map((item, i) => (
-                          <View
-                            key={i}
-                            style={[
-                              styles.cellQtyLocBlock,
-                              i === list.length - 1 ? { marginBottom: 0 } : {},
-                            ]}
-                          >
-                            <Text>{item.qty}</Text>
-                            {item.loc ? (
-                              <Text style={styles.cellLocText}>{item.loc}</Text>
-                            ) : null}
-                          </View>
-                        ))
-                      )}
-                    </View>
-                  );
-                })}
-                <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
-                  {r.rowTotal}
-                </Text>
-                {!showSpecialFields && (
-                  <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
-                    {r.runningTotal}
+          {groupByVariety && varietyKeys.length > 0 ? (
+            varietyKeys.map((varietyName) => {
+              const varietyIncoming = incomingByVariety?.[varietyName] ?? [];
+              if (varietyIncoming.length === 0) return null;
+              const startRun = varietyKeys
+                .slice(0, varietyKeys.indexOf(varietyName))
+                .reduce(
+                  (sum, v) =>
+                    sum +
+                    (incomingByVariety?.[v] ?? []).reduce(
+                      (s, e) =>
+                        s +
+                        (e.bagSizes ?? []).reduce(
+                          (a, b) => a + (b.initialQuantity ?? 0),
+                          0
+                        ),
+                      0
+                    ),
+                  0
+                );
+              const rows = buildReceiptRows(
+                varietyIncoming,
+                sizeColumns,
+                startRun
+              );
+              const varietyTotal = rows.reduce((s, r) => s + r.rowTotal, 0);
+              const totalsBySize = sizeColumns.reduce(
+                (acc, col) => ({
+                  ...acc,
+                  [col]: rows.reduce(
+                    (s, r) =>
+                      s + (r.sizeQtys[col] ?? []).reduce((a, x) => a + x.qty, 0),
+                    0
+                  ),
+                }),
+                {} as Record<string, number>
+              );
+              return (
+                <View key={varietyName}>
+                  <Text style={styles.varietySubtitle}>
+                    Variety: {varietyName}
                   </Text>
-                )}
-                <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
-                  {r.remarks}
-                </Text>
-              </View>
-            ))}
-            {receiptRows.length > 0 && (
-              <View style={[styles.tableRow, styles.rowTotals]}>
-                <Text style={[styles.cell, { width: '10%' }]}>TOTAL</Text>
-                <Text style={[styles.cell, { width: '8%' }]}>-</Text>
-                <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
-                {showSpecialFields && (
-                  <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
-                )}
-                {sizeColumns.map((col) => (
-                  <Text key={col} style={[styles.cell, { width: '8%' }]}>
-                    {receiptTotalsBySize[col] ?? 0}
+                  <View style={styles.table}>
+                    <View style={styles.tableHeaderRow}>
+                      {receiptTableCols.map((col, i) => (
+                        <Text
+                          key={col}
+                          style={[
+                            styles.cell,
+                            ...(col === 'VARIETY' ? [styles.cellLeft] : []),
+                            ...(i === receiptTableCols.length - 1 ? [styles.cellLast] : []),
+                            ...(col === 'TOTAL' ? [styles.cellTotal] : []),
+                            ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
+                            ...(col === 'REMARKS' ? [styles.cellRemarks] : []),
+                            ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
+                            {
+                              width:
+                                col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'CUSTOM MARKA' ? '10%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : col === 'REMARKS' ? '8%' : '8%',
+                            },
+                          ]}
+                        >
+                          {col}
+                        </Text>
+                      ))}
+                    </View>
+                    {rows.map((r, idx) => (
+                      <View
+                        key={`${varietyName}-${r.date}-${r.voucher}-${idx}`}
+                        style={styles.tableRow}
+                      >
+                        <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
+                        <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
+                        <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+                        {showSpecialFields && (
+                          <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
+                        )}
+                        {sizeColumns.map((col) => {
+                          const list = r.sizeQtys[col] ?? [];
+                          return (
+                            <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
+                              {list.length === 0 ? (
+                                <Text>-</Text>
+                              ) : (
+                                list.map((item, i) => (
+                                  <View
+                                    key={i}
+                                    style={[
+                                      styles.cellQtyLocBlock,
+                                      i === list.length - 1 ? { marginBottom: 0 } : {},
+                                    ]}
+                                  >
+                                    <Text>{item.qty}</Text>
+                                    {item.loc ? (
+                                      <Text style={styles.cellLocText}>{item.loc}</Text>
+                                    ) : null}
+                                  </View>
+                                ))
+                              )}
+                            </View>
+                          );
+                        })}
+                        <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
+                          {r.rowTotal}
+                        </Text>
+                        {!showSpecialFields && (
+                          <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
+                            {r.runningTotal}
+                          </Text>
+                        )}
+                        <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
+                          {r.remarks}
+                        </Text>
+                      </View>
+                    ))}
+                    <View style={[styles.tableRow, styles.rowTotals]}>
+                      <Text style={[styles.cell, { width: '10%' }]}>Subtotal</Text>
+                      <Text style={[styles.cell, { width: '8%' }]}>-</Text>
+                      <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+                      {showSpecialFields && (
+                        <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
+                      )}
+                      {sizeColumns.map((col) => (
+                        <Text key={col} style={[styles.cell, { width: '8%' }]}>
+                          {totalsBySize[col] ?? 0}
+                        </Text>
+                      ))}
+                      <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
+                        {varietyTotal}
+                      </Text>
+                      {!showSpecialFields && (
+                        <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
+                          {rows.length > 0 ? rows[rows.length - 1].runningTotal : 0}
+                        </Text>
+                      )}
+                      <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
+                        -
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+              );
+            })
+          ) : (
+            <View style={styles.table}>
+              <View style={styles.tableHeaderRow}>
+                {receiptTableCols.map((col, i) => (
+                  <Text
+                    key={col}
+                    style={[
+                      styles.cell,
+                      ...(col === 'VARIETY' ? [styles.cellLeft] : []),
+                      ...(i === receiptTableCols.length - 1 ? [styles.cellLast] : []),
+                      ...(col === 'TOTAL' ? [styles.cellTotal] : []),
+                      ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
+                      ...(col === 'REMARKS' ? [styles.cellRemarks] : []),
+                      ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
+                      {
+                        width:
+                          col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'CUSTOM MARKA' ? '10%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : col === 'REMARKS' ? '8%' : '8%',
+                      },
+                    ]}
+                  >
+                    {col}
                   </Text>
                 ))}
-                <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
-                  {totalReceived}
-                </Text>
-                {!showSpecialFields && (
-                  <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
+              </View>
+              {receiptRows.map((r, idx) => (
+                <View
+                  key={`${r.date}-${r.voucher}-${idx}`}
+                  style={styles.tableRow}
+                >
+                  <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
+                  <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
+                  <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+                  {showSpecialFields && (
+                    <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
+                  )}
+                  {sizeColumns.map((col) => {
+                    const list = r.sizeQtys[col] ?? [];
+                    return (
+                      <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
+                        {list.length === 0 ? (
+                          <Text>-</Text>
+                        ) : (
+                          list.map((item, i) => (
+                            <View
+                              key={i}
+                              style={[
+                                styles.cellQtyLocBlock,
+                                i === list.length - 1 ? { marginBottom: 0 } : {},
+                              ]}
+                            >
+                              <Text>{item.qty}</Text>
+                              {item.loc ? (
+                                <Text style={styles.cellLocText}>{item.loc}</Text>
+                              ) : null}
+                            </View>
+                          ))
+                        )}
+                      </View>
+                    );
+                  })}
+                  <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
+                    {r.rowTotal}
+                  </Text>
+                  {!showSpecialFields && (
+                    <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
+                      {r.runningTotal}
+                    </Text>
+                  )}
+                  <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
+                    {r.remarks}
+                  </Text>
+                </View>
+              ))}
+              {receiptRows.length > 0 && (
+                <View style={[styles.tableRow, styles.rowTotals]}>
+                  <Text style={[styles.cell, { width: '10%' }]}>TOTAL</Text>
+                  <Text style={[styles.cell, { width: '8%' }]}>-</Text>
+                  <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+                  {showSpecialFields && (
+                    <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
+                  )}
+                  {sizeColumns.map((col) => (
+                    <Text key={col} style={[styles.cell, { width: '8%' }]}>
+                      {receiptTotalsBySize[col] ?? 0}
+                    </Text>
+                  ))}
+                  <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>
                     {totalReceived}
                   </Text>
-                )}
-                <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
-                  -
-                </Text>
-              </View>
-            )}
-          </View>
+                  {!showSpecialFields && (
+                    <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>
+                      {totalReceived}
+                    </Text>
+                  )}
+                  <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>
+                    -
+                  </Text>
+                </View>
+              )}
+            </View>
+          )}
         </View>
 
-        {/* Delivery Table */}
+        {/* Delivery Table(s) */}
         <View style={styles.ledgerContainer}>
           <Text style={styles.ledgerTitle}>Delivery Details</Text>
-          <View style={styles.table}>
-            <View style={styles.tableHeaderRow}>
-              {deliveryTableCols.map((col, i) => (
-                <Text
-                  key={col}
-                  style={[
-                    styles.cell,
-                    ...(col === 'VARIETY' ? [styles.cellLeft] : []),
-                    ...(i === deliveryTableCols.length - 1 ? [styles.cellLast] : []),
-                    ...(col === 'TOTAL' ? [styles.cellTotal] : []),
-                    ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
-                    ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
-                    {
-                      width:
-                        col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'CUSTOM MARKA' ? '10%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : '8%',
-                    },
-                  ]}
-                >
-                  {col}
-                </Text>
-              ))}
-            </View>
-            {openingTotal > 0 && (
-              <View style={[styles.tableRow, styles.rowBalance]}>
-                <Text style={[styles.cell, { width: '10%' }]}>OPENING</Text>
-                <Text style={[styles.cell, { width: '8%' }]}>BALANCE</Text>
-                <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
-                {showSpecialFields && (
-                  <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
-                )}
-                {sizeColumns.map((col) => (
-                  <Text key={col} style={[styles.cell, { width: '8%' }]}>
-                    {receiptTotalsBySize[col] ?? 0}
-                  </Text>
-                ))}
-                <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
-                  {openingTotal}
-                </Text>
-                {!showSpecialFields && (
-                  <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
-                    {openingTotal}
-                  </Text>
-                )}
-              </View>
-            )}
-            {deliveryRows.map((r, idx) => (
-              <View
-                key={`${r.date}-${r.voucher}-${idx}`}
-                style={styles.tableRow}
-              >
-                <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
-                <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
-                <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
-                {showSpecialFields && (
-                  <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
-                )}
-                {sizeColumns.map((col) => {
-                  const list = r.sizeQtys[col] ?? [];
-                  return (
-                    <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
-                      {list.length === 0 ? (
-                        <Text>-</Text>
-                      ) : (
-                        list.map((item, i) => (
-                          <View
-                            key={i}
+          {groupByVariety && varietyKeys.length > 0 ? (
+            <>
+              {openingTotal > 0 && (
+                <View style={styles.table}>
+                  <View style={[styles.tableRow, styles.rowBalance]}>
+                    <Text style={[styles.cell, { width: '10%' }]}>OPENING</Text>
+                    <Text style={[styles.cell, { width: '8%' }]}>BALANCE</Text>
+                    <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+                    {showSpecialFields && (
+                      <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
+                    )}
+                    {sizeColumns.map((col) => (
+                      <Text key={col} style={[styles.cell, { width: '8%' }]}>
+                        {receiptTotalsBySize[col] ?? 0}
+                      </Text>
+                    ))}
+                    <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                      {openingTotal}
+                    </Text>
+                    {!showSpecialFields && (
+                      <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                        {openingTotal}
+                      </Text>
+                    )}
+                  </View>
+                </View>
+              )}
+              {varietyKeys.map((varietyName) => {
+                const varietyOutgoing = outgoingByVariety?.[varietyName] ?? [];
+                if (varietyOutgoing.length === 0) return null;
+                const runningTotalBefore = openingTotal - varietyKeys
+                  .slice(0, varietyKeys.indexOf(varietyName))
+                  .reduce(
+                    (sum, v) =>
+                      sum +
+                      (outgoingByVariety?.[v] ?? []).reduce(
+                        (s, e) => s + totalBagsOutgoing(e),
+                        0
+                      ),
+                    0
+                  );
+                const rows = buildDeliveryRows(
+                  varietyOutgoing,
+                  sizeColumns,
+                  runningTotalBefore
+                );
+                const varietyDelivered = rows.reduce((s, r) => s + r.rowTotal, 0);
+                return (
+                  <View key={varietyName}>
+                    <Text style={styles.varietySubtitle}>
+                      Variety: {varietyName}
+                    </Text>
+                    <View style={styles.table}>
+                      <View style={styles.tableHeaderRow}>
+                        {deliveryTableCols.map((col, i) => (
+                          <Text
+                            key={col}
                             style={[
-                              styles.cellQtyLocBlock,
-                              i === list.length - 1 ? { marginBottom: 0 } : {},
+                              styles.cell,
+                              ...(col === 'VARIETY' ? [styles.cellLeft] : []),
+                              ...(i === deliveryTableCols.length - 1 ? [styles.cellLast] : []),
+                              ...(col === 'TOTAL' ? [styles.cellTotal] : []),
+                              ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
+                              ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
+                              {
+                                width:
+                                  col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'CUSTOM MARKA' ? '10%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : '8%',
+                              },
                             ]}
                           >
-                            <Text>{item.qty}</Text>
-                            {item.loc ? (
-                              <Text style={styles.cellLocText}>{item.loc}</Text>
-                            ) : null}
-                          </View>
-                        ))
-                      )}
+                            {col}
+                          </Text>
+                        ))}
+                      </View>
+                      {rows.map((r, idx) => (
+                        <View
+                          key={`${varietyName}-${r.date}-${r.voucher}-${idx}`}
+                          style={styles.tableRow}
+                        >
+                          <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
+                          <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
+                          <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+                          {showSpecialFields && (
+                            <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
+                          )}
+                          {sizeColumns.map((col) => {
+                            const list = r.sizeQtys[col] ?? [];
+                            return (
+                              <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
+                                {list.length === 0 ? (
+                                  <Text>-</Text>
+                                ) : (
+                                  list.map((item, i) => (
+                                    <View
+                                      key={i}
+                                      style={[
+                                        styles.cellQtyLocBlock,
+                                        i === list.length - 1 ? { marginBottom: 0 } : {},
+                                      ]}
+                                    >
+                                      <Text>{item.qty}</Text>
+                                      {item.loc ? (
+                                        <Text style={styles.cellLocText}>{item.loc}</Text>
+                                      ) : null}
+                                    </View>
+                                  ))
+                                )}
+                              </View>
+                            );
+                          })}
+                          <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                            {r.rowTotal}
+                          </Text>
+                          {!showSpecialFields && (
+                            <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                              {r.runningTotal}
+                            </Text>
+                          )}
+                        </View>
+                      ))}
+                      <View style={[styles.tableRow, styles.rowTotals]}>
+                        <Text style={[styles.cell, { width: '10%' }]}>Subtotal</Text>
+                        <Text style={[styles.cell, { width: '8%' }]}>-</Text>
+                        <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+                        {showSpecialFields && (
+                          <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
+                        )}
+                        {sizeColumns.map((col) => (
+                          <Text key={col} style={[styles.cell, { width: '8%' }]}>
+                            {rows.reduce(
+                              (s, r) =>
+                                s + (r.sizeQtys[col] ?? []).reduce((a, x) => a + x.qty, 0),
+                              0
+                            )}
+                          </Text>
+                        ))}
+                        <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                          {varietyDelivered}
+                        </Text>
+                        {!showSpecialFields && (
+                          <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                            {rows.length > 0 ? rows[rows.length - 1].runningTotal : runningTotalBefore - varietyDelivered}
+                          </Text>
+                        )}
+                      </View>
                     </View>
-                  );
-                })}
-                <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
-                  {r.rowTotal}
-                </Text>
-                {!showSpecialFields && (
-                  <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
-                    {r.runningTotal}
+                  </View>
+                );
+              })}
+            </>
+          ) : (
+            <View style={styles.table}>
+              <View style={styles.tableHeaderRow}>
+                {deliveryTableCols.map((col, i) => (
+                  <Text
+                    key={col}
+                    style={[
+                      styles.cell,
+                      ...(col === 'VARIETY' ? [styles.cellLeft] : []),
+                      ...(i === deliveryTableCols.length - 1 ? [styles.cellLast] : []),
+                      ...(col === 'TOTAL' ? [styles.cellTotal] : []),
+                      ...(col === 'G.TOTAL' ? [styles.cellGTotal] : []),
+                      ...(col === 'CUSTOM MARKA' ? [styles.cellLeft] : []),
+                      {
+                        width:
+                          col === 'VARIETY' ? '14%' : col === 'DATE' ? '10%' : col === 'VOUCHER' ? '8%' : col === 'CUSTOM MARKA' ? '10%' : col === 'TOTAL' || col === 'G.TOTAL' ? '8%' : '8%',
+                      },
+                    ]}
+                  >
+                    {col}
                   </Text>
-                )}
+                ))}
               </View>
-            ))}
-          </View>
+              {openingTotal > 0 && (
+                <View style={[styles.tableRow, styles.rowBalance]}>
+                  <Text style={[styles.cell, { width: '10%' }]}>OPENING</Text>
+                  <Text style={[styles.cell, { width: '8%' }]}>BALANCE</Text>
+                  <Text style={[styles.cellLeft, { width: '14%' }]}>-</Text>
+                  {showSpecialFields && (
+                    <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
+                  )}
+                  {sizeColumns.map((col) => (
+                    <Text key={col} style={[styles.cell, { width: '8%' }]}>
+                      {receiptTotalsBySize[col] ?? 0}
+                    </Text>
+                  ))}
+                  <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                    {openingTotal}
+                  </Text>
+                  {!showSpecialFields && (
+                    <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                      {openingTotal}
+                    </Text>
+                  )}
+                </View>
+              )}
+              {deliveryRows.map((r, idx) => (
+                <View
+                  key={`${r.date}-${r.voucher}-${idx}`}
+                  style={styles.tableRow}
+                >
+                  <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
+                  <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
+                  <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
+                  {showSpecialFields && (
+                    <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
+                  )}
+                  {sizeColumns.map((col) => {
+                    const list = r.sizeQtys[col] ?? [];
+                    return (
+                      <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
+                        {list.length === 0 ? (
+                          <Text>-</Text>
+                        ) : (
+                          list.map((item, i) => (
+                            <View
+                              key={i}
+                              style={[
+                                styles.cellQtyLocBlock,
+                                i === list.length - 1 ? { marginBottom: 0 } : {},
+                              ]}
+                            >
+                              <Text>{item.qty}</Text>
+                              {item.loc ? (
+                                <Text style={styles.cellLocText}>{item.loc}</Text>
+                              ) : null}
+                            </View>
+                          ))
+                        )}
+                      </View>
+                    );
+                  })}
+                  <Text style={[styles.cell, styles.cellTotal, showSpecialFields ? styles.cellLast : {}, { width: '8%' }]}>
+                    {r.rowTotal}
+                  </Text>
+                  {!showSpecialFields && (
+                    <Text style={[styles.cell, styles.cellGTotal, styles.cellLast, { width: '8%' }]}>
+                      {r.runningTotal}
+                    </Text>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
         </View>
 
         {/* Summary */}

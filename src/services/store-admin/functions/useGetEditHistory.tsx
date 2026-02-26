@@ -37,6 +37,10 @@ export interface EditHistorySnapshot {
   createdAt: string;
   updatedAt: string;
   rentEntryVoucherId?: string;
+  /** Shown only when special fields are enabled for the store. */
+  customMarka?: string;
+  /** Shown only when special fields are enabled for the store. */
+  stockFilter?: string;
 }
 
 export interface EditHistoryEditedBy {

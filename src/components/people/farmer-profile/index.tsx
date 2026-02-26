@@ -58,7 +58,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from '@/components/ui/dialog';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import EditFarmerDialog from '@/components/people/farmer-profile/edit-farmer-dialog';
 import FinancesActionsDialog from '@/components/people/farmer-profile/finances-actions-dialog';
 import BuyPotatoForm from '@/components/forms/people/buy-potato';
@@ -133,6 +136,8 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const [addPaymentDialogOpen, setAddPaymentDialogOpen] = useState(false);
   const [addDiscountDialogOpen, setAddDiscountDialogOpen] = useState(false);
   const [addChargeDialogOpen, setAddChargeDialogOpen] = useState(false);
+  const [stockLedgerDialogOpen, setStockLedgerDialogOpen] = useState(false);
+  const [groupByVariety, setGroupByVariety] = useState(false);
   const [isGeneratingStockLedgerPdf, setIsGeneratingStockLedgerPdf] =
     useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -193,7 +198,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const coldStorage = useStore((s) => s.coldStorage);
   const admin = useStore((s) => s.admin);
 
-  const handleViewStockLedgerPdf = async () => {
+  const handleViewStockLedgerPdf = async (groupByVarietyOption: boolean) => {
     if (!link) return;
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -222,6 +227,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
           incoming={incoming}
           outgoing={outgoing}
           sizeColumns={sizes}
+          groupByVariety={groupByVarietyOption}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -545,7 +551,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 <Button
                   variant="outline"
                   className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
-                  onClick={handleViewStockLedgerPdf}
+                  onClick={() => setStockLedgerDialogOpen(true)}
                   disabled={isGeneratingStockLedgerPdf}
                 >
                   {isGeneratingStockLedgerPdf ? (
@@ -555,6 +561,54 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                   )}
                   View Stock Ledger
                 </Button>
+                <Dialog
+                  open={stockLedgerDialogOpen}
+                  onOpenChange={setStockLedgerDialogOpen}
+                >
+                  <DialogContent className="font-custom border-border bg-card text-card-foreground w-[calc(100%-2rem)] max-w-md gap-0 overflow-hidden rounded-xl p-0 shadow-sm sm:max-w-lg">
+                    <DialogHeader className="shrink-0 space-y-0.5 p-3 pr-11 sm:space-y-1 sm:p-5 sm:pr-12">
+                      <DialogTitle className="font-custom text-card-foreground text-base leading-tight font-bold tracking-tight sm:text-2xl">
+                        View Stock Ledger
+                      </DialogTitle>
+                      <DialogDescription className="font-custom text-muted-foreground line-clamp-1 text-xs sm:text-sm">
+                        Choose how to display the stock ledger PDF.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="min-h-0 shrink-0 space-y-4 px-3 pt-0.5 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5 sm:pt-1 sm:pb-5">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="group-by-variety"
+                          checked={groupByVariety}
+                          onCheckedChange={(checked) =>
+                            setGroupByVariety(checked === true)
+                          }
+                        />
+                        <Label
+                          htmlFor="group-by-variety"
+                          className="font-custom cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                        >
+                          Group By Variety
+                        </Label>
+                      </div>
+                      <DialogFooter className="flex flex-row gap-2 sm:justify-end">
+                        <Button
+                          variant="outline"
+                          onClick={() => setStockLedgerDialogOpen(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          onClick={() => {
+                            setStockLedgerDialogOpen(false);
+                            handleViewStockLedgerPdf(groupByVariety);
+                          }}
+                        >
+                          View PDF
+                        </Button>
+                      </DialogFooter>
+                    </div>
+                  </DialogContent>
+                </Dialog>
               </div>
 
               <Separator />

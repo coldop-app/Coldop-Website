@@ -5,6 +5,8 @@ import type {
   EditHistorySnapshot,
   EditHistoryBagSize,
 } from '@/services/store-admin/functions/useGetEditHistory';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
+import { useStore } from '@/stores/store';
 
 import {
   Card,
@@ -72,11 +74,29 @@ function formatLocation(bag: EditHistoryBagSize): string {
   return `${loc.chamber}/${loc.floor}/${loc.row}`;
 }
 
-function SnapshotSummary({ snapshot }: { snapshot: EditHistorySnapshot }) {
+function SnapshotSummary({
+  snapshot,
+  showSpecialFields,
+}: {
+  snapshot: EditHistorySnapshot;
+  showSpecialFields: boolean;
+}) {
   const bagSizes = snapshot.bagSizes ?? [];
   const totalBags = bagSizes.reduce((s, b) => s + b.currentQuantity, 0);
   const variety = snapshot.variety ?? '—';
   const status = (snapshot.status ?? '—').replace(/_/g, ' ');
+  const customMarka =
+    showSpecialFields &&
+    snapshot.customMarka != null &&
+    snapshot.customMarka.trim() !== ''
+      ? snapshot.customMarka
+      : null;
+  const stockFilterDisplay =
+    showSpecialFields &&
+    snapshot.stockFilter != null &&
+    snapshot.stockFilter !== ''
+      ? snapshot.stockFilter.replace(/_/g, ' ')
+      : null;
 
   return (
     <div className="font-custom space-y-2 text-sm">
@@ -115,6 +135,18 @@ function SnapshotSummary({ snapshot }: { snapshot: EditHistorySnapshot }) {
           <span className="text-muted-foreground">Total bags</span>
           <p className="font-medium">{totalBags}</p>
         </div>
+        {customMarka != null && (
+          <div>
+            <span className="text-muted-foreground">Custom marka</span>
+            <p className="font-medium">{customMarka}</p>
+          </div>
+        )}
+        {stockFilterDisplay != null && (
+          <div>
+            <span className="text-muted-foreground">Stock</span>
+            <p className="font-medium">{stockFilterDisplay}</p>
+          </div>
+        )}
       </div>
       {bagSizes.length > 0 && (
         <div className="mt-2">
@@ -193,6 +225,8 @@ const EditHistoryEntryCard = memo(function EditHistoryEntryCard({
   } = entry;
 
   const [open, setOpen] = useState(false);
+  const admin = useStore((s) => s.admin);
+  const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
 
   return (
     <Card className="border-border/40 hover:border-primary/30 overflow-hidden pt-0 shadow-sm transition-all duration-200 hover:shadow-md">
@@ -249,7 +283,10 @@ const EditHistoryEntryCard = memo(function EditHistoryEntryCard({
                   Before
                 </h4>
                 <div className="bg-muted/50 rounded-md p-3">
-                  <SnapshotSummary snapshot={snapshotBefore} />
+                  <SnapshotSummary
+                    snapshot={snapshotBefore}
+                    showSpecialFields={showSpecialFields}
+                  />
                 </div>
               </div>
               <div className="min-w-0 space-y-2">
@@ -257,7 +294,10 @@ const EditHistoryEntryCard = memo(function EditHistoryEntryCard({
                   After
                 </h4>
                 <div className="bg-muted/50 rounded-md p-3">
-                  <SnapshotSummary snapshot={snapshotAfter} />
+                  <SnapshotSummary
+                    snapshot={snapshotAfter}
+                    showSpecialFields={showSpecialFields}
+                  />
                 </div>
               </div>
             </div>

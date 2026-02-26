@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.11] - 2026-02-26
+
+### Added
+
+- **Edit history – Special fields** – Edit history snapshot types and UI now include `customMarka` and `stockFilter`; snapshot summary shows custom marka and stock only when `shouldShowSpecialFields(admin?.mobileNumber)` is true
+
+### Changed
+
+- **Daybook incoming card** – Stock filter badge moved from detail rows to the badge row next to status; layout uses flex-wrap and justify-end for badges
+- **Farmer report PDF** – Full layout support for special-fields mode: receipt/delivery tables show Custom Marka column and optional grouping when store admin is allowed; farmer profile passes store admin so PDF respects special-fields visibility
+- **Daily report PDF** – Minor alignment with special-fields handling
+- **Farmer profile** – Passes store admin (mobileNumber) to FarmerReportPdf for special-fields-aware farmer report
+
+---
+
 ## [0.4.10] - 2026-02-25
 
 ### Added

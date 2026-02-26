@@ -73,7 +73,12 @@ function formatPdfDate(iso: string): string {
 }
 
 function toDaybookEntryIncoming(e: IncomingGatePassEntry): DaybookEntry {
-  return { ...e, type: 'RECEIPT' };
+  return {
+    ...e,
+    type: 'RECEIPT',
+    // Preserve customMarka so it displays in receipt details when shouldShowSpecialFields is true
+    customMarka: e.customMarka,
+  };
 }
 
 function toDaybookEntryOutgoing(e: ReportOutgoingEntry): DaybookEntry {

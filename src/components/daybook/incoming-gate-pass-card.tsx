@@ -186,7 +186,15 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
               </p>
             </div>
 
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+              {stockFilterDisplay != null && (
+                <Badge
+                  variant="default"
+                  className="bg-primary px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide text-primary-foreground"
+                >
+                  {stockFilterDisplay}
+                </Badge>
+              )}
               <Badge
                 variant="secondary"
                 className="px-2.5 py-1 text-[10px] font-medium"
@@ -209,9 +217,6 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
           <DetailRow label="Variety" value={variety} icon={Package} />
           <DetailRow label="Lot No" value={lotNo} />
           <DetailRow label="Truck No" value={truckNumber} icon={Truck} />
-          {stockFilterDisplay != null && (
-            <DetailRow label="Stock" value={stockFilterDisplay} />
-          )}
         </div>
 
         <div className="border-border/50 flex w-full items-center justify-between border-t pt-4">
