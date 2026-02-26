@@ -177,8 +177,12 @@ export const IncomingFormBase = memo(function IncomingFormBase({
           ),
           remarks: z.string().max(500).default(''),
           manualGatePassNumber: z.union([z.number(), z.undefined()]),
-          stockFilter: z.string().trim().optional(),
-          customMarka: z.string().trim().optional(),
+          stockFilter: showSpecialFields
+            ? z.string().trim().min(1, 'Please select a stock filter')
+            : z.string().trim().optional(),
+          customMarka: showSpecialFields
+            ? z.string().trim().min(1, 'Please enter custom marka')
+            : z.string().trim().optional(),
         })
         .refine(
           (data) => {
@@ -232,7 +236,7 @@ export const IncomingFormBase = memo(function IncomingFormBase({
             path: ['sizeQuantities'],
           }
         ),
-    []
+    [showSpecialFields]
   );
 
   /* -------------------------------------------------
@@ -652,44 +656,64 @@ export const IncomingFormBase = memo(function IncomingFormBase({
                 <>
                   <form.Field
                     name="stockFilter"
-                    children={(field) => (
-                      <Field>
-                        <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                          Stock Filter
-                          <span className="font-custom text-muted-foreground ml-1 font-normal">
-                            (optional)
-                          </span>
-                        </FieldLabel>
-                        <SearchSelector
-                          options={stockFilterOptions}
-                          onSelect={(v) => field.handleChange(v)}
-                          value={field.state.value ?? ''}
-                          buttonClassName="w-full justify-between"
-                          placeholder="Select stock filter"
-                          emptyMessage="No option selected"
-                        />
-                      </Field>
-                    )}
+                    children={(field) => {
+                      const isInvalid =
+                        field.state.meta.isTouched &&
+                        field.state.meta.errors.length > 0;
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                            Stock Filter
+                            <span className="font-custom text-destructive ml-1">
+                              *
+                            </span>
+                          </FieldLabel>
+                          <SearchSelector
+                            options={stockFilterOptions}
+                            onSelect={(v) => field.handleChange(v)}
+                            value={field.state.value ?? ''}
+                            buttonClassName="w-full justify-between"
+                            placeholder="Select stock filter"
+                            emptyMessage="No option selected"
+                          />
+                          {isInvalid && (
+                            <FieldError
+                              errors={field.state.meta.errors as FieldErrors}
+                            />
+                          )}
+                        </Field>
+                      );
+                    }}
                   />
                   <form.Field
                     name="customMarka"
-                    children={(field) => (
-                      <Field>
-                        <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                          Custom Marka
-                          <span className="font-custom text-muted-foreground ml-1 font-normal">
-                            (optional)
-                          </span>
-                        </FieldLabel>
-                        <Input
-                          value={field.state.value ?? ''}
-                          onBlur={field.handleBlur}
-                          onChange={(e) => field.handleChange(e.target.value)}
-                          placeholder="Custom marka"
-                          className="font-custom"
-                        />
-                      </Field>
-                    )}
+                    children={(field) => {
+                      const isInvalid =
+                        field.state.meta.isTouched &&
+                        field.state.meta.errors.length > 0;
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                            Custom Marka
+                            <span className="font-custom text-destructive ml-1">
+                              *
+                            </span>
+                          </FieldLabel>
+                          <Input
+                            value={field.state.value ?? ''}
+                            onBlur={field.handleBlur}
+                            onChange={(e) => field.handleChange(e.target.value)}
+                            placeholder="Custom marka"
+                            className="font-custom"
+                          />
+                          {isInvalid && (
+                            <FieldError
+                              errors={field.state.meta.errors as FieldErrors}
+                            />
+                          )}
+                        </Field>
+                      );
+                    }}
                   />
                 </>
               )}
