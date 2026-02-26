@@ -12,6 +12,12 @@ import {
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
@@ -122,6 +128,7 @@ const MyFinancesPage = memo(function MyFinancesPage() {
 
   const [period, setPeriod] = useState<PeriodFilter>('this_month');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [reportsDialogOpen, setReportsDialogOpen] = useState(false);
 
   // Placeholder: no API yet – use false to show content, true for loading
   const isLoading = false;
@@ -214,16 +221,22 @@ const MyFinancesPage = memo(function MyFinancesPage() {
                 variant="secondary"
                 size="sm"
                 className="font-custom focus-visible:ring-primary h-9 min-h-9 w-full gap-2 rounded-lg px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:h-8 sm:w-auto"
-                asChild
+                onClick={() => setReportsDialogOpen(true)}
               >
-                <a href="#">
-                  <FileText className="h-4 w-4 shrink-0" />
-                  Get reports
-                </a>
+                <FileText className="h-4 w-4 shrink-0" />
+                Get reports
               </Button>
             </div>
           </ItemFooter>
         </Item>
+
+        <Dialog open={reportsDialogOpen} onOpenChange={setReportsDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Feature Coming Soon</DialogTitle>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
 
         {/* Tabs: scrollable on mobile; initial tab from URL when present */}
         <Tabs
