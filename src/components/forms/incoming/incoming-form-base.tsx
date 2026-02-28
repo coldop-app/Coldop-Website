@@ -999,6 +999,29 @@ export const IncomingFormBase = memo(function IncomingFormBase({
                         field.handleChange(next);
                       };
 
+                      /** First location that has chamber, floor and row all filled; used for "Apply to all". */
+                      const sourceLocation: LocationEntry | null = (() => {
+                        for (const row of locationRows) {
+                          const loc =
+                            locationBySize[row.key] ?? { ...DEFAULT_LOCATION };
+                          const c = loc.chamber?.trim();
+                          const f = loc.floor?.trim();
+                          const r = loc.row?.trim();
+                          if (c && f && r)
+                            return { chamber: c, floor: f, row: r };
+                        }
+                        return null;
+                      })();
+
+                      const applyToAllLocations = () => {
+                        if (!sourceLocation) return;
+                        const next: Record<string, LocationEntry> = {};
+                        for (const row of locationRows) {
+                          next[row.key] = { ...sourceLocation };
+                        }
+                        field.handleChange(next);
+                      };
+
                       const getLocation = (key: string) =>
                         locationBySize[key] ?? { ...DEFAULT_LOCATION };
 
@@ -1028,15 +1051,28 @@ export const IncomingFormBase = memo(function IncomingFormBase({
                                   tracking.
                                 </p>
                               </div>
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={clearAllLocations}
-                                className="font-custom text-muted-foreground hover:text-foreground shrink-0"
-                              >
-                                Clear All
-                              </Button>
+                              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant="default"
+                                  size="sm"
+                                  onClick={applyToAllLocations}
+                                  disabled={!sourceLocation}
+                                  className="font-custom"
+                                  aria-label="Apply chamber, floor and row from one size to all sizes"
+                                >
+                                  Apply to all
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={clearAllLocations}
+                                  className="font-custom text-muted-foreground hover:text-foreground"
+                                >
+                                  Clear All
+                                </Button>
+                              </div>
                             </div>
                           </CardHeader>
                           <CardContent className="space-y-6">
