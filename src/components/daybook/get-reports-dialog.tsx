@@ -17,6 +17,7 @@ import { DatePicker } from '@/components/forms/date-picker';
 import { useGetReports, type GetReportsParams } from '@/services/analytics/useGetReports';
 import { formatDate, formatDateToISO } from '@/lib/helpers';
 import { useStore } from '@/stores/store';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
 import { toast } from 'sonner';
 import { FileText } from 'lucide-react';
 
@@ -44,6 +45,7 @@ export function GetReportsDialog({
   const [fromDate, setFromDate] = useState(() => formatDate(new Date()));
   const [toDate, setToDate] = useState(() => formatDate(new Date()));
   const [groupByFarmers, setGroupByFarmers] = useState(false);
+  const [filterByOwnership, setFilterByOwnership] = useState(false);
   const [reportParams, setReportParams] = useState<GetReportsParams | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const userTriggeredFetchRef = useRef(false);
@@ -51,6 +53,7 @@ export function GetReportsDialog({
   const coldStorage = useStore((s) => s.coldStorage);
   const admin = useStore((s) => s.admin);
   const sizeColumns = useStore((s) => s.preferences?.commodities?.[0]?.sizes ?? []);
+  const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
 
   const reportQuery = useGetReports(reportParams, { enabled: !!reportParams });
 
@@ -95,6 +98,7 @@ export function GetReportsDialog({
     setFromDate('');
     setToDate('');
     setGroupByFarmers(false);
+    setFilterByOwnership(false);
     setReportParams(null);
   };
 
@@ -123,6 +127,7 @@ export function GetReportsDialog({
           data={data}
           sizeColumns={sizeColumns.length > 0 ? sizeColumns : ['Ration', 'Goli', 'Cut-tok']}
           admin={admin ? { mobileNumber: admin.mobileNumber } : undefined}
+          filterByOwnership={showSpecialFields ? filterByOwnership : undefined}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -184,6 +189,23 @@ export function GetReportsDialog({
               Group by farmers
             </Label>
           </div>
+          {showSpecialFields && (
+            <div className="flex items-center gap-2 pt-1">
+              <Checkbox
+                id="reports-filter-by-ownership"
+                checked={filterByOwnership}
+                onCheckedChange={(checked) =>
+                  setFilterByOwnership(checked === true)
+                }
+              />
+              <Label
+                htmlFor="reports-filter-by-ownership"
+                className="cursor-pointer text-sm font-normal"
+              >
+                Filter by ownership
+              </Label>
+            </div>
+          )}
 
           {reportQuery.isLoading && (
             <p className="text-muted-foreground text-sm">Loading report…</p>
