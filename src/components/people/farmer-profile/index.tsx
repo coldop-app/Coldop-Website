@@ -46,6 +46,7 @@ import type {
 import { useGetFarmerGatePasses } from '@/services/store-admin/functions/useGetFarmerGatePasses';
 import { format } from 'date-fns';
 import { formatDateToISO } from '@/lib/helpers';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
 import { DatePicker } from '@/components/forms/date-picker';
 import IncomingGatePassCard from '@/components/daybook/incoming-gate-pass-card';
 import OutgoingGatePassCard from '@/components/daybook/outgoing-gate-pass-card';
@@ -138,6 +139,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const [addChargeDialogOpen, setAddChargeDialogOpen] = useState(false);
   const [stockLedgerDialogOpen, setStockLedgerDialogOpen] = useState(false);
   const [groupByVariety, setGroupByVariety] = useState(false);
+  const [filterByOwnership, setFilterByOwnership] = useState(false);
   const [isGeneratingStockLedgerPdf, setIsGeneratingStockLedgerPdf] =
     useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -197,8 +199,12 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
 
   const coldStorage = useStore((s) => s.coldStorage);
   const admin = useStore((s) => s.admin);
+  const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
 
-  const handleViewStockLedgerPdf = async (groupByVarietyOption: boolean) => {
+  const handleViewStockLedgerPdf = async (
+    groupByVarietyOption: boolean,
+    filterByOwnershipOption: boolean
+  ) => {
     if (!link) return;
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -228,6 +234,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
           outgoing={outgoing}
           sizeColumns={sizes}
           groupByVariety={groupByVarietyOption}
+          filterByOwnership={showSpecialFields ? filterByOwnershipOption : undefined}
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -590,6 +597,23 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                           Group By Variety
                         </Label>
                       </div>
+                      {showSpecialFields && (
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="filter-by-ownership"
+                            checked={filterByOwnership}
+                            onCheckedChange={(checked) =>
+                              setFilterByOwnership(checked === true)
+                            }
+                          />
+                          <Label
+                            htmlFor="filter-by-ownership"
+                            className="font-custom cursor-pointer text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          >
+                            Filter by ownership
+                          </Label>
+                        </div>
+                      )}
                       <DialogFooter className="flex flex-row gap-2 sm:justify-end">
                         <Button
                           variant="outline"
@@ -600,7 +624,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                         <Button
                           onClick={() => {
                             setStockLedgerDialogOpen(false);
-                            handleViewStockLedgerPdf(groupByVariety);
+                            handleViewStockLedgerPdf(groupByVariety, filterByOwnership);
                           }}
                         >
                           View PDF
