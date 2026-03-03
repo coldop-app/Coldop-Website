@@ -24,6 +24,7 @@ export function PaymentReminderToaster() {
     toast.warning(PAYMENT_REMINDER_MESSAGE, {
       id: PAYMENT_REMINDER_TOAST_ID,
       duration: Number.POSITIVE_INFINITY,
+      position: 'top-right',
     });
   }, [hasHydrated, coldStorage]);
 
