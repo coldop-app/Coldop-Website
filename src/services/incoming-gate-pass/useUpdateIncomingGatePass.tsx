@@ -34,6 +34,7 @@ export const updateIncomingGatePassBodySchema = z.object({
   stockFilter: z.string().trim().optional(),
   customMarka: z.string().trim().optional(),
   manualParchiNumber: z.string().trim().optional(),
+  farmerStorageLinkId: z.string().min(1).optional(),
 });
 
 export type UpdateIncomingGatePassBody = z.infer<

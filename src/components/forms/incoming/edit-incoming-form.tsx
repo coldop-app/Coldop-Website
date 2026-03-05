@@ -32,6 +32,7 @@ export const EditIncomingForm = memo(function EditIncomingForm({
         stockFilter: payload.stockFilter,
         customMarka: payload.customMarka,
         manualParchiNumber: payload.manualParchiNumber,
+        farmerStorageLinkId: payload.farmerStorageLinkId,
       },
     });
   };

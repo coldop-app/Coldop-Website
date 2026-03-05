@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.12] - 2026-03-05
+
+### Added
+
+- **Incoming gate pass – Edit with farmer link** – Edit incoming form and update API now support optional `farmerStorageLinkId` in the payload so incoming gate passes can be associated with a farmer–storage link when editing
+
+### Changed
+
+- **Payment reminder toaster** – Toast is now one-time per session (tracked via sessionStorage), auto-dismisses after 30 seconds, and can be closed by the user; no longer persists indefinitely
+- **Sonner toaster** – Global toaster now shows a close button on toasts
+
+---
+
 ## [0.4.11] - 2026-02-26
 
 ### Added
