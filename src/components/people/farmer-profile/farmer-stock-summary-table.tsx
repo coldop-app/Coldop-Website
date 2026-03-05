@@ -17,11 +17,21 @@ import {
 } from '@/components/ui/table';
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
 import { cn } from '@/lib/utils';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
+import { useStore } from '@/stores/store';
 import {
   FarmerStockBreakdownDialog,
   type CellClickData,
   type StockTabMode,
 } from '@/components/people/farmer-profile/farmer-stock-breakdown-dialog';
+
+export type StockFilterTab = 'all' | 'owned' | 'farmer';
+
+const STOCK_FILTER_TABS: { id: StockFilterTab; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'owned', label: 'Owned' },
+  { id: 'farmer', label: 'Farmer' },
+];
 
 export type {
   BreakdownEntry,
@@ -97,14 +107,23 @@ export function FarmerStockSummaryTable({
   sizes,
   incomingEntries,
 }: FarmerStockSummaryTableProps) {
+  const admin = useStore((s) => s.admin);
+  const showStockFilterTabs = shouldShowSpecialFields(admin?.mobileNumber);
+  const [stockFilterTab, setStockFilterTab] = useState<StockFilterTab>('all');
   const [activeTab, setActiveTab] = useState<StockTabMode>('current');
   const [cellClickData, setCellClickData] = useState<CellClickData | null>(
     null
   );
 
+  const filteredEntries = useMemo(() => {
+    if (!showStockFilterTabs || stockFilterTab === 'all') return incomingEntries;
+    const key = stockFilterTab === 'owned' ? 'OWNED' : 'FARMER';
+    return incomingEntries.filter((e) => e.stockFilter === key);
+  }, [incomingEntries, showStockFilterTabs, stockFilterTab]);
+
   const { varieties, byVariety } = useMemo(
-    () => aggregateStockByVarietyAndSize(incomingEntries, sizes),
-    [incomingEntries, sizes]
+    () => aggregateStockByVarietyAndSize(filteredEntries, sizes),
+    [filteredEntries, sizes]
   );
 
   const { rows, totals, tabTotals } = useMemo(() => {
@@ -248,6 +267,28 @@ export function FarmerStockSummaryTable({
               outgoing quantities.
             </p>
           </div>
+          {showStockFilterTabs && (
+            <div className="border-border flex gap-1 border-b">
+              {STOCK_FILTER_TABS.map(({ id, label }) => {
+                const isActive = stockFilterTab === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setStockFilterTab(id)}
+                    className={cn(
+                      'font-custom focus-visible:ring-primary border-b-2 px-3 pt-1 pb-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                      isActive
+                        ? 'border-primary text-primary'
+                        : 'text-muted-foreground hover:text-foreground border-transparent'
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="border-border flex gap-1 border-b">
             {TAB_CONFIG.map(({ id, label }) => {
               const count =
@@ -407,7 +448,7 @@ export function FarmerStockSummaryTable({
         <FarmerStockBreakdownDialog
           cellClickData={cellClickData}
           onClose={() => setCellClickData(null)}
-          incomingEntries={incomingEntries}
+          incomingEntries={filteredEntries}
           tabType={activeTab}
           getTitle={getTitle}
         />

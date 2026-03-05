@@ -18,10 +18,19 @@ import {
 import type {
   VarietyStockSummary,
   SizeQuantity,
+  StockSummaryByFilterData,
 } from '@/services/analytics/useGetStorageSummary';
 import { cn } from '@/lib/utils';
 
 type TabMode = 'current' | 'initial' | 'outgoing';
+
+export type StockFilterTab = 'all' | 'owned' | 'farmer';
+
+const STOCK_FILTER_TABS: { id: StockFilterTab; label: string }[] = [
+  { id: 'all', label: 'All' },
+  { id: 'owned', label: 'Owned' },
+  { id: 'farmer', label: 'Farmer' },
+];
 
 interface TableRowData {
   variety: string;
@@ -40,7 +49,7 @@ const cellClickClass =
   'font-custom border-border border px-4 py-2 cursor-pointer hover:bg-muted hover:ring-1 hover:ring-primary/20 transition-all duration-150';
 
 export interface StorageSummaryTableProps {
-  /** Stock summary by variety and size */
+  /** Stock summary by variety and size (used for "All" tab when showStockFilterTabs, else always) */
   stockSummary: VarietyStockSummary[];
   /** Size column headers in display order */
   sizes: string[];
@@ -48,6 +57,10 @@ export interface StorageSummaryTableProps {
   controlledTab?: 'current' | 'initial' | 'outgoing';
   /** When set, data cells are clickable and this is called with (variety, bagSize). Use bagSize 'all' for total column. */
   onCellClick?: (variety: string, bagSize: string) => void;
+  /** When true, show All / Owned / Farmer tabs and use stockSummaryByFilter for Owned/Farmer. Only show when shouldShowSpecialFields. */
+  showStockFilterTabs?: boolean;
+  /** Required when showStockFilterTabs is true; keys OWNED and FARMER. */
+  stockSummaryByFilter?: StockSummaryByFilterData;
 }
 
 function buildSizeMap(
@@ -68,9 +81,34 @@ export function StorageSummaryTable({
   sizes,
   controlledTab,
   onCellClick,
+  showStockFilterTabs,
+  stockSummaryByFilter,
 }: StorageSummaryTableProps) {
   const [internalTab, setInternalTab] = useState<TabMode>('current');
+  const [stockFilterTab, setStockFilterTab] = useState<StockFilterTab>('all');
   const activeTab = controlledTab ?? internalTab;
+
+  /** Effective stockSummary and sizes based on selected All/Owned/Farmer tab */
+  const { effectiveSummary, effectiveSizes } = useMemo(() => {
+    if (!showStockFilterTabs || stockFilterTab === 'all') {
+      return { effectiveSummary: stockSummary, effectiveSizes: sizes };
+    }
+    const key = stockFilterTab === 'owned' ? 'OWNED' : 'FARMER';
+    const slice = stockSummaryByFilter?.[key];
+    if (!slice) {
+      return { effectiveSummary: [], effectiveSizes: sizes };
+    }
+    return {
+      effectiveSummary: slice.stockSummary,
+      effectiveSizes: slice.chartData?.sizes ?? sizes,
+    };
+  }, [
+    showStockFilterTabs,
+    stockFilterTab,
+    stockSummary,
+    sizes,
+    stockSummaryByFilter,
+  ]);
 
   const { rows, totals, tabTotals } = useMemo(() => {
     const rowsData: TableRowData[] = [];
@@ -81,16 +119,16 @@ export function StorageSummaryTable({
       outgoing: 0,
     };
 
-    for (const size of sizes) {
+    for (const size of effectiveSizes) {
       totals[size] = 0;
     }
 
-    for (const varietyRow of stockSummary) {
+    for (const varietyRow of effectiveSummary) {
       const sizeMap = buildSizeMap(varietyRow.sizes);
       const values: Record<string, number> = {};
       let rowTotal = 0;
 
-      for (const size of sizes) {
+      for (const size of effectiveSizes) {
         const data = sizeMap.get(size) ?? { initial: 0, current: 0 };
         const outgoing = Math.max(0, data.initial - data.current);
         const value =
@@ -110,7 +148,7 @@ export function StorageSummaryTable({
     }
 
     return { rows: rowsData, totals, tabTotals };
-  }, [stockSummary, sizes, activeTab]);
+  }, [effectiveSummary, effectiveSizes, activeTab]);
 
   const columns = useMemo<ColumnDef<TableRowData>[]>(() => {
     const cols: ColumnDef<TableRowData>[] = [
@@ -124,7 +162,7 @@ export function StorageSummaryTable({
         ),
       },
     ];
-    for (const size of sizes) {
+    for (const size of effectiveSizes) {
       cols.push({
         id: size,
         accessorFn: (row) => row.values[size] ?? 0,
@@ -146,7 +184,7 @@ export function StorageSummaryTable({
       ),
     });
     return cols;
-  }, [sizes]);
+  }, [effectiveSizes]);
 
   const table = useReactTable({
     data: rows,
@@ -161,7 +199,7 @@ export function StorageSummaryTable({
         ? tabTotals.initial
         : tabTotals.outgoing;
 
-  if (sizes.length === 0) {
+  if (effectiveSizes.length === 0) {
     return (
       <Card className="border-border rounded-xl shadow-sm">
         <CardContent className="p-4 py-8 sm:p-5">
@@ -192,6 +230,28 @@ export function StorageSummaryTable({
               </p>
             )}
           </div>
+          {showStockFilterTabs && (
+            <div className="border-border flex gap-1 border-b">
+              {STOCK_FILTER_TABS.map(({ id, label }) => {
+                const isActive = stockFilterTab === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setStockFilterTab(id)}
+                    className={cn(
+                      'font-custom focus-visible:ring-primary border-b-2 px-3 pt-1 pb-2.5 text-sm font-medium transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
+                      isActive
+                        ? 'border-primary text-primary'
+                        : 'text-muted-foreground hover:text-foreground border-transparent'
+                    )}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           {controlledTab == null && (
             <div className="border-border flex gap-1 border-b">
               {TAB_CONFIG.map(({ id, label }) => {
@@ -308,7 +368,7 @@ export function StorageSummaryTable({
                   <TableHead className="font-custom bg-muted/50 border-border border px-4 py-2 font-bold">
                     Bag Total
                   </TableHead>
-                  {sizes.map((size) => (
+                  {effectiveSizes.map((size) => (
                     <TableCell
                       key={size}
                       className="font-custom bg-muted/50 border-border border px-4 py-2 font-bold tabular-nums"

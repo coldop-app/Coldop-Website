@@ -24,6 +24,7 @@ import { useGetStorageSummary } from '@/services/analytics/useGetStorageSummary'
 import { useGetTopFarmers } from '@/services/analytics/useGetTopFarmers';
 import { StorageSummaryTable } from '@/components/analytics/storage-summary-table';
 import { useStore } from '@/stores/store';
+import { shouldShowSpecialFields } from '@/lib/special-fields';
 import CapacityUtilisation from './capacity-utilisation';
 import SizeDistributionChart from './size-distribution-chart';
 import TopFarmersChart from './top-farmers-chart';
@@ -34,8 +35,14 @@ type AnalyticsMode = 'current' | 'initial' | 'outgoing';
 const AnalyticsPage = memo(function AnalyticsPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<AnalyticsMode>('current');
+  const admin = useStore((s) => s.admin);
+  const showStockFilterTabs = shouldShowSpecialFields(admin?.mobileNumber);
   const { data, isLoading, error, refetch, isFetching } =
     useGetStorageSummary();
+  const { data: dataByFilter } = useGetStorageSummary({
+    stockFilter: true,
+    enabled: showStockFilterTabs,
+  });
   const { data: topFarmersData } = useGetTopFarmers();
 
   const handleStockSummaryCellClick = useCallback(
@@ -342,6 +349,12 @@ const AnalyticsPage = memo(function AnalyticsPage() {
                 sizes={sizesForTable}
                 controlledTab={mode}
                 onCellClick={handleStockSummaryCellClick}
+                showStockFilterTabs={showStockFilterTabs}
+                stockSummaryByFilter={
+                  showStockFilterTabs && dataByFilter
+                    ? dataByFilter
+                    : undefined
+                }
               />
 
               {/* Advanced Analytics CTA */}

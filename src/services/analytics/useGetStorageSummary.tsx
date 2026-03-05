@@ -1,4 +1,4 @@
-import { useQuery, queryOptions } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult, queryOptions } from '@tanstack/react-query';
 import storeAdminAxiosClient from '@/lib/axios';
 import { queryClient } from '@/lib/queryClient';
 
@@ -58,46 +58,96 @@ export interface StorageSummaryData {
   topSize: TopSize | null;
 }
 
-/** API response shape for GET /analytics/summary */
+/** When stockFilter=true, summary is grouped by filter key (e.g. FARMER, OWNED) */
+export type StockSummaryByFilterData = Record<string, StorageSummaryData>;
+
+/** API response shape for GET /analytics/summary (default) */
 export interface GetStorageSummaryApiResponse {
   success: boolean;
   data: StorageSummaryData;
   message: string;
 }
 
+/** API response shape for GET /analytics/summary?stockFilter=true */
+export interface GetStorageSummaryByFilterApiResponse {
+  success: boolean;
+  data: { stockSummaryByFilter: StockSummaryByFilterData };
+  message: string;
+}
+
 /** Query key factory */
 export const storageSummaryKeys = {
   all: ['analytics'] as const,
-  summary: () => [...storageSummaryKeys.all, 'summary'] as const,
+  summary: (stockFilter?: boolean) =>
+    [...storageSummaryKeys.all, 'summary', stockFilter] as const,
 };
 
 /** Fetcher used by queryOptions and prefetch */
-async function fetchStorageSummary(): Promise<StorageSummaryData> {
+async function fetchStorageSummary(
+  stockFilter?: boolean
+): Promise<StorageSummaryData | StockSummaryByFilterData> {
+  const params = new URLSearchParams();
+  if (stockFilter === true) params.set('stockFilter', 'true');
+  const url =
+    '/analytics/summary' +
+    (params.toString() ? '?' + params.toString() : '');
+
   const { data } =
-    await storeAdminAxiosClient.get<GetStorageSummaryApiResponse>(
-      '/analytics/summary'
-    );
+    await storeAdminAxiosClient.get<
+      GetStorageSummaryApiResponse | GetStorageSummaryByFilterApiResponse
+    >(url);
 
   if (!data.success || data.data == null) {
     throw new Error(data.message ?? 'Failed to fetch storage summary');
   }
 
-  return data.data;
+  if (stockFilter && 'stockSummaryByFilter' in data.data) {
+    return data.data.stockSummaryByFilter;
+  }
+
+  return data.data as StorageSummaryData;
+}
+
+/** Options for the storage summary query */
+export interface UseGetStorageSummaryOptions {
+  /** When true, returns summary grouped by stock filter (e.g. FARMER, OWNED) */
+  stockFilter?: boolean;
+  /** When false, the query is not executed (e.g. when filter tabs are hidden). */
+  enabled?: boolean;
 }
 
 /** Query options – use with useQuery, prefetchQuery, or in loaders */
-export const storageSummaryQueryOptions = () =>
+export const storageSummaryQueryOptions = (
+  options: UseGetStorageSummaryOptions = {}
+) =>
   queryOptions({
-    queryKey: storageSummaryKeys.summary(),
-    queryFn: fetchStorageSummary,
+    queryKey: storageSummaryKeys.summary(options.stockFilter),
+    queryFn: () => fetchStorageSummary(options.stockFilter),
   });
 
 /** Hook to fetch stock summary for the authenticated store admin's cold storage. */
-export function useGetStorageSummary() {
-  return useQuery(storageSummaryQueryOptions());
+export function useGetStorageSummary(
+  options?: Omit<UseGetStorageSummaryOptions, 'stockFilter'> & {
+    stockFilter?: false;
+  }
+): UseQueryResult<StorageSummaryData, Error>;
+export function useGetStorageSummary(options: {
+  stockFilter: true;
+  enabled?: boolean;
+}): UseQueryResult<StockSummaryByFilterData, Error>;
+export function useGetStorageSummary(
+  options: UseGetStorageSummaryOptions = {}
+): UseQueryResult<StorageSummaryData | StockSummaryByFilterData, Error> {
+  const { enabled = true, ...queryOptions } = options;
+  return useQuery({
+    ...storageSummaryQueryOptions({ ...queryOptions }),
+    enabled,
+  });
 }
 
 /** Prefetch storage summary – e.g. before opening analytics page */
-export function prefetchStorageSummary() {
-  return queryClient.prefetchQuery(storageSummaryQueryOptions());
+export function prefetchStorageSummary(
+  options: UseGetStorageSummaryOptions = {}
+) {
+  return queryClient.prefetchQuery(storageSummaryQueryOptions(options));
 }

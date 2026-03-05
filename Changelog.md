@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.13] - 2026-03-06
+
+### Added
+
+- **Stock summary – All / Owned / Farmer tabs** – Analytics storage summary table and farmer profile stock summary table now show three filter tabs ("All", "Owned", "Farmer") when `shouldShowSpecialFields(admin?.mobileNumber)` is true; "All" shows combined data, "Owned" and "Farmer" show data from gate passes with the corresponding stock filter
+- **Analytics summary API – stockFilter** – `useGetStorageSummary` supports optional `stockFilter: true` to fetch summary grouped by stock filter (OWNED / FARMER); by-filter request is only made when filter tabs are visible (`enabled` option)
+- **Storage summary types** – `StockSummaryByFilterData`, `GetStorageSummaryByFilterApiResponse`, and overloaded `useGetStorageSummary` return types for correct typing of default vs by-filter responses
+
+### Changed
+
+- **Analytics page** – Fetches by-filter summary when special fields are shown and passes it to `StorageSummaryTable` for Owned/Farmer tab data
+- **Farmer stock summary table** – Filters `incomingEntries` by `stockFilter === 'OWNED'` or `'FARMER'` when Owned/Farmer tab is selected; breakdown dialog uses filtered entries
+
+---
+
 ## [0.4.12] - 2026-03-05
 
 ### Added
