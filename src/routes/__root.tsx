@@ -2,7 +2,6 @@ import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
 import { ThemeProvider } from '@/components/theme-provider';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
-import { PaymentReminderToaster } from '@/components/payment-reminder-toaster';
 import { queryClient } from '@/lib/queryClient';
 import type { StoreAdmin } from '@/types/store-admin';
 import ErrorPage from '@/components/error-page';
@@ -25,7 +24,6 @@ export const Route = createRootRouteWithContext<MyRouterContext>()({
         <Outlet />
         {/* <Maintenance /> */}
         <Toaster />
-        <PaymentReminderToaster />
       </ThemeProvider>
     </QueryClientProvider>
   ),
