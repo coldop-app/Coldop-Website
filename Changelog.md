@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.14] - 2026-03-16
+
+### Added
+
+- **Transfer stock between farmers** – New `TransferStockForm` under Daybook lets store admins move stock from one farmer to another using existing incoming gate passes; includes farmer search selector, per-gate-pass quantity allocation, and a confirmation summary sheet before creating the transfer.
+- **Transfer stock routes & history** – New `/store-admin/transfer-stock` screen for creating transfers and `/store-admin/transfer-stock-history` for viewing past transfers with paging and filters; accessible from Daybook actions and the user menu.
+
+### Changed
+
+- **Navigation – Daybook & history** – Daybook navigation now treats `/store-admin/transfer-stock` as part of the Daybook section; app top bar includes a "Transfer Stock" entry under the user menu for quick access.
+
+---
+
 ## [0.4.13] - 2026-03-06
 
 ### Added

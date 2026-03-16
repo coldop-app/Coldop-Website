@@ -16,6 +16,12 @@ const navigationItems: NavigationItem[] = [
     name: 'Daybook',
     href: '/store-admin/daybook',
     icon: BookOpen,
+    activePaths: [
+      '/store-admin/daybook',
+      '/store-admin/incoming',
+      '/store-admin/outgoing',
+      '/store-admin/transfer-stock',
+    ],
   },
   {
     name: 'People',
