@@ -5,6 +5,22 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.15] - 2026-03-18
+
+### Added
+
+- **Form keyboard flow** – `useEnterToNext` / `focusNextInForm` (`src/hooks/use-enter-to-next.ts`): Enter advances to the next focusable field in the same form without submitting; textareas keep newline on Enter (Shift+Enter or remarks field uses explicit next-focus).
+- **Incoming gate pass form** – Form uses Enter-to-next; moving to step 2 scrolls to top and focuses the first chamber field; remarks textarea Enter moves to next field.
+- **SearchSelector** – Optional `openOnFocus` (default `true`): when focusing the trigger via keyboard (e.g. Tab), the list opens so the search field is ready; mouse open/close behavior preserved; trigger uses `type="button"`.
+
+### Changed
+
+- **DatePicker** – Accepts both `dd.mm.yyyy` and `YYYY-MM-DD`; normalizes display and value on blur; placeholder documents both formats; calendar button is `type="button"` with `aria-label="Open calendar"`.
+- **Incoming create – Summary sheet** – Create only runs after explicit confirmation in the summary sheet (fixes accidental submit on first Review); guard against double final submit while create is in flight; closing the sheet resets confirm state.
+- **Incoming summary sheet** – Opening the sheet focuses "Create Gate Pass" (or Cancel if disabled); primary button supports keyboard activation via Enter.
+
+---
+
 ## [0.4.14] - 2026-03-16
 
 ### Added

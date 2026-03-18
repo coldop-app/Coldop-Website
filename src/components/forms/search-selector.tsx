@@ -39,6 +39,12 @@ export interface SearchSelectorProps<T extends string> {
   defaultValue?: T | '';
   /** When set, component is controlled: display and selection follow this value */
   value?: T | '';
+  /**
+   * When true (default), opening the list via Tab/Enter-to-next focuses the search
+   * field so you can type or arrow through options without pressing Enter again.
+   * Mouse clicks still use normal open/close behavior.
+   */
+  openOnFocus?: boolean;
 }
 
 export function SearchSelector<T extends string>({
@@ -55,11 +61,15 @@ export function SearchSelector<T extends string>({
   loadingMessage = 'Loading...',
   defaultValue = '',
   value: controlledValue,
+  openOnFocus = true,
 }: SearchSelectorProps<T>) {
   const [open, setOpen] = React.useState(false);
   const [uncontrolledValue, setUncontrolledValue] = React.useState<T | ''>(
     defaultValue
   );
+  const contentRef = React.useRef<HTMLDivElement>(null);
+  const openedByPointerRef = React.useRef(false);
+  const skipNextFocusOpenRef = React.useRef(false);
 
   const isControlled = controlledValue !== undefined;
   const displayValue = isControlled ? controlledValue : uncontrolledValue;
@@ -76,7 +86,25 @@ export function SearchSelector<T extends string>({
     const newValue = currentValue === displayValue ? '' : currentValue;
     if (!isControlled) setUncontrolledValue(newValue);
     onSelect?.(newValue);
+    skipNextFocusOpenRef.current = true;
     setOpen(false);
+  };
+
+  const handleTriggerFocus = (e: React.FocusEvent<HTMLButtonElement>) => {
+    if (!openOnFocus || disabled) return;
+    if (skipNextFocusOpenRef.current) {
+      skipNextFocusOpenRef.current = false;
+      return;
+    }
+    if (openedByPointerRef.current) {
+      openedByPointerRef.current = false;
+      return;
+    }
+    const rt = e.relatedTarget as Node | null;
+    if (rt && contentRef.current?.contains(rt)) {
+      return;
+    }
+    setOpen(true);
   };
 
   const isEmpty = !loading && options.length === 0;
@@ -86,11 +114,16 @@ export function SearchSelector<T extends string>({
       <PopoverTrigger asChild>
         <Button
           id={id}
+          type="button"
           variant="outline"
           role="combobox"
           aria-expanded={open}
           className={cn('w-[200px] justify-between', buttonClassName)}
           disabled={disabled}
+          onPointerDown={(ev) => {
+            if (ev.button === 0) openedByPointerRef.current = true;
+          }}
+          onFocus={handleTriggerFocus}
         >
           {selectedOption ? selectedOption.label : placeholder}
           <ChevronsUpDown className="opacity-50" />
@@ -107,7 +140,11 @@ export function SearchSelector<T extends string>({
         sideOffset={10}
         avoidCollisions={false}
         collisionPadding={0}
+        onEscapeKeyDown={() => {
+          skipNextFocusOpenRef.current = true;
+        }}
       >
+        <div ref={contentRef}>
         <Command>
           <CommandInput placeholder={searchPlaceholder} className="h-9" />
           <CommandList>
@@ -153,6 +190,7 @@ export function SearchSelector<T extends string>({
             )}
           </CommandList>
         </Command>
+        </div>
       </PopoverContent>
     </Popover>
   );

@@ -156,7 +156,6 @@ export const IncomingSummarySheet = memo(function IncomingSummarySheet({
 }: IncomingSummarySheetProps) {
   const admin = useStore((s) => s.admin);
   const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
-
   const totalBags = quantityRows.reduce(
     (sum, row) => sum + (row.quantity ?? 0),
     0
@@ -167,6 +166,19 @@ export const IncomingSummarySheet = memo(function IncomingSummarySheet({
       <SheetContent
         side="right"
         className="flex w-full flex-col border-0 p-0 sm:max-w-lg"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          requestAnimationFrame(() => {
+            const create = document.getElementById(
+              'incoming-summary-create-gate-pass'
+            ) as HTMLButtonElement | null;
+            if (create && !create.disabled) {
+              create.focus();
+            } else {
+              document.getElementById('incoming-summary-cancel')?.focus();
+            }
+          });
+        }}
       >
         {/* ------------------------------------------------------------------ */}
         {/* Content area (theme-aware light/dark)                               */}
@@ -347,6 +359,7 @@ export const IncomingSummarySheet = memo(function IncomingSummarySheet({
           <SheetFooter className="border-border bg-muted/50 border-t px-4 py-4 sm:px-6">
             <div className="flex w-full flex-col gap-3 sm:flex-row">
               <Button
+                id="incoming-summary-cancel"
                 type="button"
                 variant="outline"
                 className="font-custom border-border text-foreground hover:bg-muted hover:text-foreground w-full bg-transparent sm:w-auto"
@@ -356,10 +369,17 @@ export const IncomingSummarySheet = memo(function IncomingSummarySheet({
                 Cancel
               </Button>
               <Button
+                id="incoming-summary-create-gate-pass"
                 type="button"
                 size="lg"
                 className="font-custom w-full font-bold sm:flex-1"
                 onClick={onSubmit}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  if (isPending || isLoadingVoucher || !gatePassNo) return;
+                  e.preventDefault();
+                  onSubmit();
+                }}
                 disabled={isPending || isLoadingVoucher || !gatePassNo}
               >
                 {isPending ? (

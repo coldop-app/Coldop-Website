@@ -1,4 +1,4 @@
-import { memo, useMemo, useRef, useState } from 'react';
+import { memo, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import * as z from 'zod';
 
@@ -35,6 +35,10 @@ import {
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
 import { useStore } from '@/stores/store';
 import { shouldShowSpecialFields } from '@/lib/special-fields';
+import {
+  focusNextInForm,
+  useEnterToNext,
+} from '@/hooks/use-enter-to-next';
 import { Plus, Trash2 } from 'lucide-react';
 
 const DEFAULT_LOCATION = { chamber: '', floor: '', row: '' };
@@ -99,6 +103,8 @@ export const IncomingFormBase = memo(function IncomingFormBase({
 
   const { data: preferences, isLoading: isLoadingPreferences } =
     useGetPreferences();
+
+  const onEnterToNext = useEnterToNext();
 
   /** Bag sizes from preferences (first commodity). */
   const quantitySizes = useMemo(
@@ -319,7 +325,20 @@ export const IncomingFormBase = memo(function IncomingFormBase({
 
   const [step, setStep] = useState<1 | 2>(1);
   const [summaryOpen, setSummaryOpen] = useState(false);
-  const openSheetRef = useRef(false);
+  /** True only when user confirms in the summary sheet (not on first Review). */
+  const summaryConfirmedRef = useRef(false);
+  const createFinalSubmitInFlightRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (step !== 2) return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    const id = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById('incoming-form-step2-first-chamber')?.focus();
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [step]);
 
   const form = useForm({
     defaultValues: resolvedDefaultValues ?? {
@@ -401,19 +420,28 @@ export const IncomingFormBase = memo(function IncomingFormBase({
         customMarka: value.customMarka?.trim() || undefined,
       };
 
-      if (!isEditMode && !openSheetRef.current) {
-        openSheetRef.current = true;
+      if (!isEditMode && !summaryConfirmedRef.current) {
         setSummaryOpen(true);
         return;
       }
 
       if (!isEditMode) {
-        openSheetRef.current = false;
+        if (createFinalSubmitInFlightRef.current) {
+          return;
+        }
+        createFinalSubmitInFlightRef.current = true;
       }
 
-      await onSubmitProp(payload);
+      try {
+        await onSubmitProp(payload);
+      } finally {
+        if (!isEditMode) {
+          createFinalSubmitInFlightRef.current = false;
+        }
+      }
 
       if (!isEditMode) {
+        summaryConfirmedRef.current = false;
         form.reset();
         setStep(1);
         setSummaryOpen(false);
@@ -504,6 +532,7 @@ export const IncomingFormBase = memo(function IncomingFormBase({
       </div>
 
       <form
+        onKeyDown={onEnterToNext}
         onSubmit={(e) => {
           e.preventDefault();
           e.stopPropagation();
@@ -1107,6 +1136,11 @@ export const IncomingFormBase = memo(function IncomingFormBase({
                                           Chamber
                                         </FieldLabel>
                                         <Input
+                                          id={
+                                            index === 0
+                                              ? 'incoming-form-step2-first-chamber'
+                                              : undefined
+                                          }
                                           value={loc.chamber}
                                           onChange={(e) =>
                                             setLocation(
@@ -1185,6 +1219,12 @@ export const IncomingFormBase = memo(function IncomingFormBase({
                     <textarea
                       value={field.state.value}
                       onChange={(e) => field.handleChange(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          focusNextInForm(e.currentTarget);
+                        }
+                      }}
                       className="border-input bg-background text-foreground font-custom placeholder:text-muted-foreground focus-visible:ring-ring focus-visible:ring-offset-background w-full rounded-md border p-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                       rows={4}
                     />
@@ -1242,8 +1282,10 @@ export const IncomingFormBase = memo(function IncomingFormBase({
         <IncomingSummarySheet
           open={summaryOpen}
           onOpenChange={(open) => {
-            if (!open) openSheetRef.current = false;
             setSummaryOpen(open);
+            if (!open) {
+              summaryConfirmedRef.current = false;
+            }
           }}
           voucherNumberDisplay={voucherNumberDisplay}
           farmerDisplayName={farmerDisplayName}
@@ -1255,7 +1297,10 @@ export const IncomingFormBase = memo(function IncomingFormBase({
           isPending={isSubmitting}
           isLoadingVoucher={isLoadingVoucher}
           gatePassNo={gatePassNoForSummary}
-          onSubmit={() => form.handleSubmit()}
+          onSubmit={() => {
+            summaryConfirmedRef.current = true;
+            void form.handleSubmit();
+          }}
         />
       )}
     </main>

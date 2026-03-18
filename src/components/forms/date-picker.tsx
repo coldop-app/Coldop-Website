@@ -12,9 +12,46 @@ import {
 import { cn } from '@/lib/utils';
 import { formatDate } from '@/lib/helpers';
 
+/** Accepts dd.mm.yyyy or YYYY-MM-DD; returns local calendar date or undefined. */
+function parseFlexibleDate(str: string): Date | undefined {
+  const trimmed = str.trim();
+  if (!trimmed) return undefined;
+
+  const iso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+  if (iso) {
+    const year = Number(iso[1]);
+    const month = Number(iso[2]);
+    const day = Number(iso[3]);
+    if (!year || !month || !day) return undefined;
+    const parsed = new Date(year, month - 1, day);
+    if (
+      parsed.getFullYear() !== year ||
+      parsed.getMonth() !== month - 1 ||
+      parsed.getDate() !== day
+    ) {
+      return undefined;
+    }
+    return parsed;
+  }
+
+  const parts = trimmed.split('.').map(Number);
+  if (parts.length !== 3) return undefined;
+  const [day, month, year] = parts;
+  if (!day || !month || !year) return undefined;
+  const parsed = new Date(year, month - 1, day);
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return undefined;
+  }
+  return parsed;
+}
+
 interface DatePickerProps {
-  value?: string; // dd.mm.yyyy format
-  onChange?: (value: string) => void; // Called with dd.mm.yyyy format
+  value?: string; // dd.mm.yyyy (or YYYY-MM-DD from parent — normalized on change)
+  onChange?: (value: string) => void; // Always dd.mm.yyyy
   label?: string; // Optional label override
   id?: string; // Optional id override
   /** When true, input and container take full width (e.g. for mobile stacks) */
@@ -33,14 +70,6 @@ export const DatePicker: React.FC<DatePickerProps> = ({
 }) => {
   const [open, setOpen] = React.useState(false);
 
-  // Parse the date string to Date object for the calendar
-  const parseDate = (str: string): Date | undefined => {
-    const [day, month, year] = str.split('.').map(Number);
-    if (!day || !month || !year) return undefined;
-    const parsed = new Date(year, month - 1, day);
-    return isNaN(parsed.getTime()) ? undefined : parsed;
-  };
-
   // Default to today's date
   const today = new Date();
   const defaultDateString = formatDate(today);
@@ -49,27 +78,56 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   const dateString = value ?? defaultDateString;
 
   const [date, setDate] = React.useState<Date | undefined>(() =>
-    parseDate(dateString)
+    parseFlexibleDate(dateString)
   );
-  const [inputValue, setInputValue] = React.useState(dateString);
+  const [inputValue, setInputValue] = React.useState(() => {
+    const p = parseFlexibleDate(dateString);
+    return p ? formatDate(p) : dateString;
+  });
 
   // Sync internal state when controlled value changes
   React.useEffect(() => {
     if (value !== undefined) {
-      setInputValue(value);
-      const parsed = parseDate(value);
-      if (parsed) setDate(parsed);
+      const parsed = parseFlexibleDate(value);
+      if (parsed) {
+        setInputValue(formatDate(parsed));
+        setDate(parsed);
+      } else {
+        setInputValue(value);
+      }
     }
   }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newValue = e.target.value;
     setInputValue(newValue);
-    const parsed = parseDate(newValue);
+    const parsed = parseFlexibleDate(newValue);
     if (parsed) {
       setDate(parsed);
-      // Call onChange with formatted date string
       onChange?.(formatDate(parsed));
+    }
+  };
+
+  const handleInputBlur = () => {
+    const parsed = parseFlexibleDate(inputValue);
+    if (parsed) {
+      const formatted = formatDate(parsed);
+      setInputValue(formatted);
+      setDate(parsed);
+      onChange?.(formatted);
+      return;
+    }
+    if (value !== undefined) {
+      const p = parseFlexibleDate(value);
+      setInputValue(p ? formatDate(p) : value);
+      return;
+    }
+    const fallback = date ?? parseFlexibleDate(defaultDateString);
+    if (fallback) {
+      const formatted = formatDate(fallback);
+      setInputValue(formatted);
+      setDate(fallback);
+      onChange?.(formatted);
     }
   };
 
@@ -99,9 +157,10 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         <input
           id={id}
           type="text"
-          placeholder="dd.mm.yyyy"
+          placeholder="dd.mm.yyyy or yyyy-mm-dd"
           value={inputValue}
           onChange={handleInputChange}
+          onBlur={handleInputBlur}
           className={cn(
             'border-input bg-background rounded-md border px-4 py-2.5 text-sm shadow-sm transition-colors',
             'focus-visible:ring-ring focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
@@ -111,7 +170,13 @@ export const DatePicker: React.FC<DatePickerProps> = ({
         {/* Calendar popover */}
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="icon" className="h-10 w-10">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              className="h-10 w-10"
+              aria-label="Open calendar"
+            >
               <CalendarIcon className="h-4 w-4" />
             </Button>
           </PopoverTrigger>
