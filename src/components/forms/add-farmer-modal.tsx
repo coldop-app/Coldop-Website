@@ -1,5 +1,7 @@
 import debounce from 'lodash/debounce';
 import { memo, useState, useMemo, useEffect } from 'react';
+
+import { useEnterToNext } from '@/hooks/use-enter-to-next';
 import { useForm } from '@tanstack/react-form';
 import * as z from 'zod';
 import { Info, Loader2, Plus } from 'lucide-react';
@@ -70,6 +72,8 @@ export const AddFarmerModal = memo(function AddFarmerModal({
     status: MobileCheckStatus;
     farmer?: CheckFarmerMobileResponseFarmer | null;
   }>({ status: 'idle' });
+
+  const onEnterToNext = useEnterToNext();
 
   /* ----------------------------------
      Used numbers (from links)
@@ -293,8 +297,19 @@ export const AddFarmerModal = memo(function AddFarmerModal({
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="font-custom max-h-[85dvh] overflow-y-auto p-4 sm:max-w-[425px] sm:p-6">
+      <DialogContent
+        className="font-custom max-h-[85dvh] overflow-y-auto p-4 sm:max-w-[425px] sm:p-6"
+        onOpenAutoFocus={(e) => {
+          e.preventDefault();
+          requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+              document.getElementById('add-farmer-first-field')?.focus();
+            });
+          });
+        }}
+      >
         <form
+          onKeyDown={onEnterToNext}
           onSubmit={(e) => {
             e.preventDefault();
             e.stopPropagation();
@@ -320,7 +335,7 @@ export const AddFarmerModal = memo(function AddFarmerModal({
                 return (
                   <Field data-invalid={isInvalid}>
                     <div className="flex items-center justify-between">
-                      <FieldLabel htmlFor={field.name}>
+                      <FieldLabel htmlFor="add-farmer-first-field">
                         Account Number
                       </FieldLabel>
 
@@ -352,7 +367,7 @@ export const AddFarmerModal = memo(function AddFarmerModal({
                     <div className="flex flex-col gap-2">
                       <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
                         <Input
-                          id={field.name}
+                          id="add-farmer-first-field"
                           name={field.name}
                           type="number"
                           value={field.state.value}

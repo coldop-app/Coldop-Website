@@ -340,6 +340,26 @@ export const IncomingFormBase = memo(function IncomingFormBase({
     return () => cancelAnimationFrame(id);
   }, [step]);
 
+  useLayoutEffect(() => {
+    if (step !== 1) return;
+    if (isEditMode && !resolvedDefaultValues) return;
+    if (isEditMode && quantitySizes.length === 0 && isLoadingPreferences) {
+      return;
+    }
+    const id = window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById('incoming-form-step1-first-field')?.focus();
+      });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [
+    step,
+    isEditMode,
+    resolvedDefaultValues,
+    isLoadingPreferences,
+    quantitySizes.length,
+  ]);
+
   const form = useForm({
     defaultValues: resolvedDefaultValues ?? {
       manualParchiNumber: '',
@@ -556,6 +576,7 @@ export const IncomingFormBase = memo(function IncomingFormBase({
                       </span>
                     </FieldLabel>
                     <Input
+                      id="incoming-form-step1-first-field"
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
