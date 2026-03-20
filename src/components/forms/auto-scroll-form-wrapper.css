@@ -1,0 +1,9 @@
+.auto-scroll-form-wrapper :is(
+    input,
+    textarea,
+    select,
+    [role='combobox'],
+    [data-slot='select-trigger']
+  ) {
+  scroll-margin-top: 100px;
+}
