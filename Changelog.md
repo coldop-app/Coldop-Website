@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.4.15] - 2026-03-18
 
+### Removed
+
+- **Transfer stock** – Removed transfer stock UI, routes, and API hooks (`/store-admin/transfer-stock`, `/store-admin/transfer-stock-history`); Daybook and navigation no longer link to transfer stock flows.
+
 ### Added
 
 - **Form keyboard flow** – `useEnterToNext` / `focusNextInForm` (`src/hooks/use-enter-to-next.ts`): Enter advances to the next focusable field in the same form without submitting; textareas keep newline on Enter (Shift+Enter or remarks field uses explicit next-focus).

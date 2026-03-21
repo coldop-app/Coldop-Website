@@ -375,12 +375,6 @@ const DaybookPage = memo(function DaybookPage() {
                 </Link>
               </Button>
               <Button
-                className="font-custom h-10 w-full gap-2 bg-sky-600 text-white hover:bg-sky-700 sm:w-auto"
-                asChild
-              >
-                <Link to="/store-admin/transfer-stock">Transfer Stock</Link>
-              </Button>
-              <Button
                 variant="secondary"
                 className="font-custom h-10 w-full gap-2 sm:w-auto"
                 onClick={() => setReportsDialogOpen(true)}

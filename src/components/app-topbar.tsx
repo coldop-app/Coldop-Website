@@ -68,16 +68,6 @@ const UserMenuComponent = ({ admin, coldStorage }: UserMenuProps) => {
         </Link>
       </DropdownMenuItem>
 
-      <DropdownMenuItem asChild>
-        <Link
-          to="/store-admin/transfer-stock-history"
-          className="focus:bg-accent focus:text-accent-foreground flex cursor-pointer items-center"
-        >
-          <History className="mr-2 h-4 w-4" />
-          <span>Transfer Stock</span>
-        </Link>
-      </DropdownMenuItem>
-
       <DropdownMenuSeparator />
 
       <DropdownMenuItem asChild>
