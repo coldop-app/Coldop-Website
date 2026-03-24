@@ -197,9 +197,14 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
               )}
               <Badge
                 variant="secondary"
-                className="px-2.5 py-1 text-[10px] font-medium"
+                className="inline-flex max-w-full flex-wrap items-center gap-x-1 px-2.5 py-1 text-[10px] font-medium"
               >
-                {totalInitial.toLocaleString('en-IN')} bags
+                <span>{totalInitial.toLocaleString('en-IN')} bags</span>
+                {entry.type === 'Incoming-transfer' && (
+                  <span className="text-blue-600 font-semibold">
+                    · Incoming-transfer
+                  </span>
+                )}
               </Badge>
               <Badge
                 variant="outline"

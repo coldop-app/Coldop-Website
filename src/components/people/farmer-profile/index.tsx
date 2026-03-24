@@ -262,17 +262,11 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
     [preferences?.commodities]
   );
 
-  const combinedEntries: DaybookEntry[] = useMemo(() => {
-    const inc: DaybookEntry[] = incoming.map((e) => ({
-      ...e,
-      type: 'RECEIPT' as const,
-    }));
-    const out: DaybookEntry[] = outgoing.map((e) => ({
-      ...e,
-      type: 'DELIVERY' as const,
-    }));
-    return [...inc, ...out];
-  }, [incoming, outgoing]);
+  /** Preserve API `type` (RECEIPT / Incoming-transfer / DELIVERY / Outgoing-transfer); do not normalize to RECEIPT/DELIVERY so cards show transfer labels. */
+  const combinedEntries: DaybookEntry[] = useMemo(
+    () => [...incoming, ...outgoing],
+    [incoming, outgoing]
+  );
 
   const filteredAndSortedEntries = useMemo(() => {
     let list = combinedEntries;
@@ -916,7 +910,8 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
         ) : !isError ? (
           <div className="w-full space-y-4">
             {filteredAndSortedEntries.map((entry, idx) =>
-              entry.type === 'RECEIPT' ? (
+              entry.type === 'RECEIPT' ||
+              entry.type === 'Incoming-transfer' ? (
                 <IncomingGatePassCard
                   key={entry._id ?? `inc-${idx}`}
                   entry={entry as IncomingGatePassEntry}

@@ -434,7 +434,8 @@ const DaybookPage = memo(function DaybookPage() {
             entries.length > 0 && (
               <div className="w-full space-y-4">
                 {entries.map((entry) =>
-                  entry.type === 'RECEIPT' ? (
+                  entry.type === 'RECEIPT' ||
+                  entry.type === 'Incoming-transfer' ? (
                     <IncomingGatePassCard
                       key={entry._id}
                       entry={entry as IncomingGatePassEntry}

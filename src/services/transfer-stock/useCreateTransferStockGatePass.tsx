@@ -65,6 +65,7 @@ export type CreateTransferStockGatePassApiError = {
 
 export const transferStockGatePassKeys = {
   all: ['transfer-stock-gate-pass'] as const,
+  list: () => [...transferStockGatePassKeys.all, 'list'] as const,
 };
 
 const DEFAULT_ERROR_MESSAGE = 'Failed to create transfer stock gate pass';

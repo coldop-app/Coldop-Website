@@ -94,7 +94,7 @@ export interface IncomingGatePassEntry {
   createdBy: DaybookCreatedBy;
   gatePassNo: number;
   date: string;
-  type: 'RECEIPT';
+  type: 'RECEIPT' | 'Incoming-transfer';
   variety?: string;
   bagSizes: DaybookBagSize[];
   truckNumber?: string;
@@ -113,7 +113,7 @@ export interface OutgoingGatePassEntry {
   createdBy: DaybookCreatedBy;
   gatePassNo: number;
   date: string;
-  type: 'DELIVERY';
+  type: 'DELIVERY' | 'Outgoing-transfer';
   variety?: string;
   truckNumber?: string;
   orderDetails?: DaybookOrderDetail[];
@@ -134,7 +134,7 @@ export interface DaybookEntry {
   createdBy: DaybookCreatedBy;
   gatePassNo: number;
   date: string;
-  type: 'RECEIPT' | 'DELIVERY';
+  type: 'RECEIPT' | 'DELIVERY' | 'Incoming-transfer' | 'Outgoing-transfer';
   /** Legacy top-level variety; prefer varieties from incomingGatePassEntries when present. */
   variety?: string;
   truckNumber?: string;

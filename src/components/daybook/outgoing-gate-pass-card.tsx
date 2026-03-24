@@ -286,9 +286,14 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
             <div className="flex shrink-0 items-center gap-2">
               <Badge
                 variant="secondary"
-                className="px-2.5 py-1 text-[10px] font-medium"
+                className="inline-flex max-w-full flex-wrap items-center gap-x-1 px-2.5 py-1 text-[10px] font-medium"
               >
-                {bags.toLocaleString('en-IN')} bags
+                <span>{bags.toLocaleString('en-IN')} bags</span>
+                {entry.type === 'Outgoing-transfer' && (
+                  <span className="text-destructive font-semibold">
+                    · Outgoing-transfer
+                  </span>
+                )}
               </Badge>
             </div>
           </div>

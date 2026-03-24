@@ -78,7 +78,10 @@ async function fetchFarmerGatePasses(
       ...e,
       type: e.type ?? (e.orderDetails?.length ? 'DELIVERY' : 'RECEIPT'),
     } as DaybookEntry;
-    if (entry.type === 'RECEIPT') {
+    if (
+      entry.type === 'RECEIPT' ||
+      entry.type === 'Incoming-transfer'
+    ) {
       incoming.push(entry);
     } else {
       outgoing.push(entry);

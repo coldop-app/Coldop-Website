@@ -44,7 +44,11 @@ function getBreakdownEntries(
 ): BreakdownEntry[] {
   const entries: BreakdownEntry[] = [];
   for (const entry of incomingEntries) {
-    if (entry.type !== 'RECEIPT' || !entry.bagSizes?.length) continue;
+    if (
+      (entry.type !== 'RECEIPT' && entry.type !== 'Incoming-transfer') ||
+      !entry.bagSizes?.length
+    )
+      continue;
     const entryVariety = entry.variety ?? 'Unknown';
     if (entryVariety !== variety) continue;
     const voucherNumber = entry.gatePassNo ?? 0;
@@ -57,17 +61,15 @@ function getBreakdownEntries(
             '/'
           )
         : '—';
-      let quantity = 0;
-      if (tabType === 'current') {
-        quantity = bag.currentQuantity ?? 0;
-      } else if (tabType === 'initial') {
-        quantity = bag.initialQuantity ?? 0;
-      } else {
-        quantity = Math.max(
-          0,
-          (bag.initialQuantity ?? 0) - (bag.currentQuantity ?? 0)
-        );
-      }
+      const quantity =
+        tabType === 'current'
+          ? (bag.currentQuantity ?? 0)
+          : tabType === 'initial'
+            ? (bag.initialQuantity ?? 0)
+            : Math.max(
+                0,
+                (bag.initialQuantity ?? 0) - (bag.currentQuantity ?? 0)
+              );
       if (quantity > 0) {
         entries.push({
           size: bag.name,
@@ -102,7 +104,9 @@ export function FarmerStockBreakdownDialog({
     const allVarieties = [
       ...new Set(
         incomingEntries
-          .filter((e) => e.type === 'RECEIPT')
+          .filter(
+            (e) => e.type === 'RECEIPT' || e.type === 'Incoming-transfer'
+          )
           .map((e) => e.variety ?? 'Unknown')
       ),
     ].sort();

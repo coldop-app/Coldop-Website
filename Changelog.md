@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.16] - 2026-03-25
+
+### Added
+
+- **Transfer history** – Transfer history page loads transfer stock gate passes from `GET /transfer-stock` via `useGetTransferStockGatePasses`, with loading and error states, empty state, and `TransferStockGatePassCard` for each record (from/to farmers, items, linked incoming/outgoing gate passes).
+- **Transfer stock query keys** – `transferStockGatePassKeys.list()` for list query invalidation and prefetch alongside existing create keys.
+
+### Changed
+
+- **Daybook & types** – Daybook and `useGetDaybook` types support `Incoming-transfer` and `Outgoing-transfer` alongside `RECEIPT` / `DELIVERY`; incoming and outgoing gate pass cards show a transfer label on the bags badge when applicable.
+- **Farmer profile** – Combined gate pass list preserves API `type` instead of normalizing to RECEIPT/DELIVERY; stock summary table and breakdown dialog treat `Incoming-transfer` like receipts for quantity aggregation; rendering uses `IncomingGatePassCard` for both RECEIPT and Incoming-transfer entries.
+- **Farmer gate passes** – `useGetFarmerGatePasses` routes `Incoming-transfer` entries to the incoming list.
+
+---
+
 ## [0.4.15] - 2026-03-18
 
 ### Removed

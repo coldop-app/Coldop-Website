@@ -57,7 +57,11 @@ function aggregateStockByVarietyAndSize(
   const varietySet = new Set<string>();
 
   for (const entry of incomingEntries) {
-    if (entry.type !== 'RECEIPT' || !entry.bagSizes?.length) continue;
+    if (
+      (entry.type !== 'RECEIPT' && entry.type !== 'Incoming-transfer') ||
+      !entry.bagSizes?.length
+    )
+      continue;
     const variety = entry.variety ?? 'Unknown';
     varietySet.add(variety);
     let row = byVariety.get(variety);
