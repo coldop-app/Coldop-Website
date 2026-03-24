@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Link } from '@tanstack/react-router';
-import { History, User } from 'lucide-react';
+import { ArrowLeftRight, History, User } from 'lucide-react';
 import { LogoutButton } from './logout-button';
 import { Button } from '@/components/ui/button';
 import {
@@ -65,6 +65,18 @@ const UserMenuComponent = ({ admin, coldStorage }: UserMenuProps) => {
         >
           <History className="mr-2 h-4 w-4" />
           <span>Edit history</span>
+        </Link>
+      </DropdownMenuItem>
+
+      <DropdownMenuSeparator />
+
+      <DropdownMenuItem asChild>
+        <Link
+          to="/store-admin/transfer-history"
+          className="focus:bg-accent focus:text-accent-foreground flex cursor-pointer items-center"
+        >
+          <ArrowLeftRight className="mr-2 h-4 w-4" />
+          <span>Transfer history</span>
         </Link>
       </DropdownMenuItem>
 

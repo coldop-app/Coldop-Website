@@ -13,6 +13,8 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as ZustandIndexRouteImport } from './routes/zustand/index'
 import { Route as StoreAdminAuthenticatedRouteImport } from './routes/store-admin/_authenticated'
 import { Route as StoreAdminLoginIndexRouteImport } from './routes/store-admin/login/index'
+import { Route as StoreAdminAuthenticatedTransferStockIndexRouteImport } from './routes/store-admin/_authenticated/transfer-stock/index'
+import { Route as StoreAdminAuthenticatedTransferHistoryIndexRouteImport } from './routes/store-admin/_authenticated/transfer-history/index'
 import { Route as StoreAdminAuthenticatedPeopleIndexRouteImport } from './routes/store-admin/_authenticated/people/index'
 import { Route as StoreAdminAuthenticatedOutgoingIndexRouteImport } from './routes/store-admin/_authenticated/outgoing/index'
 import { Route as StoreAdminAuthenticatedMyFinancesIndexRouteImport } from './routes/store-admin/_authenticated/my-finances/index'
@@ -46,6 +48,18 @@ const StoreAdminLoginIndexRoute = StoreAdminLoginIndexRouteImport.update({
   path: '/store-admin/login/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StoreAdminAuthenticatedTransferStockIndexRoute =
+  StoreAdminAuthenticatedTransferStockIndexRouteImport.update({
+    id: '/transfer-stock/',
+    path: '/transfer-stock/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
+const StoreAdminAuthenticatedTransferHistoryIndexRoute =
+  StoreAdminAuthenticatedTransferHistoryIndexRouteImport.update({
+    id: '/transfer-history/',
+    path: '/transfer-history/',
+    getParentRoute: () => StoreAdminAuthenticatedRoute,
+  } as any)
 const StoreAdminAuthenticatedPeopleIndexRoute =
   StoreAdminAuthenticatedPeopleIndexRouteImport.update({
     id: '/people/',
@@ -131,6 +145,8 @@ export interface FileRoutesByFullPath {
   '/store-admin/my-finances/': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
   '/store-admin/outgoing/': typeof StoreAdminAuthenticatedOutgoingIndexRoute
   '/store-admin/people/': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/transfer-history/': typeof StoreAdminAuthenticatedTransferHistoryIndexRoute
+  '/store-admin/transfer-stock/': typeof StoreAdminAuthenticatedTransferStockIndexRoute
   '/store-admin/analytics/advanced/': typeof StoreAdminAuthenticatedAnalyticsAdvancedIndexRoute
   '/store-admin/analytics/variety-breakdown/': typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute
   '/store-admin/people/$farmerStorageLinkId/': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
@@ -149,6 +165,8 @@ export interface FileRoutesByTo {
   '/store-admin/my-finances': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
   '/store-admin/outgoing': typeof StoreAdminAuthenticatedOutgoingIndexRoute
   '/store-admin/people': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/transfer-history': typeof StoreAdminAuthenticatedTransferHistoryIndexRoute
+  '/store-admin/transfer-stock': typeof StoreAdminAuthenticatedTransferStockIndexRoute
   '/store-admin/analytics/advanced': typeof StoreAdminAuthenticatedAnalyticsAdvancedIndexRoute
   '/store-admin/analytics/variety-breakdown': typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute
   '/store-admin/people/$farmerStorageLinkId': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
@@ -168,6 +186,8 @@ export interface FileRoutesById {
   '/store-admin/_authenticated/my-finances/': typeof StoreAdminAuthenticatedMyFinancesIndexRoute
   '/store-admin/_authenticated/outgoing/': typeof StoreAdminAuthenticatedOutgoingIndexRoute
   '/store-admin/_authenticated/people/': typeof StoreAdminAuthenticatedPeopleIndexRoute
+  '/store-admin/_authenticated/transfer-history/': typeof StoreAdminAuthenticatedTransferHistoryIndexRoute
+  '/store-admin/_authenticated/transfer-stock/': typeof StoreAdminAuthenticatedTransferStockIndexRoute
   '/store-admin/_authenticated/analytics/advanced/': typeof StoreAdminAuthenticatedAnalyticsAdvancedIndexRoute
   '/store-admin/_authenticated/analytics/variety-breakdown/': typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute
   '/store-admin/_authenticated/people/$farmerStorageLinkId/': typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
@@ -188,6 +208,8 @@ export interface FileRouteTypes {
     | '/store-admin/my-finances/'
     | '/store-admin/outgoing/'
     | '/store-admin/people/'
+    | '/store-admin/transfer-history/'
+    | '/store-admin/transfer-stock/'
     | '/store-admin/analytics/advanced/'
     | '/store-admin/analytics/variety-breakdown/'
     | '/store-admin/people/$farmerStorageLinkId/'
@@ -206,6 +228,8 @@ export interface FileRouteTypes {
     | '/store-admin/my-finances'
     | '/store-admin/outgoing'
     | '/store-admin/people'
+    | '/store-admin/transfer-history'
+    | '/store-admin/transfer-stock'
     | '/store-admin/analytics/advanced'
     | '/store-admin/analytics/variety-breakdown'
     | '/store-admin/people/$farmerStorageLinkId'
@@ -224,6 +248,8 @@ export interface FileRouteTypes {
     | '/store-admin/_authenticated/my-finances/'
     | '/store-admin/_authenticated/outgoing/'
     | '/store-admin/_authenticated/people/'
+    | '/store-admin/_authenticated/transfer-history/'
+    | '/store-admin/_authenticated/transfer-stock/'
     | '/store-admin/_authenticated/analytics/advanced/'
     | '/store-admin/_authenticated/analytics/variety-breakdown/'
     | '/store-admin/_authenticated/people/$farmerStorageLinkId/'
@@ -267,6 +293,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/store-admin/login/'
       preLoaderRoute: typeof StoreAdminLoginIndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/store-admin/_authenticated/transfer-stock/': {
+      id: '/store-admin/_authenticated/transfer-stock/'
+      path: '/transfer-stock'
+      fullPath: '/store-admin/transfer-stock/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedTransferStockIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
+    }
+    '/store-admin/_authenticated/transfer-history/': {
+      id: '/store-admin/_authenticated/transfer-history/'
+      path: '/transfer-history'
+      fullPath: '/store-admin/transfer-history/'
+      preLoaderRoute: typeof StoreAdminAuthenticatedTransferHistoryIndexRouteImport
+      parentRoute: typeof StoreAdminAuthenticatedRoute
     }
     '/store-admin/_authenticated/people/': {
       id: '/store-admin/_authenticated/people/'
@@ -363,6 +403,8 @@ interface StoreAdminAuthenticatedRouteChildren {
   StoreAdminAuthenticatedMyFinancesIndexRoute: typeof StoreAdminAuthenticatedMyFinancesIndexRoute
   StoreAdminAuthenticatedOutgoingIndexRoute: typeof StoreAdminAuthenticatedOutgoingIndexRoute
   StoreAdminAuthenticatedPeopleIndexRoute: typeof StoreAdminAuthenticatedPeopleIndexRoute
+  StoreAdminAuthenticatedTransferHistoryIndexRoute: typeof StoreAdminAuthenticatedTransferHistoryIndexRoute
+  StoreAdminAuthenticatedTransferStockIndexRoute: typeof StoreAdminAuthenticatedTransferStockIndexRoute
   StoreAdminAuthenticatedAnalyticsAdvancedIndexRoute: typeof StoreAdminAuthenticatedAnalyticsAdvancedIndexRoute
   StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute: typeof StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute
   StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute: typeof StoreAdminAuthenticatedPeopleFarmerStorageLinkIdIndexRoute
@@ -386,6 +428,10 @@ const StoreAdminAuthenticatedRouteChildren: StoreAdminAuthenticatedRouteChildren
       StoreAdminAuthenticatedOutgoingIndexRoute,
     StoreAdminAuthenticatedPeopleIndexRoute:
       StoreAdminAuthenticatedPeopleIndexRoute,
+    StoreAdminAuthenticatedTransferHistoryIndexRoute:
+      StoreAdminAuthenticatedTransferHistoryIndexRoute,
+    StoreAdminAuthenticatedTransferStockIndexRoute:
+      StoreAdminAuthenticatedTransferStockIndexRoute,
     StoreAdminAuthenticatedAnalyticsAdvancedIndexRoute:
       StoreAdminAuthenticatedAnalyticsAdvancedIndexRoute,
     StoreAdminAuthenticatedAnalyticsVarietyBreakdownIndexRoute:

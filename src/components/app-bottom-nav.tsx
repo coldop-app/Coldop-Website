@@ -20,6 +20,7 @@ const navigationItems: NavigationItem[] = [
       '/store-admin/daybook',
       '/store-admin/incoming',
       '/store-admin/outgoing',
+      '/store-admin/transfer-stock',
     ],
   },
   {

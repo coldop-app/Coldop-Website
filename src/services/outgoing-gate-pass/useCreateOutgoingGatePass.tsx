@@ -26,7 +26,8 @@ const allocationSchema = z.object({
   location: locationSchema,
 });
 
-const incomingGatePassEntrySchema = z.object({
+/** Shared with rental / transfer stock gate pass payloads. */
+export const incomingGatePassEntrySchema = z.object({
   incomingGatePassId: z.string().min(1, 'Incoming gate pass ID is required'),
   variety: z.string().min(1, 'Variety is required'),
   allocations: z

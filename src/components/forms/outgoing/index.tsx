@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
 import * as z from 'zod';
 
@@ -179,7 +179,7 @@ function buildOutgoingPayload(
 }
 
 /** Fetches data, filter/sort state, and renders OutgoingVouchersTable (grouped by date, R. Voucher + size cells) */
-function OutgoingVouchersSection({
+export function OutgoingVouchersSection({
   farmerStorageLinkId,
   cellRemovedQuantities,
   setCellRemovedQuantities,
@@ -370,8 +370,13 @@ function OutgoingVouchersSection({
   }
 
   const hasGradingData = allPasses.length > 0;
+  /** When there are varieties, require an explicit choice (not "All") before showing gate passes. */
+  const varietySelected =
+    uniqueVarieties.length === 0 || varietyFilter.trim() !== '';
   const hasFilteredData =
-    filteredAndSortedPasses.length > 0 && tableSizes.length > 0;
+    varietySelected &&
+    filteredAndSortedPasses.length > 0 &&
+    tableSizes.length > 0;
   const hasActiveFilters =
     varietyFilter.trim() !== '' ||
     locationFilters.chamber !== '' ||
@@ -692,15 +697,11 @@ export const OutgoingForm = memo(function OutgoingForm({
   const createOutgoing = useCreateOutgoingGatePass();
   const [cellRemovedQuantities, setCellRemovedQuantities] = useState<
     Record<string, number>
-  >({});
+  >(() =>
+    editEntry ? buildInitialAllocationsFromEntry(editEntry) : {}
+  );
   const [pendingPayload, setPendingPayload] =
     useState<CreateOutgoingGatePassBody | null>(null);
-
-  useEffect(() => {
-    if (editEntry) {
-      setCellRemovedQuantities(buildInitialAllocationsFromEntry(editEntry));
-    }
-  }, [editEntry]);
 
   const editDefaultValues = useMemo(() => {
     if (!editEntry) return null;

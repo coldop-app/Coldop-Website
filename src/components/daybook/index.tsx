@@ -40,6 +40,7 @@ import {
   Receipt,
   ArrowUpFromLine,
   ArrowRightFromLine,
+  ArrowLeftRight,
   FileText,
 } from 'lucide-react';
 
@@ -372,6 +373,16 @@ const DaybookPage = memo(function DaybookPage() {
                 <Link to="/store-admin/outgoing">
                   <ArrowRightFromLine className="h-4 w-4 shrink-0" />
                   Add Outgoing
+                </Link>
+              </Button>
+              <Button
+                variant="secondary"
+                className="font-custom h-10 w-full gap-2 sm:w-auto"
+                asChild
+              >
+                <Link to="/store-admin/transfer-stock">
+                  <ArrowLeftRight className="h-4 w-4 shrink-0" />
+                  Transfer Stock
                 </Link>
               </Button>
               <Button

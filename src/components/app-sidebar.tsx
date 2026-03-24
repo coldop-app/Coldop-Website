@@ -44,6 +44,7 @@ const navigationItems: NavigationItem[] = [
     activePaths: [
       '/store-admin/incoming',
       '/store-admin/outgoing',
+      '/store-admin/transfer-stock',
     ],
     icon: BookOpen,
   },
