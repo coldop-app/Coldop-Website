@@ -36,7 +36,6 @@ const defaultFormValues = {
   fromFarmerStorageLinkId: '',
   toFarmerStorageLinkId: '',
   date: formatDate(new Date()),
-  truckNumber: '',
   remarks: '',
 };
 
@@ -94,7 +93,6 @@ function TransferStockFormInner() {
           fromFarmerStorageLinkId: value.fromFarmerStorageLinkId,
           toFarmerStorageLinkId: value.toFarmerStorageLinkId,
           date: value.date,
-          truckNumber: value.truckNumber,
           remarks: value.remarks,
         },
         cellRemovedQuantities,
@@ -109,10 +107,9 @@ function TransferStockFormInner() {
       const parsed = createTransferStockGatePassBodySchema.safeParse(built);
       if (!parsed.success) {
         const first =
-          parsed.error.flatten().fieldErrors.truckNumber?.[0] ??
           parsed.error.flatten().fieldErrors.items?.[0] ??
           parsed.error.issues[0]?.message ??
-          'Please check truck number and allocations';
+          'Please check allocations';
         toast.error(first);
         return;
       }
@@ -123,6 +120,12 @@ function TransferStockFormInner() {
 
   const fromFarmerForPasses =
     form.state.values.fromFarmerStorageLinkId ?? '';
+
+  const toFarmerOptions: Option<string>[] = useMemo(() => {
+    if (!fromFarmerForPasses) return farmerOptions;
+    return farmerOptions.filter((o) => o.value !== fromFarmerForPasses);
+  }, [farmerOptions, fromFarmerForPasses]);
+
   const { data: incomingPasses = [] } =
     useGetIncomingGatePassesOfSingleFarmer(fromFarmerForPasses);
 
@@ -131,7 +134,11 @@ function TransferStockFormInner() {
   }, [incomingPasses]);
 
   const handleFromFarmerSelect = (value: string) => {
+    const previousTo = form.state.values.toFarmerStorageLinkId;
     form.setFieldValue('fromFarmerStorageLinkId', value);
+    if (previousTo === value) {
+      form.setFieldValue('toFarmerStorageLinkId', '');
+    }
   };
 
   const handleToFarmerSelect = (value: string) => {
@@ -285,14 +292,18 @@ function TransferStockFormInner() {
                       </FieldLabel>
                       <SearchSelector
                         id="transfer-to-farmer"
-                        options={farmerOptions}
+                        options={toFarmerOptions}
                         placeholder="Search or select farmer"
                         searchPlaceholder="Search by name, account number, or mobile…"
                         onSelect={handleToFarmerSelect}
                         value={field.state.value}
                         loading={isLoadingFarmers}
                         loadingMessage="Loading farmers…"
-                        emptyMessage="No farmers found"
+                        emptyMessage={
+                          fromFarmerForPasses && toFarmerOptions.length === 0
+                            ? 'No other farmer accounts available'
+                            : 'No farmers found'
+                        }
                         buttonClassName="w-full justify-between"
                       />
                       {isInvalid && (
@@ -352,33 +363,6 @@ function TransferStockFormInner() {
 
           {step === 2 && (
             <>
-              <form.Field
-                name="truckNumber"
-                children={(field) => (
-                  <Field data-invalid={field.state.meta.isTouched && !field.state.meta.isValid}>
-                    <FieldLabel
-                      htmlFor="transfer-truck-number"
-                      className="font-custom mb-2 block text-base font-semibold"
-                    >
-                      Truck number
-                    </FieldLabel>
-                    <input
-                      id="transfer-truck-number"
-                      type="text"
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      className="border-input bg-background text-foreground font-custom placeholder:text-muted-foreground focus-visible:ring-ring focus-visible:ring-offset-background h-10 w-full rounded-md border px-3 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                      placeholder="e.g. PB10AB1234"
-                      autoComplete="off"
-                    />
-                    {field.state.meta.isTouched && !field.state.meta.isValid && (
-                      <FieldError
-                        errors={field.state.meta.errors as FieldErrors}
-                      />
-                    )}
-                  </Field>
-                )}
-              />
               <form.Field
                 name="remarks"
                 children={(field) => (

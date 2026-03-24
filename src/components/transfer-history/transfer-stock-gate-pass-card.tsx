@@ -17,7 +17,6 @@ import {
   ChevronUp,
   ArrowRightLeft,
   User,
-  Truck,
   Package,
   MapPin,
   FileStack,
@@ -78,13 +77,6 @@ const TransferStockGatePassCard = memo(function TransferStockGatePassCard({
 
             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
               <Badge
-                variant="secondary"
-                className="px-2.5 py-1 text-[10px] font-medium"
-              >
-                <Truck className="mr-1 inline h-3 w-3" />
-                {entry.truckNumber ?? '—'}
-              </Badge>
-              <Badge
                 variant="outline"
                 className="px-2.5 py-1 text-[10px] font-medium"
               >
@@ -121,7 +113,7 @@ const TransferStockGatePassCard = memo(function TransferStockGatePassCard({
           </div>
         </div>
 
-        <div className="mb-4 grid w-full grid-cols-2 gap-4 sm:grid-cols-3">
+        <div className="mb-4 grid w-full grid-cols-2 gap-4">
           <DetailRow
             label="Created by"
             value={entry.createdBy?.name ?? '—'}
@@ -131,11 +123,6 @@ const TransferStockGatePassCard = memo(function TransferStockGatePassCard({
             label="Variety"
             value={igp?.variety ?? '—'}
             icon={Package}
-          />
-          <DetailRow
-            label="Truck"
-            value={entry.truckNumber ?? '—'}
-            icon={Truck}
           />
         </div>
 
@@ -243,8 +230,7 @@ const TransferStockGatePassCard = memo(function TransferStockGatePassCard({
                       OGP #{ogp?.gatePassNo ?? '—'}
                     </p>
                     <p className="text-muted-foreground text-xs">
-                      {formatVoucherDate(ogp?.date)} ·{' '}
-                      {ogp?.truckNumber ?? entry.truckNumber ?? '—'}
+                      {formatVoucherDate(ogp?.date)}
                     </p>
                   </div>
                 </div>

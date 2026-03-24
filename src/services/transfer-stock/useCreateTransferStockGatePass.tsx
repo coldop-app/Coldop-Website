@@ -35,7 +35,6 @@ export const createTransferStockGatePassBodySchema = z
       .string()
       .min(1, 'Destination farmer is required'),
     date: z.string().min(1, 'Date is required'),
-    truckNumber: z.string().trim().min(1, 'Truck number is required'),
     items: z
       .array(transferStockItemSchema)
       .min(1, 'At least one line item is required'),
@@ -103,7 +102,6 @@ export function buildTransferStockPayload(
     fromFarmerStorageLinkId: string;
     toFarmerStorageLinkId: string;
     date: string;
-    truckNumber: string;
     remarks: string;
   },
   cellRemovedQuantities: Record<string, number>,
@@ -154,7 +152,6 @@ export function buildTransferStockPayload(
     fromFarmerStorageLinkId: formValues.fromFarmerStorageLinkId,
     toFarmerStorageLinkId: formValues.toFarmerStorageLinkId,
     date,
-    truckNumber: formValues.truckNumber.trim(),
     items,
     remarks: formValues.remarks?.trim() ?? '',
   };

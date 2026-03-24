@@ -89,7 +89,7 @@ export interface TransferStockGatePass {
   createdBy: TransferStockCreatedBy;
   gatePassNo: number;
   date: string;
-  truckNumber: string;
+  truckNumber?: string;
   items: TransferStockItem[];
   remarks?: string;
   createdIncomingGatePassId: TransferStockCreatedIncomingGatePass;

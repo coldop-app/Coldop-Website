@@ -11,7 +11,6 @@ import {
 import {
   ArrowRightLeft,
   Calendar,
-  FileText,
   Loader2,
   Package,
   Users,
@@ -160,11 +159,6 @@ export const TransferStockSummarySheet = memo(function TransferStockSummarySheet
           {pendingPayload ? (
             <>
               <div className="border-border flex flex-wrap gap-x-6 gap-y-3 border-b px-4 py-3 sm:px-6">
-                <SummaryMetaRow
-                  label="Truck"
-                  value={pendingPayload.truckNumber || '—'}
-                  icon={FileText}
-                />
                 <SummaryMetaRow
                   label="Date"
                   value={formatDateLong(pendingPayload.date)}
