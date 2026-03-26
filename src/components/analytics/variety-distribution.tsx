@@ -11,6 +11,7 @@ import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -215,6 +216,21 @@ const VarietyDistribution = memo(function VarietyDistribution({
                   </TableRow>
                 ))}
               </TableBody>
+              <TableFooter>
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="font-custom bg-muted/50 border-border border px-4 py-2 font-bold">
+                    Total
+                  </TableHead>
+                  <TableCell className="font-custom bg-muted/50 border-border border px-4 py-2 text-right font-bold tabular-nums">
+                    {pieData
+                      .reduce((sum, item) => sum + item.value, 0)
+                      .toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell className="font-custom text-primary bg-primary/10 border-border border px-4 py-2 text-right font-bold tabular-nums">
+                    100.0%
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
             </Table>
           </div>
         </div>
