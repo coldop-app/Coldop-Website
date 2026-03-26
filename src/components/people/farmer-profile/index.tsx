@@ -78,6 +78,7 @@ import AddChargeForm from '@/components/forms/people/add-charge';
 
 type OrderFilter = 'all' | 'incoming' | 'outgoing';
 type SortOrder = 'latest' | 'oldest';
+type OwnershipReportView = 'ALL' | 'OWNED' | 'FARMER';
 
 const ORDER_LABELS: Record<OrderFilter, string> = {
   all: 'All Orders',
@@ -140,6 +141,8 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const [stockLedgerDialogOpen, setStockLedgerDialogOpen] = useState(false);
   const [groupByVariety, setGroupByVariety] = useState(false);
   const [filterByOwnership, setFilterByOwnership] = useState(false);
+  const [ownershipReportView, setOwnershipReportView] =
+    useState<OwnershipReportView>('ALL');
   const [isGeneratingStockLedgerPdf, setIsGeneratingStockLedgerPdf] =
     useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -203,7 +206,8 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
 
   const handleViewStockLedgerPdf = async (
     groupByVarietyOption: boolean,
-    filterByOwnershipOption: boolean
+    filterByOwnershipOption: boolean,
+    ownershipReportViewOption: OwnershipReportView
   ) => {
     if (!link) return;
     const printWindow = window.open('', '_blank');
@@ -235,6 +239,11 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
           sizeColumns={sizes}
           groupByVariety={groupByVarietyOption}
           filterByOwnership={showSpecialFields ? filterByOwnershipOption : undefined}
+          ownershipReportView={
+            showSpecialFields && filterByOwnershipOption
+              ? ownershipReportViewOption
+              : undefined
+          }
         />
       ).toBlob();
       const url = URL.createObjectURL(blob);
@@ -608,6 +617,30 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                           </Label>
                         </div>
                       )}
+                      {showSpecialFields && filterByOwnership && (
+                        <div className="space-y-2">
+                          <Label
+                            htmlFor="ownership-report-view"
+                            className="font-custom text-sm font-medium"
+                          >
+                            Ownership report view
+                          </Label>
+                          <select
+                            id="ownership-report-view"
+                            className="font-custom border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            value={ownershipReportView}
+                            onChange={(e) =>
+                              setOwnershipReportView(
+                                e.target.value as OwnershipReportView
+                              )
+                            }
+                          >
+                            <option value="ALL">Show BOTH (OWNED + FARMER)</option>
+                            <option value="OWNED">Show only OWNED report</option>
+                            <option value="FARMER">Show only FARMER report</option>
+                          </select>
+                        </div>
+                      )}
                       <DialogFooter className="flex flex-row gap-2 sm:justify-end">
                         <Button
                           variant="outline"
@@ -618,7 +651,11 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                         <Button
                           onClick={() => {
                             setStockLedgerDialogOpen(false);
-                            handleViewStockLedgerPdf(groupByVariety, filterByOwnership);
+                            handleViewStockLedgerPdf(
+                              groupByVariety,
+                              filterByOwnership,
+                              ownershipReportView
+                            );
                           }}
                         >
                           View PDF

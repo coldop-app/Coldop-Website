@@ -30,6 +30,8 @@ export interface FarmerReportPdfProps {
   groupByVariety?: boolean;
   /** When true and special fields are shown, receipt details are grouped by ownership (OWNED / FARMER). */
   filterByOwnership?: boolean;
+  /** Ownership report view when ownership filter is enabled. */
+  ownershipReportView?: 'ALL' | 'OWNED' | 'FARMER';
 }
 
 /** Per-size list of (quantity, location) for one gate pass row */
@@ -441,6 +443,7 @@ export function FarmerReportPdf({
   sizeColumns,
   groupByVariety = false,
   filterByOwnership = false,
+  ownershipReportView = 'ALL',
 }: FarmerReportPdfProps) {
   const showSpecialFields = shouldShowSpecialFields(storeAdmin?.mobileNumber);
   const useOwnershipFilter = showSpecialFields && filterByOwnership;
@@ -451,6 +454,8 @@ export function FarmerReportPdf({
   const farmerIncoming = useOwnershipFilter
     ? incoming.filter((e) => e.stockFilter !== 'OWNED')
     : [];
+  const showOwnedSection = useOwnershipFilter && ownershipReportView !== 'FARMER';
+  const showFarmerSection = useOwnershipFilter && ownershipReportView !== 'OWNED';
 
   const ownedReceiptRows = useOwnershipFilter
     ? buildReceiptRows(ownedIncoming, sizeColumns)
@@ -561,6 +566,8 @@ export function FarmerReportPdf({
         <View style={styles.ledgerContainer}>
           {useOwnershipFilter ? (
             <>
+              {showOwnedSection && (
+                <>
               <Text style={styles.ledgerTitle}>Receipt Details (OWNED)</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeaderRow}>
@@ -652,6 +659,10 @@ export function FarmerReportPdf({
                   </View>
                 )}
               </View>
+                </>
+              )}
+              {showFarmerSection && (
+                <>
               <Text style={styles.ledgerTitle}>Receipt Details (FARMER)</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeaderRow}>
@@ -743,6 +754,8 @@ export function FarmerReportPdf({
                   </View>
                 )}
               </View>
+                </>
+              )}
             </>
           ) : (
             <>
