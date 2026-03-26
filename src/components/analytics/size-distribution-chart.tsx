@@ -7,6 +7,14 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import type { VarietyStockSummary } from '@/services/analytics/useGetStorageSummary';
 
 const CHART_COLORS = [
@@ -169,21 +177,45 @@ const SizeDistributionChart = memo(function SizeDistributionChart({
           <h4 className="font-custom text-foreground text-sm font-semibold">
             Size Distribution & Insights
           </h4>
-          <ul className="font-custom text-muted-foreground grid grid-cols-1 gap-1.5 text-sm sm:grid-cols-2">
-            {pieData.map((item) => (
-              <li key={item.name} className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: item.fill }}
-                  aria-hidden
-                />
-                <span className="text-foreground">
-                  {item.name}: {item.value.toLocaleString('en-IN')} bags (
-                  {item.percentage.toFixed(1)}%)
-                </span>
-              </li>
-            ))}
-          </ul>
+          <div className="border-border overflow-x-auto rounded-lg border">
+            <Table className="border-collapse">
+              <TableHeader>
+                <TableRow className="border-border bg-muted hover:bg-muted">
+                  <TableHead className="font-custom border-border border px-4 py-2 font-bold">
+                    Size
+                  </TableHead>
+                  <TableHead className="font-custom border-border border px-4 py-2 text-right font-bold">
+                    Bags
+                  </TableHead>
+                  <TableHead className="font-custom border-border border px-4 py-2 text-right font-bold">
+                    Share
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pieData.map((item) => (
+                  <TableRow key={item.name} className="border-border hover:bg-transparent">
+                    <TableCell className="font-custom border-border border px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: item.fill }}
+                          aria-hidden
+                        />
+                        <span className="font-medium">{item.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-custom border-border border px-4 py-2 text-right font-medium tabular-nums">
+                      {item.value.toLocaleString('en-IN')}
+                    </TableCell>
+                    <TableCell className="font-custom text-primary border-border border px-4 py-2 text-right font-semibold tabular-nums">
+                      {item.percentage.toFixed(1)}%
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </CardContent>
     </Card>

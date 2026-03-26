@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.17] - 2026-03-26
+
+### Changed
+
+- **Analytics chart insights** - Replaced list-style insight legends with bordered tabular summaries in variety distribution, size distribution, and farmer-wise share charts so quantity and percentage comparisons are easier to scan.
+- **Variety breakdown screen** - Removed the dedicated farmer quantity table section and kept the focused dual-chart layout (size-wise distribution + farmer-wise share) for cleaner breakdown presentation.
+- **Farmer-wise share totals** - Added a total row in the farmer-wise share summary table to show aggregate quantity and a fixed 100.0% share at a glance.
+
+---
+
 ## [0.4.16] - 2026-03-25
 
 ### Added

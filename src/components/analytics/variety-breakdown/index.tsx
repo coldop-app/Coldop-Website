@@ -26,10 +26,6 @@ import {
 } from './types';
 import SizeWiseDistributionChart from './size-wise-distribution-chart';
 import FarmerWiseShareChart from './farmer-wise-share-chart';
-import FarmerQuantityTable, {
-  type FarmerQuantityRow,
-  type FarmerQuantityRowAllSizes,
-} from './farmer-quantity-table';
 
 const TAB_VALUE_ALL = 'all';
 
@@ -160,62 +156,6 @@ const VarietyBreakdownScreen = () => {
     [farmerAggregate]
   );
 
-  const tableRows = useMemo((): FarmerQuantityRow[] => {
-    if (totalQuantity <= 0) return farmerAggregate.map((d) => ({
-      farmerName: d.name,
-      quantity: d.value,
-      percentage: 0,
-    }));
-    return farmerAggregate.map((d) => ({
-      farmerName: d.name,
-      quantity: d.value,
-      percentage: (d.value / totalQuantity) * 100,
-    }));
-  }, [farmerAggregate, totalQuantity]);
-
-  /** When "All sizes" is selected: columns = preference sizes; rows = per-farmer quantities per size */
-  const sizeColumnsForTable = useMemo(() => {
-    if (selectedBagSize !== TAB_VALUE_ALL) return [];
-    return preferenceSizes.filter((s) => (s ?? '').trim());
-  }, [selectedBagSize, preferenceSizes]);
-
-  const tableRowsAllSizes = useMemo((): FarmerQuantityRowAllSizes[] => {
-    if (selectedBagSize !== TAB_VALUE_ALL || !data?.sizes) return [];
-    const byFarmer = new Map<string, Record<string, number>>();
-    for (const sizeObj of data.sizes) {
-      const sizeKey = (sizeObj.size ?? '').trim();
-      if (!sizeKey) continue;
-      for (const f of sizeObj.farmerBreakdown ?? []) {
-        const q = getQuantityFromFarmer(f, quantityType);
-        if (q <= 0) continue;
-        const name = (f.farmerName ?? '').trim() || '—';
-        if (!byFarmer.has(name)) {
-          byFarmer.set(name, {});
-        }
-        const row = byFarmer.get(name)!;
-        row[sizeKey] = (row[sizeKey] ?? 0) + q;
-      }
-    }
-    const totalAll = Array.from(byFarmer.values()).reduce(
-      (sum, qtyBySize) =>
-        sum + Object.values(qtyBySize).reduce((a, b) => a + b, 0),
-      0
-    );
-    return Array.from(byFarmer.entries())
-      .map(([farmerName, quantitiesBySize]) => {
-        const total = Object.values(quantitiesBySize).reduce((a, b) => a + b, 0);
-        const percentage = totalAll > 0 ? (total / totalAll) * 100 : 0;
-        return { farmerName, quantitiesBySize, total, percentage };
-      })
-      .sort((a, b) => b.total - a.total);
-  }, [data, selectedBagSize, quantityType]);
-
-  const sizeLabel = useMemo(
-    () =>
-      selectedBagSize === TAB_VALUE_ALL ? 'All sizes' : selectedBagSize,
-    [selectedBagSize]
-  );
-
   return (
     <main className="mx-auto max-w-7xl p-2 sm:p-4 lg:p-6">
       <div className="space-y-6">
@@ -326,22 +266,6 @@ const VarietyBreakdownScreen = () => {
                 </CardContent>
               </Card>
             </div>
-
-            {/* Farmer quantity table */}
-            <FarmerQuantityTable
-              rows={tableRows}
-              quantityType={quantityType}
-              sizeLabel={sizeLabel}
-              sizeColumns={
-                sizeColumnsForTable.length > 0 ? sizeColumnsForTable : undefined
-              }
-              rowsAllSizes={
-                sizeColumnsForTable.length > 0 ? tableRowsAllSizes : undefined
-              }
-              quantityColumnLabel={
-                selectedBagSize !== TAB_VALUE_ALL ? selectedBagSize : undefined
-              }
-            />
 
             {/* Charts: Size-wise (bar) + Farmer-wise (donut) */}
             <div className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-2">

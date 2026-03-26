@@ -7,6 +7,15 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from '@/components/ui/chart';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import type { QuantityType } from './types';
 
 const CHART_COLORS = [
@@ -125,20 +134,57 @@ const FarmerWiseShareChart = memo(function FarmerWiseShareChart({
           </ChartContainer>
         </div>
         <div className="min-w-0 space-y-2">
-          <div className="font-custom text-muted-foreground flex min-w-0 flex-wrap gap-x-4 gap-y-1 text-xs sm:text-sm">
-            {pieData.map((item) => (
-              <div key={item.name} className="flex min-w-0 items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: item.fill }}
-                  aria-hidden
-                />
-                <span className="min-w-0 text-foreground">
-                  {item.name}: {item.value.toLocaleString('en-IN')} (
-                  {item.percentage.toFixed(1)}%)
-                </span>
-              </div>
-            ))}
+          <div className="border-border overflow-x-auto rounded-lg border">
+            <Table className="border-collapse">
+              <TableHeader>
+                <TableRow className="border-border bg-muted hover:bg-muted">
+                  <TableHead className="font-custom border-border border px-4 py-2 font-bold">
+                    Farmer
+                  </TableHead>
+                  <TableHead className="font-custom border-border border px-4 py-2 text-right font-bold">
+                    Bags
+                  </TableHead>
+                  <TableHead className="font-custom border-border border px-4 py-2 text-right font-bold">
+                    Share
+                  </TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pieData.map((item) => (
+                  <TableRow key={item.name} className="border-border hover:bg-transparent">
+                    <TableCell className="font-custom border-border border px-4 py-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span
+                          className="h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: item.fill }}
+                          aria-hidden
+                        />
+                        <span className="truncate font-medium">{item.name}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-custom border-border border px-4 py-2 text-right font-medium tabular-nums">
+                      {item.value.toLocaleString('en-IN')}
+                    </TableCell>
+                    <TableCell className="font-custom text-primary border-border border px-4 py-2 text-right font-semibold tabular-nums">
+                      {item.percentage.toFixed(1)}%
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                <TableRow className="border-border hover:bg-transparent">
+                  <TableHead className="font-custom bg-muted/50 border-border border px-4 py-2 font-bold">
+                    Total
+                  </TableHead>
+                  <TableCell className="font-custom bg-muted/50 border-border border px-4 py-2 text-right font-bold tabular-nums">
+                    {total.toLocaleString('en-IN')}
+                  </TableCell>
+                  <TableCell className="font-custom text-primary bg-primary/10 border-border border px-4 py-2 text-right font-bold tabular-nums">
+                    100.0%
+                  </TableCell>
+                </TableRow>
+              </TableFooter>
+            </Table>
           </div>
           <div className="min-w-0 space-y-1">
             {topFarmer && (
