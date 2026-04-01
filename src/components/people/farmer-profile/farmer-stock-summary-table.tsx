@@ -17,8 +17,12 @@ import {
 } from '@/components/ui/table';
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
 import { cn } from '@/lib/utils';
-import { shouldShowSpecialFields } from '@/lib/special-fields';
+import {
+  shouldShowSpecialFields,
+  PAYMENT_RESTRICTED_TOAST_MESSAGE,
+} from '@/lib/special-fields';
 import { useStore } from '@/stores/store';
+import { toast } from 'sonner';
 import {
   FarmerStockBreakdownDialog,
   type CellClickData,
@@ -90,6 +94,8 @@ export interface FarmerStockSummaryTableProps {
   sizes: string[];
   /** Incoming (RECEIPT) gate pass entries to aggregate */
   incomingEntries: DaybookEntry[];
+  /** When true, tab/cell interactions show the payment-restricted toast instead. */
+  paymentRestricted?: boolean;
 }
 
 interface TableRowData {
@@ -110,6 +116,7 @@ const cellClickClass =
 export function FarmerStockSummaryTable({
   sizes,
   incomingEntries,
+  paymentRestricted = false,
 }: FarmerStockSummaryTableProps) {
   const admin = useStore((s) => s.admin);
   const showStockFilterTabs = shouldShowSpecialFields(admin?.mobileNumber);
@@ -230,6 +237,10 @@ export function FarmerStockSummaryTable({
     rowIndex: number,
     isTotal: boolean
   ) => {
+    if (paymentRestricted) {
+      toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+      return;
+    }
     setCellClickData({ variety, column, value, rowIndex, isTotal });
   };
 
@@ -279,12 +290,19 @@ export function FarmerStockSummaryTable({
                   <button
                     key={id}
                     type="button"
-                    onClick={() => setStockFilterTab(id)}
+                    onClick={() => {
+                      if (paymentRestricted) {
+                        toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+                        return;
+                      }
+                      setStockFilterTab(id);
+                    }}
                     className={cn(
                       'font-custom focus-visible:ring-primary border-b-2 px-3 pt-1 pb-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                       isActive
                         ? 'border-primary text-primary'
-                        : 'text-muted-foreground hover:text-foreground border-transparent'
+                        : 'text-muted-foreground hover:text-foreground border-transparent',
+                      paymentRestricted && 'cursor-not-allowed opacity-70'
                     )}
                   >
                     {label}
@@ -306,12 +324,19 @@ export function FarmerStockSummaryTable({
                 <button
                   key={id}
                   type="button"
-                  onClick={() => setActiveTab(id)}
+                  onClick={() => {
+                    if (paymentRestricted) {
+                      toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+                      return;
+                    }
+                    setActiveTab(id);
+                  }}
                   className={cn(
                     'font-custom focus-visible:ring-primary border-b-2 px-3 pt-1 pb-2.5 text-sm font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2',
                     isActive
                       ? 'border-primary text-primary'
-                      : 'text-muted-foreground hover:text-foreground border-transparent'
+                      : 'text-muted-foreground hover:text-foreground border-transparent',
+                    paymentRestricted && 'cursor-not-allowed opacity-70'
                   )}
                 >
                   {label} ({count.toLocaleString('en-IN')})
@@ -362,7 +387,10 @@ export function FarmerStockSummaryTable({
                       return (
                         <TableCell
                           key={cell.id}
-                          className={cellClickClass}
+                          className={cn(
+                            cellClickClass,
+                            paymentRestricted && 'cursor-not-allowed opacity-70'
+                          )}
                           onClick={() =>
                             handleCellClick(
                               row.original.variety,
@@ -399,7 +427,8 @@ export function FarmerStockSummaryTable({
                   <TableHead
                     className={cn(
                       'font-custom bg-muted/50 border-border border px-4 py-2 font-bold',
-                      cellClickClass
+                      cellClickClass,
+                      paymentRestricted && 'cursor-not-allowed opacity-70'
                     )}
                     onClick={() =>
                       handleCellClick('Total', 'variety', 0, -1, true)
@@ -412,7 +441,8 @@ export function FarmerStockSummaryTable({
                       key={size}
                       className={cn(
                         'font-custom bg-muted/50 border-border border px-4 py-2 font-bold',
-                        cellClickClass
+                        cellClickClass,
+                        paymentRestricted && 'cursor-not-allowed opacity-70'
                       )}
                       onClick={() =>
                         handleCellClick(
@@ -430,7 +460,8 @@ export function FarmerStockSummaryTable({
                   <TableCell
                     className={cn(
                       'font-custom text-primary bg-primary/10 border-border border px-4 py-2 font-bold',
-                      cellClickClass
+                      cellClickClass,
+                      paymentRestricted && 'cursor-not-allowed opacity-70'
                     )}
                     onClick={() =>
                       handleCellClick(

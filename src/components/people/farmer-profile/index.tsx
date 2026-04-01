@@ -46,7 +46,12 @@ import type {
 import { useGetFarmerGatePasses } from '@/services/store-admin/functions/useGetFarmerGatePasses';
 import { format } from 'date-fns';
 import { formatDateToISO } from '@/lib/helpers';
-import { shouldShowSpecialFields } from '@/lib/special-fields';
+import {
+  shouldShowSpecialFields,
+  isPaymentRestrictedAdmin,
+  PAYMENT_RESTRICTED_TOAST_MESSAGE,
+} from '@/lib/special-fields';
+import { cn } from '@/lib/utils';
 import { DatePicker } from '@/components/forms/date-picker';
 import IncomingGatePassCard from '@/components/daybook/incoming-gate-pass-card';
 import OutgoingGatePassCard from '@/components/daybook/outgoing-gate-pass-card';
@@ -203,12 +208,21 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const coldStorage = useStore((s) => s.coldStorage);
   const admin = useStore((s) => s.admin);
   const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
+  const paymentRestricted = isPaymentRestrictedAdmin(admin?.mobileNumber);
+  const notifyPaymentRestricted = () =>
+    toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+  const restrictedActionClass =
+    'cursor-not-allowed opacity-70 pointer-events-auto';
 
   const handleViewStockLedgerPdf = async (
     groupByVarietyOption: boolean,
     filterByOwnershipOption: boolean,
     ownershipReportViewOption: OwnershipReportView
   ) => {
+    if (paymentRestricted) {
+      notifyPaymentRestricted();
+      return;
+    }
     if (!link) return;
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -355,9 +369,18 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="focus-visible:ring-primary h-10 w-10 rounded-full focus-visible:ring-2 focus-visible:ring-offset-2"
+                  className={cn(
+                    'focus-visible:ring-primary h-10 w-10 rounded-full focus-visible:ring-2 focus-visible:ring-offset-2',
+                    paymentRestricted && restrictedActionClass
+                  )}
                   aria-label="Edit farmer"
-                  onClick={() => setEditDialogOpen(true)}
+                  onClick={() => {
+                    if (paymentRestricted) {
+                      notifyPaymentRestricted();
+                      return;
+                    }
+                    setEditDialogOpen(true);
+                  }}
                 >
                   <Edit className="h-4 w-4" />
                 </Button>
@@ -380,8 +403,17 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
               <div className="flex flex-wrap gap-3">
                 <Button
                   variant="outline"
-                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
-                  onClick={() => setFinancesDialogOpen(true)}
+                  className={cn(
+                    'font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2',
+                    paymentRestricted && restrictedActionClass
+                  )}
+                  onClick={() => {
+                    if (paymentRestricted) {
+                      notifyPaymentRestricted();
+                      return;
+                    }
+                    setFinancesDialogOpen(true);
+                  }}
                 >
                   <Wallet className="text-primary h-4 w-4" />
                   Finances
@@ -540,29 +572,53 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     </div>
                   </DialogContent>
                 </Dialog>
-                <Button
-                  variant="outline"
-                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
-                  asChild
-                >
-                  <Link
-                    to="/store-admin/my-finances"
-                    search={{
-                      tab: 'Ledger View',
-                      farmerStorageLinkId: link._id,
-                      farmerName: link.farmerId.name,
-                    }}
-                    className="gap-2"
+                {paymentRestricted ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className={cn(
+                      'font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm',
+                      restrictedActionClass
+                    )}
+                    onClick={notifyPaymentRestricted}
                   >
                     <BookOpen className="text-primary h-4 w-4" />
                     View Financial Ledger
-                  </Link>
-                </Button>
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
+                    asChild
+                  >
+                    <Link
+                      to="/store-admin/my-finances"
+                      search={{
+                        tab: 'Ledger View',
+                        farmerStorageLinkId: link._id,
+                        farmerName: link.farmerId.name,
+                      }}
+                      className="gap-2"
+                    >
+                      <BookOpen className="text-primary h-4 w-4" />
+                      View Financial Ledger
+                    </Link>
+                  </Button>
+                )}
                 <Button
                   variant="outline"
-                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
-                  onClick={() => setStockLedgerDialogOpen(true)}
-                  disabled={isGeneratingStockLedgerPdf}
+                  className={cn(
+                    'font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2',
+                    paymentRestricted && restrictedActionClass
+                  )}
+                  onClick={() => {
+                    if (paymentRestricted) {
+                      notifyPaymentRestricted();
+                      return;
+                    }
+                    setStockLedgerDialogOpen(true);
+                  }}
+                  disabled={isGeneratingStockLedgerPdf && !paymentRestricted}
                 >
                   {isGeneratingStockLedgerPdf ? (
                     <Spinner className="h-4 w-4" />
@@ -644,12 +700,25 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                       <DialogFooter className="flex flex-row gap-2 sm:justify-end">
                         <Button
                           variant="outline"
-                          onClick={() => setStockLedgerDialogOpen(false)}
+                          onClick={() => {
+                            if (paymentRestricted) {
+                              notifyPaymentRestricted();
+                              return;
+                            }
+                            setStockLedgerDialogOpen(false);
+                          }}
+                          className={
+                            paymentRestricted ? restrictedActionClass : undefined
+                          }
                         >
                           Cancel
                         </Button>
                         <Button
                           onClick={() => {
+                            if (paymentRestricted) {
+                              notifyPaymentRestricted();
+                              return;
+                            }
                             setStockLedgerDialogOpen(false);
                             handleViewStockLedgerPdf(
                               groupByVariety,
@@ -657,6 +726,9 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                               ownershipReportView
                             );
                           }}
+                          className={
+                            paymentRestricted ? restrictedActionClass : undefined
+                          }
                         >
                           View PDF
                         </Button>
@@ -725,9 +797,18 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={isFetching}
-                onClick={() => refetch()}
-                className="font-custom h-8 gap-2 rounded-lg px-3"
+                disabled={isFetching && !paymentRestricted}
+                onClick={() => {
+                  if (paymentRestricted) {
+                    notifyPaymentRestricted();
+                    return;
+                  }
+                  refetch();
+                }}
+                className={cn(
+                  'font-custom h-8 gap-2 rounded-lg px-3',
+                  paymentRestricted && restrictedActionClass
+                )}
               >
                 <RefreshCw
                   className={`h-4 w-4 shrink-0 ${
@@ -760,66 +841,98 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
             {/* Left: sorting filters */}
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-nowrap sm:items-center sm:gap-4">
               {/* Orders filter – same as daybook */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="font-custom focus-visible:ring-primary h-8 w-full gap-2 rounded-lg px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:w-auto"
-                  >
-                    Orders: {ORDER_LABELS[orderFilter]}
-                    <ChevronDown className="h-4 w-4 shrink-0" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="font-custom">
-                  <DropdownMenuCheckboxItem
-                    checked={orderFilter === 'all'}
-                    onCheckedChange={() => setOrderFilter('all')}
-                  >
-                    All Orders
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={orderFilter === 'incoming'}
-                    onCheckedChange={() => setOrderFilter('incoming')}
-                  >
-                    Incoming
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={orderFilter === 'outgoing'}
-                    onCheckedChange={() => setOrderFilter('outgoing')}
-                  >
-                    Outgoing
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {paymentRestricted ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'font-custom focus-visible:ring-primary h-8 w-full gap-2 rounded-lg px-3 sm:w-auto',
+                    restrictedActionClass
+                  )}
+                  onClick={notifyPaymentRestricted}
+                >
+                  Orders: {ORDER_LABELS[orderFilter]}
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="font-custom focus-visible:ring-primary h-8 w-full gap-2 rounded-lg px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:w-auto"
+                    >
+                      Orders: {ORDER_LABELS[orderFilter]}
+                      <ChevronDown className="h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="font-custom">
+                    <DropdownMenuCheckboxItem
+                      checked={orderFilter === 'all'}
+                      onCheckedChange={() => setOrderFilter('all')}
+                    >
+                      All Orders
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={orderFilter === 'incoming'}
+                      onCheckedChange={() => setOrderFilter('incoming')}
+                    >
+                      Incoming
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={orderFilter === 'outgoing'}
+                      onCheckedChange={() => setOrderFilter('outgoing')}
+                    >
+                      Outgoing
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
               {/* Sort – same as daybook */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="font-custom focus-visible:ring-primary h-8 w-full gap-2 rounded-lg px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:w-auto"
-                  >
-                    Sort: {SORT_LABELS[sortOrder]}
-                    <ChevronDown className="h-4 w-4 shrink-0" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="font-custom">
-                  <DropdownMenuCheckboxItem
-                    checked={sortOrder === 'latest'}
-                    onCheckedChange={() => setSortOrder('latest')}
-                  >
-                    Latest First
-                  </DropdownMenuCheckboxItem>
-                  <DropdownMenuCheckboxItem
-                    checked={sortOrder === 'oldest'}
-                    onCheckedChange={() => setSortOrder('oldest')}
-                  >
-                    Oldest First
-                  </DropdownMenuCheckboxItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {paymentRestricted ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className={cn(
+                    'font-custom focus-visible:ring-primary h-8 w-full gap-2 rounded-lg px-3 sm:w-auto',
+                    restrictedActionClass
+                  )}
+                  onClick={notifyPaymentRestricted}
+                >
+                  Sort: {SORT_LABELS[sortOrder]}
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                </Button>
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="font-custom focus-visible:ring-primary h-8 w-full gap-2 rounded-lg px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:w-auto"
+                    >
+                      Sort: {SORT_LABELS[sortOrder]}
+                      <ChevronDown className="h-4 w-4 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="font-custom">
+                    <DropdownMenuCheckboxItem
+                      checked={sortOrder === 'latest'}
+                      onCheckedChange={() => setSortOrder('latest')}
+                    >
+                      Latest First
+                    </DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem
+                      checked={sortOrder === 'oldest'}
+                      onCheckedChange={() => setSortOrder('oldest')}
+                    >
+                      Oldest First
+                    </DropdownMenuCheckboxItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
 
             {/* Right: date range filter */}
@@ -838,6 +951,9 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     value={dateFrom}
                     onChange={setDateFrom}
                     fullWidth
+                    onBlockedInteraction={
+                      paymentRestricted ? notifyPaymentRestricted : undefined
+                    }
                   />
                 </div>
                 <div className="w-full min-w-0 sm:w-auto sm:min-w-32">
@@ -847,14 +963,24 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     value={dateTo}
                     onChange={setDateTo}
                     fullWidth
+                    onBlockedInteraction={
+                      paymentRestricted ? notifyPaymentRestricted : undefined
+                    }
                   />
                 </div>
                 {(dateFrom || dateTo) && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="font-custom text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg px-2 sm:shrink-0"
+                    className={cn(
+                      'font-custom text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg px-2 sm:shrink-0',
+                      paymentRestricted && restrictedActionClass
+                    )}
                     onClick={() => {
+                      if (paymentRestricted) {
+                        notifyPaymentRestricted();
+                        return;
+                      }
                       setDateFrom('');
                       setDateTo('');
                     }}
@@ -869,7 +995,11 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
           </ItemFooter>
         </Item>
 
-        <FarmerStockSummaryTable sizes={sizes} incomingEntries={incoming} />
+        <FarmerStockSummaryTable
+          sizes={sizes}
+          incomingEntries={incoming}
+          paymentRestricted={paymentRestricted}
+        />
 
         {/* Error state */}
         {isError && (
@@ -886,8 +1016,17 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => refetch()}
-                className="font-custom mt-4"
+                onClick={() => {
+                  if (paymentRestricted) {
+                    notifyPaymentRestricted();
+                    return;
+                  }
+                  refetch();
+                }}
+                className={cn(
+                  'font-custom mt-4',
+                  paymentRestricted && restrictedActionClass
+                )}
               >
                 Try again
               </Button>
@@ -952,11 +1091,13 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 <IncomingGatePassCard
                   key={entry._id ?? `inc-${idx}`}
                   entry={entry as IncomingGatePassEntry}
+                  paymentRestricted={paymentRestricted}
                 />
               ) : (
                 <OutgoingGatePassCard
                   key={entry._id ?? `out-${idx}`}
                   entry={entry as OutgoingGatePassEntry}
+                  paymentRestricted={paymentRestricted}
                 />
               )
             )}

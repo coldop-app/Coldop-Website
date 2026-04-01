@@ -5,7 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useStore } from '@/stores/store';
-import { shouldShowSpecialFields } from '@/lib/special-fields';
+import {
+  shouldShowSpecialFields,
+  PAYMENT_RESTRICTED_TOAST_MESSAGE,
+} from '@/lib/special-fields';
 import {
   Table,
   TableBody,
@@ -35,6 +38,8 @@ import { DetailRow } from './detail-row';
 
 interface IncomingGatePassCardProps {
   entry: IncomingGatePassEntry;
+  /** When true, card actions show the payment-restricted toast instead. */
+  paymentRestricted?: boolean;
 }
 
 function formatLocation(bag: DaybookBagSize): string {
@@ -50,6 +55,7 @@ function formatVoucherDate(date: string | undefined): string {
 
 const IncomingGatePassCard = memo(function IncomingGatePassCard({
   entry,
+  paymentRestricted = false,
 }: IncomingGatePassCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -79,6 +85,10 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
   }, [entry.bagSizes, preferenceSizes]);
 
   const handlePrintPdf = async () => {
+    if (paymentRestricted) {
+      toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+      return;
+    }
     // Open window synchronously so mobile popup blockers allow it
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -228,8 +238,18 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsExpanded((p) => !p)}
-            className="hover:bg-accent h-8 px-3 text-xs"
+            onClick={() => {
+              if (paymentRestricted) {
+                toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+                return;
+              }
+              setIsExpanded((p) => !p);
+            }}
+            className={
+              paymentRestricted
+                ? 'hover:bg-accent h-8 cursor-not-allowed px-3 text-xs opacity-70'
+                : 'hover:bg-accent h-8 px-3 text-xs'
+            }
           >
             {isExpanded ? (
               <>
@@ -245,27 +265,44 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
           </Button>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 px-3 text-xs"
-              asChild
-            >
-              <Link
-                to="/store-admin/incoming/edit/$id"
-                params={{ id: entry._id }}
-                state={{ entry } as Record<string, unknown>}
+            {paymentRestricted ? (
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                className="h-8 cursor-not-allowed px-3 text-xs opacity-70"
+                onClick={() => toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE)}
               >
                 <Pencil className="mr-1.5 h-3.5 w-3.5" />
                 Edit
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 text-xs"
+                asChild
+              >
+                <Link
+                  to="/store-admin/incoming/edit/$id"
+                  params={{ id: entry._id }}
+                  state={{ entry } as Record<string, unknown>}
+                >
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                  Edit
+                </Link>
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrintPdf}
               disabled={isGeneratingPdf}
-              className="h-8 w-8 p-0"
+              className={
+                paymentRestricted
+                  ? 'h-8 w-8 cursor-not-allowed p-0 opacity-70'
+                  : 'h-8 w-8 p-0'
+              }
               aria-label={
                 isGeneratingPdf ? 'Generating PDF…' : 'Print gate pass'
               }

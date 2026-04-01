@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.18] - 2026-04-02
+
+### Added
+
+- **Variety breakdown – Farmer quantity table** – Restored `FarmerQuantityTable` above the size-wise and farmer-wise charts: per-size quantity and share when a single bag size is selected; when "All sizes" is selected, a multi-column table shows quantities per preference size plus totals and percentages.
+- **Payment restriction (temporary)** – `isPaymentRestrictedAdmin` and `PAYMENT_RESTRICTED_TOAST_MESSAGE` in `src/lib/special-fields.ts` for a configured store admin; blocked actions show an info toast asking the user to contact the team to enable the feature.
+- **DatePicker – Blocked interaction** – Optional `onBlockedInteraction` makes the text input read-only, keeps the calendar closed, and invokes the callback when the calendar button would open (used for payment-restricted date ranges on farmer profile).
+
+### Changed
+
+- **Daybook** – For payment-restricted admins, "Get Reports" is disabled with toast feedback; incoming/outgoing gate pass cards accept `paymentRestricted` and block expand, edit, and PDF print until lifted.
+- **Farmer profile** – Payment-restricted flow gates edit farmer, finances, financial ledger link, stock ledger PDF and dialog, refresh and retry, order/sort filters, date range pickers and clear, stock summary table tabs and cell drill-down, and gate pass card actions; `FarmerStockSummaryTable` accepts `paymentRestricted`.
+
+---
+
 ## [0.4.17] - 2026-03-26
 
 ### Changed

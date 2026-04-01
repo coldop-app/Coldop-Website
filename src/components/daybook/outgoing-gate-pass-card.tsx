@@ -19,9 +19,11 @@ import { Spinner } from '@/components/ui/spinner';
 import { DetailRow } from './detail-row';
 import type { OutgoingGatePassEntry } from '@/services/store-admin/functions/useGetDaybook';
 import { useStore } from '@/stores/store';
+import { PAYMENT_RESTRICTED_TOAST_MESSAGE } from '@/lib/special-fields';
 
 interface OutgoingGatePassCardProps {
   entry: OutgoingGatePassEntry;
+  paymentRestricted?: boolean;
 }
 
 function formatVoucherDate(date: string | undefined): string {
@@ -45,6 +47,7 @@ function sortByPreferenceOrder<T>(
 
 const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
   entry,
+  paymentRestricted = false,
 }: OutgoingGatePassCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -54,6 +57,10 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
   );
 
   const handlePrintPdf = async () => {
+    if (paymentRestricted) {
+      toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+      return;
+    }
     // Open window synchronously so mobile popup blockers allow it
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -316,8 +323,18 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsExpanded((p) => !p)}
-            className="hover:bg-accent h-8 px-3 text-xs"
+            onClick={() => {
+              if (paymentRestricted) {
+                toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+                return;
+              }
+              setIsExpanded((p) => !p);
+            }}
+            className={
+              paymentRestricted
+                ? 'hover:bg-accent h-8 cursor-not-allowed px-3 text-xs opacity-70'
+                : 'hover:bg-accent h-8 px-3 text-xs'
+            }
           >
             {isExpanded ? (
               <>
@@ -333,27 +350,44 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
           </Button>
 
           <div className="flex shrink-0 items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="hidden h-8 px-3 text-xs"
-              asChild
-            >
-              <Link
-                to="/store-admin/outgoing/edit/$id"
-                params={{ id: entry._id }}
-                state={{ entry } as Record<string, unknown>}
+            {paymentRestricted ? (
+              <Button
+                variant="outline"
+                size="sm"
+                type="button"
+                className="hidden h-8 cursor-not-allowed px-3 text-xs opacity-70"
+                onClick={() => toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE)}
               >
                 <Pencil className="mr-1.5 h-3.5 w-3.5" />
                 Edit
-              </Link>
-            </Button>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="hidden h-8 px-3 text-xs"
+                asChild
+              >
+                <Link
+                  to="/store-admin/outgoing/edit/$id"
+                  params={{ id: entry._id }}
+                  state={{ entry } as Record<string, unknown>}
+                >
+                  <Pencil className="mr-1.5 h-3.5 w-3.5" />
+                  Edit
+                </Link>
+              </Button>
+            )}
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrintPdf}
               disabled={isGeneratingPdf}
-              className="h-8 w-8 p-0"
+              className={
+                paymentRestricted
+                  ? 'h-8 w-8 cursor-not-allowed p-0 opacity-70'
+                  : 'h-8 w-8 p-0'
+              }
               aria-label={
                 isGeneratingPdf ? 'Generating PDF…' : 'Print gate pass'
               }

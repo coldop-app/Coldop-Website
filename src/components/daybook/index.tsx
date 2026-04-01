@@ -52,6 +52,13 @@ import {
   EmptyMedia,
 } from '@/components/ui/empty';
 
+import { toast } from 'sonner';
+import { useStore } from '@/stores/store';
+import {
+  isPaymentRestrictedAdmin,
+  PAYMENT_RESTRICTED_TOAST_MESSAGE,
+} from '@/lib/special-fields';
+import { cn } from '@/lib/utils';
 import { useGetDaybook } from '@/services/store-admin/functions/useGetDaybook';
 import type {
   DaybookEntry,
@@ -154,6 +161,13 @@ const DaybookPage = memo(function DaybookPage() {
   const searchDaybook = useSearchDaybook();
   const searchResult = searchDaybook.data;
   const isSearchMode = searchResult !== undefined;
+
+  const admin = useStore((s) => s.admin);
+  const paymentRestricted = isPaymentRestrictedAdmin(admin?.mobileNumber);
+  const notifyPaymentRestricted = () =>
+    toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
+  const restrictedActionClass =
+    'cursor-not-allowed opacity-70 pointer-events-auto';
 
   const handleSearchReceiptChange = (value: string) => {
     setSearchReceipt(value.replace(/\D/g, ''));
@@ -387,8 +401,17 @@ const DaybookPage = memo(function DaybookPage() {
               </Button>
               <Button
                 variant="secondary"
-                className="font-custom h-10 w-full gap-2 sm:w-auto"
-                onClick={() => setReportsDialogOpen(true)}
+                className={cn(
+                  'font-custom h-10 w-full gap-2 sm:w-auto',
+                  paymentRestricted && restrictedActionClass
+                )}
+                onClick={() => {
+                  if (paymentRestricted) {
+                    notifyPaymentRestricted();
+                    return;
+                  }
+                  setReportsDialogOpen(true);
+                }}
               >
                 <FileText className="h-4 w-4 shrink-0" />
                 Get Reports
@@ -529,8 +552,14 @@ const DaybookPage = memo(function DaybookPage() {
         )}
 
         <GetReportsDialog
-          open={reportsDialogOpen}
-          onOpenChange={setReportsDialogOpen}
+          open={paymentRestricted ? false : reportsDialogOpen}
+          onOpenChange={(open) => {
+            if (open && paymentRestricted) {
+              notifyPaymentRestricted();
+              return;
+            }
+            setReportsDialogOpen(open);
+          }}
         />
       </div>
     </main>

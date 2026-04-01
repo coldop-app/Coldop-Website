@@ -18,3 +18,18 @@ export function shouldShowSpecialFields(
     mobileNumber != null && ALLOWED_SPECIAL_NUMBERS.includes(mobileNumber)
   );
 }
+
+/** Shown when a payment-restricted store admin taps a blocked control. */
+export const PAYMENT_RESTRICTED_TOAST_MESSAGE =
+  'Please contact our team to enable this functionality';
+
+/**
+ * TEMPORARY — remove when the client on this number completes payment.
+ * Matches 10-digit mobile and common +91-prefixed forms.
+ */
+export function isPaymentRestrictedAdmin(
+  mobileNumber: string | null | undefined
+): boolean {
+  const digits = (mobileNumber ?? '').replace(/\D/g, '');
+  return digits.endsWith('9817664358');
+}

@@ -58,6 +58,11 @@ interface DatePickerProps {
   fullWidth?: boolean;
   /** Optional class name for the label (e.g. to match form FieldLabel style) */
   labelClassName?: string;
+  /**
+   * When set, the text input is read-only and opening the calendar invokes this
+   * instead of the popover (e.g. payment-restricted flows).
+   */
+  onBlockedInteraction?: () => void;
 }
 
 export const DatePicker: React.FC<DatePickerProps> = ({
@@ -67,6 +72,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   id = 'date',
   fullWidth = false,
   labelClassName,
+  onBlockedInteraction,
 }) => {
   const [open, setOpen] = React.useState(false);
 
@@ -99,6 +105,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
   }, [value]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (onBlockedInteraction) return;
     const newValue = e.target.value;
     setInputValue(newValue);
     const parsed = parseFlexibleDate(newValue);
@@ -159,6 +166,7 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           type="text"
           placeholder="dd.mm.yyyy or yyyy-mm-dd"
           value={inputValue}
+          readOnly={!!onBlockedInteraction}
           onChange={handleInputChange}
           onBlur={handleInputBlur}
           className={cn(
@@ -168,7 +176,16 @@ export const DatePicker: React.FC<DatePickerProps> = ({
           )}
         />
         {/* Calendar popover */}
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+          open={onBlockedInteraction ? false : open}
+          onOpenChange={(next) => {
+            if (next && onBlockedInteraction) {
+              onBlockedInteraction();
+              return;
+            }
+            setOpen(next);
+          }}
+        >
           <PopoverTrigger asChild>
             <Button
               type="button"
