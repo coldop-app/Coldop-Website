@@ -42,6 +42,7 @@ import {
 import { EditOutgoingAllocations } from '@/components/forms/outgoing/edit-outgoing-allocations';
 import { DatePicker } from '@/components/forms/date-picker';
 import { formatDate, payloadDateSchema } from '@/lib/helpers';
+import { cn } from '@/lib/utils';
 import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -383,6 +384,10 @@ export function OutgoingVouchersSection({
     locationFilters.floor !== '' ||
     locationFilters.row !== '';
 
+  /** Gate passes stay hidden until a specific variety is chosen (not "All"). */
+  const needsVarietySelection =
+    uniqueVarieties.length > 0 && varietyFilter.trim() === '';
+
   const sizesForColumnPicker =
     tableSizes.length > 0 ? tableSizes : allTableSizes;
 
@@ -449,17 +454,51 @@ export function OutgoingVouchersSection({
             </DropdownMenu>
           </div>
           {uniqueVarieties.length > 0 && (
-            <div className="flex flex-col gap-2">
-              <span className="font-custom text-muted-foreground text-xs leading-none font-medium">
-                Variety
-              </span>
+            <div
+              className={cn(
+                'flex flex-col gap-2 rounded-lg transition-[box-shadow,background-color,border-color]',
+                needsVarietySelection &&
+                  'border-primary/50 bg-primary/5 ring-primary/25 border-2 p-2.5 shadow-sm ring-2'
+              )}
+            >
+              <div className="flex flex-col gap-0.5">
+                <span
+                  className={cn(
+                    'font-custom text-xs leading-none font-medium',
+                    needsVarietySelection
+                      ? 'text-primary'
+                      : 'text-muted-foreground'
+                  )}
+                >
+                  Variety
+                  {needsVarietySelection ? (
+                    <span className="text-destructive ml-0.5 font-semibold">
+                      *
+                    </span>
+                  ) : null}
+                </span>
+                {needsVarietySelection ? (
+                  <span className="font-custom text-muted-foreground max-w-52 text-[11px] font-normal leading-snug">
+                    Choose a variety to show gate passes below.
+                  </span>
+                ) : null}
+              </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     type="button"
                     variant="outline"
                     size="sm"
-                    className="font-custom h-10 min-w-[100px] justify-between gap-2"
+                    aria-label={
+                      needsVarietySelection
+                        ? 'Variety — required to show gate passes'
+                        : 'Variety filter'
+                    }
+                    className={cn(
+                      'font-custom h-10 min-w-[120px] justify-between gap-2',
+                      needsVarietySelection &&
+                        'border-primary/60 bg-background text-primary hover:bg-primary/10 hover:text-primary'
+                    )}
                   >
                     <Package className="h-4 w-4 shrink-0" />
                     {varietyFilter || 'All'}
@@ -769,6 +808,7 @@ export const OutgoingForm = memo(function OutgoingForm({
 
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [vouchersSectionKey, setVouchersSectionKey] = useState(0);
+  const [createStep, setCreateStep] = useState<1 | 2>(1);
   const openSheetRef = useRef(false);
 
   const form = useForm({
@@ -821,23 +861,60 @@ export const OutgoingForm = memo(function OutgoingForm({
     },
   });
 
+  const handleCreateNext = () => {
+    const v = form.state.values;
+    if (!v.farmerStorageLinkId?.trim()) {
+      toast.error('Please select a farmer');
+      return;
+    }
+    const mp = v.manualParchiNumber?.trim() ?? '';
+    if (
+      mp !== '' &&
+      (!/^\d+$/.test(mp) || Number.parseInt(mp, 10) <= 0)
+    ) {
+      toast.error('Manual parchi number must be a positive integer');
+      return;
+    }
+    const hasAllocation = Object.values(cellRemovedQuantities).some(
+      (q) => q != null && q > 0
+    );
+    if (!hasAllocation) {
+      toast.error('Please add at least one allocation', {
+        description: 'Select quantities in the gate passes table.',
+      });
+      return;
+    }
+    setCreateStep(2);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCreateBack = () => {
+    setCreateStep(1);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  /** Enter key / Review: open summary only on step 2 (never from step 1). */
+  const runPrimaryAction = () => {
+    if (!isEditMode && createStep === 1) {
+      handleCreateNext();
+      return;
+    }
+    if (isEditMode) {
+      void form.handleSubmit();
+      return;
+    }
+    if (createStep === 2) {
+      openSheetRef.current = true;
+      void form.handleSubmit();
+    }
+  };
+
   const farmerStorageLinkIdForPasses =
     (form.state.values as { farmerStorageLinkId?: string })
       .farmerStorageLinkId ?? '';
   const { data: incomingPasses = [] } = useGetIncomingGatePassesOfSingleFarmer(
     farmerStorageLinkIdForPasses
   );
-
-  const handleReview = (e: React.FormEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (isEditMode) {
-      form.handleSubmit();
-      return;
-    }
-    openSheetRef.current = true;
-    form.handleSubmit();
-  };
 
   return (
     <main className="font-custom mx-auto max-w-7xl px-4 py-6 sm:px-8 sm:py-12">
@@ -852,187 +929,208 @@ export const OutgoingForm = memo(function OutgoingForm({
             GATE PASS NO: {voucherNumberDisplay}
           </span>
         </div>
+
+        {!isEditMode && (
+          <p className="font-custom text-muted-foreground text-sm">
+            Step {createStep} of 2 —{' '}
+            {createStep === 1
+              ? 'Parchi, order date, farmer, and gate passes'
+              : 'Route, truck, and remarks'}
+          </p>
+        )}
       </div>
 
       {/* Form */}
-      <form onSubmit={handleReview} className="space-y-6">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          runPrimaryAction();
+        }}
+        className="space-y-6"
+      >
         <FieldGroup className="space-y-6">
-          {/* Manual Parchi Number */}
-          <form.Field
-            name="manualParchiNumber"
-            children={(field) => (
-              <Field>
-                <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                  Manual Parchi Number
-                  <span className="font-custom text-muted-foreground ml-1 font-normal">
-                    (optional)
-                  </span>
-                </FieldLabel>
-                <Input
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="e.g. 123"
-                  className="font-custom"
-                />
-              </Field>
-            )}
-          />
-
-          {/* Farmer Selection */}
-          <form.Field
-            name="farmerStorageLinkId"
-            children={(field) => {
-              const hasSubmitError = Boolean(
-                field.state.meta.errorMap &&
-                'onSubmit' in field.state.meta.errorMap &&
-                field.state.meta.errorMap.onSubmit
-              );
-              const invalidFromValidation =
-                hasSubmitError ||
-                (field.state.meta.isTouched && !field.state.meta.isValid);
-              const isInvalid = invalidFromValidation && !field.state.value;
-              return (
-                <Field data-invalid={isInvalid}>
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
-                    <div className="flex-1">
-                      <FieldLabel
-                        htmlFor="outgoing-farmer-select"
-                        className="font-custom mb-2 block text-base font-semibold"
-                      >
-                        Enter Account Name (search and select)
-                      </FieldLabel>
-                      <SearchSelector
-                        id="outgoing-farmer-select"
-                        options={farmerOptions}
-                        placeholder="Search or Create Farmer"
-                        searchPlaceholder="Search by name, account number, or mobile..."
-                        onSelect={handleFarmerSelect}
-                        value={field.state.value}
-                        loading={isLoadingFarmers}
-                        loadingMessage="Loading farmers..."
-                        emptyMessage="No farmers found"
-                        buttonClassName="w-full justify-between"
-                      />
-                    </div>
-                    <AddFarmerModal
-                      links={farmerLinks ?? []}
-                      onFarmerAdded={handleFarmerAdded}
+          {/* Step 1 (create) or full form (edit): Manual Parchi + Farmer */}
+          {(isEditMode || createStep === 1) && (
+            <>
+              <form.Field
+                name="manualParchiNumber"
+                children={(field) => (
+                  <Field>
+                    <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                      Manual Parchi Number
+                      <span className="font-custom text-muted-foreground ml-1 font-normal">
+                        (optional)
+                      </span>
+                    </FieldLabel>
+                    <Input
+                      autoFocus={!isEditMode}
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g. 123"
+                      className="font-custom"
                     />
-                  </div>
-                  {isInvalid && (
-                    <FieldError
-                      errors={field.state.meta.errors as FieldErrors}
-                    />
-                  )}
-                </Field>
-              );
-            }}
-          />
-
-          {/* Date */}
-          <form.Field
-            name="orderDate"
-            children={(field) => (
-              <Field>
-                <DatePicker
-                  id="outgoing-order-date"
-                  label="Order Date"
-                  value={field.state.value}
-                  onChange={(value) => field.handleChange(value)}
-                />
-                {field.state.meta.isTouched && !field.state.meta.isValid && (
-                  <FieldError errors={field.state.meta.errors as FieldErrors} />
+                  </Field>
                 )}
-              </Field>
-            )}
-          />
+              />
 
-          {/* From */}
-          <form.Field
-            name="from"
-            children={(field) => (
-              <Field>
-                <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                  From
-                  <span className="font-custom text-muted-foreground ml-1 font-normal">
-                    (optional)
-                  </span>
-                </FieldLabel>
-                <Input
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="e.g. Cold Storage"
-                  className="font-custom"
-                />
-              </Field>
-            )}
-          />
+              <form.Field
+                name="orderDate"
+                children={(field) => (
+                  <Field>
+                    <DatePicker
+                      id="outgoing-order-date"
+                      label="Order Date"
+                      value={field.state.value}
+                      onChange={(value) => field.handleChange(value)}
+                    />
+                    {field.state.meta.isTouched && !field.state.meta.isValid && (
+                      <FieldError
+                        errors={field.state.meta.errors as FieldErrors}
+                      />
+                    )}
+                  </Field>
+                )}
+              />
 
-          {/* To */}
-          <form.Field
-            name="to"
-            children={(field) => (
-              <Field>
-                <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                  To
-                  <span className="font-custom text-muted-foreground ml-1 font-normal">
-                    (optional)
-                  </span>
-                </FieldLabel>
-                <Input
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  placeholder="e.g. Customer"
-                  className="font-custom"
-                />
-              </Field>
-            )}
-          />
+              <form.Field
+                name="farmerStorageLinkId"
+                children={(field) => {
+                  const hasSubmitError = Boolean(
+                    field.state.meta.errorMap &&
+                    'onSubmit' in field.state.meta.errorMap &&
+                    field.state.meta.errorMap.onSubmit
+                  );
+                  const invalidFromValidation =
+                    hasSubmitError ||
+                    (field.state.meta.isTouched && !field.state.meta.isValid);
+                  const isInvalid = invalidFromValidation && !field.state.value;
+                  return (
+                    <Field data-invalid={isInvalid}>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-end">
+                        <div className="flex-1">
+                          <FieldLabel
+                            htmlFor="outgoing-farmer-select"
+                            className="font-custom mb-2 block text-base font-semibold"
+                          >
+                            Enter Account Name (search and select)
+                          </FieldLabel>
+                          <SearchSelector
+                            id="outgoing-farmer-select"
+                            options={farmerOptions}
+                            placeholder="Search or Create Farmer"
+                            searchPlaceholder="Search by name, account number, or mobile..."
+                            onSelect={handleFarmerSelect}
+                            value={field.state.value}
+                            loading={isLoadingFarmers}
+                            loadingMessage="Loading farmers..."
+                            emptyMessage="No farmers found"
+                            buttonClassName="w-full justify-between"
+                          />
+                        </div>
+                        <AddFarmerModal
+                          links={farmerLinks ?? []}
+                          onFarmerAdded={handleFarmerAdded}
+                        />
+                      </div>
+                      {isInvalid && (
+                        <FieldError
+                          errors={field.state.meta.errors as FieldErrors}
+                        />
+                      )}
+                    </Field>
+                  );
+                }}
+              />
+            </>
+          )}
 
-          {/* Truck Number */}
-          <form.Field
-            name="truckNumber"
-            children={(field) => (
-              <Field>
-                <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                  Truck Number
-                  <span className="font-custom text-muted-foreground ml-1 font-normal">
-                    (optional)
-                  </span>
-                </FieldLabel>
-                <Input
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) =>
-                    field.handleChange(e.target.value.toUpperCase())
-                  }
-                  placeholder="e.g. MH-12-AB-1234"
-                  className="font-custom"
-                />
-              </Field>
-            )}
-          />
+          {/* Step 2 (create) or full form (edit): route, truck, remarks */}
+          {(isEditMode || createStep === 2) && (
+            <>
+              <form.Field
+                name="from"
+                children={(field) => (
+                  <Field>
+                    <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                      From
+                      <span className="font-custom text-muted-foreground ml-1 font-normal">
+                        (optional)
+                      </span>
+                    </FieldLabel>
+                    <Input
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g. Cold Storage"
+                      className="font-custom"
+                    />
+                  </Field>
+                )}
+              />
 
-          {/* Remarks */}
-          <form.Field
-            name="remarks"
-            children={(field) => (
-              <Field>
-                <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                  Remarks
-                </FieldLabel>
-                <textarea
-                  value={field.state.value}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  className="border-input bg-background text-foreground font-custom placeholder:text-muted-foreground focus-visible:ring-ring focus-visible:ring-offset-background w-full rounded-md border p-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
-                  rows={4}
-                />
-              </Field>
-            )}
-          />
+              <form.Field
+                name="to"
+                children={(field) => (
+                  <Field>
+                    <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                      To
+                      <span className="font-custom text-muted-foreground ml-1 font-normal">
+                        (optional)
+                      </span>
+                    </FieldLabel>
+                    <Input
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder="e.g. Customer"
+                      className="font-custom"
+                    />
+                  </Field>
+                )}
+              />
+
+              <form.Field
+                name="truckNumber"
+                children={(field) => (
+                  <Field>
+                    <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                      Truck Number
+                      <span className="font-custom text-muted-foreground ml-1 font-normal">
+                        (optional)
+                      </span>
+                    </FieldLabel>
+                    <Input
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) =>
+                        field.handleChange(e.target.value.toUpperCase())
+                      }
+                      placeholder="e.g. MH-12-AB-1234"
+                      className="font-custom"
+                    />
+                  </Field>
+                )}
+              />
+
+              <form.Field
+                name="remarks"
+                children={(field) => (
+                  <Field>
+                    <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                      Remarks
+                    </FieldLabel>
+                    <textarea
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      className="border-input bg-background text-foreground font-custom placeholder:text-muted-foreground focus-visible:ring-ring focus-visible:ring-offset-background w-full rounded-md border p-2 focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                      rows={4}
+                    />
+                  </Field>
+                )}
+              />
+            </>
+          )}
 
           {/* Edit mode: show issued quantities so user can update them */}
           {isEditMode && editEntry && (
@@ -1048,8 +1146,8 @@ export const OutgoingForm = memo(function OutgoingForm({
             </Field>
           )}
 
-          {/* Incoming gate passes for selected farmer (create only) */}
-          {!isEditMode && (
+          {/* Incoming gate passes for selected farmer (create step 1 only) */}
+          {!isEditMode && createStep === 1 && (
             <form.Subscribe
               selector={(state) => ({
                 farmerStorageLinkId: state.values.farmerStorageLinkId,
@@ -1072,7 +1170,7 @@ export const OutgoingForm = memo(function OutgoingForm({
           )}
         </FieldGroup>
 
-        {/* Review / Save button */}
+        {/* Step actions */}
         <div className="flex flex-wrap items-center justify-end gap-4 pt-4">
           <Button
             type="button"
@@ -1081,19 +1179,49 @@ export const OutgoingForm = memo(function OutgoingForm({
               form.reset();
               setCellRemovedQuantities({});
               setVouchersSectionKey((k) => k + 1);
+              setCreateStep(1);
             }}
             className="font-custom"
           >
             Reset
           </Button>
-          <Button
-            type="submit"
-            variant="default"
-            size="lg"
-            className="font-custom px-8 font-bold"
-          >
-            {isEditMode ? 'Save' : 'Review'}
-          </Button>
+
+          {!isEditMode && createStep === 2 && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCreateBack}
+              className="font-custom"
+            >
+              Back
+            </Button>
+          )}
+
+          {!isEditMode && createStep === 1 ? (
+            <Button
+              type="button"
+              variant="default"
+              size="lg"
+              className="font-custom px-8 font-bold"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleCreateNext();
+              }}
+            >
+              Next
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              variant="default"
+              size="lg"
+              className="font-custom px-8 font-bold"
+              onClick={runPrimaryAction}
+            >
+              {isEditMode ? 'Save' : 'Review'}
+            </Button>
+          )}
         </div>
       </form>
 
@@ -1112,6 +1240,7 @@ export const OutgoingForm = memo(function OutgoingForm({
                 form.reset();
                 setCellRemovedQuantities({});
                 setVouchersSectionKey((k) => k + 1);
+                setCreateStep(1);
               },
             });
           }}
