@@ -49,6 +49,7 @@ import { formatDateToISO } from '@/lib/helpers';
 import {
   shouldShowSpecialFields,
   isPaymentRestrictedAdmin,
+  isReportOnlyRestrictedContext,
   PAYMENT_RESTRICTED_TOAST_MESSAGE,
 } from '@/lib/special-fields';
 import { cn } from '@/lib/utils';
@@ -209,6 +210,14 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const admin = useStore((s) => s.admin);
   const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
   const paymentRestricted = isPaymentRestrictedAdmin(admin?.mobileNumber);
+  const reportOnlyContext = isReportOnlyRestrictedContext(
+    admin?.mobileNumber,
+    coldStorage?._id
+  );
+  /** Block non-report UI (edit, finances, filters, etc.). False in report-only context. */
+  const interactionRestricted = paymentRestricted && !reportOnlyContext;
+  /** Block PDFs and report-style actions (stock ledger PDF, gate pass print, …). */
+  const reportsRestricted = paymentRestricted;
   const notifyPaymentRestricted = () =>
     toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
   const restrictedActionClass =
@@ -219,7 +228,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
     filterByOwnershipOption: boolean,
     ownershipReportViewOption: OwnershipReportView
   ) => {
-    if (paymentRestricted) {
+    if (reportsRestricted) {
       notifyPaymentRestricted();
       return;
     }
@@ -371,11 +380,11 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                   size="icon"
                   className={cn(
                     'focus-visible:ring-primary h-10 w-10 rounded-full focus-visible:ring-2 focus-visible:ring-offset-2',
-                    paymentRestricted && restrictedActionClass
+                    interactionRestricted && restrictedActionClass
                   )}
                   aria-label="Edit farmer"
                   onClick={() => {
-                    if (paymentRestricted) {
+                    if (interactionRestricted) {
                       notifyPaymentRestricted();
                       return;
                     }
@@ -405,10 +414,10 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                   variant="outline"
                   className={cn(
                     'font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2',
-                    paymentRestricted && restrictedActionClass
+                    interactionRestricted && restrictedActionClass
                   )}
                   onClick={() => {
-                    if (paymentRestricted) {
+                    if (interactionRestricted) {
                       notifyPaymentRestricted();
                       return;
                     }
@@ -572,7 +581,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     </div>
                   </DialogContent>
                 </Dialog>
-                {paymentRestricted ? (
+                {reportsRestricted ? (
                   <Button
                     type="button"
                     variant="outline"
@@ -609,16 +618,16 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                   variant="outline"
                   className={cn(
                     'font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2',
-                    paymentRestricted && restrictedActionClass
+                    reportsRestricted && restrictedActionClass
                   )}
                   onClick={() => {
-                    if (paymentRestricted) {
+                    if (reportsRestricted) {
                       notifyPaymentRestricted();
                       return;
                     }
                     setStockLedgerDialogOpen(true);
                   }}
-                  disabled={isGeneratingStockLedgerPdf && !paymentRestricted}
+                  disabled={isGeneratingStockLedgerPdf && !reportsRestricted}
                 >
                   {isGeneratingStockLedgerPdf ? (
                     <Spinner className="h-4 w-4" />
@@ -700,22 +709,13 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                       <DialogFooter className="flex flex-row gap-2 sm:justify-end">
                         <Button
                           variant="outline"
-                          onClick={() => {
-                            if (paymentRestricted) {
-                              notifyPaymentRestricted();
-                              return;
-                            }
-                            setStockLedgerDialogOpen(false);
-                          }}
-                          className={
-                            paymentRestricted ? restrictedActionClass : undefined
-                          }
+                          onClick={() => setStockLedgerDialogOpen(false)}
                         >
                           Cancel
                         </Button>
                         <Button
                           onClick={() => {
-                            if (paymentRestricted) {
+                            if (reportsRestricted) {
                               notifyPaymentRestricted();
                               return;
                             }
@@ -727,7 +727,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                             );
                           }}
                           className={
-                            paymentRestricted ? restrictedActionClass : undefined
+                            reportsRestricted ? restrictedActionClass : undefined
                           }
                         >
                           View PDF
@@ -797,9 +797,9 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={isFetching && !paymentRestricted}
+                disabled={isFetching && !interactionRestricted}
                 onClick={() => {
-                  if (paymentRestricted) {
+                  if (interactionRestricted) {
                     notifyPaymentRestricted();
                     return;
                   }
@@ -807,7 +807,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 }}
                 className={cn(
                   'font-custom h-8 gap-2 rounded-lg px-3',
-                  paymentRestricted && restrictedActionClass
+                  interactionRestricted && restrictedActionClass
                 )}
               >
                 <RefreshCw
@@ -841,7 +841,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
             {/* Left: sorting filters */}
             <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-nowrap sm:items-center sm:gap-4">
               {/* Orders filter – same as daybook */}
-              {paymentRestricted ? (
+              {interactionRestricted ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -891,7 +891,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
               )}
 
               {/* Sort – same as daybook */}
-              {paymentRestricted ? (
+              {interactionRestricted ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -952,7 +952,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     onChange={setDateFrom}
                     fullWidth
                     onBlockedInteraction={
-                      paymentRestricted ? notifyPaymentRestricted : undefined
+                      interactionRestricted ? notifyPaymentRestricted : undefined
                     }
                   />
                 </div>
@@ -964,7 +964,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     onChange={setDateTo}
                     fullWidth
                     onBlockedInteraction={
-                      paymentRestricted ? notifyPaymentRestricted : undefined
+                      interactionRestricted ? notifyPaymentRestricted : undefined
                     }
                   />
                 </div>
@@ -974,10 +974,10 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     size="sm"
                     className={cn(
                       'font-custom text-muted-foreground hover:text-foreground h-8 gap-1.5 rounded-lg px-2 sm:shrink-0',
-                      paymentRestricted && restrictedActionClass
+                      interactionRestricted && restrictedActionClass
                     )}
                     onClick={() => {
-                      if (paymentRestricted) {
+                      if (interactionRestricted) {
                         notifyPaymentRestricted();
                         return;
                       }
@@ -998,7 +998,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
         <FarmerStockSummaryTable
           sizes={sizes}
           incomingEntries={incoming}
-          paymentRestricted={paymentRestricted}
+          paymentRestricted={interactionRestricted}
         />
 
         {/* Error state */}
@@ -1017,7 +1017,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 variant="outline"
                 size="sm"
                 onClick={() => {
-                  if (paymentRestricted) {
+                  if (interactionRestricted) {
                     notifyPaymentRestricted();
                     return;
                   }
@@ -1025,7 +1025,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 }}
                 className={cn(
                   'font-custom mt-4',
-                  paymentRestricted && restrictedActionClass
+                  interactionRestricted && restrictedActionClass
                 )}
               >
                 Try again
@@ -1091,13 +1091,15 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                 <IncomingGatePassCard
                   key={entry._id ?? `inc-${idx}`}
                   entry={entry as IncomingGatePassEntry}
-                  paymentRestricted={paymentRestricted}
+                  paymentRestricted={interactionRestricted}
+                  reportsRestricted={reportsRestricted}
                 />
               ) : (
                 <OutgoingGatePassCard
                   key={entry._id ?? `out-${idx}`}
                   entry={entry as OutgoingGatePassEntry}
-                  paymentRestricted={paymentRestricted}
+                  paymentRestricted={interactionRestricted}
+                  reportsRestricted={reportsRestricted}
                 />
               )
             )}

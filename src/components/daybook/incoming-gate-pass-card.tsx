@@ -38,8 +38,13 @@ import { DetailRow } from './detail-row';
 
 interface IncomingGatePassCardProps {
   entry: IncomingGatePassEntry;
-  /** When true, card actions show the payment-restricted toast instead. */
+  /** When true, expand/edit show the payment-restricted toast instead. */
   paymentRestricted?: boolean;
+  /**
+   * When set, gates PDF/print only; expand/edit follow paymentRestricted.
+   * If omitted, print behavior matches paymentRestricted.
+   */
+  reportsRestricted?: boolean;
 }
 
 function formatLocation(bag: DaybookBagSize): string {
@@ -56,9 +61,14 @@ function formatVoucherDate(date: string | undefined): string {
 const IncomingGatePassCard = memo(function IncomingGatePassCard({
   entry,
   paymentRestricted = false,
+  reportsRestricted: reportsRestrictedProp,
 }: IncomingGatePassCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const reportsRestricted =
+    reportsRestrictedProp !== undefined
+      ? reportsRestrictedProp
+      : paymentRestricted;
 
   const coldStorage = useStore((s) => s.coldStorage);
   const admin = useStore((s) => s.admin);
@@ -85,7 +95,7 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
   }, [entry.bagSizes, preferenceSizes]);
 
   const handlePrintPdf = async () => {
-    if (paymentRestricted) {
+    if (reportsRestricted) {
       toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
       return;
     }
@@ -299,7 +309,7 @@ const IncomingGatePassCard = memo(function IncomingGatePassCard({
               onClick={handlePrintPdf}
               disabled={isGeneratingPdf}
               className={
-                paymentRestricted
+                reportsRestricted
                   ? 'h-8 w-8 cursor-not-allowed p-0 opacity-70'
                   : 'h-8 w-8 p-0'
               }

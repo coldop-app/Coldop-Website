@@ -33,3 +33,20 @@ export function isPaymentRestrictedAdmin(
   const digits = (mobileNumber ?? '').replace(/\D/g, '');
   return digits.endsWith('9817664358');
 }
+
+/**
+ * When the payment-restricted admin is on this cold storage, only PDF/report
+ * actions stay blocked; edit, finances, filters, and gate pass expand/edit work.
+ */
+export const REPORT_ONLY_RESTRICTED_COLD_STORAGE_ID =
+  '6996912634984daeca106e4f' as const;
+
+export function isReportOnlyRestrictedContext(
+  mobileNumber: string | null | undefined,
+  coldStorageId: string | null | undefined
+): boolean {
+  return (
+    isPaymentRestrictedAdmin(mobileNumber) &&
+    coldStorageId === REPORT_ONLY_RESTRICTED_COLD_STORAGE_ID
+  );
+}
