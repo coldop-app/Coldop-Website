@@ -1,4 +1,4 @@
-import { memo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Link } from '@tanstack/react-router';
 
 // import { Card } from '@/components/ui/card'; // used in DaybookEntryCard (commented)
@@ -57,6 +57,7 @@ import { useStore } from '@/stores/store';
 import {
   isPaymentRestrictedAdmin,
   PAYMENT_RESTRICTED_TOAST_MESSAGE,
+  shouldShowSpecialFields,
 } from '@/lib/special-fields';
 import { cn } from '@/lib/utils';
 import { useGetDaybook } from '@/services/store-admin/functions/useGetDaybook';
@@ -65,7 +66,10 @@ import type {
   IncomingGatePassEntry,
   OutgoingGatePassEntry,
 } from '@/services/store-admin/functions/useGetDaybook';
-import { useSearchDaybook } from '@/services/store-admin/functions/useSearchDaybook';
+import {
+  useSearchDaybook,
+  type SearchOrderByReceiptSearchBy,
+} from '@/services/store-admin/functions/useSearchDaybook';
 import IncomingGatePassCard from '@/components/daybook/incoming-gate-pass-card';
 import OutgoingGatePassCard from '@/components/daybook/outgoing-gate-pass-card';
 import { GetReportsDialog } from '@/components/daybook/get-reports-dialog';
@@ -89,6 +93,38 @@ const SORT_LABELS: Record<SortOrder, string> = {
   latest: 'Latest First',
   oldest: 'Oldest First',
 };
+
+const SEARCH_BY_OPTIONS: {
+  value: SearchOrderByReceiptSearchBy;
+  menuLabel: string;
+  placeholder: string;
+}[] = [
+  {
+    value: 'gatePassNumber',
+    menuLabel: 'Gate pass no',
+    placeholder: 'Search by gate pass no',
+  },
+  {
+    value: 'manualParchiNumber',
+    menuLabel: 'Manual parchi',
+    placeholder: 'Parchi number or label',
+  },
+  {
+    value: 'marka',
+    menuLabel: 'Marka (e.g. 42/300)',
+    placeholder: 'Marka, e.g. 42/300',
+  },
+  {
+    value: 'customMarka',
+    menuLabel: 'Custom marka',
+    placeholder: 'Exact custom marka',
+  },
+  {
+    value: 'remarks',
+    menuLabel: 'Remarks',
+    placeholder: 'Search in remarks',
+  },
+];
 
 /* ------------------------------------------------------------------ */
 /* Skeleton loader */
@@ -148,6 +184,8 @@ const DaybookPage = memo(function DaybookPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchReceipt, setSearchReceipt] = useState('');
+  const [searchByMode, setSearchByMode] =
+    useState<SearchOrderByReceiptSearchBy>('gatePassNumber');
   const [reportsDialogOpen, setReportsDialogOpen] = useState(false);
 
   const { data, isLoading, isError, error, isFetching, refetch } =
@@ -164,19 +202,45 @@ const DaybookPage = memo(function DaybookPage() {
 
   const admin = useStore((s) => s.admin);
   const paymentRestricted = isPaymentRestrictedAdmin(admin?.mobileNumber);
+  const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
   const notifyPaymentRestricted = () =>
     toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE);
   const restrictedActionClass =
     'cursor-not-allowed opacity-70 pointer-events-auto';
 
+  const searchByOptionsForMenu = useMemo(
+    () =>
+      SEARCH_BY_OPTIONS.filter(
+        (o) => o.value !== 'customMarka' || showSpecialFields
+      ),
+    [showSpecialFields]
+  );
+
+  /** When special fields are off, custom marka is not available; fall back for API and UI. */
+  const effectiveSearchBy: SearchOrderByReceiptSearchBy =
+    !showSpecialFields && searchByMode === 'customMarka'
+      ? 'gatePassNumber'
+      : searchByMode;
+
+  const searchByMeta = SEARCH_BY_OPTIONS.find(
+    (o) => o.value === effectiveSearchBy
+  );
+
   const handleSearchReceiptChange = (value: string) => {
-    setSearchReceipt(value.replace(/\D/g, ''));
+    if (effectiveSearchBy === 'gatePassNumber') {
+      setSearchReceipt(value.replace(/\D/g, ''));
+    } else {
+      setSearchReceipt(value);
+    }
   };
 
   const handleSearchSubmit = () => {
     const trimmed = searchReceipt.trim();
     if (trimmed) {
-      searchDaybook.mutate({ receiptNumber: trimmed });
+      searchDaybook.mutate({
+        receiptNumber: trimmed,
+        searchBy: effectiveSearchBy,
+      });
     }
   };
 
@@ -255,15 +319,45 @@ const DaybookPage = memo(function DaybookPage() {
           size="sm"
           className="flex-col items-stretch gap-4 rounded-xl"
         >
-          {/* Search by receipt number (numbers only) */}
-          <div className="relative flex w-full gap-2">
-            <div className="relative flex-1">
+          {/* Search by receipt (mode + value) */}
+          <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-stretch sm:gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-custom focus-visible:ring-primary h-10 w-full shrink-0 gap-2 rounded-lg px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:h-auto sm:w-auto"
+                >
+                  Search: {searchByMeta?.menuLabel ?? effectiveSearchBy}
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="font-custom">
+                {searchByOptionsForMenu.map((opt) => (
+                  <DropdownMenuItem
+                    key={opt.value}
+                    onSelect={() => setSearchByMode(opt.value)}
+                    className={
+                      effectiveSearchBy === opt.value ? 'font-semibold' : undefined
+                    }
+                  >
+                    {opt.menuLabel}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            <div className="relative min-w-0 flex-1">
               <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
               <Input
                 type="text"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                placeholder="Search by gate pass no"
+                inputMode={
+                  effectiveSearchBy === 'gatePassNumber' ? 'numeric' : undefined
+                }
+                pattern={
+                  effectiveSearchBy === 'gatePassNumber' ? '[0-9]*' : undefined
+                }
+                placeholder={searchByMeta?.placeholder ?? 'Search'}
                 value={searchReceipt}
                 onChange={(e) => handleSearchReceiptChange(e.target.value)}
                 onKeyDown={(e) => {
@@ -272,34 +366,43 @@ const DaybookPage = memo(function DaybookPage() {
                     handleSearchSubmit();
                   }
                 }}
-                className="font-custom focus-visible:ring-primary w-full pl-10 focus-visible:ring-2 focus-visible:ring-offset-2"
-                aria-label="Search by gate pass no (numbers only)"
+                className="font-custom focus-visible:ring-primary h-10 w-full pl-10 focus-visible:ring-2 focus-visible:ring-offset-2"
+                aria-label={searchByMeta?.placeholder ?? 'Search daybook'}
               />
             </div>
-            <Button
-              variant="default"
-              size="sm"
-              className="font-custom focus-visible:ring-primary h-8 shrink-0 gap-2 rounded-lg px-3 focus-visible:ring-2 focus-visible:ring-offset-2"
-              onClick={handleSearchSubmit}
-              disabled={!searchReceipt.trim() || searchDaybook.isPending}
-            >
-              {searchDaybook.isPending ? (
-                <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
-              ) : (
-                'Search'
-              )}
-            </Button>
-            {isSearchMode && (
+            <div className="flex shrink-0 gap-2 self-stretch sm:self-auto">
               <Button
-                variant="outline"
+                variant="default"
                 size="sm"
-                className="font-custom focus-visible:ring-primary h-8 shrink-0 gap-2 rounded-lg px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
-                onClick={handleClearSearch}
+                className="font-custom focus-visible:ring-primary h-10 min-w-0 flex-1 gap-2 rounded-lg px-3 focus-visible:ring-2 focus-visible:ring-offset-2 sm:h-8 sm:flex-none"
+                onClick={handleSearchSubmit}
+                disabled={!searchReceipt.trim() || searchDaybook.isPending}
               >
-                Clear
+                {searchDaybook.isPending ? (
+                  <RefreshCw className="h-4 w-4 shrink-0 animate-spin" />
+                ) : (
+                  'Search'
+                )}
               </Button>
-            )}
+              {isSearchMode && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="font-custom focus-visible:ring-primary h-10 shrink-0 gap-2 rounded-lg px-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 sm:h-8"
+                  onClick={handleClearSearch}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
+
+          {showSpecialFields && searchByMode === 'customMarka' && (
+            <p className="text-muted-foreground font-custom text-xs">
+              Custom marka matches incoming gate passes only; outgoing results
+              stay empty.
+            </p>
+          )}
 
           <ItemFooter className="flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex w-full flex-col gap-3 sm:flex-1 sm:flex-row sm:flex-nowrap sm:items-center sm:gap-4">
@@ -422,9 +525,11 @@ const DaybookPage = memo(function DaybookPage() {
 
         {/* Search results or Daybook list */}
         <div className="min-h-[120px] w-full">
-          {isSearchMode && searchDaybook.isError && (
+          {searchDaybook.isError && (
             <p className="font-custom text-destructive text-sm">
-              Search failed. Please try again.
+              {searchDaybook.error instanceof Error
+                ? searchDaybook.error.message
+                : 'Search failed. Please try again.'}
             </p>
           )}
           {!isSearchMode && isLoading && <DaybookSkeleton />}

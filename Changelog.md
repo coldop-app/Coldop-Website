@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.19] - 2026-04-05
+
+### Added
+
+- **Daybook – Multi-field search** – A "Search" mode menu chooses how the query is interpreted: gate pass number (digits only), manual parchi, marka, custom marka, or remarks; placeholders and input constraints follow the mode. Custom marka appears only for admins who see special fields (`shouldShowSpecialFields`), with a note that matches apply to incoming gate passes only.
+
+### Changed
+
+- **useSearchDaybook** – Request body includes optional `searchBy` (default gate-pass behavior unchanged); API responses distinguish Success and Fail, and Fail messages plus 400/404 payload messages surface in the daybook UI instead of a generic error.
+
+---
+
 ## [0.4.18] - 2026-04-02
 
 ### Added
