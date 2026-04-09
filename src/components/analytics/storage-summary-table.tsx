@@ -25,6 +25,7 @@ import { cn } from '@/lib/utils';
 type TabMode = 'current' | 'initial' | 'outgoing';
 
 export type StockFilterTab = 'all' | 'owned' | 'farmer';
+type StockFilterParam = 'OWNED' | 'FARMER';
 
 const STOCK_FILTER_TABS: { id: StockFilterTab; label: string }[] = [
   { id: 'all', label: 'All' },
@@ -56,7 +57,11 @@ export interface StorageSummaryTableProps {
   /** When set, table shows only this mode and the tab row is hidden (e.g. when page-level tabs control the mode). */
   controlledTab?: 'current' | 'initial' | 'outgoing';
   /** When set, data cells are clickable and this is called with (variety, bagSize). Use bagSize 'all' for total column. */
-  onCellClick?: (variety: string, bagSize: string) => void;
+  onCellClick?: (
+    variety: string,
+    bagSize: string,
+    stockFilter?: StockFilterParam
+  ) => void;
   /** When true, show All / Owned / Farmer tabs and use stockSummaryByFilter for Owned/Farmer. Only show when shouldShowSpecialFields. */
   showStockFilterTabs?: boolean;
   /** Required when showStockFilterTabs is true; keys OWNED and FARMER. */
@@ -328,7 +333,15 @@ export function StorageSummaryTable({
                           )}
                           {...(isClickable && {
                             onClick: () =>
-                              onCellClick(row.original.variety, bagSize),
+                              onCellClick(
+                                row.original.variety,
+                                bagSize,
+                                stockFilterTab === 'owned'
+                                  ? 'OWNED'
+                                  : stockFilterTab === 'farmer'
+                                    ? 'FARMER'
+                                    : undefined
+                              ),
                             role: 'button',
                             tabIndex: 0,
                             onKeyDown: (e: KeyboardEvent<HTMLTableCellElement>) => {
@@ -337,7 +350,15 @@ export function StorageSummaryTable({
                                 e.key === ' '
                               ) {
                                 e.preventDefault();
-                                onCellClick(row.original.variety, bagSize);
+                                onCellClick(
+                                  row.original.variety,
+                                  bagSize,
+                                  stockFilterTab === 'owned'
+                                    ? 'OWNED'
+                                    : stockFilterTab === 'farmer'
+                                      ? 'FARMER'
+                                      : undefined
+                                );
                               }
                             },
                           })}

@@ -18,7 +18,11 @@ import {
 import { BarChart3, Package, RefreshCw } from 'lucide-react';
 import { useStore } from '@/stores/store';
 import { useVarietyBreakdown } from '@/services/analytics/useVarietyBreakdown';
-import type { VarietyBreakdownSize, VarietyBreakdownFarmer } from '@/services/analytics/useVarietyBreakdown';
+import type {
+  VarietyBreakdownSize,
+  VarietyBreakdownFarmer,
+  StockFilterParam,
+} from '@/services/analytics/useVarietyBreakdown';
 import {
   type QuantityType,
   QUANTITY_TYPE_LABELS,
@@ -62,13 +66,14 @@ const VarietyBreakdownScreen = () => {
   });
   const variety = search.variety ?? '';
   const bagSizeFromUrl = search.bagSize ?? '';
+  const stockFilter = search.stockFilter as StockFilterParam | undefined;
 
   const preferenceSizes = useStore(
     (s) => s.preferences?.commodities?.[0]?.sizes ?? []
   );
 
   const { data, isLoading, error, refetch, isFetching } =
-    useVarietyBreakdown(variety);
+    useVarietyBreakdown(variety, stockFilter);
 
   const [quantityType, setQuantityType] = useState<QuantityType>('current');
   const [selectedBagSize, setSelectedBagSize] = useState<string>(() =>

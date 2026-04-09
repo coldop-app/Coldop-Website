@@ -31,6 +31,7 @@ import TopFarmersChart from './top-farmers-chart';
 import VarietyDistribution from './variety-distribution';
 
 type AnalyticsMode = 'current' | 'initial' | 'outgoing';
+type StockFilterParam = 'OWNED' | 'FARMER';
 
 const AnalyticsPage = memo(function AnalyticsPage() {
   const navigate = useNavigate();
@@ -46,10 +47,10 @@ const AnalyticsPage = memo(function AnalyticsPage() {
   const { data: topFarmersData } = useGetTopFarmers();
 
   const handleStockSummaryCellClick = useCallback(
-    (variety: string, bagSize: string) => {
+    (variety: string, bagSize: string, stockFilter?: StockFilterParam) => {
       navigate({
         to: '/store-admin/analytics/variety-breakdown',
-        search: { variety, bagSize },
+        search: { variety, bagSize, stockFilter },
       });
     },
     [navigate]

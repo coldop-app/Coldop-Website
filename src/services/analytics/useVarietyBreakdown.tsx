@@ -2,6 +2,8 @@ import { useQuery, queryOptions } from '@tanstack/react-query';
 import storeAdminAxiosClient from '@/lib/axios';
 import { queryClient } from '@/lib/queryClient';
 
+export type StockFilterParam = 'OWNED' | 'FARMER';
+
 /** Per-farmer contribution for a size in variety breakdown */
 export interface VarietyBreakdownFarmer {
   farmerName: string;
@@ -35,18 +37,24 @@ export interface GetVarietyBreakdownApiResponse {
 /** Query key factory */
 export const varietyBreakdownKeys = {
   all: ['analytics', 'variety-breakdown'] as const,
-  detail: (variety: string) =>
-    [...varietyBreakdownKeys.all, variety] as const,
+  detail: (variety: string, stockFilter?: StockFilterParam) =>
+    [...varietyBreakdownKeys.all, variety, stockFilter] as const,
 };
 
 /** Fetcher used by queryOptions and prefetch */
 async function fetchVarietyBreakdown(
-  variety: string
+  variety: string,
+  stockFilter?: StockFilterParam
 ): Promise<VarietyBreakdownData> {
   const { data } =
     await storeAdminAxiosClient.get<GetVarietyBreakdownApiResponse>(
       '/analytics/variety-breakdown',
-      { params: { variety } }
+      {
+        params: {
+          variety,
+          ...(stockFilter ? { stockFilter } : {}),
+        },
+      }
     );
 
   if (!data.success || data.data == null) {
@@ -57,22 +65,33 @@ async function fetchVarietyBreakdown(
 }
 
 /** Query options – use with useQuery, prefetchQuery, or in loaders */
-export const varietyBreakdownQueryOptions = (variety: string) =>
+export const varietyBreakdownQueryOptions = (
+  variety: string,
+  stockFilter?: StockFilterParam
+) =>
   queryOptions({
-    queryKey: varietyBreakdownKeys.detail(variety),
-    queryFn: () => fetchVarietyBreakdown(variety),
+    queryKey: varietyBreakdownKeys.detail(variety, stockFilter),
+    queryFn: () => fetchVarietyBreakdown(variety, stockFilter),
   });
 
 /** Hook to fetch variety breakdown (sizes + per-farmer contribution) for the given variety. Scoped to authenticated store. */
-export function useVarietyBreakdown(variety: string) {
+export function useVarietyBreakdown(
+  variety: string,
+  stockFilter?: StockFilterParam
+) {
   return useQuery({
-    ...varietyBreakdownQueryOptions(variety),
+    ...varietyBreakdownQueryOptions(variety, stockFilter),
     enabled: !!variety?.trim(),
   });
 }
 
 /** Prefetch variety breakdown – e.g. before opening a variety detail view */
-export function prefetchVarietyBreakdown(variety: string) {
+export function prefetchVarietyBreakdown(
+  variety: string,
+  stockFilter?: StockFilterParam
+) {
   if (!variety?.trim()) return Promise.resolve();
-  return queryClient.prefetchQuery(varietyBreakdownQueryOptions(variety));
+  return queryClient.prefetchQuery(
+    varietyBreakdownQueryOptions(variety, stockFilter)
+  );
 }
