@@ -18,7 +18,10 @@ import {
   Loader2,
 } from 'lucide-react';
 
-import { shouldShowSpecialFields } from '@/lib/special-fields';
+import {
+  shouldShowSpecialFields,
+  shouldShowStockFilterField,
+} from '@/lib/special-fields';
 import { useStore } from '@/stores/store';
 
 /* -------------------------------------------------------------------------- */
@@ -156,6 +159,7 @@ export const IncomingSummarySheet = memo(function IncomingSummarySheet({
 }: IncomingSummarySheetProps) {
   const admin = useStore((s) => s.admin);
   const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
+  const showStockFilterField = shouldShowStockFilterField(admin?.mobileNumber);
   const totalBags = quantityRows.reduce(
     (sum, row) => sum + (row.quantity ?? 0),
     0
@@ -256,7 +260,7 @@ export const IncomingSummarySheet = memo(function IncomingSummarySheet({
                       value={formValues.manualParchiNumber}
                     />
                   )}
-                  {showSpecialFields && formValues.stockFilter?.trim() && (
+                  {showStockFilterField && formValues.stockFilter?.trim() && (
                     <SummaryMetaRow
                       label="Stock Filter"
                       value={formValues.stockFilter}

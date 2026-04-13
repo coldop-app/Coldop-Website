@@ -5,6 +5,7 @@
 const ALLOWED_SPECIAL_NUMBERS: readonly string[] = [
   '9217100041',
   '9877741375',
+  '9478631000'
 ];
 
 /**
@@ -16,6 +17,28 @@ export function shouldShowSpecialFields(
 ): boolean {
   return (
     mobileNumber != null && ALLOWED_SPECIAL_NUMBERS.includes(mobileNumber)
+  );
+}
+
+/**
+ * Mobile numbers that see custom marka on incoming forms but not the stock
+ * filter field (stock filter is optional / hidden for them).
+ */
+const INCOMING_CUSTOM_MARKA_ONLY_MOBILES: readonly string[] = [
+  '9478631000',
+];
+
+/**
+ * Stock filter (OWNED/FARMER) on incoming create/edit — shown only for special
+ * admins who are not in {@link INCOMING_CUSTOM_MARKA_ONLY_MOBILES}.
+ */
+export function shouldShowStockFilterField(
+  mobileNumber: string | null | undefined
+): boolean {
+  return (
+    shouldShowSpecialFields(mobileNumber) &&
+    mobileNumber != null &&
+    !INCOMING_CUSTOM_MARKA_ONLY_MOBILES.includes(mobileNumber)
   );
 }
 
