@@ -1,10 +1,7 @@
-import { createRootRouteWithContext, Outlet } from '@tanstack/react-router';
-import { ThemeProvider } from '@/components/theme-provider';
-import { QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/sonner';
-import { queryClient } from '@/lib/queryClient';
+import { createRootRouteWithContext } from '@tanstack/react-router';
 import type { StoreAdmin } from '@/types/store-admin';
 import ErrorPage from '@/components/error-page';
+import RootRouteLayout from '@/components/root-route-layout';
 // import { Maintenance } from '@/components/maintenance';
 import NotFound from '@/components/not-found';
 
@@ -18,15 +15,7 @@ interface MyRouterContext {
 }
 
 export const Route = createRootRouteWithContext<MyRouterContext>()({
-  component: () => (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="vite-ui-theme">
-        <Outlet />
-        {/* <Maintenance /> */}
-        <Toaster />
-      </ThemeProvider>
-    </QueryClientProvider>
-  ),
+  component: RootRouteLayout,
   errorComponent: ErrorPage,
   notFoundComponent: NotFound,
 });
