@@ -51,6 +51,7 @@ type LocationEntry = { chamber: string; floor: string; row: string };
 export type ExtraQuantityRow = { id: string; size: string; quantity: number };
 
 const EXTRA_ROW_KEY_PREFIX = 'extra:';
+const SPECIAL_STOCK_FILTER_COLD_STORAGE_ID = '69e2014dcd40bd2e61416551';
 
 type FieldErrors = Array<{ message?: string } | undefined>;
 
@@ -96,6 +97,7 @@ export const IncomingFormBase = memo(function IncomingFormBase({
 }: IncomingFormBaseProps) {
   const isEditMode = mode === 'edit';
   const admin = useStore((s) => s.admin);
+  const coldStorage = useStore((s) => s.coldStorage);
   const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
   const showStockFilterField = shouldShowStockFilterField(admin?.mobileNumber);
 
@@ -128,10 +130,31 @@ export const IncomingFormBase = memo(function IncomingFormBase({
   }, [preferences]);
 
   /** Stock filter options (shown only for specific account) */
-  const stockFilterOptions: Option<string>[] = [
-    { value: 'OWNED', label: 'OWNED', searchableText: 'OWNED' },
-    { value: 'FARMER', label: 'FARMER', searchableText: 'FARMER' },
-  ];
+  const stockFilterOptions: Option<string>[] = useMemo(() => {
+    if (
+      admin &&
+      coldStorage?._id === SPECIAL_STOCK_FILTER_COLD_STORAGE_ID
+    ) {
+      return [
+        {
+          value: 'Guru Sahib',
+          label: 'Guru Sahib',
+          searchableText: 'Guru Sahib',
+        },
+        {
+          value: 'Amrinder Sodhi HUF',
+          label: 'Amrinder Sodhi HUF',
+          searchableText: 'Amrinder Sodhi HUF',
+        },
+        { value: 'Jamindar', label: 'Jamindar', searchableText: 'Jamindar' },
+      ];
+    }
+
+    return [
+      { value: 'OWNED', label: 'OWNED', searchableText: 'OWNED' },
+      { value: 'FARMER', label: 'FARMER', searchableText: 'FARMER' },
+    ];
+  }, [admin, coldStorage?._id]);
 
   const farmerOptions: Option<string>[] = useMemo(() => {
     if (!farmerLinks) return [];

@@ -5,7 +5,8 @@
 const ALLOWED_SPECIAL_NUMBERS: readonly string[] = [
   '9217100041',
   '9877741375',
-  '9478631000'
+  '9478631000',
+  '9888200953',
 ];
 
 /**
