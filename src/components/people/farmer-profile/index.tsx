@@ -260,6 +260,7 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
           incoming={incoming}
           outgoing={outgoing}
           sizeColumns={sizes}
+          preferenceSizeOrder={preferences?.commodities?.[0]?.sizes}
           groupByVariety={groupByVarietyOption}
           filterByOwnership={showSpecialFields ? filterByOwnershipOption : undefined}
           ownershipReportView={

@@ -26,6 +26,12 @@ export interface FarmerReportPdfProps {
   incoming: DaybookEntry[];
   outgoing: DaybookEntry[];
   sizeColumns: string[];
+  /**
+   * Canonical bag-size order from store preferences (e.g. `preferences.commodities[0].sizes`).
+   * When set, table columns follow this order; sizes not listed in preferences stay at the end
+   * in their original relative order.
+   */
+  preferenceSizeOrder?: string[];
   /** When true, group receipt and delivery tables by variety (only when not using special fields layout). */
   groupByVariety?: boolean;
   /** When true and special fields are shown, receipt details are grouped by ownership (OWNED / FARMER). */
@@ -74,6 +80,24 @@ function formatPdfDate(iso: string): string {
   const month = d.getMonth() + 1;
   const year = String(d.getFullYear()).slice(2);
   return `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}/${year}`;
+}
+
+/**
+ * Order size column headers and cells to match preference order (store `commodities[0].sizes`).
+ * Sizes present in `sizeColumns` but not in preferences are appended, preserving their relative order.
+ */
+function orderSizeColumnsByPreference(
+  sizeColumns: string[],
+  preferenceOrder: string[] | undefined
+): string[] {
+  const unique = [...new Set(sizeColumns)];
+  if (!preferenceOrder?.length) return unique;
+  const idx = new Map(preferenceOrder.map((s, i) => [s, i]));
+  const pref = new Set(preferenceOrder);
+  const inPref = unique.filter((c) => pref.has(c));
+  const extra = unique.filter((c) => !pref.has(c));
+  inPref.sort((a, b) => (idx.get(a)! - idx.get(b)!));
+  return [...inPref, ...extra];
 }
 
 /** Ascending gate pass order; tie-break by date for identical numbers. */
@@ -500,10 +524,15 @@ export function FarmerReportPdf({
   incoming,
   outgoing,
   sizeColumns,
+  preferenceSizeOrder,
   groupByVariety = false,
   filterByOwnership = false,
   ownershipReportView = 'ALL',
 }: FarmerReportPdfProps) {
+  const orderedSizeColumns = orderSizeColumnsByPreference(
+    sizeColumns,
+    preferenceSizeOrder
+  );
   const showSpecialFields = shouldShowSpecialFields(storeAdmin?.mobileNumber);
   const useOwnershipFilter = showSpecialFields && filterByOwnership;
 
@@ -517,18 +546,18 @@ export function FarmerReportPdf({
   const showFarmerSection = useOwnershipFilter && ownershipReportView !== 'OWNED';
 
   const ownedReceiptRows = useOwnershipFilter
-    ? buildReceiptRows(ownedIncoming, sizeColumns)
+    ? buildReceiptRows(ownedIncoming, orderedSizeColumns)
     : [];
   const farmerReceiptRows = useOwnershipFilter
-    ? buildReceiptRows(farmerIncoming, sizeColumns)
+    ? buildReceiptRows(farmerIncoming, orderedSizeColumns)
     : [];
 
   const farmIncomingOnly = incoming.filter((e) => e.type === 'RECEIPT');
   const incomingTransferEntries = incoming.filter((e) => e.type === 'Incoming-transfer');
 
-  const receiptRows = buildReceiptRows(farmIncomingOnly, sizeColumns);
+  const receiptRows = buildReceiptRows(farmIncomingOnly, orderedSizeColumns);
   const totalFarmReceived = receiptRows.reduce((s, r) => s + r.rowTotal, 0);
-  const farmReceiptTotalsBySize = sizeColumns.reduce(
+  const farmReceiptTotalsBySize = orderedSizeColumns.reduce(
     (acc, col) => ({
       ...acc,
       [col]: receiptRows.reduce(
@@ -543,11 +572,11 @@ export function FarmerReportPdf({
 
   const incomingTransferRows = buildIncomingTransferRows(
     incomingTransferEntries,
-    sizeColumns,
+    orderedSizeColumns,
     totalFarmReceived
   );
   const totalIncomingTransferBags = incomingTransferRows.reduce((s, r) => s + r.rowTotal, 0);
-  const incomingTransferTotalsBySize = sizeColumns.reduce(
+  const incomingTransferTotalsBySize = orderedSizeColumns.reduce(
     (acc, col) => ({
       ...acc,
       [col]: incomingTransferRows.reduce(
@@ -560,7 +589,7 @@ export function FarmerReportPdf({
   );
 
   /** Per-size bags from all incoming credited to stock (farm receipts + purchases from other farmers). */
-  const receiptTotalsBySize = sizeColumns.reduce(
+  const receiptTotalsBySize = orderedSizeColumns.reduce(
     (acc, col) => ({
       ...acc,
       [col]: (farmReceiptTotalsBySize[col] ?? 0) + (incomingTransferTotalsBySize[col] ?? 0),
@@ -569,7 +598,7 @@ export function FarmerReportPdf({
   );
   const totalReceived = totalFarmReceived + totalIncomingTransferBags;
   const openingTotal = totalReceived;
-  const deliveryRows = buildDeliveryRows(outgoing, sizeColumns, openingTotal);
+  const deliveryRows = buildDeliveryRows(outgoing, orderedSizeColumns, openingTotal);
   const totalDelivered = outgoing.reduce((s, e) => s + totalBagsOutgoing(e), 0);
   const closingBalance = openingTotal - totalDelivered;
 
@@ -582,20 +611,20 @@ export function FarmerReportPdf({
   const ownedTransferRows = useOwnershipFilter
     ? buildIncomingTransferRows(
         ownedIncoming.filter((e) => e.type === 'Incoming-transfer'),
-        sizeColumns,
+        orderedSizeColumns,
         totalOwned
       )
     : [];
   const farmerTransferRows = useOwnershipFilter
     ? buildIncomingTransferRows(
         farmerIncoming.filter((e) => e.type === 'Incoming-transfer'),
-        sizeColumns,
+        orderedSizeColumns,
         totalFarmer
       )
     : [];
 
   const ownedTotalsBySize = useOwnershipFilter
-    ? sizeColumns.reduce(
+    ? orderedSizeColumns.reduce(
         (acc, col) => ({
           ...acc,
           [col]: ownedReceiptRows.reduce(
@@ -607,7 +636,7 @@ export function FarmerReportPdf({
       )
     : {};
   const farmerTotalsBySize = useOwnershipFilter
-    ? sizeColumns.reduce(
+    ? orderedSizeColumns.reduce(
         (acc, col) => ({
           ...acc,
           [col]: farmerReceiptRows.reduce(
@@ -619,7 +648,7 @@ export function FarmerReportPdf({
       )
     : {};
   const ownedTransferTotalsBySize = useOwnershipFilter
-    ? sizeColumns.reduce(
+    ? orderedSizeColumns.reduce(
         (acc, col) => ({
           ...acc,
           [col]: ownedTransferRows.reduce(
@@ -632,7 +661,7 @@ export function FarmerReportPdf({
     : {};
   const totalOwnedTransferBags = ownedTransferRows.reduce((s, r) => s + r.rowTotal, 0);
   const farmerTransferTotalsBySize = useOwnershipFilter
-    ? sizeColumns.reduce(
+    ? orderedSizeColumns.reduce(
         (acc, col) => ({
           ...acc,
           [col]: farmerTransferRows.reduce(
@@ -663,11 +692,11 @@ export function FarmerReportPdf({
     : [];
 
   const receiptTableCols = showSpecialFields
-    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...sizeColumns, 'TOTAL', 'REMARKS']
-    : ['DATE', 'VOUCHER', 'VARIETY', ...sizeColumns, 'TOTAL', 'G.TOTAL', 'REMARKS'];
+    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...orderedSizeColumns, 'TOTAL', 'REMARKS']
+    : ['DATE', 'VOUCHER', 'VARIETY', ...orderedSizeColumns, 'TOTAL', 'G.TOTAL', 'REMARKS'];
   const deliveryTableCols = showSpecialFields
-    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...sizeColumns, 'TOTAL']
-    : ['DATE', 'VOUCHER', 'VARIETY', ...sizeColumns, 'TOTAL', 'G.TOTAL'];
+    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...orderedSizeColumns, 'TOTAL']
+    : ['DATE', 'VOUCHER', 'VARIETY', ...orderedSizeColumns, 'TOTAL', 'G.TOTAL'];
 
   return (
     <Document>
@@ -746,7 +775,7 @@ export function FarmerReportPdf({
                     {showSpecialFields && (
                       <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                     )}
-                    {sizeColumns.map((col) => {
+                    {orderedSizeColumns.map((col) => {
                       const list = r.sizeQtys[col] ?? [];
                       return (
                         <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -790,7 +819,7 @@ export function FarmerReportPdf({
                     {showSpecialFields && (
                       <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                     )}
-                    {sizeColumns.map((col) => (
+                    {orderedSizeColumns.map((col) => (
                       <Text key={col} style={[styles.cell, { width: '8%' }]}>
                         {ownedTotalsBySize[col] ?? 0}
                       </Text>
@@ -841,7 +870,7 @@ export function FarmerReportPdf({
                         {showSpecialFields && (
                           <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                         )}
-                        {sizeColumns.map((col) => {
+                        {orderedSizeColumns.map((col) => {
                           const list = r.sizeQtys[col] ?? [];
                           return (
                             <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -885,7 +914,7 @@ export function FarmerReportPdf({
                         {showSpecialFields && (
                           <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                         )}
-                        {sizeColumns.map((col) => (
+                        {orderedSizeColumns.map((col) => (
                           <Text key={col} style={[styles.cell, { width: '8%' }]}>
                             {ownedTransferTotalsBySize[col] ?? 0}
                           </Text>
@@ -940,7 +969,7 @@ export function FarmerReportPdf({
                     {showSpecialFields && (
                       <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                     )}
-                    {sizeColumns.map((col) => {
+                    {orderedSizeColumns.map((col) => {
                       const list = r.sizeQtys[col] ?? [];
                       return (
                         <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -984,7 +1013,7 @@ export function FarmerReportPdf({
                     {showSpecialFields && (
                       <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                     )}
-                    {sizeColumns.map((col) => (
+                    {orderedSizeColumns.map((col) => (
                       <Text key={col} style={[styles.cell, { width: '8%' }]}>
                         {farmerTotalsBySize[col] ?? 0}
                       </Text>
@@ -1035,7 +1064,7 @@ export function FarmerReportPdf({
                         {showSpecialFields && (
                           <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                         )}
-                        {sizeColumns.map((col) => {
+                        {orderedSizeColumns.map((col) => {
                           const list = r.sizeQtys[col] ?? [];
                           return (
                             <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -1079,7 +1108,7 @@ export function FarmerReportPdf({
                         {showSpecialFields && (
                           <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                         )}
-                        {sizeColumns.map((col) => (
+                        {orderedSizeColumns.map((col) => (
                           <Text key={col} style={[styles.cell, { width: '8%' }]}>
                             {farmerTransferTotalsBySize[col] ?? 0}
                           </Text>
@@ -1127,11 +1156,11 @@ export function FarmerReportPdf({
                 );
               const rows = buildReceiptRows(
                 varietyIncoming,
-                sizeColumns,
+                orderedSizeColumns,
                 startRun
               );
               const varietyTotal = rows.reduce((s, r) => s + r.rowTotal, 0);
-              const totalsBySize = sizeColumns.reduce(
+              const totalsBySize = orderedSizeColumns.reduce(
                 (acc, col) => ({
                   ...acc,
                   [col]: rows.reduce(
@@ -1181,7 +1210,7 @@ export function FarmerReportPdf({
                         {showSpecialFields && (
                           <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                         )}
-                        {sizeColumns.map((col) => {
+                        {orderedSizeColumns.map((col) => {
                           const list = r.sizeQtys[col] ?? [];
                           return (
                             <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -1226,7 +1255,7 @@ export function FarmerReportPdf({
                       {showSpecialFields && (
                         <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                       )}
-                      {sizeColumns.map((col) => (
+                      {orderedSizeColumns.map((col) => (
                         <Text key={col} style={[styles.cell, { width: '8%' }]}>
                           {totalsBySize[col] ?? 0}
                         </Text>
@@ -1275,11 +1304,11 @@ export function FarmerReportPdf({
                       );
                   const rows = buildIncomingTransferRows(
                     varietyTransfer,
-                    sizeColumns,
+                    orderedSizeColumns,
                     startRun
                   );
                   const varietyTotal = rows.reduce((s, r) => s + r.rowTotal, 0);
-                  const totalsBySize = sizeColumns.reduce(
+                  const totalsBySize = orderedSizeColumns.reduce(
                     (acc, col) => ({
                       ...acc,
                       [col]: rows.reduce(
@@ -1329,7 +1358,7 @@ export function FarmerReportPdf({
                             {showSpecialFields && (
                               <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                             )}
-                            {sizeColumns.map((col) => {
+                            {orderedSizeColumns.map((col) => {
                               const list = r.sizeQtys[col] ?? [];
                               return (
                                 <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -1374,7 +1403,7 @@ export function FarmerReportPdf({
                           {showSpecialFields && (
                             <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                           )}
-                          {sizeColumns.map((col) => (
+                          {orderedSizeColumns.map((col) => (
                             <Text key={col} style={[styles.cell, { width: '8%' }]}>
                               {totalsBySize[col] ?? 0}
                             </Text>
@@ -1434,7 +1463,7 @@ export function FarmerReportPdf({
                   {showSpecialFields && (
                     <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                   )}
-                  {sizeColumns.map((col) => {
+                  {orderedSizeColumns.map((col) => {
                     const list = r.sizeQtys[col] ?? [];
                     return (
                       <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -1480,7 +1509,7 @@ export function FarmerReportPdf({
                   {showSpecialFields && (
                     <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                   )}
-                  {sizeColumns.map((col) => (
+                  {orderedSizeColumns.map((col) => (
                     <Text key={col} style={[styles.cell, { width: '8%' }]}>
                       {farmReceiptTotalsBySize[col] ?? 0}
                     </Text>
@@ -1538,7 +1567,7 @@ export function FarmerReportPdf({
                       {showSpecialFields && (
                         <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                       )}
-                      {sizeColumns.map((col) => {
+                      {orderedSizeColumns.map((col) => {
                         const list = r.sizeQtys[col] ?? [];
                         return (
                           <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -1583,7 +1612,7 @@ export function FarmerReportPdf({
                     {showSpecialFields && (
                       <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                     )}
-                    {sizeColumns.map((col) => (
+                    {orderedSizeColumns.map((col) => (
                       <Text key={col} style={[styles.cell, { width: '8%' }]}>
                         {incomingTransferTotalsBySize[col] ?? 0}
                       </Text>
@@ -1623,7 +1652,7 @@ export function FarmerReportPdf({
                     {showSpecialFields && (
                       <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                     )}
-                    {sizeColumns.map((col) => (
+                    {orderedSizeColumns.map((col) => (
                       <Text key={col} style={[styles.cell, { width: '8%' }]}>
                         {receiptTotalsBySize[col] ?? 0}
                       </Text>
@@ -1655,7 +1684,7 @@ export function FarmerReportPdf({
                   );
                 const rows = buildDeliveryRows(
                   varietyOutgoing,
-                  sizeColumns,
+                  orderedSizeColumns,
                   runningTotalBefore
                 );
                 const varietyDelivered = rows.reduce((s, r) => s + r.rowTotal, 0);
@@ -1697,7 +1726,7 @@ export function FarmerReportPdf({
                           {showSpecialFields && (
                             <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                           )}
-                          {sizeColumns.map((col) => {
+                          {orderedSizeColumns.map((col) => {
                             const list = r.sizeQtys[col] ?? [];
                             return (
                               <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
@@ -1739,7 +1768,7 @@ export function FarmerReportPdf({
                         {showSpecialFields && (
                           <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                         )}
-                        {sizeColumns.map((col) => (
+                        {orderedSizeColumns.map((col) => (
                           <Text key={col} style={[styles.cell, { width: '8%' }]}>
                             {rows.reduce(
                               (s, r) =>
@@ -1793,7 +1822,7 @@ export function FarmerReportPdf({
                   {showSpecialFields && (
                     <Text style={[styles.cellLeft, { width: '10%' }]}>-</Text>
                   )}
-                  {sizeColumns.map((col) => (
+                  {orderedSizeColumns.map((col) => (
                     <Text key={col} style={[styles.cell, { width: '8%' }]}>
                       {receiptTotalsBySize[col] ?? 0}
                     </Text>
@@ -1819,7 +1848,7 @@ export function FarmerReportPdf({
                   {showSpecialFields && (
                     <Text style={[styles.cellLeft, { width: '10%' }]}>{r.customMarka}</Text>
                   )}
-                  {sizeColumns.map((col) => {
+                  {orderedSizeColumns.map((col) => {
                     const list = r.sizeQtys[col] ?? [];
                     return (
                       <View key={col} style={[styles.cell, styles.cellQtyLoc, { width: '8%' }]}>
