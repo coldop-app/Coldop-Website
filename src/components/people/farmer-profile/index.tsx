@@ -228,10 +228,6 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
     filterByOwnershipOption: boolean,
     ownershipReportViewOption: OwnershipReportView
   ) => {
-    if (reportsRestricted) {
-      notifyPaymentRestricted();
-      return;
-    }
     if (!link) return;
     const printWindow = window.open('', '_blank');
     if (printWindow) {
@@ -582,53 +578,31 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                     </div>
                   </DialogContent>
                 </Dialog>
-                {reportsRestricted ? (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className={cn(
-                      'font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm',
-                      restrictedActionClass
-                    )}
-                    onClick={notifyPaymentRestricted}
+                <Button
+                  variant="outline"
+                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
+                  asChild
+                >
+                  <Link
+                    to="/store-admin/my-finances"
+                    search={{
+                      tab: 'Ledger View',
+                      farmerStorageLinkId: link._id,
+                      farmerName: link.farmerId.name,
+                    }}
+                    className="gap-2"
                   >
                     <BookOpen className="text-primary h-4 w-4" />
                     View Financial Ledger
-                  </Button>
-                ) : (
-                  <Button
-                    variant="outline"
-                    className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
-                    asChild
-                  >
-                    <Link
-                      to="/store-admin/my-finances"
-                      search={{
-                        tab: 'Ledger View',
-                        farmerStorageLinkId: link._id,
-                        farmerName: link.farmerId.name,
-                      }}
-                      className="gap-2"
-                    >
-                      <BookOpen className="text-primary h-4 w-4" />
-                      View Financial Ledger
-                    </Link>
-                  </Button>
-                )}
+                  </Link>
+                </Button>
                 <Button
                   variant="outline"
-                  className={cn(
-                    'font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2',
-                    reportsRestricted && restrictedActionClass
-                  )}
+                  className="font-custom focus-visible:ring-primary dark:border-border dark:bg-background dark:text-foreground dark:hover:bg-accent dark:hover:text-foreground cursor-pointer gap-2 rounded-lg border-gray-200 bg-white text-[#333] shadow-sm transition-colors duration-200 hover:bg-gray-50 hover:text-[#333] focus-visible:ring-2 focus-visible:ring-offset-2"
                   onClick={() => {
-                    if (reportsRestricted) {
-                      notifyPaymentRestricted();
-                      return;
-                    }
                     setStockLedgerDialogOpen(true);
                   }}
-                  disabled={isGeneratingStockLedgerPdf && !reportsRestricted}
+                  disabled={isGeneratingStockLedgerPdf}
                 >
                   {isGeneratingStockLedgerPdf ? (
                     <Spinner className="h-4 w-4" />
@@ -716,10 +690,6 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                         </Button>
                         <Button
                           onClick={() => {
-                            if (reportsRestricted) {
-                              notifyPaymentRestricted();
-                              return;
-                            }
                             setStockLedgerDialogOpen(false);
                             handleViewStockLedgerPdf(
                               groupByVariety,
@@ -727,9 +697,6 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                               ownershipReportView
                             );
                           }}
-                          className={
-                            reportsRestricted ? restrictedActionClass : undefined
-                          }
                         >
                           View PDF
                         </Button>
