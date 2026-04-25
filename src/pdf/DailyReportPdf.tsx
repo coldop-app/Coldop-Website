@@ -206,11 +206,6 @@ function buildDeliveryRows(
   return rows;
 }
 
-function totalBagsOutgoing(entry: DaybookEntry): number {
-  const orderDetails = entry.orderDetails ?? [];
-  return orderDetails.reduce((s, d) => s + (d.quantityIssued ?? 0), 0);
-}
-
 /* ------------------------------------------------------------------ */
 /* Styles */
 /* ------------------------------------------------------------------ */
@@ -221,7 +216,7 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 80,
     fontFamily: 'Helvetica',
-    fontSize: 8,
+    fontSize: 11,
   },
   header: {
     borderBottomWidth: 2,
@@ -231,47 +226,58 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   companyName: {
-    fontSize: 16,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 3,
   },
   reportTitle: {
-    fontSize: 12,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 6,
   },
   dateRange: {
-    fontSize: 9,
+    fontSize: 11,
     marginBottom: 6,
   },
-  farmerInfo: {
+  farmerInfoStrip: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: '#000',
+    backgroundColor: '#F5F5F5',
+    borderRadius: 2,
+    overflow: 'hidden',
     marginBottom: 12,
   },
-  farmerInfoCol: {
-    width: '48%',
+  farmerInfoItem: {
+    flex: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    borderRightWidth: 0.5,
+    borderRightColor: '#999',
   },
-  infoRow: {
-    flexDirection: 'row',
-    marginBottom: 3,
+  farmerInfoItemLast: {
+    borderRightWidth: 0,
+  },
+  farmerInfoLabel: {
     fontSize: 8,
-  },
-  infoLabel: {
-    width: '40%',
+    color: '#444',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 2,
     fontWeight: 'bold',
   },
-  infoValue: {
-    width: '60%',
+  farmerInfoValue: {
+    fontSize: 11,
+    fontWeight: 'bold',
   },
   ledgerContainer: {
     marginVertical: 12,
   },
   ledgerTitle: {
-    fontSize: 10,
+    fontSize: 14,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginBottom: 6,
+    marginBottom: 8,
     textTransform: 'uppercase',
   },
   table: {
@@ -288,20 +294,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     backgroundColor: '#E8E8E8',
     fontWeight: 'bold',
+    fontSize: 11,
     borderBottomWidth: 1,
     borderBottomColor: '#000',
-    paddingVertical: 3,
+    paddingVertical: 5,
   },
   cell: {
-    padding: 2,
-    fontSize: 7,
+    padding: 4,
+    fontSize: 11,
     textAlign: 'center',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
   },
   cellLeft: {
-    padding: 2,
-    fontSize: 7,
+    padding: 4,
+    fontSize: 11,
     textAlign: 'left',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
@@ -316,7 +323,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   cellLocText: {
-    fontSize: 6,
+    fontSize: 10,
     color: '#444',
   },
   cellTotal: {
@@ -340,39 +347,21 @@ const styles = StyleSheet.create({
   },
   summary: {
     marginTop: 12,
-    padding: 8,
-    borderWidth: 2,
+    marginBottom: 10,
+  },
+  summaryTable: {
+    borderWidth: 1,
     borderColor: '#000',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#FAFAFA',
   },
-  summaryTitle: {
-    fontSize: 10,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 6,
-    textTransform: 'uppercase',
-  },
-  summaryRow: {
+  summaryTableRow: {
     flexDirection: 'row',
     borderBottomWidth: 0.5,
-    borderBottomColor: '#666',
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    fontSize: 8,
-    fontWeight: 'bold',
+    borderBottomColor: '#999',
+    minHeight: 20,
   },
-  summaryLabel: {
-    width: '70%',
-  },
-  summaryValue: {
-    width: '30%',
-    textAlign: 'right',
-    borderLeftWidth: 0.5,
-    borderLeftColor: '#666',
-    paddingLeft: 4,
-  },
-  summaryRowClosing: {
-    backgroundColor: '#D0D0D0',
+  summaryTableRowLast: {
+    borderBottomWidth: 0,
   },
   footer: {
     position: 'absolute',
@@ -380,47 +369,39 @@ const styles = StyleSheet.create({
     left: 16,
     right: 16,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
-    borderTopWidth: 1,
+    borderTopWidth: 1.5,
     borderTopColor: '#000',
+    backgroundColor: '#F2F2F2',
+    borderRadius: 4,
     paddingTop: 6,
-    fontSize: 7,
-  },
-  footerLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+    paddingBottom: 6,
+    fontSize: 10,
   },
   footerCenter: {
-    flex: 1,
-    marginLeft: 28,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  footerRight: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
   footerLogo: {
-    width: 24,
-    height: 24,
+    width: 26,
+    height: 26,
     marginBottom: 3,
   },
   poweredBy: {
-    fontSize: 6,
-    color: '#555',
-    fontStyle: 'italic',
+    fontSize: 10,
+    color: '#2B2B2B',
+    fontWeight: 'bold',
   },
   pageNumber: {
     textAlign: 'center',
-    fontSize: 7,
+    fontSize: 10,
     color: '#666',
     marginTop: 8,
+  },
+  emptyStateText: {
+    fontSize: 11,
   },
 });
 
@@ -449,6 +430,92 @@ function cellWidth(col: string): string {
   return '8%';
 }
 
+function buildSummaryMatrix(rows: ReceiptRow[], sizeColumns: string[]) {
+  const varietyMap = new Map<string, Record<string, number>>();
+  for (const row of rows) {
+    const variety = row.variety?.trim() || '-';
+    const totals =
+      varietyMap.get(variety) ??
+      (Object.fromEntries(sizeColumns.map((col) => [col, 0])) as Record<string, number>);
+    for (const col of sizeColumns) {
+      totals[col] += (row.sizeQtys[col] ?? []).reduce((sum, item) => sum + item.qty, 0);
+    }
+    varietyMap.set(variety, totals);
+  }
+
+  const varietyRows = [...varietyMap.entries()]
+    .map(([variety, totalsBySize]) => ({
+      variety,
+      totalsBySize,
+      rowTotal: sizeColumns.reduce((sum, col) => sum + (totalsBySize[col] ?? 0), 0),
+    }))
+    .sort((a, b) => a.variety.localeCompare(b.variety));
+
+  const grandTotalsBySize = Object.fromEntries(sizeColumns.map((col) => [col, 0])) as Record<string, number>;
+  for (const row of varietyRows) {
+    for (const col of sizeColumns) {
+      grandTotalsBySize[col] += row.totalsBySize[col] ?? 0;
+    }
+  }
+
+  return {
+    varietyRows,
+    grandTotalsBySize,
+    grandTotal: sizeColumns.reduce((sum, col) => sum + (grandTotalsBySize[col] ?? 0), 0),
+  };
+}
+
+function SummaryTable({
+  receiptRows,
+  sizeColumns,
+}: {
+  receiptRows: ReceiptRow[];
+  sizeColumns: string[];
+}) {
+  const { varietyRows, grandTotalsBySize, grandTotal } = buildSummaryMatrix(receiptRows, sizeColumns);
+  const sizeColWidth = sizeColumns.length > 0 ? `${Math.max(8, Math.floor(62 / sizeColumns.length))}%` : '12%';
+
+  return (
+    <View style={styles.summary}>
+      <View style={styles.summaryTable}>
+        <View style={[styles.summaryTableRow, styles.tableHeaderRow]}>
+          <Text style={[styles.cellLeft, { width: '26%', fontWeight: 'bold' }]}>Varieties</Text>
+          {sizeColumns.map((col) => (
+            <Text key={`summary-head-${col}`} style={[styles.cell, { width: sizeColWidth, fontWeight: 'bold' }]}>
+              {col}
+            </Text>
+          ))}
+          <Text style={[styles.cell, styles.cellTotal, styles.cellLast, { width: '12%', fontWeight: 'bold' }]}>
+            Total
+          </Text>
+        </View>
+        {varietyRows.map((row, idx) => (
+          <View key={`summary-row-${row.variety}-${idx}`} style={styles.summaryTableRow}>
+            <Text style={[styles.cellLeft, { width: '26%' }]}>{row.variety}</Text>
+            {sizeColumns.map((col) => (
+              <Text key={`summary-${row.variety}-${col}`} style={[styles.cell, { width: sizeColWidth }]}>
+                {row.totalsBySize[col] ?? 0}
+              </Text>
+            ))}
+            <Text style={[styles.cell, styles.cellTotal, styles.cellLast, { width: '12%' }]}>{row.rowTotal}</Text>
+          </View>
+        ))}
+        <View style={[styles.summaryTableRow, styles.rowTotals, styles.summaryTableRowLast]}>
+          <Text style={[styles.cellLeft, { width: '26%', fontWeight: 'bold' }]}>Bag Total</Text>
+          {sizeColumns.map((col) => (
+            <Text key={`summary-total-${col}`} style={[styles.cell, { width: sizeColWidth, fontWeight: 'bold' }]}>
+              {grandTotalsBySize[col] ?? 0}
+            </Text>
+          ))}
+          <Text style={[styles.cell, styles.cellTotal, styles.cellLast, { width: '12%', fontWeight: 'bold' }]}>
+            {grandTotal}
+          </Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* Single farmer block (same layout as FarmerReportPdf) */
 /* ------------------------------------------------------------------ */
@@ -460,6 +527,8 @@ function FarmerBlockPage({
   sizeColumns,
   pageIndex,
   showSpecialFields,
+  filterByOwnership = false,
+  showFooter = true,
 }: {
   companyName: string;
   dateRangeLabel: string;
@@ -467,13 +536,30 @@ function FarmerBlockPage({
   sizeColumns: string[];
   pageIndex: number;
   showSpecialFields: boolean;
+  filterByOwnership?: boolean;
+  showFooter?: boolean;
 }) {
   const incoming = block.incoming.map(toDaybookEntryIncoming);
   const outgoing = block.outgoing.map(toDaybookEntryOutgoing);
+  const useOwnershipFilter = showSpecialFields && filterByOwnership;
+  const ownedIncoming = incoming.filter((e) => e.stockFilter === 'OWNED');
+  const farmerIncoming = incoming.filter((e) => e.stockFilter !== 'OWNED');
   const receiptRows = buildReceiptRows(incoming, sizeColumns, {
     includeAcColumn: false,
     includeCustomMarka: showSpecialFields,
   });
+  const ownedReceiptRows = useOwnershipFilter
+    ? buildReceiptRows(ownedIncoming, sizeColumns, {
+        includeAcColumn: false,
+        includeCustomMarka: true,
+      })
+    : [];
+  const farmerReceiptRows = useOwnershipFilter
+    ? buildReceiptRows(farmerIncoming, sizeColumns, {
+        includeAcColumn: false,
+        includeCustomMarka: true,
+      })
+    : [];
   const totalReceived = receiptRows.reduce((s, r) => s + r.rowTotal, 0);
   const receiptTotalsBySize = sizeColumns.reduce(
     (acc, col) => ({
@@ -487,13 +573,39 @@ function FarmerBlockPage({
     }),
     {} as Record<string, number>
   );
+  const ownedTotalsBySize = useOwnershipFilter
+    ? sizeColumns.reduce(
+        (acc, col) => ({
+          ...acc,
+          [col]: ownedReceiptRows.reduce(
+            (s, r) =>
+              s +
+              (r.sizeQtys[col] ?? []).reduce((sum, x) => sum + x.qty, 0),
+            0
+          ),
+        }),
+        {} as Record<string, number>
+      )
+    : {};
+  const farmerTotalsBySize = useOwnershipFilter
+    ? sizeColumns.reduce(
+        (acc, col) => ({
+          ...acc,
+          [col]: farmerReceiptRows.reduce(
+            (s, r) =>
+              s +
+              (r.sizeQtys[col] ?? []).reduce((sum, x) => sum + x.qty, 0),
+            0
+          ),
+        }),
+        {} as Record<string, number>
+      )
+    : {};
   const openingTotal = totalReceived;
   const deliveryRows = buildDeliveryRows(outgoing, sizeColumns, openingTotal, {
     includeAcColumn: false,
     includeCustomMarka: showSpecialFields,
   });
-  const totalDelivered = outgoing.reduce((s, entry) => s + totalBagsOutgoing(entry), 0);
-  const closingBalance = openingTotal - totalDelivered;
   const includeAc = false;
   const recCols = [
     ...receiptTableBaseCols(includeAc, showSpecialFields),
@@ -509,40 +621,15 @@ function FarmerBlockPage({
     ...(showSpecialFields ? [] : ['G.TOTAL']),
   ];
   const farmer = block.farmer;
-
-  return (
-    <Page size="A4" style={styles.page}>
-      <View style={styles.header}>
-        <Text style={styles.companyName}>{companyName}</Text>
-        <Text style={styles.reportTitle}>DAILY REPORTS</Text>
-        <Text style={styles.dateRange}>{dateRangeLabel}</Text>
-      </View>
-
-      <View style={styles.farmerInfo}>
-        <View style={styles.farmerInfoCol}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>A/c No.:</Text>
-            <Text style={styles.infoValue}>{String(farmer.accountNumber)}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Name:</Text>
-            <Text style={styles.infoValue}>{farmer.name}</Text>
-          </View>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Address:</Text>
-            <Text style={styles.infoValue}>{farmer.address}</Text>
-          </View>
-        </View>
-        <View style={styles.farmerInfoCol}>
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>Mobile:</Text>
-            <Text style={styles.infoValue}>{farmer.mobileNumber}</Text>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.ledgerContainer}>
-        <Text style={styles.ledgerTitle}>Receipt Details</Text>
+  function renderReceiptTable(
+    title: string,
+    rows: ReceiptRow[],
+    totalsBySize: Record<string, number>,
+    groupTotal: number
+  ) {
+    return (
+      <View style={styles.ledgerContainer} key={title}>
+        <Text style={styles.ledgerTitle}>{title}</Text>
         <View style={styles.table}>
           <View style={styles.tableHeaderRow}>
             {recCols.map((col, i) => (
@@ -563,11 +650,8 @@ function FarmerBlockPage({
               </Text>
             ))}
           </View>
-          {receiptRows.map((r, idx) => (
-            <View
-              key={`${r.date}-${r.voucher}-${idx}`}
-              style={styles.tableRow}
-            >
+          {rows.map((r, idx) => (
+            <View key={`${title}-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow}>
               <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
               <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
               <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
@@ -612,7 +696,7 @@ function FarmerBlockPage({
               </Text>
             </View>
           ))}
-          {receiptRows.length > 0 && (
+          {rows.length > 0 && (
             <View style={[styles.tableRow, styles.rowTotals]}>
               <Text style={[styles.cell, { width: '10%' }]}>TOTAL</Text>
               <Text style={[styles.cell, { width: '8%' }]}>-</Text>
@@ -622,18 +706,77 @@ function FarmerBlockPage({
               )}
               {sizeColumns.map((col) => (
                 <Text key={col} style={[styles.cell, { width: '8%' }]}>
-                  {receiptTotalsBySize[col] ?? 0}
+                  {totalsBySize[col] ?? 0}
                 </Text>
               ))}
-              <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{totalReceived}</Text>
+              <Text style={[styles.cell, styles.cellTotal, { width: '8%' }]}>{groupTotal}</Text>
               {!showSpecialFields && (
-                <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{totalReceived}</Text>
+                <Text style={[styles.cell, styles.cellGTotal, { width: '8%' }]}>{groupTotal}</Text>
               )}
               <Text style={[styles.cell, styles.cellRemarks, styles.cellLast, { width: '8%' }]}>-</Text>
             </View>
           )}
         </View>
       </View>
+    );
+  }
+
+  return (
+    <Page size="A4" orientation="landscape" style={styles.page}>
+      <View style={styles.header}>
+        <Text style={styles.companyName}>{companyName}</Text>
+        <Text style={styles.reportTitle}>DAILY REPORTS</Text>
+        <Text style={styles.dateRange}>{dateRangeLabel}</Text>
+      </View>
+
+      <View style={styles.farmerInfoStrip}>
+        <View style={styles.farmerInfoItem}>
+          <Text style={styles.farmerInfoLabel}>A/c No</Text>
+          <Text style={styles.farmerInfoValue}>{String(farmer.accountNumber)}</Text>
+        </View>
+        <View style={styles.farmerInfoItem}>
+          <Text style={styles.farmerInfoLabel}>Farmer</Text>
+          <Text style={styles.farmerInfoValue}>{farmer.name}</Text>
+        </View>
+        <View style={styles.farmerInfoItem}>
+          <Text style={styles.farmerInfoLabel}>Address</Text>
+          <Text style={styles.farmerInfoValue}>{farmer.address}</Text>
+        </View>
+        <View style={styles.farmerInfoItem}>
+          <Text style={styles.farmerInfoLabel}>Mobile</Text>
+          <Text style={styles.farmerInfoValue}>{farmer.mobileNumber}</Text>
+        </View>
+        <View style={[styles.farmerInfoItem, styles.farmerInfoItemLast]}>
+          <Text style={styles.farmerInfoLabel}>Report Date</Text>
+          <Text style={styles.farmerInfoValue}>{dateRangeLabel}</Text>
+        </View>
+      </View>
+
+      <SummaryTable receiptRows={receiptRows} sizeColumns={sizeColumns} />
+
+      {useOwnershipFilter ? (
+        <>
+          {renderReceiptTable(
+            'Receipt Details (OWNED)',
+            ownedReceiptRows,
+            ownedTotalsBySize,
+            ownedReceiptRows.reduce((s, r) => s + r.rowTotal, 0)
+          )}
+          {renderReceiptTable(
+            'Receipt Details (FARMER)',
+            farmerReceiptRows,
+            farmerTotalsBySize,
+            farmerReceiptRows.reduce((s, r) => s + r.rowTotal, 0)
+          )}
+        </>
+      ) : (
+        renderReceiptTable(
+          'Receipt Details',
+          receiptRows,
+          receiptTotalsBySize,
+          totalReceived
+        )
+      )}
 
       <View style={styles.ledgerContainer}>
         <Text style={styles.ledgerTitle}>Delivery Details</Text>
@@ -730,47 +873,19 @@ function FarmerBlockPage({
         </View>
       </View>
 
-      <View style={styles.summary}>
-        <Text style={styles.summaryTitle}>Account Summary</Text>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Receipt Transactions:</Text>
-          <Text style={styles.summaryValue}>{incoming.length}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Delivery Transactions:</Text>
-          <Text style={styles.summaryValue}>{outgoing.length}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Bags Received:</Text>
-          <Text style={styles.summaryValue}>{totalReceived}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
-          <Text style={styles.summaryValue}>{totalDelivered}</Text>
-        </View>
-        <View style={[styles.summaryRow, styles.summaryRowClosing]}>
-          <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
-          <Text style={styles.summaryValue}>{closingBalance}</Text>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.footerLeft}>
-          <Text style={{ fontSize: 7 }}>Authorized Signature: ____________________</Text>
-        </View>
-        <View style={styles.footerCenter}>
-          <View style={{ alignItems: 'center' }}>
-            <Image
-              src="https://res.cloudinary.com/dakh64xhy/image/upload/v1753172868/profile_pictures/lhdlzskpe2gj8dq8jvzl.png"
-              style={styles.footerLogo}
-            />
-            <Text style={styles.poweredBy}>Powered by Coldop</Text>
+      {showFooter && (
+        <View style={styles.footer}>
+          <View style={styles.footerCenter}>
+            <View style={{ alignItems: 'center' }}>
+              <Image
+                src="https://res.cloudinary.com/dakh64xhy/image/upload/v1753172868/profile_pictures/lhdlzskpe2gj8dq8jvzl.png"
+                style={styles.footerLogo}
+              />
+              <Text style={styles.poweredBy}>Powered by Coldop</Text>
+            </View>
           </View>
         </View>
-        <View style={styles.footerRight}>
-          <Text style={{ fontSize: 7 }}>{dateRangeLabel}</Text>
-        </View>
-      </View>
+      )}
 
       <Text style={styles.pageNumber}>Page {pageIndex + 1}</Text>
     </Page>
@@ -788,6 +903,7 @@ function FlatReportPage({
   outgoing: outgoingList,
   sizeColumns,
   showSpecialFields,
+  showFooter = true,
 }: {
   companyName: string;
   dateRangeLabel: string;
@@ -795,6 +911,7 @@ function FlatReportPage({
   outgoing: ReportOutgoingEntry[];
   sizeColumns: string[];
   showSpecialFields: boolean;
+  showFooter?: boolean;
 }) {
   const incoming = incomingList.map(toDaybookEntryIncoming);
   const outgoing = outgoingList.map(toDaybookEntryOutgoing);
@@ -820,8 +937,6 @@ function FlatReportPage({
     includeAcColumn: true,
     includeCustomMarka: showSpecialFields,
   });
-  const totalDelivered = outgoing.reduce((s, e) => s + totalBagsOutgoing(e), 0);
-  const closingBalance = totalReceived - totalDelivered;
   const recCols = [
     ...receiptTableBaseCols(includeAc, showSpecialFields),
     ...sizeColumns,
@@ -837,12 +952,14 @@ function FlatReportPage({
   ];
 
   return (
-    <Page size="A4" style={styles.page}>
+    <Page size="A4" orientation="landscape" style={styles.page}>
       <View style={styles.header}>
         <Text style={styles.companyName}>{companyName}</Text>
         <Text style={styles.reportTitle}>DAILY REPORTS</Text>
         <Text style={styles.dateRange}>{dateRangeLabel}</Text>
       </View>
+
+      <SummaryTable receiptRows={receiptRows} sizeColumns={sizeColumns} />
 
       <View style={styles.ledgerContainer}>
         <Text style={styles.ledgerTitle}>Receipt Details</Text>
@@ -1036,47 +1153,19 @@ function FlatReportPage({
         </View>
       </View>
 
-      <View style={styles.summary}>
-        <Text style={styles.summaryTitle}>Summary</Text>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Receipt Transactions:</Text>
-          <Text style={styles.summaryValue}>{incoming.length}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Delivery Transactions:</Text>
-          <Text style={styles.summaryValue}>{outgoing.length}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Bags Received:</Text>
-          <Text style={styles.summaryValue}>{totalReceived}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
-          <Text style={styles.summaryValue}>{totalDelivered}</Text>
-        </View>
-        <View style={[styles.summaryRow, styles.summaryRowClosing]}>
-          <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
-          <Text style={styles.summaryValue}>{closingBalance}</Text>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.footerLeft}>
-          <Text style={{ fontSize: 7 }}>Authorized Signature: ____________________</Text>
-        </View>
-        <View style={styles.footerCenter}>
-          <View style={{ alignItems: 'center' }}>
-            <Image
-              src="https://res.cloudinary.com/dakh64xhy/image/upload/v1753172868/profile_pictures/lhdlzskpe2gj8dq8jvzl.png"
-              style={styles.footerLogo}
-            />
-            <Text style={styles.poweredBy}>Powered by Coldop</Text>
+      {showFooter && (
+        <View style={styles.footer}>
+          <View style={styles.footerCenter}>
+            <View style={{ alignItems: 'center' }}>
+              <Image
+                src="https://res.cloudinary.com/dakh64xhy/image/upload/v1753172868/profile_pictures/lhdlzskpe2gj8dq8jvzl.png"
+                style={styles.footerLogo}
+              />
+              <Text style={styles.poweredBy}>Powered by Coldop</Text>
+            </View>
           </View>
         </View>
-        <View style={styles.footerRight}>
-          <Text style={{ fontSize: 7 }}>{dateRangeLabel}</Text>
-        </View>
-      </View>
+      )}
 
       <Text style={styles.pageNumber}>Page 1</Text>
     </Page>
@@ -1094,6 +1183,7 @@ function FlatReportPageFilteredByOwnership({
   outgoing: outgoingList,
   sizeColumns,
   showSpecialFields,
+  showFooter = true,
 }: {
   companyName: string;
   dateRangeLabel: string;
@@ -1101,6 +1191,7 @@ function FlatReportPageFilteredByOwnership({
   outgoing: ReportOutgoingEntry[];
   sizeColumns: string[];
   showSpecialFields: boolean;
+  showFooter?: boolean;
 }) {
   const ownedIncoming = incomingList.filter((e) => e.stockFilter === 'OWNED');
   const farmerIncoming = incomingList.filter((e) => e.stockFilter !== 'OWNED');
@@ -1145,8 +1236,6 @@ function FlatReportPageFilteredByOwnership({
   );
 
   const deliveryRows = buildDeliveryRows(outgoing, sizeColumns, totalReceived, receiptOptions);
-  const totalDelivered = outgoing.reduce((s, e) => s + totalBagsOutgoing(e), 0);
-  const closingBalance = totalReceived - totalDelivered;
 
   const recCols = [
     ...receiptTableBaseCols(includeAc, showSpecialFields),
@@ -1254,12 +1343,14 @@ function FlatReportPageFilteredByOwnership({
   }
 
   return (
-    <Page size="A4" style={styles.page}>
+    <Page size="A4" orientation="landscape" style={styles.page}>
       <View style={styles.header}>
         <Text style={styles.companyName}>{companyName}</Text>
         <Text style={styles.reportTitle}>DAILY REPORTS</Text>
         <Text style={styles.dateRange}>{dateRangeLabel}</Text>
       </View>
+
+      <SummaryTable receiptRows={[...ownedReceiptRows, ...farmerReceiptRows]} sizeColumns={sizeColumns} />
 
       {renderReceiptTable('Receipt Details (OWNED)', ownedReceiptRows, totalOwned, ownedTotalsBySize)}
       {renderReceiptTable('Receipt Details (FARMER)', farmerReceiptRows, totalFarmer, farmerTotalsBySize)}
@@ -1359,47 +1450,19 @@ function FlatReportPageFilteredByOwnership({
         </View>
       </View>
 
-      <View style={styles.summary}>
-        <Text style={styles.summaryTitle}>Summary</Text>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Receipt Transactions:</Text>
-          <Text style={styles.summaryValue}>{incomingList.length}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Delivery Transactions:</Text>
-          <Text style={styles.summaryValue}>{outgoingList.length}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Bags Received:</Text>
-          <Text style={styles.summaryValue}>{totalReceived}</Text>
-        </View>
-        <View style={styles.summaryRow}>
-          <Text style={styles.summaryLabel}>Total Bags Delivered:</Text>
-          <Text style={styles.summaryValue}>{totalDelivered}</Text>
-        </View>
-        <View style={[styles.summaryRow, styles.summaryRowClosing]}>
-          <Text style={styles.summaryLabel}>CLOSING BALANCE:</Text>
-          <Text style={styles.summaryValue}>{closingBalance}</Text>
-        </View>
-      </View>
-
-      <View style={styles.footer}>
-        <View style={styles.footerLeft}>
-          <Text style={{ fontSize: 7 }}>Authorized Signature: ____________________</Text>
-        </View>
-        <View style={styles.footerCenter}>
-          <View style={{ alignItems: 'center' }}>
-            <Image
-              src="https://res.cloudinary.com/dakh64xhy/image/upload/v1753172868/profile_pictures/lhdlzskpe2gj8dq8jvzl.png"
-              style={styles.footerLogo}
-            />
-            <Text style={styles.poweredBy}>Powered by Coldop</Text>
+      {showFooter && (
+        <View style={styles.footer}>
+          <View style={styles.footerCenter}>
+            <View style={{ alignItems: 'center' }}>
+              <Image
+                src="https://res.cloudinary.com/dakh64xhy/image/upload/v1753172868/profile_pictures/lhdlzskpe2gj8dq8jvzl.png"
+                style={styles.footerLogo}
+              />
+              <Text style={styles.poweredBy}>Powered by Coldop</Text>
+            </View>
           </View>
         </View>
-        <View style={styles.footerRight}>
-          <Text style={{ fontSize: 7 }}>{dateRangeLabel}</Text>
-        </View>
-      </View>
+      )}
 
       <Text style={styles.pageNumber}>Page 1</Text>
     </Page>
@@ -1421,14 +1484,14 @@ export function DailyReportPdf({
     if (grouped.farmers.length === 0) {
       return (
         <Document>
-          <Page size="A4" style={styles.page}>
+          <Page size="A4" orientation="landscape" style={styles.page}>
             <View style={styles.header}>
               <Text style={styles.companyName}>{companyName}</Text>
               <Text style={styles.reportTitle}>DAILY REPORTS</Text>
               <Text style={styles.dateRange}>{dateRangeLabel}</Text>
             </View>
             <View style={{ padding: 24 }}>
-              <Text style={{ fontSize: 10 }}>No report data for this period.</Text>
+              <Text style={styles.emptyStateText}>No report data for this period.</Text>
             </View>
           </Page>
         </Document>
@@ -1445,6 +1508,8 @@ export function DailyReportPdf({
             sizeColumns={sizeColumns}
             pageIndex={i}
             showSpecialFields={showSpecialFields}
+            filterByOwnership={filterByOwnership}
+            showFooter={i === grouped.farmers.length - 1}
           />
         ))}
       </Document>
