@@ -33,7 +33,9 @@ function locDisplay(loc: { chamber?: string; floor?: string; row?: string }): st
   const f = loc?.floor ?? '';
   const r = loc?.row ?? '';
   const s = [c, f, r].filter(Boolean).join('-').trim();
-  return s ? `(${s})` : '';
+  // Add soft wrap opportunities for narrow PDF table cells.
+  const wrapFriendly = s.replace(/-/g, '- ');
+  return wrapFriendly ? `(${wrapFriendly})` : '';
 }
 
 function formatPdfDate(iso: string): string {
@@ -61,6 +63,32 @@ function orderSizeColumnsByPreference(
   const extra = unique.filter((c) => !pref.has(c));
   inPref.sort((a, b) => (idx.get(a)! - idx.get(b)!));
   return [...inPref, ...extra];
+}
+
+function filterSizeColumnsWithValues(
+  sizeColumns: string[],
+  incoming: DaybookEntry[],
+  outgoing: DaybookEntry[]
+): string[] {
+  const nonEmptySizes = new Set<string>();
+
+  for (const entry of incoming) {
+    for (const bag of entry.bagSizes ?? []) {
+      if ((bag.initialQuantity ?? 0) > 0 && bag.name) {
+        nonEmptySizes.add(bag.name);
+      }
+    }
+  }
+
+  for (const entry of outgoing) {
+    for (const detail of entry.orderDetails ?? []) {
+      if ((detail.quantityIssued ?? 0) > 0 && detail.size) {
+        nonEmptySizes.add(detail.size);
+      }
+    }
+  }
+
+  return sizeColumns.filter((size) => nonEmptySizes.has(size));
 }
 
 /** Ascending gate pass order; tie-break by date for identical numbers. */
@@ -339,6 +367,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
+    flexShrink: 1,
   },
   cellLeft: {
     padding: 2,
@@ -346,19 +375,26 @@ const styles = StyleSheet.create({
     textAlign: 'left',
     borderRightWidth: 0.5,
     borderRightColor: '#666',
+    flexShrink: 1,
   },
   cellLast: {
     borderRightWidth: 0,
   },
   cellQtyLoc: {
     paddingVertical: 1,
+    flexWrap: 'wrap',
+    alignItems: 'center',
   },
   cellQtyLocBlock: {
     marginBottom: 4,
+    width: '100%',
+    alignItems: 'center',
   },
   cellLocText: {
     fontSize: 6,
     color: '#444',
+    lineHeight: 7,
+    textAlign: 'center',
   },
   cellTotal: {
     backgroundColor: '#F5F5F5',
@@ -370,6 +406,7 @@ const styles = StyleSheet.create({
   },
   cellRemarks: {
     backgroundColor: '#F5F5F5',
+    textAlign: 'left',
   },
   rowTotals: {
     backgroundColor: '#E0E0E0',
@@ -492,8 +529,9 @@ export function FarmerReportPortraitPdf({
   filterByOwnership = false,
   ownershipReportView = 'ALL',
 }: FarmerReportPdfProps) {
+  const filteredSizeColumns = filterSizeColumnsWithValues(sizeColumns, incoming, outgoing);
   const orderedSizeColumns = orderSizeColumnsByPreference(
-    sizeColumns,
+    filteredSizeColumns,
     preferenceSizeOrder
   );
   const showSpecialFields = shouldShowSpecialFields(storeAdmin?.mobileNumber);
@@ -663,7 +701,7 @@ export function FarmerReportPortraitPdf({
 
   return (
     <Document>
-      <Page size="A4" style={styles.page}>
+      <Page size="A4" style={styles.page} wrap>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.companyName}>{companyName}</Text>
@@ -708,7 +746,7 @@ export function FarmerReportPortraitPdf({
                 <>
               <Text style={styles.ledgerTitle}>Receipt Details (OWNED)</Text>
               <View style={styles.table}>
-                <View style={styles.tableHeaderRow}>
+                <View style={styles.tableHeaderRow} fixed>
                   {receiptTableCols.map((col, i) => (
                     <Text
                       key={col}
@@ -731,7 +769,7 @@ export function FarmerReportPortraitPdf({
                   ))}
                 </View>
                 {ownedReceiptRows.map((r, idx) => (
-                  <View key={`owned-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow}>
+                  <View key={`owned-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow} wrap={false}>
                     <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                     <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
                     <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
@@ -803,7 +841,7 @@ export function FarmerReportPortraitPdf({
                     Purchases from other farmers (incoming transfer) — OWNED
                   </Text>
                   <View style={styles.table}>
-                    <View style={styles.tableHeaderRow}>
+                    <View style={styles.tableHeaderRow} fixed>
                       {receiptTableCols.map((col, i) => (
                         <Text
                           key={col}
@@ -826,7 +864,7 @@ export function FarmerReportPortraitPdf({
                       ))}
                     </View>
                     {ownedTransferRows.map((r, idx) => (
-                      <View key={`owned-it-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow}>
+                      <View key={`owned-it-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow} wrap={false}>
                         <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                         <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
                         <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
@@ -902,7 +940,7 @@ export function FarmerReportPortraitPdf({
                 <>
               <Text style={styles.ledgerTitle}>Receipt Details (FARMER)</Text>
               <View style={styles.table}>
-                <View style={styles.tableHeaderRow}>
+                <View style={styles.tableHeaderRow} fixed>
                   {receiptTableCols.map((col, i) => (
                     <Text
                       key={col}
@@ -925,7 +963,7 @@ export function FarmerReportPortraitPdf({
                   ))}
                 </View>
                 {farmerReceiptRows.map((r, idx) => (
-                  <View key={`farmer-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow}>
+                  <View key={`farmer-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow} wrap={false}>
                     <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                     <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
                     <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
@@ -997,7 +1035,7 @@ export function FarmerReportPortraitPdf({
                     Purchases from other farmers (incoming transfer) — FARMER
                   </Text>
                   <View style={styles.table}>
-                    <View style={styles.tableHeaderRow}>
+                    <View style={styles.tableHeaderRow} fixed>
                       {receiptTableCols.map((col, i) => (
                         <Text
                           key={col}
@@ -1020,7 +1058,7 @@ export function FarmerReportPortraitPdf({
                       ))}
                     </View>
                     {farmerTransferRows.map((r, idx) => (
-                      <View key={`farmer-it-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow}>
+                      <View key={`farmer-it-${r.date}-${r.voucher}-${idx}`} style={styles.tableRow} wrap={false}>
                         <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                         <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
                         <Text style={[styles.cellLeft, { width: '14%' }]}>{r.variety}</Text>
@@ -1140,7 +1178,7 @@ export function FarmerReportPortraitPdf({
                     Variety: {varietyName}
                   </Text>
                   <View style={styles.table}>
-                    <View style={styles.tableHeaderRow}>
+                    <View style={styles.tableHeaderRow} fixed>
                       {receiptTableCols.map((col, i) => (
                         <Text
                           key={col}
@@ -1166,6 +1204,7 @@ export function FarmerReportPortraitPdf({
                       <View
                         key={`${varietyName}-${r.date}-${r.voucher}-${idx}`}
                         style={styles.tableRow}
+                        wrap={false}
                       >
                         <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                         <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
@@ -1288,7 +1327,7 @@ export function FarmerReportPortraitPdf({
                         Variety: {varietyName}
                       </Text>
                       <View style={styles.table}>
-                        <View style={styles.tableHeaderRow}>
+                        <View style={styles.tableHeaderRow} fixed>
                           {receiptTableCols.map((col, i) => (
                             <Text
                               key={col}
@@ -1314,6 +1353,7 @@ export function FarmerReportPortraitPdf({
                           <View
                             key={`transfer-${varietyName}-${r.date}-${r.voucher}-${idx}`}
                             style={styles.tableRow}
+                            wrap={false}
                           >
                             <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                             <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
@@ -1393,7 +1433,7 @@ export function FarmerReportPortraitPdf({
           ) : (
             <>
             <View style={styles.table}>
-              <View style={styles.tableHeaderRow}>
+              <View style={styles.tableHeaderRow} fixed>
                 {receiptTableCols.map((col, i) => (
                   <Text
                     key={col}
@@ -1419,6 +1459,7 @@ export function FarmerReportPortraitPdf({
                 <View
                   key={`${r.date}-${r.voucher}-${idx}`}
                   style={styles.tableRow}
+                  wrap={false}
                 >
                   <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                   <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
@@ -1497,7 +1538,7 @@ export function FarmerReportPortraitPdf({
                   Purchases from other farmers (incoming transfer)
                 </Text>
                 <View style={styles.table}>
-                  <View style={styles.tableHeaderRow}>
+                  <View style={styles.tableHeaderRow} fixed>
                     {receiptTableCols.map((col, i) => (
                       <Text
                         key={col}
@@ -1523,6 +1564,7 @@ export function FarmerReportPortraitPdf({
                     <View
                       key={`it-${r.date}-${r.voucher}-${idx}`}
                       style={styles.tableRow}
+                      wrap={false}
                     >
                       <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                       <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
@@ -1602,7 +1644,7 @@ export function FarmerReportPortraitPdf({
         </View>
 
         {/* Delivery Table(s) */}
-        <View style={styles.ledgerContainer}>
+        <View style={styles.ledgerContainer} break>
           <Text style={styles.ledgerTitle}>Delivery Details</Text>
           {groupByVariety && varietyKeys.length > 0 ? (
             <>
@@ -1657,7 +1699,7 @@ export function FarmerReportPortraitPdf({
                       Variety: {varietyName}
                     </Text>
                     <View style={styles.table}>
-                      <View style={styles.tableHeaderRow}>
+                      <View style={styles.tableHeaderRow} fixed>
                         {deliveryTableCols.map((col, i) => (
                           <Text
                             key={col}
@@ -1682,6 +1724,7 @@ export function FarmerReportPortraitPdf({
                         <View
                           key={`${varietyName}-${r.date}-${r.voucher}-${idx}`}
                           style={styles.tableRow}
+                          wrap={false}
                         >
                           <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                           <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
@@ -1756,7 +1799,7 @@ export function FarmerReportPortraitPdf({
             </>
           ) : (
             <View style={styles.table}>
-              <View style={styles.tableHeaderRow}>
+              <View style={styles.tableHeaderRow} fixed>
                 {deliveryTableCols.map((col, i) => (
                   <Text
                     key={col}
@@ -1804,6 +1847,7 @@ export function FarmerReportPortraitPdf({
                 <View
                   key={`${r.date}-${r.voucher}-${idx}`}
                   style={styles.tableRow}
+                  wrap={false}
                 >
                   <Text style={[styles.cell, { width: '10%' }]}>{r.date}</Text>
                   <Text style={[styles.cell, { width: '8%' }]}>{r.voucher}</Text>
@@ -1851,7 +1895,7 @@ export function FarmerReportPortraitPdf({
         </View>
 
         {/* Summary */}
-        <View style={styles.summary}>
+        <View style={styles.summary} break>
           <Text style={styles.summaryTitle}>Account Summary</Text>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Farm receipt transactions (own deposit):</Text>
@@ -1902,7 +1946,11 @@ export function FarmerReportPortraitPdf({
           </View>
         </View>
 
-        <Text style={styles.pageNumber}>Page 1</Text>
+        <Text
+          style={styles.pageNumber}
+          fixed
+          render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`}
+        />
       </Page>
     </Document>
   );

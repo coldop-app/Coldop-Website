@@ -72,6 +72,32 @@ export function orderSizeColumnsByPreference(
   return [...inPref, ...extra];
 }
 
+function filterSizeColumnsWithValues(
+  sizeColumns: string[],
+  incoming: DaybookEntry[],
+  outgoing: DaybookEntry[]
+): string[] {
+  const nonEmptySizes = new Set<string>();
+
+  for (const entry of incoming) {
+    for (const bag of entry.bagSizes ?? []) {
+      if ((bag.initialQuantity ?? 0) > 0 && bag.name) {
+        nonEmptySizes.add(bag.name);
+      }
+    }
+  }
+
+  for (const entry of outgoing) {
+    for (const detail of entry.orderDetails ?? []) {
+      if ((detail.quantityIssued ?? 0) > 0 && detail.size) {
+        nonEmptySizes.add(detail.size);
+      }
+    }
+  }
+
+  return sizeColumns.filter((size) => nonEmptySizes.has(size));
+}
+
 function compareDaybookByGatePassAsc(a: DaybookEntry, b: DaybookEntry): number {
   const ga = a.gatePassNo ?? 0;
   const gb = b.gatePassNo ?? 0;
@@ -307,7 +333,8 @@ export function buildFarmerReportData({
   filterByOwnership,
   ownershipReportView,
 }: BuildFarmerReportDataInput): FarmerReportComputedData {
-  const orderedSizeColumns = orderSizeColumnsByPreference(sizeColumns, preferenceSizeOrder);
+  const filteredSizeColumns = filterSizeColumnsWithValues(sizeColumns, incoming, outgoing);
+  const orderedSizeColumns = orderSizeColumnsByPreference(filteredSizeColumns, preferenceSizeOrder);
   const showSpecialFields = shouldShowSpecialFields(storeAdminMobileNumber);
   const useOwnershipFilter = showSpecialFields && filterByOwnership;
 
@@ -341,6 +368,10 @@ export function buildFarmerReportData({
   const totalReceived = totalFarmReceived + totalIncomingTransferBags;
   const openingTotal = totalReceived;
   const deliveryRows = buildDeliveryRows(outgoing, orderedSizeColumns, openingTotal);
+  const allDeliveryTotalsBySize = deliveryTotalsBySize(deliveryRows, orderedSizeColumns);
+  const visibleOrderedSizeColumns = orderedSizeColumns.filter(
+    (col) => (receiptTotalsBySize[col] ?? 0) > 0 || (allDeliveryTotalsBySize[col] ?? 0) > 0
+  );
   const hasNonZeroDeliveryVoucher = deliveryRows.some((row) => Number(row.voucher) > 0);
   const totalDelivered = outgoing.reduce((s, e) => s + totalBagsOutgoing(e), 0);
   const closingBalance = openingTotal - totalDelivered;
@@ -366,11 +397,13 @@ export function buildFarmerReportData({
       )
     : [];
 
-  const ownedTotalsBySize = useOwnershipFilter ? totalsBySize(ownedReceiptRows, orderedSizeColumns) : {};
-  const farmerTotalsBySize = useOwnershipFilter ? totalsBySize(farmerReceiptRows, orderedSizeColumns) : {};
-  const ownedTransferTotalsBySize = useOwnershipFilter ? totalsBySize(ownedTransferRows, orderedSizeColumns) : {};
+  const ownedTotalsBySize = useOwnershipFilter ? totalsBySize(ownedReceiptRows, visibleOrderedSizeColumns) : {};
+  const farmerTotalsBySize = useOwnershipFilter ? totalsBySize(farmerReceiptRows, visibleOrderedSizeColumns) : {};
+  const ownedTransferTotalsBySize = useOwnershipFilter ? totalsBySize(ownedTransferRows, visibleOrderedSizeColumns) : {};
   const totalOwnedTransferBags = ownedTransferRows.reduce((s, r) => s + r.rowTotal, 0);
-  const farmerTransferTotalsBySize = useOwnershipFilter ? totalsBySize(farmerTransferRows, orderedSizeColumns) : {};
+  const farmerTransferTotalsBySize = useOwnershipFilter
+    ? totalsBySize(farmerTransferRows, visibleOrderedSizeColumns)
+    : {};
   const totalFarmerTransferBags = farmerTransferRows.reduce((s, r) => s + r.rowTotal, 0);
 
   const receiptIncomingByVariety = groupByVariety ? groupIncomingByVariety(farmIncomingOnly) : null;
@@ -387,11 +420,11 @@ export function buildFarmerReportData({
     : [];
 
   const receiptTableCols = showSpecialFields
-    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...orderedSizeColumns, 'TOTAL', 'REMARKS']
-    : ['DATE', 'VOUCHER', 'VARIETY', ...orderedSizeColumns, 'TOTAL', 'G.TOTAL', 'REMARKS'];
+    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...visibleOrderedSizeColumns, 'TOTAL', 'REMARKS']
+    : ['DATE', 'VOUCHER', 'VARIETY', ...visibleOrderedSizeColumns, 'TOTAL', 'G.TOTAL', 'REMARKS'];
   const deliveryTableCols = showSpecialFields
-    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...orderedSizeColumns, 'TOTAL']
-    : ['DATE', 'VOUCHER', 'VARIETY', ...orderedSizeColumns, 'TOTAL', 'G.TOTAL'];
+    ? ['DATE', 'VOUCHER', 'VARIETY', 'CUSTOM MARKA', ...visibleOrderedSizeColumns, 'TOTAL']
+    : ['DATE', 'VOUCHER', 'VARIETY', ...visibleOrderedSizeColumns, 'TOTAL', 'G.TOTAL'];
 
   const receiptVarietySections: ReceiptVarietySection[] = [];
   if (groupByVariety) {
@@ -399,13 +432,13 @@ export function buildFarmerReportData({
     for (const varietyName of varietyKeys) {
       const varietyIncoming = receiptIncomingByVariety?.[varietyName] ?? [];
       if (varietyIncoming.length === 0) continue;
-      const rows = buildReceiptRows(varietyIncoming, orderedSizeColumns, runningTotal);
+      const rows = buildReceiptRows(varietyIncoming, visibleOrderedSizeColumns, runningTotal);
       const varietyTotal = rows.reduce((sum, row) => sum + row.rowTotal, 0);
       runningTotal += varietyTotal;
       receiptVarietySections.push({
         varietyName,
         rows,
-        totalsBySize: totalsBySize(rows, orderedSizeColumns),
+        totalsBySize: totalsBySize(rows, visibleOrderedSizeColumns),
         varietyTotal,
         runningTotalAfter: runningTotal,
       });
@@ -418,13 +451,13 @@ export function buildFarmerReportData({
     for (const varietyName of varietyKeys) {
       const varietyTransfer = transferIncomingByVariety?.[varietyName] ?? [];
       if (varietyTransfer.length === 0) continue;
-      const rows = buildIncomingTransferRows(varietyTransfer, orderedSizeColumns, runningTotal);
+      const rows = buildIncomingTransferRows(varietyTransfer, visibleOrderedSizeColumns, runningTotal);
       const varietyTotal = rows.reduce((sum, row) => sum + row.rowTotal, 0);
       runningTotal += varietyTotal;
       transferVarietySections.push({
         varietyName,
         rows,
-        totalsBySize: totalsBySize(rows, orderedSizeColumns),
+        totalsBySize: totalsBySize(rows, visibleOrderedSizeColumns),
         varietyTotal,
         runningTotalAfter: runningTotal,
       });
@@ -437,13 +470,13 @@ export function buildFarmerReportData({
     for (const varietyName of varietyKeys) {
       const varietyOutgoing = outgoingByVariety?.[varietyName] ?? [];
       if (varietyOutgoing.length === 0) continue;
-      const rows = buildDeliveryRows(varietyOutgoing, orderedSizeColumns, runningTotalBefore);
+      const rows = buildDeliveryRows(varietyOutgoing, visibleOrderedSizeColumns, runningTotalBefore);
       const varietyDelivered = rows.reduce((sum, row) => sum + row.rowTotal, 0);
       const runningTotalAfter = runningTotalBefore - varietyDelivered;
       deliveryVarietySections.push({
         varietyName,
         rows,
-        totalsBySize: deliveryTotalsBySize(rows, orderedSizeColumns),
+        totalsBySize: deliveryTotalsBySize(rows, visibleOrderedSizeColumns),
         varietyDelivered,
         runningTotalBefore,
         runningTotalAfter,
@@ -453,7 +486,7 @@ export function buildFarmerReportData({
   }
 
   return {
-    orderedSizeColumns,
+    orderedSizeColumns: visibleOrderedSizeColumns,
     showSpecialFields,
     useOwnershipFilter,
     showOwnedSection,
