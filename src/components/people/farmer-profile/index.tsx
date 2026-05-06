@@ -85,6 +85,7 @@ import AddChargeForm from '@/components/forms/people/add-charge';
 type OrderFilter = 'all' | 'incoming' | 'outgoing';
 type SortOrder = 'latest' | 'oldest';
 type OwnershipReportView = 'ALL' | 'OWNED' | 'FARMER';
+type StockLedgerOrientation = 'LANDSCAPE' | 'PORTRAIT';
 
 const ORDER_LABELS: Record<OrderFilter, string> = {
   all: 'All Orders',
@@ -149,6 +150,8 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const [filterByOwnership, setFilterByOwnership] = useState(false);
   const [ownershipReportView, setOwnershipReportView] =
     useState<OwnershipReportView>('ALL');
+  const [stockLedgerOrientation, setStockLedgerOrientation] =
+    useState<StockLedgerOrientation>('LANDSCAPE');
   const [isGeneratingStockLedgerPdf, setIsGeneratingStockLedgerPdf] =
     useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -226,7 +229,8 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const handleViewStockLedgerPdf = async (
     groupByVarietyOption: boolean,
     filterByOwnershipOption: boolean,
-    ownershipReportViewOption: OwnershipReportView
+    ownershipReportViewOption: OwnershipReportView,
+    orientationOption: StockLedgerOrientation
   ) => {
     if (!link) return;
     const printWindow = window.open('', '_blank');
@@ -237,13 +241,15 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
     }
     setIsGeneratingStockLedgerPdf(true);
     try {
-      const [{ pdf }, { FarmerReportPdf }] = await Promise.all([
-        import('@react-pdf/renderer'),
-        import('@/pdf/FarmerReportPdf'),
-      ]);
+      const { pdf } = await import('@react-pdf/renderer');
+      const ReportComponent =
+        orientationOption === 'PORTRAIT'
+          ? (await import('@/pdf/portrait/FarmerReportPortraitPdf'))
+              .FarmerReportPortraitPdf
+          : (await import('@/pdf/FarmerReportPdf')).FarmerReportPdf;
       const reportDate = format(new Date(), 'dd/MM/yyyy');
       const blob = await pdf(
-        <FarmerReportPdf
+        <ReportComponent
           companyName={coldStorage?.name ?? 'Cold Storage'}
           farmer={{
             accountNumber: link.accountNumber,
@@ -640,6 +646,27 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                           Group By Variety
                         </Label>
                       </div>
+                      <div className="space-y-2">
+                        <Label
+                          htmlFor="stock-ledger-orientation"
+                          className="font-custom text-sm font-medium"
+                        >
+                          Orientation
+                        </Label>
+                        <select
+                          id="stock-ledger-orientation"
+                          className="font-custom border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                          value={stockLedgerOrientation}
+                          onChange={(e) =>
+                            setStockLedgerOrientation(
+                              e.target.value as StockLedgerOrientation
+                            )
+                          }
+                        >
+                          <option value="LANDSCAPE">Landscape</option>
+                          <option value="PORTRAIT">Portrait</option>
+                        </select>
+                      </div>
                       {showSpecialFields && (
                         <div className="flex items-center space-x-2">
                           <Checkbox
@@ -694,7 +721,8 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                             handleViewStockLedgerPdf(
                               groupByVariety,
                               filterByOwnership,
-                              ownershipReportView
+                              ownershipReportView,
+                              stockLedgerOrientation
                             );
                           }}
                         >

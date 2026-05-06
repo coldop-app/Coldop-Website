@@ -28,6 +28,8 @@ export interface GetReportsDialogProps {
   onSubmit?: (fromDate: string, toDate: string, groupByFarmers: boolean) => void;
 }
 
+type ReportOrientation = 'LANDSCAPE' | 'PORTRAIT';
+
 function formatDateRangeLabel(from: string, to: string): string {
   if (!from || !to) return '';
   const formatPart = (s: string) => {
@@ -46,6 +48,8 @@ export function GetReportsDialog({
   const [toDate, setToDate] = useState(() => formatDate(new Date()));
   const [groupByFarmers, setGroupByFarmers] = useState(false);
   const [filterByOwnership, setFilterByOwnership] = useState(false);
+  const [reportOrientation, setReportOrientation] =
+    useState<ReportOrientation>('LANDSCAPE');
   const [reportParams, setReportParams] = useState<GetReportsParams | null>(null);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const userTriggeredFetchRef = useRef(false);
@@ -99,6 +103,7 @@ export function GetReportsDialog({
     setToDate('');
     setGroupByFarmers(false);
     setFilterByOwnership(false);
+    setReportOrientation('LANDSCAPE');
     setReportParams(null);
   };
 
@@ -116,12 +121,14 @@ export function GetReportsDialog({
     }
     setIsGeneratingPdf(true);
     try {
-      const [{ pdf }, { DailyReportPdf }] = await Promise.all([
-        import('@react-pdf/renderer'),
-        import('@/pdf/DailyReportPdf'),
-      ]);
+      const { pdf } = await import('@react-pdf/renderer');
+      const ReportComponent =
+        reportOrientation === 'PORTRAIT'
+          ? (await import('@/pdf/portrait/DailyReportPortraitPdf'))
+              .DailyReportPortraitPdf
+          : (await import('@/pdf/DailyReportPdf')).DailyReportPdf;
       const blob = await pdf(
-        <DailyReportPdf
+        <ReportComponent
           companyName={companyName}
           dateRangeLabel={dateRangeLabel}
           data={data}
@@ -206,6 +213,25 @@ export function GetReportsDialog({
               </Label>
             </div>
           )}
+          <div className="space-y-2 pt-1">
+            <Label
+              htmlFor="reports-orientation"
+              className="cursor-pointer text-sm font-normal"
+            >
+              Orientation
+            </Label>
+            <select
+              id="reports-orientation"
+              className="border-input bg-background ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex h-9 w-full rounded-md border px-3 py-1 text-sm shadow-xs transition-colors focus-visible:ring-1 focus-visible:outline-none"
+              value={reportOrientation}
+              onChange={(e) =>
+                setReportOrientation(e.target.value as ReportOrientation)
+              }
+            >
+              <option value="LANDSCAPE">Landscape</option>
+              <option value="PORTRAIT">Portrait</option>
+            </select>
+          </div>
 
           {reportQuery.isLoading && (
             <p className="text-muted-foreground text-sm">Loading report…</p>
