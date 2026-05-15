@@ -192,13 +192,11 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
   }, [incomingEntries, preferenceSizes]);
 
   /**
-   * One row per (size, location) from incoming snapshots (legacy) so the table shows
-   * separate rows for separate locations instead of concatenated locations.
-   * When orderDetails exist, INIT / Issued / Avail use orderDetails (quantityAvailable + quantityIssued for INIT).
+   * One row per incoming snapshot bag (size + location + ref). Quantities come from
+   * the snapshot so locations split across multiple incoming GPs are not double-counted.
    */
   const breakdownRowsLegacy = useMemo(() => {
     const snapshots = entry.incomingGatePassSnapshots ?? [];
-    const orderDetailsList = entry.orderDetails ?? [];
     const rows: {
       size: string;
       variety: string;
@@ -220,16 +218,9 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
               ''
             ) || '—'
           : '—';
-        const matchOd = orderDetailsList.find(
-          (od) =>
-            (od.size ?? '').trim() === size &&
-            String(od.location?.chamber ?? '') === String(loc?.chamber ?? '') &&
-            String(od.location?.floor ?? '') === String(loc?.floor ?? '') &&
-            String(od.location?.row ?? '') === String(loc?.row ?? '')
-        );
-        const availableQty = matchOd?.quantityAvailable ?? bs.currentQuantity ?? 0;
-        const issuedQty = matchOd?.quantityIssued ?? Math.max(0, (bs.initialQuantity ?? 0) - (bs.currentQuantity ?? 0));
-        const initialQty = availableQty + issuedQty;
+        const initialQty = bs.initialQuantity ?? 0;
+        const availableQty = bs.currentQuantity ?? 0;
+        const issuedQty = Math.max(0, initialQty - availableQty);
         rows.push({
           size,
           variety,
@@ -242,7 +233,7 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
       }
     }
     return sortByPreferenceOrder(rows, (r) => r.size, preferenceSizes);
-  }, [entry.incomingGatePassSnapshots, entry.orderDetails, preferenceSizes]);
+  }, [entry.incomingGatePassSnapshots, preferenceSizes]);
 
   const useNewFormat = breakdownRowsNew.length > 0;
 
@@ -268,8 +259,6 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
     }
     return { totalIssued: issued, totalAvailable: available };
   }, [useNewFormat, breakdownRowsNew, breakdownRowsLegacy, orderDetails]);
-
-  const bags = totalIssued + totalAvailable;
 
   return (
     <Card className="border-border/40 hover:border-destructive/30 overflow-hidden pt-0 shadow-sm transition-all duration-200 hover:shadow-md">
@@ -302,7 +291,7 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
                 variant="secondary"
                 className="inline-flex max-w-full flex-wrap items-center gap-x-1 px-2.5 py-1 text-[10px] font-medium"
               >
-                <span>{bags.toLocaleString('en-IN')} bags</span>
+                <span>{totalIssued.toLocaleString('en-IN')} bags</span>
                 {entry.type === 'Outgoing-transfer' && (
                   <span className="text-destructive font-semibold">
                     · Outgoing-transfer
