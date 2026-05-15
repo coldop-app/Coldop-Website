@@ -20,6 +20,10 @@ import { DetailRow } from './detail-row';
 import type { OutgoingGatePassEntry } from '@/services/store-admin/functions/useGetDaybook';
 import { useStore } from '@/stores/store';
 import { PAYMENT_RESTRICTED_TOAST_MESSAGE } from '@/lib/special-fields';
+import {
+  buildLegacyBreakdownRows,
+  sumOrderDetailQuantities,
+} from '@/lib/outgoing-gate-pass-breakdown';
 
 interface OutgoingGatePassCardProps {
   entry: OutgoingGatePassEntry;
@@ -191,49 +195,12 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
     return sortByPreferenceOrder(rows, (r) => r.size, preferenceSizes);
   }, [incomingEntries, preferenceSizes]);
 
-  /**
-   * One row per incoming snapshot bag (size + location + ref). Quantities come from
-   * the snapshot so locations split across multiple incoming GPs are not double-counted.
-   */
+  /** One row per snapshot bag; quantities from orderDetails when location matches. */
   const breakdownRowsLegacy = useMemo(() => {
     const snapshots = entry.incomingGatePassSnapshots ?? [];
-    const rows: {
-      size: string;
-      variety: string;
-      location: string;
-      refNo: number;
-      initialQty: number;
-      issuedQty: number;
-      availableQty: number;
-    }[] = [];
-    for (const snap of snapshots) {
-      const variety = snap.variety?.trim() ?? '—';
-      for (const bs of snap.bagSizes ?? []) {
-        const size = (bs.name ?? '').trim();
-        if (!size) continue;
-        const loc = bs.location;
-        const locationStr = loc
-          ? `${loc.chamber ?? ''}-${loc.floor ?? ''}-${loc.row ?? ''}`.replace(
-              /^-+$/,
-              ''
-            ) || '—'
-          : '—';
-        const initialQty = bs.initialQuantity ?? 0;
-        const availableQty = bs.currentQuantity ?? 0;
-        const issuedQty = Math.max(0, initialQty - availableQty);
-        rows.push({
-          size,
-          variety,
-          location: locationStr,
-          refNo: snap.gatePassNo ?? 0,
-          initialQty,
-          issuedQty,
-          availableQty,
-        });
-      }
-    }
+    const rows = buildLegacyBreakdownRows(snapshots, orderDetails);
     return sortByPreferenceOrder(rows, (r) => r.size, preferenceSizes);
-  }, [entry.incomingGatePassSnapshots, preferenceSizes]);
+  }, [entry.incomingGatePassSnapshots, orderDetails, preferenceSizes]);
 
   const useNewFormat = breakdownRowsNew.length > 0;
 
@@ -243,6 +210,9 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
       return { totalIssued: issued, totalAvailable: 0 };
     }
     if (breakdownRowsLegacy.length > 0) {
+      if (orderDetails.length > 0) {
+        return sumOrderDetailQuantities(orderDetails);
+      }
       return {
         totalIssued: breakdownRowsLegacy.reduce((s, r) => s + r.issuedQty, 0),
         totalAvailable: breakdownRowsLegacy.reduce(
@@ -251,13 +221,7 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
         ),
       };
     }
-    let issued = 0;
-    let available = 0;
-    for (const od of orderDetails) {
-      issued += od.quantityIssued ?? 0;
-      available += od.quantityAvailable ?? 0;
-    }
-    return { totalIssued: issued, totalAvailable: available };
+    return sumOrderDetailQuantities(orderDetails);
   }, [useNewFormat, breakdownRowsNew, breakdownRowsLegacy, orderDetails]);
 
   return (

@@ -8,6 +8,10 @@ import {
   Image,
 } from '@react-pdf/renderer';
 import type { OutgoingGatePassEntry } from '@/services/store-admin/functions/useGetDaybook';
+import {
+  buildLegacyBreakdownRows,
+  sumOrderDetailQuantities,
+} from '@/lib/outgoing-gate-pass-breakdown';
 import { format } from 'date-fns';
 
 /* -------------------------------------------------
@@ -266,40 +270,14 @@ function useBreakdown(entry: OutgoingGatePassEntry) {
   }, [incomingEntries]);
 
   const breakdownRowsLegacy = useMemo((): BreakdownRowLegacy[] => {
-    const rows: BreakdownRowLegacy[] = [];
-    for (const snap of snapshots) {
-      const variety = snap.variety?.trim() ?? '—';
-      for (const bs of snap.bagSizes ?? []) {
-        const size = (bs.name ?? '').trim();
-        if (!size) continue;
-        const loc = bs.location;
-        const locationStr = loc
-          ? `${loc.chamber ?? ''}-${loc.floor ?? ''}-${loc.row ?? ''}`.replace(
-              /^-+$/,
-              ''
-            ) || '—'
-          : '—';
-        const init = bs.initialQuantity ?? 0;
-        const current = bs.currentQuantity ?? 0;
-        const issued = Math.max(0, init - current);
-        rows.push({
-          size,
-          variety,
-          location: locationStr,
-          refNo: snap.gatePassNo ?? 0,
-          initialQty: init,
-          issuedQty: issued,
-          availableQty: current,
-        });
-      }
-    }
+    const rows = buildLegacyBreakdownRows(snapshots, orderDetails);
     return rows.sort(
       (a, b) =>
         a.size.localeCompare(b.size) ||
         a.variety.localeCompare(b.variety) ||
         a.location.localeCompare(b.location)
     );
-  }, [snapshots]);
+  }, [snapshots, orderDetails]);
 
   const useNewFormat = breakdownRowsNew.length > 0;
 
@@ -311,6 +289,9 @@ function useBreakdown(entry: OutgoingGatePassEntry) {
       };
     }
     if (breakdownRowsLegacy.length > 0) {
+      if (orderDetails.length > 0) {
+        return sumOrderDetailQuantities(orderDetails);
+      }
       return {
         totalIssued: breakdownRowsLegacy.reduce((s, r) => s + r.issuedQty, 0),
         totalAvailable: breakdownRowsLegacy.reduce(
