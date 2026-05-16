@@ -195,7 +195,27 @@ export interface EditAllocationRow {
 export function buildInitialAllocationsFromEntry(
   entry: DaybookEntry | null | undefined
 ): Record<string, number> {
-  if (!entry?.orderDetails?.length) return {};
+  if (!entry) return {};
+
+  const incomingEntries = entry.incomingGatePassEntries ?? [];
+  if (incomingEntries.length > 0) {
+    const result: Record<string, number> = {};
+    for (const ent of incomingEntries) {
+      const passId = ent.incomingGatePassId;
+      const perSizeCount = new Map<string, number>();
+      for (const alloc of ent.allocations ?? []) {
+        const size = (alloc.size ?? '').trim();
+        const qty = alloc.quantityToAllocate ?? 0;
+        if (!size || qty <= 0) continue;
+        const idx = perSizeCount.get(size) ?? 0;
+        perSizeCount.set(size, idx + 1);
+        result[allocationKey(passId, size, idx)] = qty;
+      }
+    }
+    return result;
+  }
+
+  if (!entry.orderDetails?.length) return {};
   const snapshots = entry.incomingGatePassSnapshots ?? [];
   const result: Record<string, number> = {};
   for (const od of entry.orderDetails) {
@@ -222,7 +242,36 @@ export function getEditAllocationRows(
   entry: DaybookEntry | null | undefined,
   cellRemovedQuantities: Record<string, number>
 ): EditAllocationRow[] {
-  if (!entry?.incomingGatePassSnapshots?.length) return [];
+  if (!entry) return [];
+
+  const incomingEntries = entry.incomingGatePassEntries ?? [];
+  if (incomingEntries.length > 0) {
+    const passMeta = new Map(
+      incomingEntries.map((e) => [e.incomingGatePassId, e.gatePassNo ?? 0])
+    );
+    const rows: EditAllocationRow[] = [];
+    for (const [key, qty] of Object.entries(cellRemovedQuantities)) {
+      if (qty <= 0) continue;
+      const parsed = parseAllocationKey(key);
+      if (!parsed) continue;
+      const gatePassNo = passMeta.get(parsed.passId) ?? 0;
+      rows.push({
+        key,
+        passId: parsed.passId,
+        gatePassNo,
+        size: parsed.sizeName,
+        location: '—',
+        quantityIssued: qty,
+      });
+    }
+    return rows.sort((a, b) =>
+      a.gatePassNo !== b.gatePassNo
+        ? a.gatePassNo - b.gatePassNo
+        : a.size.localeCompare(b.size)
+    );
+  }
+
+  if (!entry.incomingGatePassSnapshots?.length) return [];
   const snapshots = entry.incomingGatePassSnapshots;
   const rows: EditAllocationRow[] = [];
   for (const snap of snapshots) {

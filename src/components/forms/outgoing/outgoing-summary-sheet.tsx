@@ -10,6 +10,17 @@ import {
 } from '@/components/ui/sheet';
 import { FileText, Calendar, Package, Loader2, Truck } from 'lucide-react';
 import type { CreateOutgoingGatePassBody } from '@/services/outgoing-gate-pass/useCreateOutgoingGatePass';
+import type { EditOutgoingGatePassBody } from '@/services/outgoing-gate-pass/useEditOutgoingGatePass';
+
+export type OutgoingSummaryPayload =
+  | CreateOutgoingGatePassBody
+  | EditOutgoingGatePassBody;
+
+function isCreatePayload(
+  payload: OutgoingSummaryPayload
+): payload is CreateOutgoingGatePassBody {
+  return 'gatePassNo' in payload && typeof payload.gatePassNo === 'number';
+}
 
 /* -------------------------------------------------------------------------- */
 /*                                  Helpers                                   */
@@ -57,7 +68,10 @@ function formatDateLong(dateStr: string): string {
 export interface OutgoingSummarySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  pendingPayload: CreateOutgoingGatePassBody | null;
+  pendingPayload: OutgoingSummaryPayload | null;
+  /** Shown when payload has no gatePassNo (edit mode). */
+  gatePassNo?: number;
+  mode?: 'create' | 'edit';
   isSubmitting: boolean;
   onConfirm: () => void;
 }
@@ -100,6 +114,8 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
   open,
   onOpenChange,
   pendingPayload,
+  gatePassNo: gatePassNoProp,
+  mode = 'create',
   isSubmitting,
   onConfirm,
 }: OutgoingSummarySheetProps) {
@@ -109,6 +125,18 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
         sum + entry.allocations.reduce((a, b) => a + b.quantityToAllocate, 0),
       0
     ) ?? 0;
+
+  const displayGatePassNo =
+    pendingPayload && isCreatePayload(pendingPayload)
+      ? pendingPayload.gatePassNo
+      : gatePassNoProp;
+
+  const truckNumber =
+    pendingPayload && 'truckNumber' in pendingPayload
+      ? pendingPayload.truckNumber?.trim()
+      : undefined;
+
+  const isEdit = mode === 'edit';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -122,18 +150,22 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
               Outgoing Gate Pass Summary
             </SheetTitle>
             <SheetDescription className="font-custom text-muted-foreground text-sm">
-              Review before creating outgoing gate pass
+              {isEdit
+                ? 'Review before updating outgoing gate pass'
+                : 'Review before creating outgoing gate pass'}
             </SheetDescription>
           </SheetHeader>
 
           {pendingPayload ? (
             <>
               <div className="border-border flex flex-wrap gap-x-6 gap-y-3 border-b px-4 py-3 sm:px-6">
-                <SummaryMetaRow
-                  label="Voucher"
-                  value={`#${pendingPayload.gatePassNo}`}
-                  icon={FileText}
-                />
+                {displayGatePassNo != null && (
+                  <SummaryMetaRow
+                    label="Voucher"
+                    value={`#${displayGatePassNo}`}
+                    icon={FileText}
+                  />
+                )}
                 <SummaryMetaRow
                   label="Date"
                   value={formatDateLong(pendingPayload.date)}
@@ -161,6 +193,13 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                   }
                   icon={Truck}
                 />
+                {truckNumber && (
+                  <SummaryMetaRow
+                    label="Truck"
+                    value={truckNumber}
+                    icon={Truck}
+                  />
+                )}
                 <span className="font-custom text-primary text-sm font-semibold">
                   {totalBags} bag{totalBags !== 1 ? 's' : ''}
                 </span>
@@ -282,8 +321,10 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                     {isSubmitting ? (
                       <span className="flex items-center gap-2">
                         <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                        Creating...
+                        {isEdit ? 'Updating...' : 'Creating...'}
                       </span>
+                    ) : isEdit ? (
+                      'Update Outgoing Gate Pass'
                     ) : (
                       'Create Outgoing Gate Pass'
                     )}

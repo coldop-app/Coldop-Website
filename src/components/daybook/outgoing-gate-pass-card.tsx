@@ -315,26 +315,26 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
                 variant="outline"
                 size="sm"
                 type="button"
-                className="hidden h-8 cursor-not-allowed px-3 text-xs opacity-70"
+                className="h-8 w-8 cursor-not-allowed p-0 opacity-70"
                 onClick={() => toast.info(PAYMENT_RESTRICTED_TOAST_MESSAGE)}
+                aria-label="Edit gate pass"
               >
-                <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                Edit
+                <Pencil className="h-3.5 w-3.5" />
               </Button>
             ) : (
               <Button
                 variant="outline"
                 size="sm"
-                className="hidden h-8 px-3 text-xs"
+                className="h-8 w-8 p-0"
                 asChild
               >
                 <Link
                   to="/store-admin/outgoing/edit/$id"
                   params={{ id: entry._id }}
                   state={{ entry } as Record<string, unknown>}
+                  aria-label="Edit gate pass"
                 >
-                  <Pencil className="mr-1.5 h-3.5 w-3.5" />
-                  Edit
+                  <Pencil className="h-3.5 w-3.5" />
                 </Link>
               </Button>
             )}

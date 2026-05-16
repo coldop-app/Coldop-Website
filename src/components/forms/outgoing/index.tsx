@@ -39,7 +39,6 @@ import {
   passMatchesLocationFilters,
   type LocationFilters,
 } from '@/components/forms/outgoing/outgoing-form-utils';
-import { EditOutgoingAllocations } from '@/components/forms/outgoing/edit-outgoing-allocations';
 import { DatePicker } from '@/components/forms/date-picker';
 import { formatDate, payloadDateSchema } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
@@ -60,6 +59,10 @@ import {
   useCreateOutgoingGatePass,
   type CreateOutgoingGatePassBody,
 } from '@/services/outgoing-gate-pass/useCreateOutgoingGatePass';
+import {
+  useEditOutgoingGatePass,
+  type EditOutgoingGatePassBody,
+} from '@/services/outgoing-gate-pass/useEditOutgoingGatePass';
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
 
 type FieldErrors = Array<{ message?: string } | undefined>;
@@ -90,40 +93,32 @@ function getUniqueSizes(passes: IncomingGatePassItem[]): string[] {
   return [...names].sort();
 }
 
-/** Build API payload from form values and allocation map. Returns null if no allocations. */
-function buildOutgoingPayload(
-  formValues: {
-    farmerStorageLinkId: string;
-    orderDate: string;
-    remarks: string;
-    from?: string;
-    to?: string;
-    truckNumber?: string;
-    manualParchiNumber?: string;
-  },
-  gatePassNo: number,
+type OutgoingAllocationLine = {
+  size: string;
+  quantityToAllocate: number;
+  location: { chamber: string; floor: string; row: string };
+};
+
+/** Group cell quantities into per–incoming-pass allocation lines. */
+function buildIncomingGatePassEntriesFromCells(
   cellRemovedQuantities: Record<string, number>,
-  incomingPasses: IncomingGatePassItem[] = []
-): CreateOutgoingGatePassBody | null {
+  incomingPasses: IncomingGatePassItem[],
+  varietyByPassId: Map<string, string> = new Map()
+) {
   const entries = Object.entries(cellRemovedQuantities).filter(
     ([, qty]) => qty != null && qty > 0
   );
-  if (entries.length === 0) return null;
+  if (entries.length === 0) return [];
 
   const passById = new Map(incomingPasses.map((p) => [p._id, p]));
+  const byPassAllocations = new Map<string, OutgoingAllocationLine[]>();
 
-  /** Per passId: list of allocations (size, quantityToAllocate, location) – one per cell. */
-  const byPassAllocations = new Map<
-    string,
-    Array<{ size: string; quantityToAllocate: number; location: { chamber: string; floor: string; row: string } }>
-  >();
   for (const [key, qty] of entries) {
     const parsed = parseAllocationKey(key);
     if (!parsed) continue;
     const { passId, sizeName, bagIndex } = parsed;
     const pass = passById.get(passId);
-    if (!pass) continue;
-    const details = getBagDetailsForSize(pass, sizeName);
+    const details = pass ? getBagDetailsForSize(pass, sizeName) : [];
     const detail = details[bagIndex];
     const location = detail?.location
       ? {
@@ -140,19 +135,94 @@ function buildOutgoingPayload(
     });
   }
 
-  const incomingGatePasses = [...byPassAllocations.entries()]
+  return [...byPassAllocations.entries()]
     .map(([incomingGatePassId, allocations]) => {
       const pass = passById.get(incomingGatePassId);
-      const variety = pass?.variety?.trim() ?? '';
+      const variety =
+        pass?.variety?.trim() ||
+        varietyByPassId.get(incomingGatePassId)?.trim() ||
+        '';
       return { incomingGatePassId, variety, allocations };
     })
-    .filter((e) => e.allocations.length > 0);
+    .filter((e) => e.allocations.length > 0 && e.variety.length > 0);
+}
+
+function hasNonEmptyLocation(location: {
+  chamber: string;
+  floor: string;
+  row: string;
+}): boolean {
+  return Boolean(
+    location.chamber.trim() || location.floor.trim() || location.row.trim()
+  );
+}
+
+/** Build PATCH body for edit. Returns null if no valid allocations. */
+function buildEditOutgoingPayload(
+  formValues: {
+    orderDate: string;
+    remarks: string;
+    from?: string;
+    to?: string;
+    truckNumber?: string;
+  },
+  cellRemovedQuantities: Record<string, number>,
+  incomingPasses: IncomingGatePassItem[] = [],
+  varietyByPassId: Map<string, string> = new Map()
+): EditOutgoingGatePassBody | null {
+  const incomingGatePasses = buildIncomingGatePassEntriesFromCells(
+    cellRemovedQuantities,
+    incomingPasses,
+    varietyByPassId
+  ).map(({ incomingGatePassId, variety, allocations }) => ({
+    incomingGatePassId,
+    variety,
+    allocations: allocations.map(({ size, quantityToAllocate, location }) => {
+      if (hasNonEmptyLocation(location)) {
+        return { size, quantityToAllocate, location };
+      }
+      return { size, quantityToAllocate };
+    }),
+  }));
+
+  if (incomingGatePasses.length === 0) return null;
+
+  return {
+    date: payloadDateSchema.parse(formValues.orderDate),
+    ...(formValues.from?.trim() && { from: formValues.from.trim() }),
+    ...(formValues.to?.trim() && { to: formValues.to.trim() }),
+    ...(formValues.truckNumber?.trim() && {
+      truckNumber: formValues.truckNumber.trim(),
+    }),
+    incomingGatePasses,
+    remarks: formValues.remarks?.trim() ?? '',
+  };
+}
+
+/** Build API payload from form values and allocation map. Returns null if no allocations. */
+function buildOutgoingPayload(
+  formValues: {
+    farmerStorageLinkId: string;
+    orderDate: string;
+    remarks: string;
+    from?: string;
+    to?: string;
+    truckNumber?: string;
+    manualParchiNumber?: string;
+  },
+  gatePassNo: number,
+  cellRemovedQuantities: Record<string, number>,
+  incomingPasses: IncomingGatePassItem[] = []
+): CreateOutgoingGatePassBody | null {
+  const incomingGatePasses = buildIncomingGatePassEntriesFromCells(
+    cellRemovedQuantities,
+    incomingPasses
+  );
   if (incomingGatePasses.length === 0) return null;
 
   const date = payloadDateSchema.parse(formValues.orderDate);
 
-  const manualParchiNum =
-    formValues.manualParchiNumber?.trim();
+  const manualParchiNum = formValues.manualParchiNumber?.trim();
   const manualParchiNumber =
     manualParchiNum != null &&
     manualParchiNum !== '' &&
@@ -184,12 +254,18 @@ export function OutgoingVouchersSection({
   farmerStorageLinkId,
   cellRemovedQuantities,
   setCellRemovedQuantities,
+  /** When true (e.g. edit outgoing), table is shown without forcing a variety choice first. */
+  skipVarietyPickerRequirement = false,
+  /** When false, "Reset filters" does not clear bag quantities (edit mode). */
+  clearAllocationsOnFilterReset = true,
 }: {
   farmerStorageLinkId: string;
   cellRemovedQuantities: Record<string, number>;
   setCellRemovedQuantities: React.Dispatch<
     React.SetStateAction<Record<string, number>>
   >;
+  skipVarietyPickerRequirement?: boolean;
+  clearAllocationsOnFilterReset?: boolean;
 }) {
   const {
     data: allPasses = [],
@@ -262,8 +338,10 @@ export function OutgoingVouchersSection({
     setLocationFilters({ chamber: '', floor: '', row: '' });
     setVisibleColumns(new Set());
     setSelectedOrders(new Set());
-    setCellRemovedQuantities({});
-  }, [setCellRemovedQuantities]);
+    if (clearAllocationsOnFilterReset) {
+      setCellRemovedQuantities({});
+    }
+  }, [setCellRemovedQuantities, clearAllocationsOnFilterReset]);
 
   const handleCellQuantityChange = useCallback(
     (
@@ -371,9 +449,11 @@ export function OutgoingVouchersSection({
   }
 
   const hasGradingData = allPasses.length > 0;
-  /** When there are varieties, require an explicit choice (not "All") before showing gate passes. */
+  /** When there are varieties, require an explicit choice (not "All") before showing gate passes — unless skipped (edit mode). */
   const varietySelected =
-    uniqueVarieties.length === 0 || varietyFilter.trim() !== '';
+    skipVarietyPickerRequirement ||
+    uniqueVarieties.length === 0 ||
+    varietyFilter.trim() !== '';
   const hasFilteredData =
     varietySelected &&
     filteredAndSortedPasses.length > 0 &&
@@ -386,7 +466,9 @@ export function OutgoingVouchersSection({
 
   /** Gate passes stay hidden until a specific variety is chosen (not "All"). */
   const needsVarietySelection =
-    uniqueVarieties.length > 0 && varietyFilter.trim() === '';
+    !skipVarietyPickerRequirement &&
+    uniqueVarieties.length > 0 &&
+    varietyFilter.trim() === '';
 
   const sizesForColumnPicker =
     tableSizes.length > 0 ? tableSizes : allTableSizes;
@@ -734,6 +816,7 @@ export const OutgoingForm = memo(function OutgoingForm({
         : '—';
 
   const createOutgoing = useCreateOutgoingGatePass();
+  const editOutgoing = useEditOutgoingGatePass();
   const [cellRemovedQuantities, setCellRemovedQuantities] = useState<
     Record<string, number>
   >(() =>
@@ -741,6 +824,8 @@ export const OutgoingForm = memo(function OutgoingForm({
   );
   const [pendingPayload, setPendingPayload] =
     useState<CreateOutgoingGatePassBody | null>(null);
+  const [pendingEditPayload, setPendingEditPayload] =
+    useState<EditOutgoingGatePassBody | null>(null);
 
   const editDefaultValues = useMemo(() => {
     if (!editEntry) return null;
@@ -757,6 +842,21 @@ export const OutgoingForm = memo(function OutgoingForm({
       truckNumber: editEntry.truckNumber ?? '',
       remarks: editEntry.remarks ?? '',
     };
+  }, [editEntry]);
+
+  const editVarietyByPassId = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const ent of editEntry?.incomingGatePassEntries ?? []) {
+      if (ent.incomingGatePassId && ent.variety?.trim()) {
+        map.set(ent.incomingGatePassId, ent.variety.trim());
+      }
+    }
+    for (const snap of editEntry?.incomingGatePassSnapshots ?? []) {
+      if (snap._id && snap.variety?.trim()) {
+        map.set(snap._id, snap.variety.trim());
+      }
+    }
+    return map;
   }, [editEntry]);
 
   const farmerOptions: Option<string>[] = useMemo(() => {
@@ -818,17 +918,28 @@ export const OutgoingForm = memo(function OutgoingForm({
     },
     onSubmit: async ({ value }) => {
       if (isEditMode) {
-        const payload = {
-          ...(editId && { id: editId }),
-          farmerStorageLinkId: value.farmerStorageLinkId,
-          orderDate: payloadDateSchema.parse(value.orderDate),
-          from: value.from?.trim() || undefined,
-          to: value.to?.trim() || undefined,
-          truckNumber: value.truckNumber?.trim().toUpperCase() || undefined,
-          remarks: value.remarks?.trim() ?? '',
-          manualParchiNumber: value.manualParchiNumber?.trim() || undefined,
-        };
-        console.log('Outgoing edit payload:', payload);
+        if (!openSheetRef.current) return;
+        openSheetRef.current = false;
+        const body = buildEditOutgoingPayload(
+          {
+            orderDate: value.orderDate,
+            from: value.from,
+            to: value.to,
+            truckNumber: value.truckNumber?.trim() || undefined,
+            remarks: value.remarks,
+          },
+          cellRemovedQuantities,
+          incomingPasses,
+          editVarietyByPassId
+        );
+        if (!body) {
+          toast.error('Please add at least one allocation', {
+            description: 'Select quantities in the gate passes table.',
+          });
+          return;
+        }
+        setPendingEditPayload(body);
+        setSummaryOpen(true);
         return;
       }
 
@@ -900,6 +1011,25 @@ export const OutgoingForm = memo(function OutgoingForm({
       return;
     }
     if (isEditMode) {
+      const v = form.state.values;
+      const hasAllocation = Object.values(cellRemovedQuantities).some(
+        (q) => q != null && q > 0
+      );
+      if (!hasAllocation) {
+        toast.error('Please add at least one allocation', {
+          description: 'Select quantities in the gate passes table.',
+        });
+        return;
+      }
+      const mp = v.manualParchiNumber?.trim() ?? '';
+      if (
+        mp !== '' &&
+        (!/^\d+$/.test(mp) || Number.parseInt(mp, 10) <= 0)
+      ) {
+        toast.error('Manual parchi number must be a positive integer');
+        return;
+      }
+      openSheetRef.current = true;
       void form.handleSubmit();
       return;
     }
@@ -936,6 +1066,12 @@ export const OutgoingForm = memo(function OutgoingForm({
             {createStep === 1
               ? 'Parchi, order date, farmer, and gate passes'
               : 'Route, truck, and remarks'}
+          </p>
+        )}
+        {isEditMode && (
+          <p className="font-custom text-muted-foreground text-sm">
+            Parchi, order date, farmer, and incoming gate passes — then route,
+            truck, and remarks (same as create).
           </p>
         )}
       </div>
@@ -1045,6 +1181,31 @@ export const OutgoingForm = memo(function OutgoingForm({
             </>
           )}
 
+          {/* Incoming gate passes — create step 1 and edit (same UI as create) */}
+          {(isEditMode || createStep === 1) && (
+            <form.Subscribe
+              selector={(state) => ({
+                farmerStorageLinkId: state.values.farmerStorageLinkId,
+              })}
+            >
+              {({ farmerStorageLinkId }) => (
+                <Field>
+                  <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                    Incoming gate passes
+                  </FieldLabel>
+                  <OutgoingVouchersSection
+                    key={`${farmerStorageLinkId ?? ''}-${vouchersSectionKey}`}
+                    farmerStorageLinkId={farmerStorageLinkId ?? ''}
+                    cellRemovedQuantities={cellRemovedQuantities}
+                    setCellRemovedQuantities={setCellRemovedQuantities}
+                    skipVarietyPickerRequirement={isEditMode}
+                    clearAllocationsOnFilterReset={!isEditMode}
+                  />
+                </Field>
+              )}
+            </form.Subscribe>
+          )}
+
           {/* Step 2 (create) or full form (edit): route, truck, remarks */}
           {(isEditMode || createStep === 2) && (
             <>
@@ -1131,43 +1292,6 @@ export const OutgoingForm = memo(function OutgoingForm({
               />
             </>
           )}
-
-          {/* Edit mode: show issued quantities so user can update them */}
-          {isEditMode && editEntry && (
-            <Field>
-              <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                Allocated quantities
-              </FieldLabel>
-              <EditOutgoingAllocations
-                editEntry={editEntry}
-                cellRemovedQuantities={cellRemovedQuantities}
-                setCellRemovedQuantities={setCellRemovedQuantities}
-              />
-            </Field>
-          )}
-
-          {/* Incoming gate passes for selected farmer (create step 1 only) */}
-          {!isEditMode && createStep === 1 && (
-            <form.Subscribe
-              selector={(state) => ({
-                farmerStorageLinkId: state.values.farmerStorageLinkId,
-              })}
-            >
-              {({ farmerStorageLinkId }) => (
-                <Field>
-                  <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                    Incoming gate passes
-                  </FieldLabel>
-                  <OutgoingVouchersSection
-                    key={`${farmerStorageLinkId ?? ''}-${vouchersSectionKey}`}
-                    farmerStorageLinkId={farmerStorageLinkId ?? ''}
-                    cellRemovedQuantities={cellRemovedQuantities}
-                    setCellRemovedQuantities={setCellRemovedQuantities}
-                  />
-                </Field>
-              )}
-            </form.Subscribe>
-          )}
         </FieldGroup>
 
         {/* Step actions */}
@@ -1176,6 +1300,16 @@ export const OutgoingForm = memo(function OutgoingForm({
             type="button"
             variant="outline"
             onClick={() => {
+              if (isEditMode && editEntry) {
+                const defaults = editDefaultValues ?? defaultOutgoingFormValues;
+                form.reset(defaults);
+                setCellRemovedQuantities(
+                  buildInitialAllocationsFromEntry(editEntry)
+                );
+                setVouchersSectionKey((k) => k + 1);
+                setCreateStep(1);
+                return;
+              }
               form.reset();
               setCellRemovedQuantities({});
               setVouchersSectionKey((k) => k + 1);
@@ -1218,34 +1352,61 @@ export const OutgoingForm = memo(function OutgoingForm({
               size="lg"
               className="font-custom px-8 font-bold"
               onClick={runPrimaryAction}
+              disabled={
+                (isEditMode && editOutgoing.isPending) ||
+                (!isEditMode && createOutgoing.isPending)
+              }
             >
-              {isEditMode ? 'Save' : 'Review'}
+              Review
             </Button>
           )}
         </div>
       </form>
 
-      {!isEditMode && (
-        <OutgoingSummarySheet
-          open={summaryOpen}
-          onOpenChange={setSummaryOpen}
-          pendingPayload={pendingPayload}
-          isSubmitting={createOutgoing.isPending}
-          onConfirm={() => {
-            if (!pendingPayload) return;
-            createOutgoing.mutate(pendingPayload, {
-              onSuccess: () => {
-                setSummaryOpen(false);
-                setPendingPayload(null);
-                form.reset();
-                setCellRemovedQuantities({});
-                setVouchersSectionKey((k) => k + 1);
-                setCreateStep(1);
-              },
-            });
-          }}
-        />
-      )}
+      <OutgoingSummarySheet
+        open={summaryOpen}
+        onOpenChange={(open) => {
+          setSummaryOpen(open);
+          if (!open) {
+            setPendingPayload(null);
+            setPendingEditPayload(null);
+          }
+        }}
+        mode={isEditMode ? 'edit' : 'create'}
+        gatePassNo={editEntry?.gatePassNo}
+        pendingPayload={
+          isEditMode ? pendingEditPayload : pendingPayload
+        }
+        isSubmitting={
+          isEditMode ? editOutgoing.isPending : createOutgoing.isPending
+        }
+        onConfirm={() => {
+          if (isEditMode) {
+            if (!pendingEditPayload || !editId) return;
+            editOutgoing.mutate(
+              { id: editId, body: pendingEditPayload },
+              {
+                onSuccess: () => {
+                  setSummaryOpen(false);
+                  setPendingEditPayload(null);
+                },
+              }
+            );
+            return;
+          }
+          if (!pendingPayload) return;
+          createOutgoing.mutate(pendingPayload, {
+            onSuccess: () => {
+              setSummaryOpen(false);
+              setPendingPayload(null);
+              form.reset();
+              setCellRemovedQuantities({});
+              setVouchersSectionKey((k) => k + 1);
+              setCreateStep(1);
+            },
+          });
+        }}
+      />
     </main>
   );
 });
