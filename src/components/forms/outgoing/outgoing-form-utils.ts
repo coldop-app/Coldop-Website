@@ -2,7 +2,41 @@ import type {
   IncomingGatePassItem,
   IncomingGatePassBagSizeLocation,
 } from '@/services/incoming-gate-pass/useGetIncomingGatePassesOfSingleFarmer';
-import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
+import type {
+  DaybookEntry,
+  DaybookIncomingGatePassSnapshot,
+} from '@/services/store-admin/functions/useGetDaybook';
+import { formatOutgoingLocation } from '@/lib/outgoing-gate-pass-breakdown';
+
+export interface OutgoingEditRestore {
+  snapshotPasses: IncomingGatePassItem[];
+  initialSelectedPassIds: string[];
+  /** Pre-selected variety in the filter (first issuance variety when multiple). */
+  initialVarietyFilter?: string;
+  /** Varieties that were part of the original outgoing order. */
+  issuanceVarieties?: string[];
+  /** When true, table shows only passes from the original issuance. */
+  issuanceOnly?: boolean;
+  skipVarietyRequirement?: boolean;
+}
+
+/** Resolve the variety to pre-select for edit restore. */
+export function getInitialVarietyFilterForEntry(
+  entry: DaybookEntry,
+  issuanceVarieties: string[]
+): string {
+  if (issuanceVarieties.length === 1) return issuanceVarieties[0]!;
+  const topLevel = entry.variety?.trim();
+  if (topLevel && issuanceVarieties.includes(topLevel)) return topLevel;
+  return issuanceVarieties[0] ?? '';
+}
+
+function orderDetailLocationKey(
+  size: string,
+  location?: { chamber?: string; floor?: string; row?: string }
+): string {
+  return `${size.trim()}|${formatOutgoingLocation(location)}`;
+}
 
 /** Delimiter for allocation map keys (passId + sizeName + optional bagIndex). Use so size names with '-' parse correctly. */
 export const ALLOCATION_KEY_DELIMITER = '::';
@@ -191,34 +225,121 @@ export interface EditAllocationRow {
   quantityIssued: number;
 }
 
+/** Map daybook snapshots to incoming gate pass items (issuance-time bag layout). */
+export function snapshotsToIncomingGatePassItems(
+  snapshots: DaybookIncomingGatePassSnapshot[]
+): IncomingGatePassItem[] {
+  return snapshots.map((snap) => ({
+    _id: snap._id,
+    gatePassNo: snap.gatePassNo,
+    variety: snap.variety ?? '',
+    bagSizes: (snap.bagSizes ?? []).map((b) => ({
+      name: b.name,
+      initialQuantity: b.initialQuantity ?? 0,
+      currentQuantity: b.currentQuantity ?? 0,
+      location: {
+        chamber: b.location?.chamber ?? '',
+        floor: b.location?.floor ?? '',
+        row: b.location?.row ?? '',
+      },
+    })),
+    date: '',
+    type: 'RECEIPT' as const,
+    farmerStorageLinkId: {
+      name: '',
+      accountNumber: 0,
+      address: '',
+      mobileNumber: '',
+    },
+    createdBy: { _id: '', name: '' },
+    truckNumber: '',
+    status: '',
+    remarks: '',
+    manualParchiNumber: '',
+    createdAt: '',
+    updatedAt: '',
+  }));
+}
+
+/** Union live farmer passes with snapshot passes; live wins when present, snapshot fills gaps. */
+export function mergePassesForEdit(
+  livePasses: IncomingGatePassItem[],
+  snapshotItems: IncomingGatePassItem[]
+): IncomingGatePassItem[] {
+  const byId = new Map(livePasses.map((p) => [p._id, p]));
+  for (const snap of snapshotItems) {
+    if (!byId.has(snap._id)) {
+      byId.set(snap._id, snap);
+    }
+  }
+  return [...byId.values()];
+}
+
+/** Pass IDs that were part of the original outgoing order. */
+export function getInitialSelectedPassIds(entry: DaybookEntry): string[] {
+  const fromSnapshots = (entry.incomingGatePassSnapshots ?? []).map((s) => s._id);
+  const fromEntries = (entry.incomingGatePassEntries ?? []).map(
+    (e) => e.incomingGatePassId
+  );
+  return [...new Set([...fromSnapshots, ...fromEntries])];
+}
+
 /** Build allocation key -> quantity from a daybook outgoing entry (for edit form initial state). */
 export function buildInitialAllocationsFromEntry(
   entry: DaybookEntry | null | undefined
 ): Record<string, number> {
   if (!entry) return {};
 
+  const result: Record<string, number> = {};
+  const snapshots = entry.incomingGatePassSnapshots ?? [];
   const incomingEntries = entry.incomingGatePassEntries ?? [];
+
   if (incomingEntries.length > 0) {
-    const result: Record<string, number> = {};
     for (const ent of incomingEntries) {
       const passId = ent.incomingGatePassId;
-      const perSizeCount = new Map<string, number>();
+      const sizeToNextIndex = new Map<string, number>();
       for (const alloc of ent.allocations ?? []) {
         const size = (alloc.size ?? '').trim();
         const qty = alloc.quantityToAllocate ?? 0;
         if (!size || qty <= 0) continue;
-        const idx = perSizeCount.get(size) ?? 0;
-        perSizeCount.set(size, idx + 1);
-        result[allocationKey(passId, size, idx)] = qty;
+        const bagIndex = sizeToNextIndex.get(size) ?? 0;
+        sizeToNextIndex.set(size, bagIndex + 1);
+        result[allocationKey(passId, size, bagIndex)] = qty;
+      }
+    }
+    if (Object.keys(result).length > 0) return result;
+  }
+
+  if (snapshots.length > 0) {
+    const orderDetails = entry.orderDetails ?? [];
+    const quantitiesByLocation = new Map<string, number>();
+    for (const od of orderDetails) {
+      const size = (od.size ?? '').trim();
+      if (!size) continue;
+      const key = orderDetailLocationKey(size, od.location);
+      quantitiesByLocation.set(key, od.quantityIssued ?? 0);
+    }
+
+    for (const snap of snapshots) {
+      const sizeToIndex = new Map<string, number>();
+      for (const bag of snap.bagSizes ?? []) {
+        const size = (bag.name ?? '').trim();
+        if (!size) continue;
+        const bagIndex = sizeToIndex.get(size) ?? 0;
+        sizeToIndex.set(size, bagIndex + 1);
+        const qty =
+          quantitiesByLocation.get(orderDetailLocationKey(size, bag.location)) ??
+          0;
+        if (qty > 0) {
+          result[allocationKey(snap._id, size, bagIndex)] = qty;
+        }
       }
     }
     return result;
   }
 
-  if (!entry.orderDetails?.length) return {};
-  const snapshots = entry.incomingGatePassSnapshots ?? [];
-  const result: Record<string, number> = {};
-  for (const od of entry.orderDetails) {
+  const orderDetails = entry.orderDetails ?? [];
+  for (const od of orderDetails) {
     const qty = od.quantityIssued ?? 0;
     if (qty <= 0) continue;
     const size = (od.size ?? '').trim();
@@ -237,41 +358,41 @@ export function buildInitialAllocationsFromEntry(
   return result;
 }
 
+/** Build edit restore config from a daybook entry. */
+export function buildEditRestoreFromEntry(
+  entry: DaybookEntry
+): OutgoingEditRestore | undefined {
+  const snapshots = entry.incomingGatePassSnapshots ?? [];
+  if (snapshots.length === 0 && !(entry.incomingGatePassEntries?.length)) {
+    return undefined;
+  }
+  const snapshotPasses = snapshotsToIncomingGatePassItems(snapshots);
+  const varieties = new Set<string>();
+  for (const s of snapshots) {
+    const v = s.variety?.trim();
+    if (v) varieties.add(v);
+  }
+  for (const e of entry.incomingGatePassEntries ?? []) {
+    const v = e.variety?.trim();
+    if (v) varieties.add(v);
+  }
+  const varietyList = [...varieties].sort();
+  return {
+    snapshotPasses,
+    initialSelectedPassIds: getInitialSelectedPassIds(entry),
+    initialVarietyFilter: getInitialVarietyFilterForEntry(entry, varietyList),
+    issuanceVarieties: varietyList,
+    issuanceOnly: false,
+    skipVarietyRequirement: true,
+  };
+}
+
 /** Build display rows for edit allocations from entry + current cellRemovedQuantities. One row per (pass, size, location) so multiple locations for same size are shown. */
 export function getEditAllocationRows(
   entry: DaybookEntry | null | undefined,
   cellRemovedQuantities: Record<string, number>
 ): EditAllocationRow[] {
-  if (!entry) return [];
-
-  const incomingEntries = entry.incomingGatePassEntries ?? [];
-  if (incomingEntries.length > 0) {
-    const passMeta = new Map(
-      incomingEntries.map((e) => [e.incomingGatePassId, e.gatePassNo ?? 0])
-    );
-    const rows: EditAllocationRow[] = [];
-    for (const [key, qty] of Object.entries(cellRemovedQuantities)) {
-      if (qty <= 0) continue;
-      const parsed = parseAllocationKey(key);
-      if (!parsed) continue;
-      const gatePassNo = passMeta.get(parsed.passId) ?? 0;
-      rows.push({
-        key,
-        passId: parsed.passId,
-        gatePassNo,
-        size: parsed.sizeName,
-        location: '—',
-        quantityIssued: qty,
-      });
-    }
-    return rows.sort((a, b) =>
-      a.gatePassNo !== b.gatePassNo
-        ? a.gatePassNo - b.gatePassNo
-        : a.size.localeCompare(b.size)
-    );
-  }
-
-  if (!entry.incomingGatePassSnapshots?.length) return [];
+  if (!entry?.incomingGatePassSnapshots?.length) return [];
   const snapshots = entry.incomingGatePassSnapshots;
   const rows: EditAllocationRow[] = [];
   for (const snap of snapshots) {

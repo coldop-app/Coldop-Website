@@ -1,6 +1,7 @@
+/* eslint-disable react-refresh/only-export-components -- route file exports Route config */
 import { createFileRoute, useLocation } from '@tanstack/react-router';
-import OutgoingForm from '@/components/forms/outgoing';
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
+import OutgoingEditForm from '@/components/forms/outgoing/edit';
 
 type OutgoingEditState = { entry?: DaybookEntry };
 
@@ -25,5 +26,5 @@ function OutgoingEditPage() {
     );
   }
 
-  return <OutgoingForm editEntry={entry} editId={id} />;
+  return <OutgoingEditForm editEntry={entry} editId={id} />;
 }

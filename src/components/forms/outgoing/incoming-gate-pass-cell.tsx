@@ -32,6 +32,10 @@ export interface IncomingGatePassCellProps {
   location?: IncomingGatePassCellLocation;
   /** Short label for this location when multiple cells for same size (e.g. "A 1 R1") */
   locationLabel?: string;
+  /** Edit mode: allow keeping/saving allocation above live currentQuantity */
+  allowExceedingAllocation?: boolean;
+  /** Saved allocation on this outgoing order before edits (edit mode only). */
+  previouslySelectedQuantity?: number;
 }
 
 function getBorderByPercentage(
@@ -57,6 +61,8 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
   disabled,
   location,
   locationLabel,
+  allowExceedingAllocation = false,
+  previouslySelectedQuantity,
 }: IncomingGatePassCellProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [inputValue, setInputValue] = useState('');
@@ -64,6 +70,11 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
   const quantity = removedQuantity;
   const hasQuantity = quantity !== undefined && quantity > 0;
   const isActive = hasQuantity;
+  const isEditAllocationMode = previouslySelectedQuantity !== undefined;
+  const prevSelected = previouslySelectedQuantity ?? 0;
+  const totalAvailableForRemoval = isEditAllocationMode
+    ? prevSelected + currentQuantity
+    : currentQuantity;
 
   const borderByPercentage = getBorderByPercentage(
     initialQuantity,
@@ -81,7 +92,9 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
     if (!open) setInputValue('');
   }, []);
 
-  const maxQuantity = currentQuantity;
+  const maxQuantity = allowExceedingAllocation
+    ? Math.max(totalAvailableForRemoval, removedQuantity)
+    : currentQuantity;
 
   const quantityError = (() => {
     const trimmed = inputValue.trim();
@@ -99,11 +112,11 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
     const parsed = parseFloat(inputValue);
     const value = Number.isNaN(parsed)
       ? 0
-      : Math.max(0, Math.min(currentQuantity, parsed));
+      : Math.max(0, Math.min(maxQuantity, parsed));
     onQuantityChange(value);
     setDialogOpen(false);
     setInputValue('');
-  }, [inputValue, currentQuantity, onQuantityChange, quantityError]);
+  }, [inputValue, maxQuantity, onQuantityChange, quantityError]);
 
   return (
     <>
@@ -122,6 +135,7 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
         }}
         className={cn(
           'hover:bg-muted/50 hover:border-muted-foreground/20 focus-visible:ring-primary relative cursor-pointer px-2 py-1.5 transition-all duration-200 outline-none hover:shadow-sm focus-visible:ring-2 focus-visible:ring-offset-2',
+          isEditAllocationMode && 'min-h-[88px]',
           isActive
             ? 'bg-primary/5 border-primary/30 shadow-sm'
             : 'bg-card/50 border-border/60',
@@ -163,14 +177,49 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
               {location.row ?? '—'}
             </p>
           )}
-          <div className="text-right">
-            <p className="font-custom text-foreground text-sm leading-none font-semibold">
-              {currentQuantity.toFixed(1)}
-            </p>
-            <p className="font-custom text-muted-foreground/70 text-[10px]">
-              /{initialQuantity.toFixed(1)}
-            </p>
-          </div>
+          {isEditAllocationMode ? (
+            <dl className="font-custom mt-1 space-y-0.5 text-[10px] leading-tight">
+              <div className="flex items-baseline justify-between gap-2">
+                <dt className="text-muted-foreground shrink-0">Prev selected</dt>
+                <dd className="text-foreground tabular-nums font-medium">
+                  {prevSelected.toFixed(1)}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-2">
+                <dt className="text-muted-foreground shrink-0">Total available</dt>
+                <dd className="text-foreground tabular-nums font-semibold">
+                  {totalAvailableForRemoval.toFixed(1)}
+                </dd>
+              </div>
+              <div className="flex items-baseline justify-between gap-2 border-t border-border/50 pt-0.5">
+                <dt
+                  className={cn(
+                    'shrink-0 font-medium',
+                    hasQuantity ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  Current
+                </dt>
+                <dd
+                  className={cn(
+                    'tabular-nums font-semibold',
+                    hasQuantity ? 'text-primary' : 'text-muted-foreground'
+                  )}
+                >
+                  {quantity.toFixed(1)}
+                </dd>
+              </div>
+            </dl>
+          ) : (
+            <div className="text-right">
+              <p className="font-custom text-foreground text-sm leading-none font-semibold">
+                {currentQuantity.toFixed(1)}
+              </p>
+              <p className="font-custom text-muted-foreground/70 text-[10px]">
+                /{initialQuantity.toFixed(1)}
+              </p>
+            </div>
+          )}
         </ItemContent>
       </Item>
 
@@ -183,24 +232,55 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
         >
           <DialogHeader>
             <DialogTitle>Enter quantity</DialogTitle>
-            <DialogDescription>
-              {variety} — available: {currentQuantity.toFixed(1)} /{' '}
-              {initialQuantity.toFixed(1)}
-              {location &&
-                (location.chamber || location.floor || location.row) && (
-                  <span className="mt-1 flex items-center gap-1.5 text-xs">
-                    <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
-                    Ch: {location.chamber ?? '—'} · F: {location.floor ?? '—'}
-                    {' · R: '}
-                    {location.row ?? '—'}
-                  </span>
+            <DialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <p>
+                  {variety}
+                  {location &&
+                    (location.chamber || location.floor || location.row) && (
+                      <span className="mt-1 flex items-center gap-1.5 text-xs">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden />
+                        Ch: {location.chamber ?? '—'} · F:{' '}
+                        {location.floor ?? '—'}
+                        {' · R: '}
+                        {location.row ?? '—'}
+                      </span>
+                    )}
+                </p>
+                {isEditAllocationMode ? (
+                  <ul className="text-muted-foreground space-y-1 text-xs">
+                    <li className="flex justify-between gap-4">
+                      <span>Previously selected</span>
+                      <span className="text-foreground font-medium tabular-nums">
+                        {prevSelected.toFixed(1)}
+                      </span>
+                    </li>
+                    <li className="flex justify-between gap-4">
+                      <span>In stock now</span>
+                      <span className="text-foreground font-medium tabular-nums">
+                        {currentQuantity.toFixed(1)}
+                      </span>
+                    </li>
+                    <li className="flex justify-between gap-4">
+                      <span>Total available for removal</span>
+                      <span className="text-foreground font-semibold tabular-nums">
+                        {totalAvailableForRemoval.toFixed(1)}
+                      </span>
+                    </li>
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground text-xs">
+                    Available: {currentQuantity.toFixed(1)} /{' '}
+                    {initialQuantity.toFixed(1)}
+                  </p>
                 )}
+              </div>
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 py-2">
             <div className="flex items-center justify-between">
               <FieldLabel className="font-custom">
-                Quantity to remove
+                {isEditAllocationMode ? 'Currently selected' : 'Quantity to remove'}
               </FieldLabel>
               {maxQuantity > 0 && (
                 <span className="font-custom text-muted-foreground/70 text-xs">

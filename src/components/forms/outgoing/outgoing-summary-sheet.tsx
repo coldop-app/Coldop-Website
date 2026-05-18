@@ -10,17 +10,11 @@ import {
 } from '@/components/ui/sheet';
 import { FileText, Calendar, Package, Loader2, Truck } from 'lucide-react';
 import type { CreateOutgoingGatePassBody } from '@/services/outgoing-gate-pass/useCreateOutgoingGatePass';
-import type { EditOutgoingGatePassBody } from '@/services/outgoing-gate-pass/useEditOutgoingGatePass';
+import type { UpdateOutgoingGatePassBody } from '@/services/outgoing-gate-pass/useUpdateOutgoingGatePass';
 
 export type OutgoingSummaryPayload =
   | CreateOutgoingGatePassBody
-  | EditOutgoingGatePassBody;
-
-function isCreatePayload(
-  payload: OutgoingSummaryPayload
-): payload is CreateOutgoingGatePassBody {
-  return 'gatePassNo' in payload && typeof payload.gatePassNo === 'number';
-}
+  | UpdateOutgoingGatePassBody;
 
 /* -------------------------------------------------------------------------- */
 /*                                  Helpers                                   */
@@ -69,11 +63,11 @@ export interface OutgoingSummarySheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   pendingPayload: OutgoingSummaryPayload | null;
-  /** Shown when payload has no gatePassNo (edit mode). */
-  gatePassNo?: number;
-  mode?: 'create' | 'edit';
   isSubmitting: boolean;
   onConfirm: () => void;
+  mode?: 'create' | 'edit';
+  /** Gate pass number for display (edit uses entry.gatePassNo; create uses payload.gatePassNo). */
+  gatePassNoDisplay?: number;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -114,29 +108,24 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
   open,
   onOpenChange,
   pendingPayload,
-  gatePassNo: gatePassNoProp,
-  mode = 'create',
   isSubmitting,
   onConfirm,
+  mode = 'create',
+  gatePassNoDisplay,
 }: OutgoingSummarySheetProps) {
+  const isEdit = mode === 'edit';
+  const voucherNo =
+    gatePassNoDisplay ??
+    (pendingPayload && 'gatePassNo' in pendingPayload
+      ? pendingPayload.gatePassNo
+      : undefined);
+
   const totalBags =
     pendingPayload?.incomingGatePasses.reduce(
       (sum, entry) =>
         sum + entry.allocations.reduce((a, b) => a + b.quantityToAllocate, 0),
       0
     ) ?? 0;
-
-  const displayGatePassNo =
-    pendingPayload && isCreatePayload(pendingPayload)
-      ? pendingPayload.gatePassNo
-      : gatePassNoProp;
-
-  const truckNumber =
-    pendingPayload && 'truckNumber' in pendingPayload
-      ? pendingPayload.truckNumber?.trim()
-      : undefined;
-
-  const isEdit = mode === 'edit';
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -159,10 +148,10 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
           {pendingPayload ? (
             <>
               <div className="border-border flex flex-wrap gap-x-6 gap-y-3 border-b px-4 py-3 sm:px-6">
-                {displayGatePassNo != null && (
+                {voucherNo != null && (
                   <SummaryMetaRow
                     label="Voucher"
-                    value={`#${displayGatePassNo}`}
+                    value={`#${voucherNo}`}
                     icon={FileText}
                   />
                 )}
@@ -193,13 +182,6 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                   }
                   icon={Truck}
                 />
-                {truckNumber && (
-                  <SummaryMetaRow
-                    label="Truck"
-                    value={truckNumber}
-                    icon={Truck}
-                  />
-                )}
                 <span className="font-custom text-primary text-sm font-semibold">
                   {totalBags} bag{totalBags !== 1 ? 's' : ''}
                 </span>

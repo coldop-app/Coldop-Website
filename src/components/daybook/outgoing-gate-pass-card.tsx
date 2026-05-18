@@ -17,7 +17,10 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { Spinner } from '@/components/ui/spinner';
 import { DetailRow } from './detail-row';
-import type { OutgoingGatePassEntry } from '@/services/store-admin/functions/useGetDaybook';
+import type {
+  DaybookEntry,
+  OutgoingGatePassEntry,
+} from '@/services/store-admin/functions/useGetDaybook';
 import { useStore } from '@/stores/store';
 import { PAYMENT_RESTRICTED_TOAST_MESSAGE } from '@/lib/special-fields';
 import {
@@ -331,7 +334,9 @@ const OutgoingGatePassCard = memo(function OutgoingGatePassCard({
                 <Link
                   to="/store-admin/outgoing/edit/$id"
                   params={{ id: entry._id }}
-                  state={{ entry } as Record<string, unknown>}
+                  state={
+                    { entry: entry as DaybookEntry } as Record<string, unknown>
+                  }
                   aria-label="Edit gate pass"
                 >
                   <Pencil className="h-3.5 w-3.5" />

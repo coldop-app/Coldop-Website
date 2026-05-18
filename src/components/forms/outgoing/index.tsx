@@ -1,7 +1,5 @@
 import { memo, useCallback, useMemo, useRef, useState } from 'react';
 import { useForm } from '@tanstack/react-form';
-import * as z from 'zod';
-
 import { Button } from '@/components/ui/button';
 import {
   Field,
@@ -31,16 +29,22 @@ import { OutgoingSummarySheet } from '@/components/forms/outgoing/outgoing-summa
 import { OutgoingVouchersTable } from '@/components/forms/outgoing/outgoing-vouchers-table';
 import {
   allocationKey,
-  buildInitialAllocationsFromEntry,
   getBagDetailsForSize,
   getUniqueLocationValues,
   groupIncomingPassesByDate,
+  mergePassesForEdit,
   parseAllocationKey,
   passMatchesLocationFilters,
   type LocationFilters,
+  type OutgoingEditRestore,
 } from '@/components/forms/outgoing/outgoing-form-utils';
+import { buildOutgoingPayload } from '@/components/forms/outgoing/outgoing-payload';
+import {
+  defaultOutgoingFormValues,
+  manualParchiNumberToString,
+  outgoingFormSchema,
+} from '@/components/forms/outgoing/outgoing-form-shared';
 import { DatePicker } from '@/components/forms/date-picker';
-import { formatDate, payloadDateSchema } from '@/lib/helpers';
 import { cn } from '@/lib/utils';
 import {
   DropdownMenuRadioGroup,
@@ -59,18 +63,8 @@ import {
   useCreateOutgoingGatePass,
   type CreateOutgoingGatePassBody,
 } from '@/services/outgoing-gate-pass/useCreateOutgoingGatePass';
-import {
-  useEditOutgoingGatePass,
-  type EditOutgoingGatePassBody,
-} from '@/services/outgoing-gate-pass/useEditOutgoingGatePass';
-import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
 
 type FieldErrors = Array<{ message?: string } | undefined>;
-
-export interface OutgoingFormProps {
-  editEntry?: DaybookEntry;
-  editId?: string;
-}
 
 /** Unique variety names from incoming gate passes (for filter dropdown). */
 function getUniqueVarieties(passes: IncomingGatePassItem[]): string[] {
@@ -93,194 +87,51 @@ function getUniqueSizes(passes: IncomingGatePassItem[]): string[] {
   return [...names].sort();
 }
 
-type OutgoingAllocationLine = {
-  size: string;
-  quantityToAllocate: number;
-  location: { chamber: string; floor: string; row: string };
-};
-
-/** Group cell quantities into per–incoming-pass allocation lines. */
-function buildIncomingGatePassEntriesFromCells(
-  cellRemovedQuantities: Record<string, number>,
-  incomingPasses: IncomingGatePassItem[],
-  varietyByPassId: Map<string, string> = new Map()
-) {
-  const entries = Object.entries(cellRemovedQuantities).filter(
-    ([, qty]) => qty != null && qty > 0
-  );
-  if (entries.length === 0) return [];
-
-  const passById = new Map(incomingPasses.map((p) => [p._id, p]));
-  const byPassAllocations = new Map<string, OutgoingAllocationLine[]>();
-
-  for (const [key, qty] of entries) {
-    const parsed = parseAllocationKey(key);
-    if (!parsed) continue;
-    const { passId, sizeName, bagIndex } = parsed;
-    const pass = passById.get(passId);
-    const details = pass ? getBagDetailsForSize(pass, sizeName) : [];
-    const detail = details[bagIndex];
-    const location = detail?.location
-      ? {
-          chamber: detail.location.chamber ?? '',
-          floor: detail.location.floor ?? '',
-          row: detail.location.row ?? '',
-        }
-      : { chamber: '', floor: '', row: '' };
-    if (!byPassAllocations.has(passId)) byPassAllocations.set(passId, []);
-    byPassAllocations.get(passId)!.push({
-      size: sizeName,
-      quantityToAllocate: qty,
-      location,
-    });
-  }
-
-  return [...byPassAllocations.entries()]
-    .map(([incomingGatePassId, allocations]) => {
-      const pass = passById.get(incomingGatePassId);
-      const variety =
-        pass?.variety?.trim() ||
-        varietyByPassId.get(incomingGatePassId)?.trim() ||
-        '';
-      return { incomingGatePassId, variety, allocations };
-    })
-    .filter((e) => e.allocations.length > 0 && e.variety.length > 0);
-}
-
-function hasNonEmptyLocation(location: {
-  chamber: string;
-  floor: string;
-  row: string;
-}): boolean {
-  return Boolean(
-    location.chamber.trim() || location.floor.trim() || location.row.trim()
-  );
-}
-
-/** Build PATCH body for edit. Returns null if no valid allocations. */
-function buildEditOutgoingPayload(
-  formValues: {
-    orderDate: string;
-    remarks: string;
-    from?: string;
-    to?: string;
-    truckNumber?: string;
-  },
-  cellRemovedQuantities: Record<string, number>,
-  incomingPasses: IncomingGatePassItem[] = [],
-  varietyByPassId: Map<string, string> = new Map()
-): EditOutgoingGatePassBody | null {
-  const incomingGatePasses = buildIncomingGatePassEntriesFromCells(
-    cellRemovedQuantities,
-    incomingPasses,
-    varietyByPassId
-  ).map(({ incomingGatePassId, variety, allocations }) => ({
-    incomingGatePassId,
-    variety,
-    allocations: allocations.map(({ size, quantityToAllocate, location }) => {
-      if (hasNonEmptyLocation(location)) {
-        return { size, quantityToAllocate, location };
-      }
-      return { size, quantityToAllocate };
-    }),
-  }));
-
-  if (incomingGatePasses.length === 0) return null;
-
-  return {
-    date: payloadDateSchema.parse(formValues.orderDate),
-    ...(formValues.from?.trim() && { from: formValues.from.trim() }),
-    ...(formValues.to?.trim() && { to: formValues.to.trim() }),
-    ...(formValues.truckNumber?.trim() && {
-      truckNumber: formValues.truckNumber.trim(),
-    }),
-    incomingGatePasses,
-    remarks: formValues.remarks?.trim() ?? '',
-  };
-}
-
-/** Build API payload from form values and allocation map. Returns null if no allocations. */
-function buildOutgoingPayload(
-  formValues: {
-    farmerStorageLinkId: string;
-    orderDate: string;
-    remarks: string;
-    from?: string;
-    to?: string;
-    truckNumber?: string;
-    manualParchiNumber?: string;
-  },
-  gatePassNo: number,
-  cellRemovedQuantities: Record<string, number>,
-  incomingPasses: IncomingGatePassItem[] = []
-): CreateOutgoingGatePassBody | null {
-  const incomingGatePasses = buildIncomingGatePassEntriesFromCells(
-    cellRemovedQuantities,
-    incomingPasses
-  );
-  if (incomingGatePasses.length === 0) return null;
-
-  const date = payloadDateSchema.parse(formValues.orderDate);
-
-  const manualParchiNum = formValues.manualParchiNumber?.trim();
-  const manualParchiNumber =
-    manualParchiNum != null &&
-    manualParchiNum !== '' &&
-    /^\d+$/.test(manualParchiNum)
-      ? Number.parseInt(manualParchiNum, 10)
-      : undefined;
-  const manualParchiPayload =
-    manualParchiNumber != null && manualParchiNumber > 0
-      ? { manualParchiNumber }
-      : {};
-
-  return {
-    farmerStorageLinkId: formValues.farmerStorageLinkId,
-    gatePassNo,
-    date,
-    ...(formValues.from?.trim() && { from: formValues.from.trim() }),
-    ...(formValues.to?.trim() && { to: formValues.to.trim() }),
-    ...(formValues.truckNumber?.trim() && {
-      truckNumber: formValues.truckNumber.trim(),
-    }),
-    ...manualParchiPayload,
-    incomingGatePasses,
-    remarks: formValues.remarks?.trim() ?? '',
-  };
-}
-
 /** Fetches data, filter/sort state, and renders OutgoingVouchersTable (grouped by date, R. Voucher + size cells) */
 export function OutgoingVouchersSection({
   farmerStorageLinkId,
   cellRemovedQuantities,
   setCellRemovedQuantities,
-  /** When true (e.g. edit outgoing), table is shown without forcing a variety choice first. */
-  skipVarietyPickerRequirement = false,
-  /** When false, "Reset filters" does not clear bag quantities (edit mode). */
-  clearAllocationsOnFilterReset = true,
+  editRestore,
+  allowZeroStockCells = false,
+  initialCellRemovedQuantities,
 }: {
   farmerStorageLinkId: string;
   cellRemovedQuantities: Record<string, number>;
   setCellRemovedQuantities: React.Dispatch<
     React.SetStateAction<Record<string, number>>
   >;
-  skipVarietyPickerRequirement?: boolean;
-  clearAllocationsOnFilterReset?: boolean;
+  editRestore?: OutgoingEditRestore;
+  allowZeroStockCells?: boolean;
+  initialCellRemovedQuantities?: Record<string, number>;
 }) {
   const {
-    data: allPasses = [],
+    data: livePasses = [],
     isLoading,
     error,
   } = useGetIncomingGatePassesOfSingleFarmer(farmerStorageLinkId);
 
+  /** All farmer passes; live stock wins, snapshots only fill passes missing from API. */
+  const allPasses = useMemo(() => {
+    if (!editRestore?.snapshotPasses.length) return livePasses;
+    return mergePassesForEdit(livePasses, editRestore.snapshotPasses);
+  }, [livePasses, editRestore]);
+
+  const pinnedPassIds = useMemo(
+    () => new Set(editRestore?.initialSelectedPassIds ?? []),
+    [editRestore?.initialSelectedPassIds]
+  );
+
   const [voucherSort, setVoucherSort] = useState<'asc' | 'desc'>('asc');
-  const [varietyFilter, setVarietyFilter] = useState('');
-  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    () => new Set()
+  const [varietyFilter, setVarietyFilter] = useState(
+    () => editRestore?.initialVarietyFilter ?? ''
   );
-  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(
-    () => new Set()
-  );
+  /** Empty = show all size columns (same as create). Edit no longer limits to issuance sizes only. */
+  const [visibleColumns, setVisibleColumns] = useState<Set<string>>(() => new Set());
+  const [selectedOrders, setSelectedOrders] = useState<Set<string>>(() => {
+    const ids = editRestore?.initialSelectedPassIds;
+    return ids?.length ? new Set(ids) : new Set();
+  });
   const [locationFilters, setLocationFilters] = useState<LocationFilters>({
     chamber: '',
     floor: '',
@@ -290,15 +141,22 @@ export function OutgoingVouchersSection({
   const filteredAndSortedPasses = useMemo(() => {
     let list = allPasses;
     if (varietyFilter.trim()) {
-      list = list.filter((p) => p.variety?.trim() === varietyFilter);
+      list = list.filter(
+        (p) =>
+          pinnedPassIds.has(p._id) || p.variety?.trim() === varietyFilter
+      );
     }
-    list = list.filter((p) => passMatchesLocationFilters(p, locationFilters));
+    list = list.filter(
+      (p) =>
+        pinnedPassIds.has(p._id) ||
+        passMatchesLocationFilters(p, locationFilters)
+    );
     return [...list].sort((a, b) => {
       const na = a.gatePassNo ?? 0;
       const nb = b.gatePassNo ?? 0;
       return voucherSort === 'asc' ? na - nb : nb - na;
     });
-  }, [allPasses, varietyFilter, voucherSort, locationFilters]);
+  }, [allPasses, varietyFilter, voucherSort, locationFilters, pinnedPassIds]);
 
   const uniqueLocations = useMemo(
     () => getUniqueLocationValues(allPasses),
@@ -334,14 +192,16 @@ export function OutgoingVouchersSection({
 
   const handleResetFilters = useCallback(() => {
     setVoucherSort('asc');
-    setVarietyFilter('');
+    setVarietyFilter(editRestore?.initialVarietyFilter ?? '');
     setLocationFilters({ chamber: '', floor: '', row: '' });
     setVisibleColumns(new Set());
-    setSelectedOrders(new Set());
-    if (clearAllocationsOnFilterReset) {
-      setCellRemovedQuantities({});
-    }
-  }, [setCellRemovedQuantities, clearAllocationsOnFilterReset]);
+    setSelectedOrders(
+      editRestore?.initialSelectedPassIds?.length
+        ? new Set(editRestore.initialSelectedPassIds)
+        : new Set()
+    );
+    setCellRemovedQuantities({});
+  }, [setCellRemovedQuantities, editRestore]);
 
   const handleCellQuantityChange = useCallback(
     (
@@ -449,9 +309,9 @@ export function OutgoingVouchersSection({
   }
 
   const hasGradingData = allPasses.length > 0;
-  /** When there are varieties, require an explicit choice (not "All") before showing gate passes — unless skipped (edit mode). */
+  /** When there are varieties, require an explicit choice (not "All") before showing gate passes. */
   const varietySelected =
-    skipVarietyPickerRequirement ||
+    Boolean(editRestore?.skipVarietyRequirement) ||
     uniqueVarieties.length === 0 ||
     varietyFilter.trim() !== '';
   const hasFilteredData =
@@ -466,7 +326,7 @@ export function OutgoingVouchersSection({
 
   /** Gate passes stay hidden until a specific variety is chosen (not "All"). */
   const needsVarietySelection =
-    !skipVarietyPickerRequirement &&
+    !editRestore?.skipVarietyRequirement &&
     uniqueVarieties.length > 0 &&
     varietyFilter.trim() === '';
 
@@ -776,27 +636,14 @@ export function OutgoingVouchersSection({
         hasGradingData={hasGradingData}
         hasFilteredData={hasFilteredData}
         hasActiveFilters={hasActiveFilters}
+        allowZeroStockCells={allowZeroStockCells}
+        initialCellRemovedQuantities={initialCellRemovedQuantities}
       />
     </div>
   );
 }
 
-const defaultOutgoingFormValues = {
-  manualParchiNumber: '',
-  farmerStorageLinkId: '',
-  orderDate: formatDate(new Date()),
-  from: '',
-  to: '',
-  truckNumber: '',
-  remarks: '',
-};
-
-export const OutgoingForm = memo(function OutgoingForm({
-  editEntry,
-  editId,
-}: OutgoingFormProps = {}) {
-  const isEditMode = Boolean(editEntry);
-
+export const OutgoingForm = memo(function OutgoingForm() {
   const {
     data: farmerLinks,
     isLoading: isLoadingFarmers,
@@ -805,59 +652,18 @@ export const OutgoingForm = memo(function OutgoingForm({
 
   const { data: nextVoucherNumber, isLoading: isLoadingVoucher } =
     useGetReceiptVoucherNumber('outgoing');
-  const voucherNumberDisplay = isEditMode
-    ? editEntry?.gatePassNo != null
-      ? `#${editEntry.gatePassNo}`
-      : '—'
-    : isLoadingVoucher
-      ? '...'
-      : nextVoucherNumber != null
-        ? `#${nextVoucherNumber}`
-        : '—';
+  const voucherNumberDisplay = isLoadingVoucher
+    ? '...'
+    : nextVoucherNumber != null
+      ? `#${nextVoucherNumber}`
+      : '—';
 
   const createOutgoing = useCreateOutgoingGatePass();
-  const editOutgoing = useEditOutgoingGatePass();
   const [cellRemovedQuantities, setCellRemovedQuantities] = useState<
     Record<string, number>
-  >(() =>
-    editEntry ? buildInitialAllocationsFromEntry(editEntry) : {}
-  );
+  >({});
   const [pendingPayload, setPendingPayload] =
     useState<CreateOutgoingGatePassBody | null>(null);
-  const [pendingEditPayload, setPendingEditPayload] =
-    useState<EditOutgoingGatePassBody | null>(null);
-
-  const editDefaultValues = useMemo(() => {
-    if (!editEntry) return null;
-    const orderDate =
-      editEntry.date != null && editEntry.date !== ''
-        ? formatDate(new Date(editEntry.date))
-        : formatDate(new Date());
-    return {
-      manualParchiNumber: editEntry.manualParchiNumber ?? '',
-      farmerStorageLinkId: editEntry.farmerStorageLinkId?._id ?? '',
-      orderDate,
-      from: editEntry.from ?? '',
-      to: editEntry.to ?? '',
-      truckNumber: editEntry.truckNumber ?? '',
-      remarks: editEntry.remarks ?? '',
-    };
-  }, [editEntry]);
-
-  const editVarietyByPassId = useMemo(() => {
-    const map = new Map<string, string>();
-    for (const ent of editEntry?.incomingGatePassEntries ?? []) {
-      if (ent.incomingGatePassId && ent.variety?.trim()) {
-        map.set(ent.incomingGatePassId, ent.variety.trim());
-      }
-    }
-    for (const snap of editEntry?.incomingGatePassSnapshots ?? []) {
-      if (snap._id && snap.variety?.trim()) {
-        map.set(snap._id, snap.variety.trim());
-      }
-    }
-    return map;
-  }, [editEntry]);
 
   const farmerOptions: Option<string>[] = useMemo(() => {
     if (!farmerLinks) return [];
@@ -878,71 +684,17 @@ export const OutgoingForm = memo(function OutgoingForm({
     refetchFarmers();
   };
 
-  const formSchema = useMemo(
-    () =>
-      z.object({
-        manualParchiNumber: z
-          .string()
-          .trim()
-          .optional()
-          .refine(
-            (v) =>
-              v === undefined ||
-              v === '' ||
-              (/^\d+$/.test(v) && Number.parseInt(v, 10) > 0),
-            'Manual parchi number must be a positive integer'
-          ),
-        farmerStorageLinkId: z.string().min(1, 'Please select a farmer'),
-        orderDate: payloadDateSchema,
-        from: z.string().trim().optional(),
-        to: z.string().trim().optional(),
-        truckNumber: z
-          .string()
-          .trim()
-          .optional()
-          .transform((val) => (val ? val.toUpperCase() : val)),
-        remarks: z.string().max(500).default(''),
-      }),
-    []
-  );
-
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [vouchersSectionKey, setVouchersSectionKey] = useState(0);
   const [createStep, setCreateStep] = useState<1 | 2>(1);
   const openSheetRef = useRef(false);
 
   const form = useForm({
-    defaultValues: editDefaultValues ?? defaultOutgoingFormValues,
+    defaultValues: defaultOutgoingFormValues,
     validators: {
-      onSubmit: formSchema as never,
+      onSubmit: outgoingFormSchema as never,
     },
     onSubmit: async ({ value }) => {
-      if (isEditMode) {
-        if (!openSheetRef.current) return;
-        openSheetRef.current = false;
-        const body = buildEditOutgoingPayload(
-          {
-            orderDate: value.orderDate,
-            from: value.from,
-            to: value.to,
-            truckNumber: value.truckNumber?.trim() || undefined,
-            remarks: value.remarks,
-          },
-          cellRemovedQuantities,
-          incomingPasses,
-          editVarietyByPassId
-        );
-        if (!body) {
-          toast.error('Please add at least one allocation', {
-            description: 'Select quantities in the gate passes table.',
-          });
-          return;
-        }
-        setPendingEditPayload(body);
-        setSummaryOpen(true);
-        return;
-      }
-
       if (openSheetRef.current) {
         openSheetRef.current = false;
         const gatePassNo = nextVoucherNumber ?? 1;
@@ -954,7 +706,8 @@ export const OutgoingForm = memo(function OutgoingForm({
             to: value.to,
             truckNumber: value.truckNumber?.trim() || undefined,
             remarks: value.remarks,
-            manualParchiNumber: value.manualParchiNumber?.trim() || undefined,
+            manualParchiNumber:
+              manualParchiNumberToString(value.manualParchiNumber) || undefined,
           },
           gatePassNo,
           cellRemovedQuantities,
@@ -978,7 +731,7 @@ export const OutgoingForm = memo(function OutgoingForm({
       toast.error('Please select a farmer');
       return;
     }
-    const mp = v.manualParchiNumber?.trim() ?? '';
+    const mp = manualParchiNumberToString(v.manualParchiNumber);
     if (
       mp !== '' &&
       (!/^\d+$/.test(mp) || Number.parseInt(mp, 10) <= 0)
@@ -1006,37 +759,12 @@ export const OutgoingForm = memo(function OutgoingForm({
 
   /** Enter key / Review: open summary only on step 2 (never from step 1). */
   const runPrimaryAction = () => {
-    if (!isEditMode && createStep === 1) {
+    if (createStep === 1) {
       handleCreateNext();
       return;
     }
-    if (isEditMode) {
-      const v = form.state.values;
-      const hasAllocation = Object.values(cellRemovedQuantities).some(
-        (q) => q != null && q > 0
-      );
-      if (!hasAllocation) {
-        toast.error('Please add at least one allocation', {
-          description: 'Select quantities in the gate passes table.',
-        });
-        return;
-      }
-      const mp = v.manualParchiNumber?.trim() ?? '';
-      if (
-        mp !== '' &&
-        (!/^\d+$/.test(mp) || Number.parseInt(mp, 10) <= 0)
-      ) {
-        toast.error('Manual parchi number must be a positive integer');
-        return;
-      }
-      openSheetRef.current = true;
-      void form.handleSubmit();
-      return;
-    }
-    if (createStep === 2) {
-      openSheetRef.current = true;
-      void form.handleSubmit();
-    }
+    openSheetRef.current = true;
+    void form.handleSubmit();
   };
 
   const farmerStorageLinkIdForPasses =
@@ -1051,7 +779,7 @@ export const OutgoingForm = memo(function OutgoingForm({
       {/* Header */}
       <div className="mb-8 space-y-4">
         <h1 className="font-custom text-foreground text-3xl font-bold sm:text-4xl">
-          {isEditMode ? 'Edit Outgoing Gate Pass' : 'Create Outgoing Gate Pass'}
+          Create Outgoing Gate Pass
         </h1>
 
         <div className="bg-primary/20 inline-block rounded-full px-4 py-1.5">
@@ -1060,20 +788,12 @@ export const OutgoingForm = memo(function OutgoingForm({
           </span>
         </div>
 
-        {!isEditMode && (
-          <p className="font-custom text-muted-foreground text-sm">
-            Step {createStep} of 2 —{' '}
-            {createStep === 1
-              ? 'Parchi, order date, farmer, and gate passes'
-              : 'Route, truck, and remarks'}
-          </p>
-        )}
-        {isEditMode && (
-          <p className="font-custom text-muted-foreground text-sm">
-            Parchi, order date, farmer, and incoming gate passes — then route,
-            truck, and remarks (same as create).
-          </p>
-        )}
+        <p className="font-custom text-muted-foreground text-sm">
+          Step {createStep} of 2 —{' '}
+          {createStep === 1
+            ? 'Parchi, order date, farmer, and gate passes'
+            : 'Route, truck, and remarks'}
+        </p>
       </div>
 
       {/* Form */}
@@ -1085,8 +805,7 @@ export const OutgoingForm = memo(function OutgoingForm({
         className="space-y-6"
       >
         <FieldGroup className="space-y-6">
-          {/* Step 1 (create) or full form (edit): Manual Parchi + Farmer */}
-          {(isEditMode || createStep === 1) && (
+          {createStep === 1 && (
             <>
               <form.Field
                 name="manualParchiNumber"
@@ -1099,7 +818,7 @@ export const OutgoingForm = memo(function OutgoingForm({
                       </span>
                     </FieldLabel>
                     <Input
-                      autoFocus={!isEditMode}
+                      autoFocus
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
@@ -1181,33 +900,7 @@ export const OutgoingForm = memo(function OutgoingForm({
             </>
           )}
 
-          {/* Incoming gate passes — create step 1 and edit (same UI as create) */}
-          {(isEditMode || createStep === 1) && (
-            <form.Subscribe
-              selector={(state) => ({
-                farmerStorageLinkId: state.values.farmerStorageLinkId,
-              })}
-            >
-              {({ farmerStorageLinkId }) => (
-                <Field>
-                  <FieldLabel className="font-custom mb-2 block text-base font-semibold">
-                    Incoming gate passes
-                  </FieldLabel>
-                  <OutgoingVouchersSection
-                    key={`${farmerStorageLinkId ?? ''}-${vouchersSectionKey}`}
-                    farmerStorageLinkId={farmerStorageLinkId ?? ''}
-                    cellRemovedQuantities={cellRemovedQuantities}
-                    setCellRemovedQuantities={setCellRemovedQuantities}
-                    skipVarietyPickerRequirement={isEditMode}
-                    clearAllocationsOnFilterReset={!isEditMode}
-                  />
-                </Field>
-              )}
-            </form.Subscribe>
-          )}
-
-          {/* Step 2 (create) or full form (edit): route, truck, remarks */}
-          {(isEditMode || createStep === 2) && (
+          {createStep === 2 && (
             <>
               <form.Field
                 name="from"
@@ -1292,6 +985,28 @@ export const OutgoingForm = memo(function OutgoingForm({
               />
             </>
           )}
+
+          {createStep === 1 && (
+            <form.Subscribe
+              selector={(state) => ({
+                farmerStorageLinkId: state.values.farmerStorageLinkId,
+              })}
+            >
+              {({ farmerStorageLinkId }) => (
+                <Field>
+                  <FieldLabel className="font-custom mb-2 block text-base font-semibold">
+                    Incoming gate passes
+                  </FieldLabel>
+                  <OutgoingVouchersSection
+                    key={`${farmerStorageLinkId ?? ''}-${vouchersSectionKey}`}
+                    farmerStorageLinkId={farmerStorageLinkId ?? ''}
+                    cellRemovedQuantities={cellRemovedQuantities}
+                    setCellRemovedQuantities={setCellRemovedQuantities}
+                  />
+                </Field>
+              )}
+            </form.Subscribe>
+          )}
         </FieldGroup>
 
         {/* Step actions */}
@@ -1300,16 +1015,6 @@ export const OutgoingForm = memo(function OutgoingForm({
             type="button"
             variant="outline"
             onClick={() => {
-              if (isEditMode && editEntry) {
-                const defaults = editDefaultValues ?? defaultOutgoingFormValues;
-                form.reset(defaults);
-                setCellRemovedQuantities(
-                  buildInitialAllocationsFromEntry(editEntry)
-                );
-                setVouchersSectionKey((k) => k + 1);
-                setCreateStep(1);
-                return;
-              }
               form.reset();
               setCellRemovedQuantities({});
               setVouchersSectionKey((k) => k + 1);
@@ -1320,7 +1025,7 @@ export const OutgoingForm = memo(function OutgoingForm({
             Reset
           </Button>
 
-          {!isEditMode && createStep === 2 && (
+          {createStep === 2 && (
             <Button
               type="button"
               variant="outline"
@@ -1331,7 +1036,7 @@ export const OutgoingForm = memo(function OutgoingForm({
             </Button>
           )}
 
-          {!isEditMode && createStep === 1 ? (
+          {createStep === 1 ? (
             <Button
               type="button"
               variant="default"
@@ -1352,10 +1057,6 @@ export const OutgoingForm = memo(function OutgoingForm({
               size="lg"
               className="font-custom px-8 font-bold"
               onClick={runPrimaryAction}
-              disabled={
-                (isEditMode && editOutgoing.isPending) ||
-                (!isEditMode && createOutgoing.isPending)
-              }
             >
               Review
             </Button>
@@ -1365,35 +1066,11 @@ export const OutgoingForm = memo(function OutgoingForm({
 
       <OutgoingSummarySheet
         open={summaryOpen}
-        onOpenChange={(open) => {
-          setSummaryOpen(open);
-          if (!open) {
-            setPendingPayload(null);
-            setPendingEditPayload(null);
-          }
-        }}
-        mode={isEditMode ? 'edit' : 'create'}
-        gatePassNo={editEntry?.gatePassNo}
-        pendingPayload={
-          isEditMode ? pendingEditPayload : pendingPayload
-        }
-        isSubmitting={
-          isEditMode ? editOutgoing.isPending : createOutgoing.isPending
-        }
+        onOpenChange={setSummaryOpen}
+        pendingPayload={pendingPayload}
+        mode="create"
+        isSubmitting={createOutgoing.isPending}
         onConfirm={() => {
-          if (isEditMode) {
-            if (!pendingEditPayload || !editId) return;
-            editOutgoing.mutate(
-              { id: editId, body: pendingEditPayload },
-              {
-                onSuccess: () => {
-                  setSummaryOpen(false);
-                  setPendingEditPayload(null);
-                },
-              }
-            );
-            return;
-          }
           if (!pendingPayload) return;
           createOutgoing.mutate(pendingPayload, {
             onSuccess: () => {

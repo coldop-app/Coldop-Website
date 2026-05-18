@@ -1,4 +1,5 @@
 import { Fragment, memo } from 'react';
+import { cn } from '@/lib/utils';
 import {
   Table,
   TableBody,
@@ -38,6 +39,10 @@ export interface OutgoingVouchersTableProps {
   hasGradingData: boolean;
   hasFilteredData: boolean;
   hasActiveFilters: boolean;
+  /** When true (edit mode), cells remain interactive even if currentQuantity is 0. */
+  allowZeroStockCells?: boolean;
+  /** Saved allocations when the edit form opened (pass::size::bagIndex → qty). */
+  initialCellRemovedQuantities?: Record<string, number>;
 }
 
 export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
@@ -52,7 +57,10 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
   hasGradingData,
   hasFilteredData,
   hasActiveFilters,
+  allowZeroStockCells = false,
+  initialCellRemovedQuantities,
 }: OutgoingVouchersTableProps) {
+  const isEditMode = Boolean(initialCellRemovedQuantities);
   const totalBySize = visibleSizes.map((size) =>
     displayGroups.reduce(
       (sum, group) =>
@@ -77,6 +85,16 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
 
   return (
     <div className="border-border/40 rounded-md border pt-2">
+      {isEditMode && (
+        <p className="font-custom text-muted-foreground border-border/40 border-b px-3 py-2 text-xs leading-relaxed">
+          <span className="text-foreground font-medium">Prev selected</span> is
+          what was saved on this order.{' '}
+          <span className="text-foreground font-medium">Total available</span>{' '}
+          is prev selected plus stock still in the store.{' '}
+          <span className="text-foreground font-medium">Current</span> is what
+          you are issuing after your changes.
+        </p>
+      )}
       {!isLoadingPasses &&
         hasGradingData &&
         hasFilteredData &&
@@ -138,7 +156,12 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
                           if (details.length === 0) {
                             return (
                               <TableCell key={size} className="py-1">
-                                <div className="bg-muted/30 border-border/40 h-[58px] w-[70px] rounded-md border" />
+                                <div
+                                  className={cn(
+                                    'bg-muted/30 border-border/40 w-[70px] rounded-md border',
+                                    isEditMode ? 'h-[88px]' : 'h-[58px]'
+                                  )}
+                                />
                               </TableCell>
                             );
                           }
@@ -151,6 +174,8 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
                                     size,
                                     detail.bagIndex
                                   );
+                                  const previouslySelected =
+                                    initialCellRemovedQuantities?.[cellKey] ?? 0;
                                   return (
                                     <IncomingGatePassCell
                                       key={cellKey}
@@ -159,6 +184,11 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
                                       initialQuantity={detail.initialQuantity}
                                       removedQuantity={
                                         cellRemovedQuantities[cellKey] ?? 0
+                                      }
+                                      previouslySelectedQuantity={
+                                        isEditMode
+                                          ? previouslySelected
+                                          : undefined
                                       }
                                       onQuantityChange={(q) =>
                                         onCellQuantityChange(
@@ -175,7 +205,13 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
                                           detail.bagIndex
                                         )
                                       }
-                                      disabled={detail.currentQuantity <= 0}
+                                      disabled={
+                                        !allowZeroStockCells &&
+                                        detail.currentQuantity <= 0
+                                      }
+                                      allowExceedingAllocation={
+                                        allowZeroStockCells
+                                      }
                                       location={detail.location}
                                       locationLabel={
                                         details.length > 1 && detail.location
@@ -204,7 +240,8 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
                 <TableFooter>
                   <TableRow className="border-border/60 bg-muted/50 hover:bg-muted/50 font-custom">
                     <TableCell className="text-foreground/90 py-2.5 font-semibold">
-                      Total selected ({totalSelected.toFixed(1)})
+                      {isEditMode ? 'Total now selected' : 'Total selected'} (
+                      {totalSelected.toFixed(1)})
                     </TableCell>
                     {visibleSizes.map((size, i) => (
                       <TableCell
