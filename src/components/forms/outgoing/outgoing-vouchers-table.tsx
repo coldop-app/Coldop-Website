@@ -87,12 +87,12 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
     <div className="border-border/40 rounded-md border pt-2">
       {isEditMode && (
         <p className="font-custom text-muted-foreground border-border/40 border-b px-3 py-2 text-xs leading-relaxed">
-          <span className="text-foreground font-medium">Prev selected</span> is
-          what was saved on this order.{' '}
-          <span className="text-foreground font-medium">Total available</span>{' '}
-          is prev selected plus stock still in the store.{' '}
-          <span className="text-foreground font-medium">Current</span> is what
-          you are issuing after your changes.
+          <span className="text-foreground font-medium">Previously issued</span>{' '}
+          is what this outgoing pass already took from the line.{' '}
+          <span className="text-foreground font-medium">Max to issue</span> is
+          remaining stock on the incoming voucher plus that amount.{' '}
+          <span className="text-foreground font-medium">Issuing now</span> is
+          the new total you want on this pass after save.
         </p>
       )}
       {!isLoadingPasses &&
@@ -263,7 +263,7 @@ export const OutgoingVouchersTable = memo(function OutgoingVouchersTable({
         (hasActiveFilters ? (
           <p className="font-custom text-muted-foreground py-4 text-center text-sm">
             No vouchers or quantities available for the current filters. Try a
-            different variety or location.
+            different variety, location, or gate pass search.
           </p>
         ) : (
           <p className="font-custom text-muted-foreground py-4 text-center text-sm">

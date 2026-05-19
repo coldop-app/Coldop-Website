@@ -25,7 +25,7 @@ import {
   buildInitialAllocationsFromEntry,
   mergePassesForEdit,
 } from '@/components/forms/outgoing/outgoing-form-utils';
-import { buildUpdateOutgoingGatePassPayload } from '@/components/forms/outgoing/outgoing-payload';
+import { buildEditOutgoingGatePassPayload } from '@/components/forms/outgoing/outgoing-payload';
 import {
   getOutgoingFormValuesFromEntry,
   manualParchiNumberToString,
@@ -86,7 +86,9 @@ export const OutgoingEditForm = memo(function OutgoingEditForm({
     onSubmit: async ({ value }) => {
       if (openSheetRef.current) {
         openSheetRef.current = false;
-        const payload = buildUpdateOutgoingGatePassPayload(
+        // cellRemovedQuantities holds absolute totals per line; payload lists the
+        // full desired incomingGatePasses set (omitted passes are dropped on save).
+        const payload = buildEditOutgoingGatePassPayload(
           {
             farmerStorageLinkId: value.farmerStorageLinkId,
             orderDate: value.orderDate,
@@ -496,6 +498,7 @@ export const OutgoingEditForm = memo(function OutgoingEditForm({
         pendingPayload={pendingPayload}
         mode="edit"
         gatePassNoDisplay={editEntry.gatePassNo}
+        incomingPasses={mergedPasses}
         isSubmitting={updateOutgoing.isPending}
         onConfirm={handleConfirmUpdate}
       />

@@ -127,14 +127,21 @@ export function buildOutgoingPayload(
   };
 }
 
-/** Build API payload for PATCH update. Returns null if no allocations. */
-export function buildUpdateOutgoingGatePassPayload(
+/**
+ * Build PATCH payload for outgoing gate pass edit.
+ *
+ * - `cellIssuedQuantities` values are **absolute** totals to issue per line after save
+ *   (not deltas from the previous issuance).
+ * - `incomingGatePasses` is the **full** desired set: only passes with at least one
+ *   line > 0 are included; omitted passes are dropped from the outgoing order.
+ */
+export function buildEditOutgoingGatePassPayload(
   formValues: OutgoingFormValues,
-  cellRemovedQuantities: Record<string, number>,
+  cellIssuedQuantities: Record<string, number>,
   incomingPasses: IncomingGatePassItem[] = []
 ): UpdateOutgoingGatePassBody | null {
   const incomingGatePasses = buildIncomingGatePassesFromAllocations(
-    cellRemovedQuantities,
+    cellIssuedQuantities,
     incomingPasses
   );
   if (!incomingGatePasses) return null;
@@ -143,4 +150,17 @@ export function buildUpdateOutgoingGatePassPayload(
     ...buildSharedHeaderFields(formValues),
     incomingGatePasses,
   };
+}
+
+/** @deprecated Prefer `buildEditOutgoingGatePassPayload` for edit flows. */
+export function buildUpdateOutgoingGatePassPayload(
+  formValues: OutgoingFormValues,
+  cellRemovedQuantities: Record<string, number>,
+  incomingPasses: IncomingGatePassItem[] = []
+): UpdateOutgoingGatePassBody | null {
+  return buildEditOutgoingGatePassPayload(
+    formValues,
+    cellRemovedQuantities,
+    incomingPasses
+  );
 }

@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { FieldLabel } from '@/components/ui/field';
+import { getEffectiveAvailableForEdit } from '@/components/forms/outgoing/outgoing-form-utils';
 
 export interface IncomingGatePassCellLocation {
   chamber?: string;
@@ -24,7 +25,7 @@ export interface IncomingGatePassCellProps {
   variety: string;
   currentQuantity: number;
   initialQuantity: number;
-  /** Quantity user has entered to remove; shown in badge when > 0 */
+  /** Total bags to issue on this line (create) or after edit (edit mode). */
   removedQuantity: number;
   onQuantityChange: (quantity: number) => void;
   onQuickRemove: (e: React.MouseEvent) => void;
@@ -71,9 +72,9 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
   const hasQuantity = quantity !== undefined && quantity > 0;
   const isActive = hasQuantity;
   const isEditAllocationMode = previouslySelectedQuantity !== undefined;
-  const prevSelected = previouslySelectedQuantity ?? 0;
-  const totalAvailableForRemoval = isEditAllocationMode
-    ? prevSelected + currentQuantity
+  const previouslyIssued = previouslySelectedQuantity ?? 0;
+  const effectiveAvailable = isEditAllocationMode
+    ? getEffectiveAvailableForEdit(currentQuantity, previouslyIssued)
     : currentQuantity;
 
   const borderByPercentage = getBorderByPercentage(
@@ -93,7 +94,7 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
   }, []);
 
   const maxQuantity = allowExceedingAllocation
-    ? Math.max(totalAvailableForRemoval, removedQuantity)
+    ? Math.max(effectiveAvailable, removedQuantity)
     : currentQuantity;
 
   const quantityError = (() => {
@@ -180,15 +181,15 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
           {isEditAllocationMode ? (
             <dl className="font-custom mt-1 space-y-0.5 text-[10px] leading-tight">
               <div className="flex items-baseline justify-between gap-2">
-                <dt className="text-muted-foreground shrink-0">Prev selected</dt>
+                <dt className="text-muted-foreground shrink-0">Previously issued</dt>
                 <dd className="text-foreground tabular-nums font-medium">
-                  {prevSelected.toFixed(1)}
+                  {previouslyIssued.toFixed(1)}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-2">
-                <dt className="text-muted-foreground shrink-0">Total available</dt>
+                <dt className="text-muted-foreground shrink-0">Max to issue</dt>
                 <dd className="text-foreground tabular-nums font-semibold">
-                  {totalAvailableForRemoval.toFixed(1)}
+                  {effectiveAvailable.toFixed(1)}
                 </dd>
               </div>
               <div className="flex items-baseline justify-between gap-2 border-t border-border/50 pt-0.5">
@@ -198,7 +199,7 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
                     hasQuantity ? 'text-primary' : 'text-muted-foreground'
                   )}
                 >
-                  Current
+                  Issuing now
                 </dt>
                 <dd
                   className={cn(
@@ -250,21 +251,21 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
                 {isEditAllocationMode ? (
                   <ul className="text-muted-foreground space-y-1 text-xs">
                     <li className="flex justify-between gap-4">
-                      <span>Previously selected</span>
+                      <span>Previously issued on this pass</span>
                       <span className="text-foreground font-medium tabular-nums">
-                        {prevSelected.toFixed(1)}
+                        {previouslyIssued.toFixed(1)}
                       </span>
                     </li>
                     <li className="flex justify-between gap-4">
-                      <span>In stock now</span>
+                      <span>Remaining on incoming voucher</span>
                       <span className="text-foreground font-medium tabular-nums">
                         {currentQuantity.toFixed(1)}
                       </span>
                     </li>
                     <li className="flex justify-between gap-4">
-                      <span>Total available for removal</span>
+                      <span>Max total to issue</span>
                       <span className="text-foreground font-semibold tabular-nums">
-                        {totalAvailableForRemoval.toFixed(1)}
+                        {effectiveAvailable.toFixed(1)}
                       </span>
                     </li>
                   </ul>
@@ -280,7 +281,7 @@ export const IncomingGatePassCell = memo(function IncomingGatePassCell({
           <div className="space-y-2 py-2">
             <div className="flex items-center justify-between">
               <FieldLabel className="font-custom">
-                {isEditAllocationMode ? 'Currently selected' : 'Quantity to remove'}
+                {isEditAllocationMode ? 'Total to issue' : 'Quantity to remove'}
               </FieldLabel>
               {maxQuantity > 0 && (
                 <span className="font-custom text-muted-foreground/70 text-xs">

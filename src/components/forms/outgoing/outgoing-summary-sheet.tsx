@@ -1,4 +1,6 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
+import type { IncomingGatePassItem } from '@/services/incoming-gate-pass/useGetIncomingGatePassesOfSingleFarmer';
+import { formatIncomingGatePassLabel } from '@/components/forms/outgoing/outgoing-form-utils';
 import { Button } from '@/components/ui/button';
 import {
   Sheet,
@@ -68,6 +70,8 @@ export interface OutgoingSummarySheetProps {
   mode?: 'create' | 'edit';
   /** Gate pass number for display (edit uses entry.gatePassNo; create uses payload.gatePassNo). */
   gatePassNoDisplay?: number;
+  /** Incoming passes for resolving gate pass numbers in the summary list. */
+  incomingPasses?: IncomingGatePassItem[];
 }
 
 /* -------------------------------------------------------------------------- */
@@ -112,8 +116,13 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
   onConfirm,
   mode = 'create',
   gatePassNoDisplay,
+  incomingPasses = [],
 }: OutgoingSummarySheetProps) {
   const isEdit = mode === 'edit';
+  const passById = useMemo(
+    () => new Map(incomingPasses.map((p) => [p._id, p])),
+    [incomingPasses]
+  );
   const voucherNo =
     gatePassNoDisplay ??
     (pendingPayload && 'gatePassNo' in pendingPayload
@@ -192,10 +201,15 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                   <h3 className="font-custom text-foreground mt-3 mb-2 px-4 text-sm font-semibold">
                     Incoming gate passes
                   </h3>
-                  {pendingPayload.incomingGatePasses.map((entry, idx) => {
+                  {pendingPayload.incomingGatePasses.map((entry) => {
                     const entryBags = entry.allocations.reduce(
                       (a, b) => a + b.quantityToAllocate,
                       0
+                    );
+                    const pass = passById.get(entry.incomingGatePassId);
+                    const gatePassLabel = formatIncomingGatePassLabel(
+                      pass?.gatePassNo,
+                      pass?.manualParchiNumber
                     );
                     return (
                       <div
@@ -205,7 +219,7 @@ export const OutgoingSummarySheet = memo(function OutgoingSummarySheet({
                         <div className="border-border/80 flex flex-wrap items-start justify-between gap-4 border-b px-3 py-3 sm:px-4">
                           <div>
                             <p className="font-custom text-foreground text-base font-bold">
-                              Incoming voucher #{idx + 1}
+                              {gatePassLabel}
                               {entry.variety?.trim() && (
                                 <span className="text-muted-foreground font-custom ml-2 font-normal">
                                   ({entry.variety.trim()})

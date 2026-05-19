@@ -34,6 +34,7 @@ import {
   groupIncomingPassesByDate,
   mergePassesForEdit,
   parseAllocationKey,
+  passMatchesGatePassSearch,
   passMatchesLocationFilters,
   type LocationFilters,
   type OutgoingEditRestore,
@@ -57,6 +58,7 @@ import {
   MapPin,
   Package,
   RotateCcw,
+  Search,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
@@ -137,6 +139,7 @@ export function OutgoingVouchersSection({
     floor: '',
     row: '',
   });
+  const [gatePassSearch, setGatePassSearch] = useState('');
 
   const filteredAndSortedPasses = useMemo(() => {
     let list = allPasses;
@@ -144,6 +147,13 @@ export function OutgoingVouchersSection({
       list = list.filter(
         (p) =>
           pinnedPassIds.has(p._id) || p.variety?.trim() === varietyFilter
+      );
+    }
+    if (gatePassSearch.trim()) {
+      list = list.filter(
+        (p) =>
+          pinnedPassIds.has(p._id) ||
+          passMatchesGatePassSearch(p, gatePassSearch)
       );
     }
     list = list.filter(
@@ -156,7 +166,14 @@ export function OutgoingVouchersSection({
       const nb = b.gatePassNo ?? 0;
       return voucherSort === 'asc' ? na - nb : nb - na;
     });
-  }, [allPasses, varietyFilter, voucherSort, locationFilters, pinnedPassIds]);
+  }, [
+    allPasses,
+    varietyFilter,
+    gatePassSearch,
+    voucherSort,
+    locationFilters,
+    pinnedPassIds,
+  ]);
 
   const uniqueLocations = useMemo(
     () => getUniqueLocationValues(allPasses),
@@ -193,6 +210,7 @@ export function OutgoingVouchersSection({
   const handleResetFilters = useCallback(() => {
     setVoucherSort('asc');
     setVarietyFilter(editRestore?.initialVarietyFilter ?? '');
+    setGatePassSearch('');
     setLocationFilters({ chamber: '', floor: '', row: '' });
     setVisibleColumns(new Set());
     setSelectedOrders(
@@ -253,9 +271,13 @@ export function OutgoingVouchersSection({
             for (const size of visibleSizes) {
               const details = getBagDetailsForSize(pass, size);
               for (const detail of details) {
-                if (detail.currentQuantity > 0) {
-                  next[allocationKey(passId, size, detail.bagIndex)] =
-                    detail.currentQuantity;
+                const key = allocationKey(passId, size, detail.bagIndex);
+                const previouslyIssued =
+                  initialCellRemovedQuantities?.[key] ?? 0;
+                if (previouslyIssued > 0) {
+                  next[key] = previouslyIssued;
+                } else if (detail.currentQuantity > 0) {
+                  next[key] = detail.currentQuantity;
                 }
               }
             }
@@ -273,7 +295,13 @@ export function OutgoingVouchersSection({
         });
       }
     },
-    [selectedOrders, displayGroups, visibleSizes, setCellRemovedQuantities]
+    [
+      selectedOrders,
+      displayGroups,
+      visibleSizes,
+      setCellRemovedQuantities,
+      initialCellRemovedQuantities,
+    ]
   );
 
   if (!farmerStorageLinkId) {
@@ -320,6 +348,7 @@ export function OutgoingVouchersSection({
     tableSizes.length > 0;
   const hasActiveFilters =
     varietyFilter.trim() !== '' ||
+    gatePassSearch.trim() !== '' ||
     locationFilters.chamber !== '' ||
     locationFilters.floor !== '' ||
     locationFilters.row !== '';
@@ -335,6 +364,17 @@ export function OutgoingVouchersSection({
 
   return (
     <div className="space-y-3">
+      {hasGradingData && (
+        <div className="relative w-full">
+          <Search className="text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2" />
+          <Input
+            placeholder="Search by gate pass or manual parchi number"
+            value={gatePassSearch}
+            onChange={(e) => setGatePassSearch(e.target.value)}
+            className="font-custom focus-visible:ring-primary w-full pl-10 focus-visible:ring-2 focus-visible:ring-offset-2"
+          />
+        </div>
+      )}
       {hasGradingData && (
         <div className="border-border/60 bg-muted/30 flex flex-wrap items-end gap-x-5 gap-y-4 rounded-xl border px-4 py-4 shadow-sm">
           <div className="flex flex-col gap-2">
@@ -1069,6 +1109,7 @@ export const OutgoingForm = memo(function OutgoingForm() {
         onOpenChange={setSummaryOpen}
         pendingPayload={pendingPayload}
         mode="create"
+        incomingPasses={incomingPasses}
         isSubmitting={createOutgoing.isPending}
         onConfirm={() => {
           if (!pendingPayload) return;

@@ -7,6 +7,7 @@ import type {
   DaybookIncomingGatePassSnapshot,
 } from '@/services/store-admin/functions/useGetDaybook';
 import { formatOutgoingLocation } from '@/lib/outgoing-gate-pass-breakdown';
+import { manualParchiNumberToString } from '@/components/forms/outgoing/outgoing-form-shared';
 
 export interface OutgoingEditRestore {
   snapshotPasses: IncomingGatePassItem[];
@@ -153,6 +154,17 @@ export function getBagDetailForSize(
   };
 }
 
+/**
+ * Max total bags the user may issue on this line when editing an outgoing pass.
+ * Matches server validation: remaining stock plus what this pass already issued.
+ */
+export function getEffectiveAvailableForEdit(
+  incomingCurrentQuantity: number,
+  quantityAlreadyIssuedByThisOutgoingPass: number
+): number {
+  return incomingCurrentQuantity + quantityAlreadyIssuedByThisOutgoingPass;
+}
+
 /** Get all bag details for a given size. When an incoming order has the same size at multiple locations, returns one entry per location so the user can choose from which to extract. */
 export function getBagDetailsForSize(
   pass: IncomingGatePassItem,
@@ -213,6 +225,61 @@ export function passMatchesLocationFilters(
     return true;
   }
   return false;
+}
+
+/** Display label for an incoming gate pass (#gatePassNo and optional manual parchi). */
+export function formatIncomingGatePassLabel(
+  gatePassNo?: number | null,
+  manualParchiNumber?: string | number | null
+): string {
+  const parts: string[] = [];
+  if (gatePassNo != null) parts.push(`#${gatePassNo}`);
+  const manual = manualParchiNumberToString(manualParchiNumber).trim();
+  if (manual) parts.push(`Manual #${manual}`);
+  return parts.length > 0 ? parts.join(' · ') : '—';
+}
+
+/** Normalize search input (#42, Manual #5, manual 5 → comparable token). */
+function normalizeGatePassSearchQuery(query: string): string {
+  return query
+    .trim()
+    .toLowerCase()
+    .replace(/^#+/, '')
+    .replace(/^manual\s*#?/i, '')
+    .trim();
+}
+
+/** True if pass matches gate pass number or manual parchi search query (substring). */
+export function passMatchesGatePassSearch(
+  pass: IncomingGatePassItem,
+  query: string
+): boolean {
+  const raw = query.trim();
+  if (!raw) return true;
+
+  const gatePassNoStr = String(pass.gatePassNo ?? '');
+  const manual = manualParchiNumberToString(pass.manualParchiNumber).trim();
+  const normalizedQuery = normalizeGatePassSearchQuery(raw);
+  const rawLower = raw.toLowerCase();
+
+  const haystacks: string[] = [
+    gatePassNoStr,
+    `#${gatePassNoStr}`,
+    manual,
+    manual ? `#${manual}` : '',
+    manual ? `manual ${manual}` : '',
+    manual ? `manual #${manual}` : '',
+    [gatePassNoStr, manual].filter(Boolean).join(' '),
+    formatIncomingGatePassLabel(pass.gatePassNo, pass.manualParchiNumber),
+  ]
+    .filter(Boolean)
+    .map((s) => s.toLowerCase());
+
+  return haystacks.some(
+    (hay) =>
+      hay.includes(rawLower) ||
+      (normalizedQuery !== '' && hay.includes(normalizedQuery))
+  );
 }
 
 /** Single row for edit-mode allocations (ref voucher, size, location, quantity). */
