@@ -136,11 +136,10 @@ const SizeDistributionChart = memo(function SizeDistributionChart({
         </p>
       </CardHeader>
       <CardContent className="space-y-6">
-        <div className="mx-auto h-[260px] w-full max-w-[400px] sm:h-[280px]">
-          <ChartContainer
-            config={chartConfig}
-            className="h-full w-full [&_.recharts-wrapper]:h-full! [&_.recharts-wrapper]:w-full!"
-          >
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-auto h-[280px] w-full min-w-0 max-w-[400px]"
+        >
             <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
               <ChartTooltip
                 content={
@@ -171,8 +170,7 @@ const SizeDistributionChart = memo(function SizeDistributionChart({
                 ))}
               </Pie>
             </PieChart>
-          </ChartContainer>
-        </div>
+        </ChartContainer>
 
         <div className="space-y-2">
           <h4 className="font-custom text-foreground text-sm font-semibold">

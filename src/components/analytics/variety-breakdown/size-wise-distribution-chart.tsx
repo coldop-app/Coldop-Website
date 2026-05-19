@@ -78,12 +78,11 @@ const SizeWiseDistributionChart = memo(function SizeWiseDistributionChart({
         </p>
       </CardHeader>
       <CardContent className="min-w-0 space-y-4 sm:space-y-6">
-        <div className="min-h-[220px] w-full min-w-0 sm:h-[280px]">
-          <ChartContainer
-            config={chartConfig}
-            className="h-full min-h-[220px] w-full min-w-0 [&_.recharts-wrapper]:h-full! [&_.recharts-wrapper]:w-full! sm:min-h-0"
-          >
-            <BarChart
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[280px] w-full min-w-0"
+        >
+          <BarChart
               data={data}
               layout="vertical"
               margin={{ top: 4, right: 16, bottom: 4, left: 4 }}
@@ -113,9 +112,8 @@ const SizeWiseDistributionChart = memo(function SizeWiseDistributionChart({
                 fill="var(--chart-1)"
                 radius={[0, 4, 4, 0]}
               />
-            </BarChart>
-          </ChartContainer>
-        </div>
+          </BarChart>
+        </ChartContainer>
         <div className="min-w-0 space-y-1">
           <p className="font-custom text-muted-foreground text-xs sm:text-sm">
             {topPercentage != null && topSize && (

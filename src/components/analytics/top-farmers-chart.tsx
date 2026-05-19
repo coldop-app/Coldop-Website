@@ -138,16 +138,15 @@ const TopFarmersChart = memo(function TopFarmersChart({
         </p>
       </CardHeader>
       <CardContent>
-        <div className="mx-auto h-[260px] w-full sm:h-[280px]">
-          <ChartContainer
-            config={chartConfig}
-            className="h-full w-full [&_.recharts-wrapper]:h-full! [&_.recharts-wrapper]:w-full!"
+        <ChartContainer
+          config={chartConfig}
+          className="aspect-auto h-[280px] w-full min-w-0"
+        >
+          <BarChart
+            data={seriesData}
+            layout="vertical"
+            margin={{ top: 4, right: 16, bottom: 4, left: 4 }}
           >
-            <BarChart
-              data={seriesData}
-              layout="vertical"
-              margin={{ top: 4, right: 16, bottom: 4, left: 4 }}
-            >
               <CartesianGrid strokeDasharray="3 3" className="stroke-border/50" />
               <XAxis type="number" dataKey="value" tickLine={false} />
               <YAxis
@@ -173,9 +172,8 @@ const TopFarmersChart = memo(function TopFarmersChart({
                 fill="var(--chart-1)"
                 radius={[0, 4, 4, 0]}
               />
-            </BarChart>
-          </ChartContainer>
-        </div>
+          </BarChart>
+        </ChartContainer>
       </CardContent>
     </Card>
   );

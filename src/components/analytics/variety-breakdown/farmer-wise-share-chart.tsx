@@ -98,12 +98,11 @@ const FarmerWiseShareChart = memo(function FarmerWiseShareChart({
         </p>
       </CardHeader>
       <CardContent className="min-w-0 space-y-4 sm:space-y-6">
-        <div className="min-h-[220px] w-full min-w-0 sm:h-[280px] md:mx-auto md:max-w-[320px]">
-          <ChartContainer
-            config={chartConfig}
-            className="h-full min-h-[220px] w-full min-w-0 [&_.recharts-wrapper]:h-full! [&_.recharts-wrapper]:w-full! sm:min-h-0"
-          >
-            <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-auto h-[280px] w-full min-w-0 max-w-[320px]"
+        >
+          <PieChart margin={{ top: 4, right: 4, bottom: 4, left: 4 }}>
               <ChartTooltip
                 content={
                   <ChartTooltipContent
@@ -130,9 +129,8 @@ const FarmerWiseShareChart = memo(function FarmerWiseShareChart({
                   <Cell key={entry.name} fill={entry.fill} />
                 ))}
               </Pie>
-            </PieChart>
-          </ChartContainer>
-        </div>
+          </PieChart>
+        </ChartContainer>
         <div className="min-w-0 space-y-2">
           <div className="border-border overflow-x-auto rounded-lg border">
             <Table className="border-collapse">
