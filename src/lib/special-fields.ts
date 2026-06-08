@@ -7,6 +7,7 @@ const ALLOWED_SPECIAL_NUMBERS: readonly string[] = [
   '9877741375',
   '9478631000',
   '9888200953',
+  '9888048330',
 ];
 
 /**
@@ -27,6 +28,7 @@ export function shouldShowSpecialFields(
  */
 const INCOMING_CUSTOM_MARKA_ONLY_MOBILES: readonly string[] = [
   '9478631000',
+  '9888048330'
 ];
 
 /**
