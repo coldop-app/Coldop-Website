@@ -26,14 +26,66 @@ export function shouldShowSpecialFields(
  * Mobile numbers that see custom marka on incoming forms but not the stock
  * filter field (stock filter is optional / hidden for them).
  */
-const INCOMING_CUSTOM_MARKA_ONLY_MOBILES: readonly string[] = [
-  '9478631000',
-  '9888048330'
+const INCOMING_CUSTOM_MARKA_ONLY_MOBILES: readonly string[] = ['9478631000'];
+
+export type StockFilterOption = {
+  readonly value: string;
+  readonly label: string;
+};
+
+const DEFAULT_STOCK_FILTER_OPTIONS: readonly StockFilterOption[] = [
+  { value: 'OWNED', label: 'OWNED' },
+  { value: 'FARMER', label: 'FARMER' },
 ];
 
+/** Per-admin stock filter dropdown options on incoming create/edit. */
+const STOCK_FILTER_OPTIONS_BY_MOBILE: Readonly<
+  Record<string, readonly StockFilterOption[]>
+> = {
+  '9888048330': [
+    { value: 'OWNED', label: 'OWNED' },
+    { value: 'AMAN', label: 'AMAN' },
+  ],
+};
+
 /**
- * Stock filter (OWNED/FARMER) on incoming create/edit — shown only for special
- * admins who are not in {@link INCOMING_CUSTOM_MARKA_ONLY_MOBILES}.
+ * Stock filter options for incoming create/edit (default OWNED/FARMER).
+ */
+export function getStockFilterOptions(
+  mobileNumber: string | null | undefined
+): readonly StockFilterOption[] {
+  if (
+    mobileNumber != null &&
+    mobileNumber in STOCK_FILTER_OPTIONS_BY_MOBILE
+  ) {
+    return STOCK_FILTER_OPTIONS_BY_MOBILE[mobileNumber];
+  }
+  return DEFAULT_STOCK_FILTER_OPTIONS;
+}
+
+/** Non-owned stock filter value for this admin (e.g. FARMER or AMAN). */
+export function getStockFilterSecondaryValue(
+  mobileNumber: string | null | undefined
+): string {
+  const options = getStockFilterOptions(mobileNumber);
+  return options.find((o) => o.value !== 'OWNED')?.value ?? 'FARMER';
+}
+
+/** Tab label for the non-owned stock filter (e.g. "Farmer" or "Aman"). */
+export function getStockFilterSecondaryTabLabel(
+  mobileNumber: string | null | undefined
+): string {
+  const secondary = getStockFilterOptions(mobileNumber).find(
+    (o) => o.value !== 'OWNED'
+  );
+  if (!secondary) return 'Farmer';
+  if (secondary.value === 'AMAN') return 'Aman';
+  return secondary.label.charAt(0) + secondary.label.slice(1).toLowerCase();
+}
+
+/**
+ * Stock filter on incoming create/edit — shown only for special admins who are
+ * not in {@link INCOMING_CUSTOM_MARKA_ONLY_MOBILES}.
  */
 export function shouldShowStockFilterField(
   mobileNumber: string | null | undefined

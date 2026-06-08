@@ -7,7 +7,9 @@ export const Route = createFileRoute(
   validateSearch: (search: Record<string, unknown>) => {
     const stockFilterRaw = search.stockFilter as string | undefined
     const stockFilter =
-      stockFilterRaw === 'OWNED' || stockFilterRaw === 'FARMER'
+      stockFilterRaw === 'OWNED' ||
+      stockFilterRaw === 'FARMER' ||
+      stockFilterRaw === 'AMAN'
         ? stockFilterRaw
         : undefined
 

@@ -2,7 +2,7 @@ import { useQuery, queryOptions } from '@tanstack/react-query';
 import storeAdminAxiosClient from '@/lib/axios';
 import { queryClient } from '@/lib/queryClient';
 
-export type StockFilterParam = 'OWNED' | 'FARMER';
+export type StockFilterParam = 'OWNED' | 'FARMER' | 'AMAN';
 
 /** Per-farmer contribution for a size in variety breakdown */
 export interface VarietyBreakdownFarmer {

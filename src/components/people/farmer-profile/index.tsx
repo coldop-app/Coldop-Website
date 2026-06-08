@@ -47,6 +47,7 @@ import { useGetFarmerGatePasses } from '@/services/store-admin/functions/useGetF
 import { format } from 'date-fns';
 import { formatDateToISO } from '@/lib/helpers';
 import {
+  getStockFilterSecondaryValue,
   shouldShowSpecialFields,
   isPaymentRestrictedAdmin,
   isReportOnlyRestrictedContext,
@@ -208,10 +209,14 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
   const pagination = gatePassesData?.pagination;
 
   const preferences = useStore((s) => s.preferences);
+  const sizes = preferences?.commodities?.[0]?.sizes ?? [];
 
   const coldStorage = useStore((s) => s.coldStorage);
   const admin = useStore((s) => s.admin);
   const showSpecialFields = shouldShowSpecialFields(admin?.mobileNumber);
+  const stockFilterSecondaryValue = getStockFilterSecondaryValue(
+    admin?.mobileNumber
+  );
   const paymentRestricted = isPaymentRestrictedAdmin(admin?.mobileNumber);
   const reportOnlyContext = isReportOnlyRestrictedContext(
     admin?.mobileNumber,
@@ -292,10 +297,6 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
       setIsGeneratingStockLedgerPdf(false);
     }
   };
-  const sizes = useMemo(
-    () => preferences?.commodities?.[0]?.sizes ?? [],
-    [preferences?.commodities]
-  );
 
   /** Preserve API `type` (RECEIPT / Incoming-transfer / DELIVERY / Outgoing-transfer); do not normalize to RECEIPT/DELIVERY so cards show transfer labels. */
   const combinedEntries: DaybookEntry[] = useMemo(
@@ -702,9 +703,13 @@ const FarmerProfilePage = ({ farmerStorageLinkId }: FarmerProfilePageProps) => {
                               )
                             }
                           >
-                            <option value="ALL">Show BOTH (OWNED + FARMER)</option>
+                            <option value="ALL">
+                              Show BOTH (OWNED + {stockFilterSecondaryValue})
+                            </option>
                             <option value="OWNED">Show only OWNED report</option>
-                            <option value="FARMER">Show only FARMER report</option>
+                            <option value="FARMER">
+                              Show only {stockFilterSecondaryValue} report
+                            </option>
                           </select>
                         </div>
                       )}

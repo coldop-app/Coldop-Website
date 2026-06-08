@@ -21,17 +21,16 @@ import type {
   StockSummaryByFilterData,
 } from '@/services/analytics/useGetStorageSummary';
 import { cn } from '@/lib/utils';
+import {
+  getStockFilterSecondaryTabLabel,
+  getStockFilterSecondaryValue,
+} from '@/lib/special-fields';
+import { useStore } from '@/stores/store';
 
 type TabMode = 'current' | 'initial' | 'outgoing';
 
 export type StockFilterTab = 'all' | 'owned' | 'farmer';
-type StockFilterParam = 'OWNED' | 'FARMER';
-
-const STOCK_FILTER_TABS: { id: StockFilterTab; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'owned', label: 'Owned' },
-  { id: 'farmer', label: 'Farmer' },
-];
+type StockFilterParam = 'OWNED' | 'FARMER' | 'AMAN';
 
 interface TableRowData {
   variety: string;
@@ -89,6 +88,22 @@ export function StorageSummaryTable({
   showStockFilterTabs,
   stockSummaryByFilter,
 }: StorageSummaryTableProps) {
+  const admin = useStore((s) => s.admin);
+  const stockFilterSecondaryValue = getStockFilterSecondaryValue(
+    admin?.mobileNumber
+  );
+  const stockFilterTabs = useMemo(
+    () =>
+      [
+        { id: 'all' as const, label: 'All' },
+        { id: 'owned' as const, label: 'Owned' },
+        {
+          id: 'farmer' as const,
+          label: getStockFilterSecondaryTabLabel(admin?.mobileNumber),
+        },
+      ] satisfies { id: StockFilterTab; label: string }[],
+    [admin?.mobileNumber]
+  );
   const [internalTab, setInternalTab] = useState<TabMode>('current');
   const [stockFilterTab, setStockFilterTab] = useState<StockFilterTab>('all');
   const activeTab = controlledTab ?? internalTab;
@@ -98,7 +113,8 @@ export function StorageSummaryTable({
     if (!showStockFilterTabs || stockFilterTab === 'all') {
       return { effectiveSummary: stockSummary, effectiveSizes: sizes };
     }
-    const key = stockFilterTab === 'owned' ? 'OWNED' : 'FARMER';
+    const key =
+      stockFilterTab === 'owned' ? 'OWNED' : stockFilterSecondaryValue;
     const slice = stockSummaryByFilter?.[key];
     if (!slice) {
       return { effectiveSummary: [], effectiveSizes: sizes };
@@ -113,6 +129,7 @@ export function StorageSummaryTable({
     stockSummary,
     sizes,
     stockSummaryByFilter,
+    stockFilterSecondaryValue,
   ]);
 
   const { rows, totals, tabTotals } = useMemo(() => {
@@ -237,7 +254,7 @@ export function StorageSummaryTable({
           </div>
           {showStockFilterTabs && (
             <div className="border-border flex gap-1 border-b">
-              {STOCK_FILTER_TABS.map(({ id, label }) => {
+              {stockFilterTabs.map(({ id, label }) => {
                 const isActive = stockFilterTab === id;
                 return (
                   <button
@@ -339,7 +356,7 @@ export function StorageSummaryTable({
                                 stockFilterTab === 'owned'
                                   ? 'OWNED'
                                   : stockFilterTab === 'farmer'
-                                    ? 'FARMER'
+                                    ? (stockFilterSecondaryValue as StockFilterParam)
                                     : undefined
                               ),
                             role: 'button',
@@ -356,7 +373,7 @@ export function StorageSummaryTable({
                                   stockFilterTab === 'owned'
                                     ? 'OWNED'
                                     : stockFilterTab === 'farmer'
-                                      ? 'FARMER'
+                                      ? (stockFilterSecondaryValue as StockFilterParam)
                                       : undefined
                                 );
                               }

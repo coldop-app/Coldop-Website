@@ -31,7 +31,7 @@ import TopFarmersChart from './top-farmers-chart';
 import VarietyDistribution from './variety-distribution';
 
 type AnalyticsMode = 'current' | 'initial' | 'outgoing';
-type StockFilterParam = 'OWNED' | 'FARMER';
+type StockFilterParam = 'OWNED' | 'FARMER' | 'AMAN';
 
 const AnalyticsPage = memo(function AnalyticsPage() {
   const navigate = useNavigate();

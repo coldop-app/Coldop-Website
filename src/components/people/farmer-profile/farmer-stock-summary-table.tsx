@@ -18,6 +18,8 @@ import {
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
 import { cn } from '@/lib/utils';
 import {
+  getStockFilterSecondaryTabLabel,
+  getStockFilterSecondaryValue,
   shouldShowSpecialFields,
   PAYMENT_RESTRICTED_TOAST_MESSAGE,
 } from '@/lib/special-fields';
@@ -30,12 +32,6 @@ import {
 } from '@/components/people/farmer-profile/farmer-stock-breakdown-dialog';
 
 export type StockFilterTab = 'all' | 'owned' | 'farmer';
-
-const STOCK_FILTER_TABS: { id: StockFilterTab; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'owned', label: 'Owned' },
-  { id: 'farmer', label: 'Farmer' },
-];
 
 export type {
   BreakdownEntry,
@@ -120,6 +116,21 @@ export function FarmerStockSummaryTable({
 }: FarmerStockSummaryTableProps) {
   const admin = useStore((s) => s.admin);
   const showStockFilterTabs = shouldShowSpecialFields(admin?.mobileNumber);
+  const stockFilterSecondaryValue = getStockFilterSecondaryValue(
+    admin?.mobileNumber
+  );
+  const stockFilterTabs = useMemo(
+    () =>
+      [
+        { id: 'all' as const, label: 'All' },
+        { id: 'owned' as const, label: 'Owned' },
+        {
+          id: 'farmer' as const,
+          label: getStockFilterSecondaryTabLabel(admin?.mobileNumber),
+        },
+      ] satisfies { id: StockFilterTab; label: string }[],
+    [admin?.mobileNumber]
+  );
   const [stockFilterTab, setStockFilterTab] = useState<StockFilterTab>('all');
   const [activeTab, setActiveTab] = useState<StockTabMode>('current');
   const [cellClickData, setCellClickData] = useState<CellClickData | null>(
@@ -128,9 +139,15 @@ export function FarmerStockSummaryTable({
 
   const filteredEntries = useMemo(() => {
     if (!showStockFilterTabs || stockFilterTab === 'all') return incomingEntries;
-    const key = stockFilterTab === 'owned' ? 'OWNED' : 'FARMER';
+    const key =
+      stockFilterTab === 'owned' ? 'OWNED' : stockFilterSecondaryValue;
     return incomingEntries.filter((e) => e.stockFilter === key);
-  }, [incomingEntries, showStockFilterTabs, stockFilterTab]);
+  }, [
+    incomingEntries,
+    showStockFilterTabs,
+    stockFilterTab,
+    stockFilterSecondaryValue,
+  ]);
 
   const { varieties, byVariety } = useMemo(
     () => aggregateStockByVarietyAndSize(filteredEntries, sizes),
@@ -284,7 +301,7 @@ export function FarmerStockSummaryTable({
           </div>
           {showStockFilterTabs && (
             <div className="border-border flex gap-1 border-b">
-              {STOCK_FILTER_TABS.map(({ id, label }) => {
+              {stockFilterTabs.map(({ id, label }) => {
                 const isActive = stockFilterTab === id;
                 return (
                   <button

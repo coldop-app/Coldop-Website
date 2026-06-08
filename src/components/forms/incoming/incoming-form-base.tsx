@@ -35,6 +35,7 @@ import {
 import type { DaybookEntry } from '@/services/store-admin/functions/useGetDaybook';
 import { useStore } from '@/stores/store';
 import {
+  getStockFilterOptions,
   shouldShowSpecialFields,
   shouldShowStockFilterField,
 } from '@/lib/special-fields';
@@ -150,10 +151,11 @@ export const IncomingFormBase = memo(function IncomingFormBase({
       ];
     }
 
-    return [
-      { value: 'OWNED', label: 'OWNED', searchableText: 'OWNED' },
-      { value: 'FARMER', label: 'FARMER', searchableText: 'FARMER' },
-    ];
+    return getStockFilterOptions(admin?.mobileNumber).map((option) => ({
+      value: option.value,
+      label: option.label,
+      searchableText: option.label,
+    }));
   }, [admin, coldStorage?._id]);
 
   const farmerOptions: Option<string>[] = useMemo(() => {
