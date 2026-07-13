@@ -1,0 +1,22 @@
+{
+  "name": "Coldop - Optimizing Your Storage",
+  "short_name": "Coldop",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#4a4a4a",
+  "icons": [
+    {
+      "src": "/icon-192x192.webp",
+      "type": "image/webp",
+      "sizes": "192x192",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512x512.webp",
+      "type": "image/webp",
+      "sizes": "512x512",
+      "purpose": "any"
+    }
+  ]
+}
