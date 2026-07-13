@@ -16,6 +16,4 @@ export const env = {
   gtmId: readOptionalString(import.meta.env.VITE_GTM_ID),
   gaMeasurementId: readOptionalString(import.meta.env.VITE_GA_MEASUREMENT_ID),
   clarityId: readOptionalString(import.meta.env.VITE_CLARITY_ID),
-  posthogKey: readOptionalString(import.meta.env.VITE_POSTHOG_KEY),
-  posthogHost: readOptionalString(import.meta.env.VITE_POSTHOG_HOST),
 } as const;
