@@ -56,4 +56,6 @@ try {
   /* ignore */
 }
 renameSync(ogOut + '.tmp', ogOut);
-console.log(`Wrote ${ogOut} (${Math.round(statSync(ogOut).size / 1024)}KB, ${OG_WIDTH}x${OG_HEIGHT})`);
+console.log(
+  `Wrote ${ogOut} (${Math.round(statSync(ogOut).size / 1024)}KB, ${OG_WIDTH}x${OG_HEIGHT})`,
+);

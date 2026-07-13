@@ -1,7 +1,7 @@
 import { Building2, Warehouse } from 'lucide-react';
 import { BASE_OPERATORS, ENTERPRISE_PARTNERS } from '../data';
 
-type ClientItem = { name: string; logo: string };
+type ClientItem = { name: string; logo: string; address?: string };
 
 function ClientChip({
   client,
@@ -47,7 +47,12 @@ function ClientChip({
       ) : (
         <Warehouse className="text-primary size-4 shrink-0" aria-hidden />
       )}
-      <span className="text-sm font-semibold">{client.name}</span>
+      <div className="flex flex-col gap-0.5">
+        <span className="text-sm font-semibold leading-tight">{client.name}</span>
+        {client.address ? (
+          <span className="text-muted-foreground text-xs leading-tight">{client.address}</span>
+        ) : null}
+      </div>
     </div>
   );
 }

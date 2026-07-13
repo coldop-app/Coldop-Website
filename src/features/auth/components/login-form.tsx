@@ -55,7 +55,7 @@ export function LoginForm() {
     <div className="bg-background relative flex min-h-screen w-full items-center justify-center px-4 py-8">
       <Link
         to="/"
-        className="absolute top-4 left-4 z-10 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring sm:top-6 sm:left-6"
+        className="focus-visible:ring-ring absolute top-4 left-4 z-10 rounded-md outline-none focus-visible:ring-2 sm:top-6 sm:left-6"
         aria-label="Go to Coldop home"
       >
         <BrandMark />

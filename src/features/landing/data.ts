@@ -110,19 +110,26 @@ export const ENTERPRISE_PARTNERS = [
 ] as const;
 
 export const BASE_OPERATORS = [
-  { name: 'Raghav Cold Storage', logo: '' },
-  { name: 'Satnam Cold Storage', logo: '' },
+  { name: 'Raghav Cold Storage', address: 'Brahmpur', logo: '' },
+  { name: 'Satnam Cold Storage', address: 'Madhojhanda', logo: '' },
   {
     name: 'Bolina Farms',
+    address: 'Karari',
     logo: 'https://res.cloudinary.com/dakh64xhy/image/upload/v1771577081/WhatsApp_Image_2026-02-20_at_14.13.32_phrbc8.jpg',
   },
-  { name: 'Dihati Cold Storage', logo: '' },
-  { name: 'Shri Guru Harigobind Cold Storage', logo: '' },
+  { name: 'Dihati Cold Storage', address: 'Kagniwal', logo: '' },
+  { name: 'Shri Guru Harigobind Cold Storage', address: 'Beas Pind', logo: '' },
   {
-    name: 'Mandeep Farms',
+    name: 'Mandip Farms',
+    address: 'Nakodar Road',
     logo: 'https://res.cloudinary.com/dakh64xhy/image/upload/v1771318114/WhatsApp_Image_2026-02-17_at_14.17.00_anwnpv.jpg',
   },
-  { name: 'Hazara Cold Storage', logo: '' },
+  { name: 'Kartarpur Cold Storage', address: 'Kartarpur', logo: '' },
+  { name: 'HS Cold Storage', address: 'Rani Bhatti', logo: '' },
+  { name: 'Guri Kirpa Cold Storage', address: 'Kala Sanghian', logo: '' },
+  { name: 'Gagan Cold Storage', address: 'Sham Chaurasi', logo: '' },
+  { name: 'Gill Cold Storage', address: 'Kala Sangha Road', logo: '' },
+  { name: 'Hazara Cold Storage', address: 'Hazara', logo: '' },
 ] as const;
 
 export const STEPS = [
