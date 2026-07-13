@@ -76,13 +76,17 @@ try {
   const html = await page.content();
   await browser.close();
 
+  // Playwright serializes the live DOM with absolute URLs for the preview origin
+  // (e.g. http://127.0.0.1:4173/assets/…). Those must become root-relative before
+  // deploy — otherwise production CSP (`script-src 'self'`) blocks them.
+  const previewOrigin = new URL(PREVIEW_URL).origin;
+  let out = html.split(previewOrigin).join('');
+
   // Ensure the document still references hashed assets from the original build shell
   const builtShell = readFileSync(distIndex, 'utf8');
   const scriptMatch = builtShell.match(/<script type="module"[^>]*src="([^"]+)"[^>]*><\/script>/);
   const cssLinks = [...builtShell.matchAll(/<link rel="stylesheet"[^>]*>/g)].map((m) => m[0]);
 
-  let out = html;
-  // Playwright may rewrite absolute URLs; keep relative asset paths from the build when possible
   if (scriptMatch && !out.includes(scriptMatch[1])) {
     console.warn('Prerender HTML missing build script path; keeping captured HTML as-is');
   }
@@ -90,6 +94,12 @@ try {
     if (!out.includes(link) && link.includes('/assets/')) {
       out = out.replace('</head>', `  ${link}\n</head>`);
     }
+  }
+
+  if (/https?:\/\/(?:127\.0\.0\.1|localhost)(?::\d+)?\/(?:assets\/|src\/)/.test(out)) {
+    throw new Error(
+      'Prerendered HTML still contains localhost asset URLs — refuse to write broken dist/index.html',
+    );
   }
 
   writeFileSync(distIndex, out, 'utf8');
