@@ -21,8 +21,10 @@
     X-Frame-Options = "DENY"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     # Baseline CSP — allow app, Cloudinary assets, and landing embeds (YouTube/Instagram).
-    # Tighten further once analytics domains are finalized.
-    Content-Security-Policy = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob: https://res.cloudinary.com https://*.ytimg.com https://*.instagram.com https://www.googletagmanager.com; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.clarity.ms; connect-src 'self' https: wss:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://www.googletagmanager.com; worker-src 'self' blob:;"
+    # PDF generation (@react-pdf) needs:
+    # - script-src 'wasm-unsafe-eval' for Yoga layout WASM
+    # - connect-src data: for inlined WASM/font fetches (react-pdf uses fetch())
+    Content-Security-Policy = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob: https://res.cloudinary.com https://*.ytimg.com https://*.instagram.com https://www.googletagmanager.com; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms; connect-src 'self' data: blob: https: wss:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://www.googletagmanager.com; worker-src 'self' blob:;"
 
 [[headers]]
   for = "/assets/*"
