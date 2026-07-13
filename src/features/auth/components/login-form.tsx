@@ -1,4 +1,5 @@
 import { useForm } from '@tanstack/react-form';
+import { Link } from '@tanstack/react-router';
 import { EyeIcon, EyeOffIcon, Lock } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { BrandMark } from '@/features/landing/components/BrandMark';
 import { env } from '@/lib/env';
 import { useLogin } from '../api/use-login';
 
@@ -50,7 +52,15 @@ export function LoginForm() {
   });
 
   return (
-    <div className="bg-background flex min-h-screen w-full items-center justify-center px-4 py-8">
+    <div className="bg-background relative flex min-h-screen w-full items-center justify-center px-4 py-8">
+      <Link
+        to="/"
+        className="absolute top-4 left-4 z-10 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring sm:top-6 sm:left-6"
+        aria-label="Go to Coldop home"
+      >
+        <BrandMark />
+      </Link>
+
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-semibold tracking-tight">Account Access</CardTitle>
