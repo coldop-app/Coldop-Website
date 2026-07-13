@@ -7,7 +7,6 @@ import {
   Image,
   Svg,
   Path,
-  Font,
 } from '@react-pdf/renderer';
 
 import type {
@@ -22,30 +21,9 @@ import {
 } from '@/features/people-report/utils/build-farmer-stock-ledger-excel';
 import type { LedgerExportColumn } from '@/features/people-report/utils/export-cell-value';
 import type { StockSummaryMatrix } from '@/features/people/utils/build-farmer-stock-summary';
+import { registerColdopPdfFonts } from '@/lib/pdf/register-pdf-fonts';
 
-Font.register({
-  family: 'Inter',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuLyfMZg.ttf',
-      fontWeight: 400,
-    },
-    {
-      src: 'https://fonts.gstatic.com/s/inter/v20/UcCO3FwrK3iLTeHuS_nVMrMxCp50SjIw2boKoduKmMEVuFuYMZg.ttf',
-      fontWeight: 700,
-    },
-  ],
-});
-
-Font.register({
-  family: 'Outfit',
-  fonts: [
-    {
-      src: 'https://fonts.gstatic.com/s/outfit/v15/QGYyz_MVcBeNP4NjuGObqx1XmO1I4deyC4E.ttf',
-      fontWeight: 700,
-    },
-  ],
-});
+registerColdopPdfFonts();
 
 export type FarmerStockLedgerReportProps = FarmerStockLedgerPdfData & {
   coldStorageName: string;

@@ -5,12 +5,26 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
 import type { BuildFarmerStockLedgerPdfDataInput } from '@/features/people-report/utils/build-farmer-stock-ledger-pdf-data';
+import { downloadBlob } from '@/lib/download-blob';
 
 type FarmerStockLedgerPdfButtonProps = {
   getPdfBuildInput: () => BuildFarmerStockLedgerPdfDataInput | null;
   disabled?: boolean;
   variant?: 'default' | 'outline';
 };
+
+function openPdfBlob(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const previewWindow = window.open(url, '_blank');
+
+  if (!previewWindow) {
+    URL.revokeObjectURL(url);
+    downloadBlob(blob, filename);
+    return;
+  }
+
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}
 
 export function FarmerStockLedgerPdfButton({
   getPdfBuildInput,
@@ -42,8 +56,9 @@ export function FarmerStockLedgerPdfButton({
         coldStorageLogo: coldStorageLogo || undefined,
       });
 
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
+      const farmerName = buildInput.search.name?.trim() || 'farmer';
+      const safeName = farmerName.replace(/[^\w.-]+/g, '_').slice(0, 40);
+      openPdfBlob(blob, `${safeName}-stock-ledger.pdf`);
     } catch (error) {
       console.error('Failed to generate PDF:', error);
       toast.error('Failed to generate PDF. Please try again.');

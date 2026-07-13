@@ -31,7 +31,7 @@ const styles = StyleSheet.create({
     paddingTop: 36,
     paddingBottom: 48,
     paddingHorizontal: 34,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 400,
     backgroundColor: COLOR.paper,
     color: COLOR.ink,
@@ -71,12 +71,12 @@ const styles = StyleSheet.create({
   logoFallbackText: {
     color: COLOR.paper,
     fontSize: 20,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
   },
   storageName: {
     fontSize: 24,
-    fontFamily: 'Roboto',
+    fontFamily: 'Outfit',
     fontWeight: 700,
     color: COLOR.ink,
     letterSpacing: -0.5,
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 1.5,
     marginTop: 8,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
     textAlign: 'center',
   },
@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
   docRefValue: {
     fontSize: 11,
     color: COLOR.accent,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
     letterSpacing: 0.3,
     marginTop: 2,
@@ -157,7 +157,7 @@ const styles = StyleSheet.create({
   },
   vLabelText: {
     fontSize: 7.5,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
     color: COLOR.inkMuted,
     textTransform: 'uppercase',
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   vValueText: {
     fontSize: 9.5,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 400,
     color: COLOR.ink,
   },
@@ -196,7 +196,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 10.5,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
     color: COLOR.ink,
     textTransform: 'uppercase',
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
   col3: { flex: 1, textAlign: 'right' },
   colTextHeader: {
     fontSize: 7.5,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
     color: COLOR.ink,
     textTransform: 'uppercase',
@@ -261,13 +261,13 @@ const styles = StyleSheet.create({
   },
   colTextTotal: {
     fontSize: 9,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
     color: COLOR.ink,
   },
   colTextTotalAccent: {
     fontSize: 9,
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
     color: COLOR.accent,
     textTransform: 'uppercase',
@@ -317,7 +317,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
   footerBrandHighlight: {
-    fontFamily: 'Roboto',
+    fontFamily: 'Inter',
     fontWeight: 700,
     color: COLOR.inkSoft,
   },

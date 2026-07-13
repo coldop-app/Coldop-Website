@@ -30,13 +30,15 @@ export default defineConfig({
   //   port:3000
   // },
   build: {
-    // @react-pdf/renderer and exceljs are large and lazy-loaded on export only.
+    // exceljs is large and lazy-loaded on export only.
+    // Do NOT isolate @react-pdf in its own chunk: it breaks in production
+    // ("re is not a function" – React.createElement ref). PDF code is only
+    // loaded via dynamic import() when generating PDFs.
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('exceljs')) return 'exceljs';
-          if (id.includes('@react-pdf')) return 'react-pdf';
         },
       },
     },
