@@ -24,4 +24,4 @@ export type VarietyBreakdownResponse = {
   message?: string;
 };
 
-export type VarietyBreakdownStockFilter = 'FARMER' | 'OWNED';
+export type VarietyBreakdownStockFilter = string;

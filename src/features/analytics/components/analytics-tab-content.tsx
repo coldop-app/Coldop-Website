@@ -45,25 +45,14 @@ export function AnalyticsTabContent({ quantityMode, enabled }: AnalyticsTabConte
 
   const coldStorageCapacity = useColdStorageStore((state) => state.coldStorage?.capacity);
 
-  const useGroupedApi = showStockFilterTabs && stockFilterTab !== 'all';
-  const needsStoreWideSummary = showStockFilterTabs && stockFilterTab !== 'all';
-
-  const summary = useAnalyticsSummary({ stockFilter: useGroupedApi }, { enabled });
-  const storeSummary = useAnalyticsSummary(
-    {},
-    {
-      enabled: enabled && needsStoreWideSummary,
-    },
-  );
+  const summary = useAnalyticsSummary({ stockFilter: showStockFilterTabs }, { enabled });
   const topFarmers = useAnalyticsTopFarmers({ enabled });
 
-  const isLoading =
-    summary.isLoading || topFarmers.isLoading || (needsStoreWideSummary && storeSummary.isLoading);
+  const isLoading = summary.isLoading || topFarmers.isLoading;
 
-  const isError =
-    summary.isError || topFarmers.isError || (needsStoreWideSummary && storeSummary.isError);
+  const isError = summary.isError || topFarmers.isError;
 
-  const error = summary.error ?? topFarmers.error ?? storeSummary.error;
+  const error = summary.error ?? topFarmers.error;
 
   const summaryData = useMemo(
     () => resolveAnalyticsSummaryData(summary.response?.data, stockFilterTab, showStockFilterTabs),
@@ -71,12 +60,12 @@ export function AnalyticsTabContent({ quantityMode, enabled }: AnalyticsTabConte
   );
 
   const storeWideSummaryData = useMemo(() => {
-    if (!needsStoreWideSummary) {
+    if (!showStockFilterTabs || stockFilterTab === 'all') {
       return summaryData;
     }
 
-    return resolveAnalyticsSummaryData(storeSummary.response?.data, 'all', false);
-  }, [needsStoreWideSummary, storeSummary.response, summaryData]);
+    return resolveAnalyticsSummaryData(summary.response?.data, 'all', true);
+  }, [showStockFilterTabs, stockFilterTab, summary.response, summaryData]);
 
   const cards = useMemo(() => {
     if (!summaryData) return null;

@@ -55,10 +55,7 @@ export type AnalyticsStockFilterBucket = {
 };
 
 export type AnalyticsSummaryByFilterData = {
-  stockSummaryByFilter: {
-    FARMER: AnalyticsStockFilterBucket;
-    OWNED: AnalyticsStockFilterBucket;
-  };
+  stockSummaryByFilter: Record<string, AnalyticsStockFilterBucket>;
 };
 
 export type AnalyticsSummaryResponse = {
