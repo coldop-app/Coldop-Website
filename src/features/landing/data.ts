@@ -126,7 +126,7 @@ export const BASE_OPERATORS = [
   },
   { name: 'Kartarpur Cold Storage', address: 'Kartarpur', logo: '' },
   { name: 'HS Cold Storage', address: 'Rani Bhatti', logo: '' },
-  { name: 'Guri Kirpa Cold Storage', address: 'Kala Sanghian', logo: '' },
+  { name: 'Guru Kirpa Cold Storage', address: 'Kala Sanghian', logo: '' },
   { name: 'Gagan Cold Storage', address: 'Sham Chaurasi', logo: '' },
   { name: 'Gill Cold Storage', address: 'Kala Sangha Road', logo: '' },
   { name: 'Hazara Cold Storage', address: 'Hazara', logo: '' },
