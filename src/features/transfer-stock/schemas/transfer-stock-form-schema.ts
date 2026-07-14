@@ -4,10 +4,15 @@ export const objectId = z.string().length(24, 'Select a valid record from the li
 
 export type TransferStockFormSchemaConfig = {
   requireCustomMarka: boolean;
+  requireStockFilter: boolean;
 };
 
 function customMarkaSchema(requireCustomMarka: boolean) {
   return requireCustomMarka ? z.string().min(1, 'Enter a custom marka.') : z.string();
+}
+
+function stockFilterSchema(requireStockFilter: boolean) {
+  return requireStockFilter ? z.string().min(1, 'Select a stock filter.') : z.string();
 }
 
 export const transferStockAllocationSchema = z.object({
@@ -28,6 +33,7 @@ export function createTransferStockFormSchema(config: TransferStockFormSchemaCon
       fromFarmerStorageLinkId: objectId,
       toFarmerStorageLinkId: objectId,
       date: z.string().min(1, 'Date is required'),
+      stockFilter: stockFilterSchema(config.requireStockFilter),
       customMarka: customMarkaSchema(config.requireCustomMarka),
       remarks: z.string().max(500),
       allocations: z
@@ -44,6 +50,7 @@ export function createTransferStockFormSchema(config: TransferStockFormSchemaCon
 
 export const transferStockFormSchema = createTransferStockFormSchema({
   requireCustomMarka: false,
+  requireStockFilter: false,
 });
 
 export type TransferStockFormValues = z.infer<typeof transferStockFormSchema>;

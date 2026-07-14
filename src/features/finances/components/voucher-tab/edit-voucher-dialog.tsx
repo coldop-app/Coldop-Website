@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { DatePickerInput } from '@/components/date-picker';
@@ -70,6 +70,7 @@ export function EditVoucherDialog({
   voucher,
   ledgerOptions,
 }: EditVoucherDialogProps) {
+  const portalContainerRef = useRef<HTMLFormElement>(null);
   const [debitCombobox, setDebitCombobox] = useState(emptyComboboxState);
   const [creditCombobox, setCreditCombobox] = useState(emptyComboboxState);
 
@@ -118,7 +119,15 @@ export function EditVoucherDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg"
+        onInteractOutside={(event) => {
+          const target = event.target as HTMLElement | null;
+          if (target?.closest('[data-slot="combobox-content"]')) {
+            event.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold tracking-tight">
             Edit Voucher #{voucher.voucherNo}
@@ -131,6 +140,7 @@ export function EditVoucherDialog({
         <form
           id="edit-voucher-form"
           noValidate
+          ref={portalContainerRef}
           onSubmit={(event) => {
             event.preventDefault();
             void form.handleSubmit();
@@ -182,6 +192,7 @@ export function EditVoucherDialog({
                       }
                       open={debitCombobox.open}
                       setOpen={(open) => setDebitCombobox((current) => ({ ...current, open }))}
+                      portalContainer={portalContainerRef}
                     />
                     {isInvalid && <FieldError errors={field.state.meta.errors} />}
                   </Field>
@@ -213,6 +224,7 @@ export function EditVoucherDialog({
                       }
                       open={creditCombobox.open}
                       setOpen={(open) => setCreditCombobox((current) => ({ ...current, open }))}
+                      portalContainer={portalContainerRef}
                     />
                     {isInvalid && <FieldError errors={field.state.meta.errors} />}
                   </Field>

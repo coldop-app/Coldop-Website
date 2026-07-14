@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 
 import { DatePickerInput } from '@/components/date-picker';
@@ -60,6 +60,7 @@ function resetDialogState(
 }
 
 export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVoucherDialogProps) {
+  const portalContainerRef = useRef<HTMLFormElement>(null);
   const [debitCombobox, setDebitCombobox] = useState(emptyComboboxState);
   const [creditCombobox, setCreditCombobox] = useState(emptyComboboxState);
 
@@ -107,7 +108,15 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg">
+      <DialogContent
+        className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-lg"
+        onInteractOutside={(event) => {
+          const target = event.target as HTMLElement | null;
+          if (target?.closest('[data-slot="combobox-content"]')) {
+            event.preventDefault();
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold tracking-tight">Add Voucher</DialogTitle>
           <DialogDescription>
@@ -118,6 +127,7 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
         <form
           id="add-voucher-form"
           noValidate
+          ref={portalContainerRef}
           onSubmit={(event) => {
             event.preventDefault();
             void form.handleSubmit();
@@ -169,6 +179,7 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
                       }
                       open={debitCombobox.open}
                       setOpen={(open) => setDebitCombobox((current) => ({ ...current, open }))}
+                      portalContainer={portalContainerRef}
                     />
                     {isInvalid && <FieldError errors={field.state.meta.errors} />}
                   </Field>
@@ -200,6 +211,7 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
                       }
                       open={creditCombobox.open}
                       setOpen={(open) => setCreditCombobox((current) => ({ ...current, open }))}
+                      portalContainer={portalContainerRef}
                     />
                     {isInvalid && <FieldError errors={field.state.meta.errors} />}
                   </Field>

@@ -102,7 +102,9 @@ function ComboboxContent({
         align={align}
         alignOffset={alignOffset}
         anchor={anchor}
-        className="isolate z-50"
+        // Radix Dialog sets `pointer-events: none` on `body`; keep popups interactive
+        // when they portal outside the dialog content (e.g. into `document.body`).
+        className="pointer-events-auto isolate z-50"
       >
         <ComboboxPrimitive.Popup
           data-slot="combobox-content"
@@ -126,6 +128,7 @@ function ComboboxList({ className, ...props }: ComboboxPrimitive.List.Props) {
         'no-scrollbar max-h-[min(calc(--spacing(72)---spacing(9)),calc(var(--available-height)---spacing(9)))] scroll-py-1.5 overflow-y-auto overscroll-contain p-1.5 data-empty:p-0',
         className,
       )}
+      onWheel={(event) => event.stopPropagation()}
       {...props}
     />
   );

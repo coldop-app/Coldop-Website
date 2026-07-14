@@ -316,4 +316,42 @@ describe('useTransferGatePassMatrix controlled stockFilter', () => {
     expect(result.current.uniqueLocations.floors).toEqual(['2']);
     expect(result.current.uniqueLocations.rows).toEqual(['B']);
   });
+
+  it('scopes variety options to stock filter with current quantity', () => {
+    const ownedWithStock = {
+      ...makePass('pass-owned-chipsona', 'Chipsona', 10),
+      stockFilter: 'Owned',
+    };
+    const ownedEmpty = {
+      ...makePass('pass-owned-empty', 'Kufri Jyoti', 11),
+      stockFilter: 'Owned',
+      bagSizes: [
+        {
+          size: '50 kg',
+          currentQuantity: 0,
+          initialQuantity: 40,
+          bagType: 'LENO',
+          chamber: 'A',
+          floor: '1',
+          row: 'R1',
+        },
+      ],
+    };
+    const farmerWithStock = {
+      ...makePass('pass-farmer-lady', 'Lady Rosetta', 12),
+      stockFilter: 'Farmer',
+    };
+
+    const { result } = renderHook(() =>
+      useTransferGatePassMatrix({
+        allPasses: [ownedWithStock, ownedEmpty, farmerWithStock],
+        allocations: {},
+        onAllocationsChange: vi.fn(),
+        varietyFilterMode: 'single-required',
+        stockFilter: 'Owned',
+      }),
+    );
+
+    expect(result.current.uniqueVarieties).toEqual(['Chipsona']);
+  });
 });

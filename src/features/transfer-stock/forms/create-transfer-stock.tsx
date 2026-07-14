@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/ui/empty';
 import { DaybookBackButton } from '@/features/daybook/components/daybook-back-button';
 import { TransferGatePassesSection } from '@/features/transfer-stock/forms/transfer-gate-passes-section';
 import { TransferStockSummarySheet } from '@/features/transfer-stock/forms/transfer-stock-summary-sheet';
@@ -41,12 +42,33 @@ import { useFarmerStorageLinks } from '@/features/people/api/use-farmer-storage-
 import { getLinkDisplayName } from '@/features/people/utils/get-link-display-fields';
 import { DEFAULT_DAYBOOK_SEARCH } from '@/features/daybook/search';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
-import { shouldShowCustomMarka } from '@/features/incoming/utils/incoming-preferences';
+import {
+  shouldShowCustomMarka,
+  shouldShowStockFilter,
+  toComboboxOptions,
+} from '@/features/incoming/utils/incoming-preferences';
 
 const transferRouteApi = getRouteApi('/_authenticated/transfer/');
 
 function isFieldInvalid(meta: { isTouched: boolean; isValid: boolean }) {
   return meta.isTouched && !meta.isValid;
+}
+
+function TransferGatePassesStockFilterPrompt() {
+  return (
+    <Card size="sm" className="ring-border/60 py-0">
+      <CardContent className="px-0 py-0">
+        <Empty className="border-0 py-10">
+          <EmptyHeader>
+            <EmptyTitle>Select a stock filter</EmptyTitle>
+            <EmptyDescription>
+              Choose a stock filter above to view incoming gate passes for this transfer.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      </CardContent>
+    </Card>
+  );
 }
 
 type TransferStockReviewSheetProps = {
@@ -101,15 +123,22 @@ const CreateTransferStock = () => {
   const preferences = usePreferencesStore((state) => state.preferences);
 
   const showCustomMarka = shouldShowCustomMarka(preferences?.customMarka);
+  const showStockFilter = shouldShowStockFilter(preferences?.stockFilter);
 
   const schemaConfig = useMemo(
     () => ({
       requireCustomMarka: showCustomMarka,
+      requireStockFilter: showStockFilter,
     }),
-    [showCustomMarka],
+    [showCustomMarka, showStockFilter],
   );
 
   const formSchema = useMemo(() => createTransferStockFormSchema(schemaConfig), [schemaConfig]);
+
+  const stockFilterOptions = useMemo(
+    () => toComboboxOptions(preferences?.stockFilter?.options ?? []),
+    [preferences?.stockFilter?.options],
+  );
 
   const {
     data: farmerStorageLinks,
@@ -131,6 +160,8 @@ const CreateTransferStock = () => {
   const [fromFarmerComboboxOpen, setFromFarmerComboboxOpen] = useState(false);
   const [toFarmerSearch, setToFarmerSearch] = useState('');
   const [toFarmerComboboxOpen, setToFarmerComboboxOpen] = useState(false);
+  const [stockFilterSearch, setStockFilterSearch] = useState('');
+  const [stockFilterComboboxOpen, setStockFilterComboboxOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const sortedFromFarmers = useMemo(
@@ -141,12 +172,18 @@ const CreateTransferStock = () => {
     () => filterAndSortOptions(toFarmerSearch, farmerOptions),
     [toFarmerSearch, farmerOptions],
   );
+  const sortedStockFilters = useMemo(
+    () => filterAndSortOptions(stockFilterSearch, stockFilterOptions),
+    [stockFilterSearch, stockFilterOptions],
+  );
 
   const resetComboboxState = () => {
     setFromFarmerSearch('');
     setFromFarmerComboboxOpen(false);
     setToFarmerSearch('');
     setToFarmerComboboxOpen(false);
+    setStockFilterSearch('');
+    setStockFilterComboboxOpen(false);
   };
 
   const form = useCreateTransferStockForm({
@@ -269,6 +306,9 @@ const CreateTransferStock = () => {
                             onValueChange={(value) => {
                               field.handleChange(value);
                               form.setFieldValue('allocations', {});
+                              form.setFieldValue('stockFilter', '');
+                              setStockFilterSearch('');
+                              setStockFilterComboboxOpen(false);
                             }}
                             onBlur={field.handleBlur}
                             isInvalid={isInvalid}
@@ -297,6 +337,47 @@ const CreateTransferStock = () => {
                       );
                     }}
                   </form.Field>
+
+                  {showStockFilter ? (
+                    <form.Field
+                      name="stockFilter"
+                      validators={{ onChange: formSchema.shape.stockFilter }}
+                    >
+                      {(field) => {
+                        const isInvalid = isFieldInvalid(field.state.meta);
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor="transfer-stock-stock-filter">
+                              Stock filter
+                            </FieldLabel>
+                            <SearchableOptionCombobox
+                              id="transfer-stock-stock-filter"
+                              name={field.name}
+                              value={field.state.value}
+                              onValueChange={(value) => {
+                                field.handleChange(value);
+                                form.setFieldValue('allocations', {});
+                              }}
+                              onBlur={field.handleBlur}
+                              isInvalid={isInvalid}
+                              placeholder="Search stock filters..."
+                              emptyMessage="No stock filters found."
+                              options={stockFilterOptions}
+                              sortedOptions={sortedStockFilters}
+                              search={stockFilterSearch}
+                              setSearch={setStockFilterSearch}
+                              open={stockFilterComboboxOpen}
+                              setOpen={setStockFilterComboboxOpen}
+                            />
+                            <FieldDescription>
+                              Required before selecting incoming gate passes.
+                            </FieldDescription>
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        );
+                      }}
+                    </form.Field>
+                  ) : null}
 
                   <form.Field name="toFarmerStorageLinkId">
                     {(field) => {
@@ -388,29 +469,41 @@ const CreateTransferStock = () => {
               </FieldSet>
 
               <form.Subscribe
-                selector={(state) => state.values.fromFarmerStorageLinkId}
-                children={(fromFarmerStorageLinkId) => (
-                  <FieldSet>
-                    <FieldLegend className="font-heading text-base font-semibold">
-                      Incoming gate pass
-                    </FieldLegend>
-                    <FieldDescription>
-                      Select vouchers and quantities to transfer from the source account.
-                    </FieldDescription>
-                    <div className="mt-5">
-                      <form.Field name="allocations">
-                        {(allocField) => (
-                          <TransferGatePassesSection
-                            key={fromFarmerStorageLinkId || 'no-farmer'}
-                            fromFarmerStorageLinkId={fromFarmerStorageLinkId}
-                            allocations={allocField.state.value}
-                            onAllocationsChange={allocField.handleChange}
-                          />
+                selector={(state) => ({
+                  fromFarmerStorageLinkId: state.values.fromFarmerStorageLinkId,
+                  stockFilter: state.values.stockFilter,
+                })}
+                children={({ fromFarmerStorageLinkId, stockFilter }) => {
+                  const canShowGatePasses = !showStockFilter || stockFilter.trim().length > 0;
+
+                  return (
+                    <FieldSet>
+                      <FieldLegend className="font-heading text-base font-semibold">
+                        Incoming gate pass
+                      </FieldLegend>
+                      <FieldDescription>
+                        Select vouchers and quantities to transfer from the source account.
+                      </FieldDescription>
+                      <div className="mt-5">
+                        {!canShowGatePasses ? (
+                          <TransferGatePassesStockFilterPrompt />
+                        ) : (
+                          <form.Field name="allocations">
+                            {(allocField) => (
+                              <TransferGatePassesSection
+                                key={`${fromFarmerStorageLinkId || 'no-farmer'}-${stockFilter}`}
+                                fromFarmerStorageLinkId={fromFarmerStorageLinkId}
+                                allocations={allocField.state.value}
+                                onAllocationsChange={allocField.handleChange}
+                                stockFilter={showStockFilter ? stockFilter : undefined}
+                              />
+                            )}
+                          </form.Field>
                         )}
-                      </form.Field>
-                    </div>
-                  </FieldSet>
-                )}
+                      </div>
+                    </FieldSet>
+                  );
+                }}
               />
 
               <FieldSet>

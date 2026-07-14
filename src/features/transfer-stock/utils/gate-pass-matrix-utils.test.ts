@@ -6,6 +6,7 @@ import {
   filterStorageGatePasses,
   getSlotStockLevel,
   getUniqueSizes,
+  getUniqueVarietiesForStockFilter,
   groupPassesByDate,
   isSlotUnavailable,
   parseAllocationKey,
@@ -199,6 +200,47 @@ describe('filterStorageGatePasses', () => {
 
     expect(filterStorageGatePasses(passes, { stockFilter: '' })).toHaveLength(3);
     expect(filterStorageGatePasses(passes, {})).toHaveLength(3);
+  });
+});
+
+describe('getUniqueVarietiesForStockFilter', () => {
+  it('returns all varieties when stock filter is unset', () => {
+    const passes: StorageGatePass[] = [
+      { ...samplePass, _id: 'a', variety: 'Chipsona', stockFilter: 'Owned' },
+      { ...samplePass, _id: 'b', variety: 'Kufri Jyoti', stockFilter: 'Farmer' },
+    ];
+
+    expect(getUniqueVarietiesForStockFilter(passes)).toEqual(['Chipsona', 'Kufri Jyoti']);
+    expect(getUniqueVarietiesForStockFilter(passes, '')).toEqual(['Chipsona', 'Kufri Jyoti']);
+  });
+
+  it('scopes varieties to matching stock filter with current quantity', () => {
+    const ownedWithStock: StorageGatePass = {
+      ...samplePass,
+      _id: 'owned-stock',
+      variety: 'Chipsona',
+      stockFilter: 'Owned',
+    };
+    const ownedEmpty: StorageGatePass = {
+      ...samplePass,
+      _id: 'owned-empty',
+      variety: 'Kufri Jyoti',
+      stockFilter: 'Owned',
+      bagSizes: samplePass.bagSizes.map((bag) => ({ ...bag, currentQuantity: 0 })),
+    };
+    const farmerWithStock: StorageGatePass = {
+      ...samplePass,
+      _id: 'farmer-stock',
+      variety: 'Lady Rosetta',
+      stockFilter: 'Farmer',
+    };
+
+    expect(
+      getUniqueVarietiesForStockFilter(
+        [ownedWithStock, ownedEmpty, farmerWithStock],
+        'Owned',
+      ),
+    ).toEqual(['Chipsona']);
   });
 });
 

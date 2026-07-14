@@ -15,7 +15,7 @@ import {
   filterStorageGatePasses,
   getUniqueLocationValues,
   getUniqueSizes,
-  getUniqueVarieties,
+  getUniqueVarietiesForStockFilter,
   groupPassesByDate,
   parseAllocationKey,
 } from '@/features/transfer-stock/utils/gate-pass-matrix-utils';
@@ -118,7 +118,30 @@ export function useTransferGatePassMatrix({
     [commodities, varietyForSizeOrder],
   );
 
-  const uniqueVarieties = useMemo(() => getUniqueVarieties(allPasses), [allPasses]);
+  const uniqueVarieties = useMemo(
+    () => getUniqueVarietiesForStockFilter(allPasses, effectiveStockFilter || undefined),
+    [allPasses, effectiveStockFilter],
+  );
+
+  useEffect(() => {
+    if (varietyFilter.trim() && !uniqueVarieties.includes(varietyFilter.trim())) {
+      setVarietyFilter('');
+    }
+  }, [uniqueVarieties, varietyFilter]);
+
+  useEffect(() => {
+    setVarietyVisibility((prev) => {
+      if (prev === 'all') return prev;
+      const next = new Set([...prev].filter((variety) => uniqueVarieties.includes(variety)));
+      if (next.size === prev.size && [...prev].every((variety) => next.has(variety))) {
+        return prev;
+      }
+      if (uniqueVarieties.length > 0 && uniqueVarieties.every((variety) => next.has(variety))) {
+        return 'all';
+      }
+      return next;
+    });
+  }, [uniqueVarieties]);
 
   const varietyScopedPasses = useMemo(() => {
     let passes = getPassesForVarietyScope(

@@ -39,6 +39,7 @@ export function useCreateTransferStockForm({
       fromFarmerStorageLinkId: '',
       toFarmerStorageLinkId: '',
       date: todayIso,
+      stockFilter: '',
       customMarka: '',
       remarks: '',
       allocations: {} as Record<string, number>,

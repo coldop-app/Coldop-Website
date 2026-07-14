@@ -12,6 +12,7 @@ const values: TransferStockFormValues = {
   fromFarmerStorageLinkId: FROM_ID,
   toFarmerStorageLinkId: TO_ID,
   date: '2025-06-21T00:00:00.000Z',
+  stockFilter: '',
   customMarka: '',
   remarks: '',
   allocations: {},

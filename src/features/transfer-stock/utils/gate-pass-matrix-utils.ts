@@ -149,6 +149,26 @@ export function getUniqueVarieties(passes: StorageGatePass[]): string[] {
   return [...names].sort();
 }
 
+export function passHasCurrentQuantity(pass: StorageGatePass): boolean {
+  return pass.bagSizes.some((bag) => bag.currentQuantity > 0);
+}
+
+/**
+ * Varieties for the matrix dropdown. When `stockFilter` is set, only varieties with
+ * at least one matching gate pass that still has current quantity are included.
+ */
+export function getUniqueVarietiesForStockFilter(
+  passes: StorageGatePass[],
+  stockFilter?: string,
+): string[] {
+  let list = passes;
+  if (stockFilter?.trim()) {
+    list = filterStorageGatePasses(list, { stockFilter });
+    list = list.filter(passHasCurrentQuantity);
+  }
+  return getUniqueVarieties(list);
+}
+
 export function getUniqueLocationValues(passes: StorageGatePass[]): {
   chambers: string[];
   floors: string[];
