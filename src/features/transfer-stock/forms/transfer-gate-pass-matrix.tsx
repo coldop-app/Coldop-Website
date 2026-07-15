@@ -1,4 +1,11 @@
-import { Fragment, useCallback, useMemo, useState, type ReactNode } from 'react';
+import {
+  Fragment,
+  useCallback,
+  useMemo,
+  useState,
+  type CSSProperties,
+  type ReactNode,
+} from 'react';
 import { ClipboardList, MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -46,40 +53,54 @@ import { cn } from '@/lib/utils';
 /** Checkbox + gate pass + manual gate pass + variety/lot columns before size lanes. */
 const FIXED_COLUMN_COUNT = 4;
 
+/** Keep sticky `left` offsets in sync with these widths — mismatches cause overlap. */
+const STICKY_COLS = {
+  checkbox: { width: '2.75rem', left: '0' },
+  gatePassNo: { width: '3rem', left: '2.75rem' },
+  manualGatePassNo: { width: '3.5rem', left: '5.75rem' },
+  varietyLot: { width: '8rem', left: '9.25rem' },
+} as const;
+
+const SIZE_LANE_MIN_WIDTH = '7.5rem';
+const FIXED_COLUMNS_WIDTH = '17.25rem';
+
+type StickyColumn = keyof typeof STICKY_COLS;
+
 function sizeLaneClasses(_columnIndex: number, variant: 'head' | 'cell') {
   return cn(
-    'border-l border-border/60 px-4',
-    variant === 'head' ? 'bg-muted/40 text-center' : 'bg-transparent',
+    'border-l border-border/60 min-w-[7.5rem] px-4',
+    variant === 'head' ? 'bg-muted text-center' : 'bg-background',
   );
 }
 
-function stickyHeadClass(
-  column: 'checkbox' | 'gatePassNo' | 'manualGatePassNo' | 'varietyLot',
-  options?: { edge?: boolean },
-) {
+/**
+ * Sticky identity columns only from `md` up.
+ * On mobile they overlap size lanes (sticky width vs collapsed layout); horizontal scroll is enough.
+ */
+function stickyHeadClass(options?: { edge?: boolean }) {
   return cn(
-    'sticky z-20 bg-muted/40 px-2 py-2 align-bottom',
-    column === 'checkbox' && 'left-0 w-11',
-    column === 'gatePassNo' && 'left-11 w-12 min-w-12',
-    column === 'manualGatePassNo' && 'left-[5.75rem] w-14 min-w-14',
-    column === 'varietyLot' && 'left-[9.25rem] w-32 min-w-32',
-    options?.edge && 'border-r border-border/60 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.04)]',
+    'bg-muted px-2 py-2 align-bottom md:sticky md:z-20 md:left-[var(--sticky-left)]',
+    options?.edge && 'border-r border-border/60 md:shadow-[2px_0_8px_-4px_rgba(0,0,0,0.12)]',
   );
 }
 
-function stickyCellClass(
-  column: 'checkbox' | 'gatePassNo' | 'manualGatePassNo' | 'varietyLot',
-  options?: { edge?: boolean },
-) {
+function stickyCellClass(options?: { edge?: boolean }) {
   return cn(
-    'sticky z-10 bg-background px-2 transition-colors',
-    'group-hover/row:bg-muted/20 group-data-[selected=true]/row:bg-primary/[0.04]',
-    column === 'checkbox' && 'left-0 w-11',
-    column === 'gatePassNo' && 'left-11 w-12 min-w-12',
-    column === 'manualGatePassNo' && 'left-[5.75rem] w-14 min-w-14',
-    column === 'varietyLot' && 'left-[9.25rem] w-32 min-w-32',
-    options?.edge && 'border-r border-border/60 shadow-[2px_0_8px_-4px_rgba(0,0,0,0.04)]',
+    'bg-background px-2 transition-colors md:sticky md:z-10 md:left-[var(--sticky-left)]',
+    'group-hover/row:bg-muted/40 group-data-[selected=true]/row:bg-primary/[0.06]',
+    options?.edge && 'border-r border-border/60 md:shadow-[2px_0_8px_-4px_rgba(0,0,0,0.12)]',
   );
+}
+
+function columnWidthStyle(column: StickyColumn): CSSProperties {
+  const { width, left } = STICKY_COLS[column];
+  return {
+    width,
+    minWidth: width,
+    maxWidth: width,
+    // CSS custom property consumed by md:left-[var(--sticky-left)]
+    ['--sticky-left' as string]: left,
+  };
 }
 
 function ColumnHeader({ children, title }: { children: ReactNode; title?: string }) {
@@ -397,117 +418,140 @@ export function TransferGatePassMatrix({
 
   return (
     <>
-      <Card size="sm" className="ring-border/60 overflow-hidden py-0 shadow-sm">
-        <CardContent className="overflow-x-auto px-0 py-0">
-          <Table className="min-w-max">
-            <TableHeader className="border-border/60 bg-muted/40 sticky top-0 z-10 border-b [&_tr]:hover:bg-transparent">
-              <TableRow>
-                <TableHead className={cn('h-11', stickyHeadClass('checkbox'))}>
-                  <span className="sr-only">Select voucher</span>
-                </TableHead>
-                <TableHead className={cn('h-11', stickyHeadClass('gatePassNo'))}>
-                  <ColumnHeader title="Gate pass no.">gp</ColumnHeader>
-                </TableHead>
-                <TableHead className={cn('h-11', stickyHeadClass('manualGatePassNo'))}>
-                  <ColumnHeader title="Manual gate pass no.">manual</ColumnHeader>
-                </TableHead>
-                <TableHead className={cn('h-11', stickyHeadClass('varietyLot', { edge: true }))}>
-                  <ColumnHeader title="Variety & lot no.">variety</ColumnHeader>
-                </TableHead>
-                {visibleSizes.map((sizeName, index) => (
-                  <TableHead
+      <Card size="sm" className="ring-border/60 min-w-0 overflow-hidden py-0 shadow-sm">
+        <CardContent className="min-w-0 overflow-hidden px-0 py-0">
+          <div className="w-full min-w-0 overflow-x-auto overscroll-x-contain **:data-[slot=table-container]:overflow-visible">
+            <Table
+              className="w-max min-w-full border-separate border-spacing-0"
+              style={{
+                minWidth: `calc(${FIXED_COLUMNS_WIDTH} + (${visibleSizes.length} * ${SIZE_LANE_MIN_WIDTH}))`,
+              }}
+            >
+              <colgroup>
+                <col style={{ width: STICKY_COLS.checkbox.width }} />
+                <col style={{ width: STICKY_COLS.gatePassNo.width }} />
+                <col style={{ width: STICKY_COLS.manualGatePassNo.width }} />
+                <col style={{ width: STICKY_COLS.varietyLot.width }} />
+                {visibleSizes.map((sizeName) => (
+                  <col
                     key={sizeName}
-                    className={cn(
-                      'text-muted-foreground h-11 px-3',
-                      sizeLaneClasses(FIXED_COLUMN_COUNT + index, 'head'),
-                    )}
-                  >
-                    <span className="text-foreground block w-full text-center text-xs font-medium whitespace-nowrap">
-                      {sizeName}
-                    </span>
-                  </TableHead>
+                    style={{ width: SIZE_LANE_MIN_WIDTH, minWidth: SIZE_LANE_MIN_WIDTH }}
+                  />
                 ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {displayGroups.map((group) => (
-                <Fragment key={group.dateKey}>
-                  <TableRow className="hover:bg-transparent">
-                    <TableCell
-                      colSpan={columnCount}
-                      className="border-border/40 bg-muted/20 border-b px-4 py-2"
+              </colgroup>
+              <TableHeader className="border-border/60 bg-muted sticky top-0 z-30 border-b [&_tr]:hover:bg-transparent">
+                <TableRow>
+                  <TableHead
+                    className={cn('h-11', stickyHeadClass())}
+                    style={columnWidthStyle('checkbox')}
+                  >
+                    <span className="sr-only">Select voucher</span>
+                  </TableHead>
+                  <TableHead
+                    className={cn('h-11', stickyHeadClass())}
+                    style={columnWidthStyle('gatePassNo')}
+                  >
+                    <ColumnHeader title="Gate pass no.">gp</ColumnHeader>
+                  </TableHead>
+                  <TableHead
+                    className={cn('h-11', stickyHeadClass())}
+                    style={columnWidthStyle('manualGatePassNo')}
+                  >
+                    <ColumnHeader title="Manual gate pass no.">manual</ColumnHeader>
+                  </TableHead>
+                  <TableHead
+                    className={cn('h-11', stickyHeadClass({ edge: true }))}
+                    style={columnWidthStyle('varietyLot')}
+                  >
+                    <ColumnHeader title="Variety & lot no.">variety</ColumnHeader>
+                  </TableHead>
+                  {visibleSizes.map((sizeName, index) => (
+                    <TableHead
+                      key={sizeName}
+                      className={cn(
+                        'text-muted-foreground h-11 px-3',
+                        sizeLaneClasses(FIXED_COLUMN_COUNT + index, 'head'),
+                      )}
                     >
-                      <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-                        {group.dateLabel}
+                      <span className="text-foreground block w-full text-center text-xs font-medium whitespace-nowrap">
+                        {sizeName}
                       </span>
-                    </TableCell>
-                  </TableRow>
-                  {group.passes.map((pass) => (
-                    <TableRow
-                      key={pass._id}
-                      className="group/row border-border/40 hover:bg-muted/20 border-b transition-colors"
-                      data-selected={selectedPassIds.has(pass._id) || undefined}
-                    >
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {displayGroups.map((group) => (
+                  <Fragment key={group.dateKey}>
+                    <TableRow className="hover:bg-transparent">
                       <TableCell
-                        className={cn(
-                          'overflow-visible py-3 align-top',
-                          stickyCellClass('checkbox'),
-                        )}
+                        colSpan={columnCount}
+                        className="border-border/40 bg-muted/30 border-b px-4 py-2"
                       >
-                        <Checkbox
-                          checked={selectedPassIds.has(pass._id)}
-                          onCheckedChange={() => onPassToggle(pass._id)}
-                          aria-label={`Select gate pass ${pass.gatePassNo}`}
-                        />
+                        <span className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+                          {group.dateLabel}
+                        </span>
                       </TableCell>
-                      <TableCell
-                        className={cn(
-                          'overflow-visible py-3 align-top',
-                          stickyCellClass('gatePassNo'),
-                        )}
+                    </TableRow>
+                    {group.passes.map((pass) => (
+                      <TableRow
+                        key={pass._id}
+                        className="group/row border-border/40 hover:bg-muted/20 border-b transition-colors"
+                        data-selected={selectedPassIds.has(pass._id) || undefined}
                       >
-                        <GatePassNoCell pass={pass} />
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          'overflow-visible py-3 align-top',
-                          stickyCellClass('manualGatePassNo'),
-                        )}
-                      >
-                        <ManualGatePassNoCell pass={pass} />
-                      </TableCell>
-                      <TableCell
-                        className={cn(
-                          'overflow-visible py-3 align-top',
-                          stickyCellClass('varietyLot', { edge: true }),
-                        )}
-                      >
-                        <VarietyLotCell pass={pass} />
-                      </TableCell>
-                      {visibleSizes.map((sizeName, index) => (
                         <TableCell
-                          key={sizeName}
-                          className={cn(
-                            'overflow-visible py-3 align-top',
-                            sizeLaneClasses(FIXED_COLUMN_COUNT + index, 'cell'),
-                          )}
+                          className={cn('py-3 align-top', stickyCellClass())}
+                          style={columnWidthStyle('checkbox')}
                         >
-                          <GatePassSizeCell
-                            pass={pass}
-                            sizeName={sizeName}
-                            allocations={allocations}
-                            baselineAllocations={baselineAllocations}
-                            allocationMode={allocationMode}
-                            onSlotClick={handleSlotClick}
+                          <Checkbox
+                            checked={selectedPassIds.has(pass._id)}
+                            onCheckedChange={() => onPassToggle(pass._id)}
+                            aria-label={`Select gate pass ${pass.gatePassNo}`}
                           />
                         </TableCell>
-                      ))}
-                    </TableRow>
-                  ))}
-                </Fragment>
-              ))}
-            </TableBody>
-          </Table>
+                        <TableCell
+                          className={cn('py-3 align-top', stickyCellClass())}
+                          style={columnWidthStyle('gatePassNo')}
+                        >
+                          <GatePassNoCell pass={pass} />
+                        </TableCell>
+                        <TableCell
+                          className={cn('py-3 align-top', stickyCellClass())}
+                          style={columnWidthStyle('manualGatePassNo')}
+                        >
+                          <ManualGatePassNoCell pass={pass} />
+                        </TableCell>
+                        <TableCell
+                          className={cn('py-3 align-top', stickyCellClass({ edge: true }))}
+                          style={columnWidthStyle('varietyLot')}
+                        >
+                          <VarietyLotCell pass={pass} />
+                        </TableCell>
+                        {visibleSizes.map((sizeName, index) => (
+                          <TableCell
+                            key={sizeName}
+                            className={cn(
+                              'overflow-visible py-3 align-top',
+                              sizeLaneClasses(FIXED_COLUMN_COUNT + index, 'cell'),
+                            )}
+                          >
+                            <GatePassSizeCell
+                              pass={pass}
+                              sizeName={sizeName}
+                              allocations={allocations}
+                              baselineAllocations={baselineAllocations}
+                              allocationMode={allocationMode}
+                              onSlotClick={handleSlotClick}
+                            />
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </Fragment>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </CardContent>
       </Card>
 

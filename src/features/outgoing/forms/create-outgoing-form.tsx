@@ -231,9 +231,9 @@ const CreateOutgoingForm = () => {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4">
       <DaybookBackButton />
-      <Card className="w-full shadow-sm">
+      <Card className="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader className="bg-muted/30 border-b pb-6">
           <CardTitle className="font-heading text-xl font-semibold tracking-tight sm:text-2xl">
             Outgoing{' '}
@@ -247,8 +247,8 @@ const CreateOutgoingForm = () => {
         </CardHeader>
 
         <form id="create-outgoing-form" noValidate onSubmit={(e) => e.preventDefault()}>
-          <CardContent className="pt-8 pb-8">
-            <FieldGroup className="@container/field-group gap-10">
+          <CardContent className="min-w-0 px-4 pt-6 pb-6 sm:px-6 sm:pt-8 sm:pb-8">
+            <FieldGroup className="@container/field-group min-w-0 gap-10">
               <FieldSet>
                 <FieldLegend className="font-heading text-base font-semibold">
                   Outgoing details
@@ -482,14 +482,14 @@ const CreateOutgoingForm = () => {
                   const canShowGatePasses = !showStockFilter || stockFilter.trim().length > 0;
 
                   return (
-                    <FieldSet>
+                    <FieldSet className="min-w-0">
                       <FieldLegend className="font-heading text-base font-semibold">
                         Incoming gate pass
                       </FieldLegend>
                       <FieldDescription>
                         Select vouchers and quantities to mark as outgoing.
                       </FieldDescription>
-                      <div className="mt-5">
+                      <div className="mt-5 min-w-0">
                         {!canShowGatePasses ? (
                           <OutgoingGatePassesStockFilterPrompt />
                         ) : (

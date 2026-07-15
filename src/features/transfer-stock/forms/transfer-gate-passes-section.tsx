@@ -123,8 +123,8 @@ export function TransferGatePassesSection({
   }
 
   return (
-    <div className="space-y-4">
-      <InputGroup className="h-11">
+    <div className="min-w-0 space-y-3 sm:space-y-4">
+      <InputGroup className="h-10 sm:h-11">
         <InputGroupAddon align="inline-start">
           <Search className="size-4" aria-hidden />
         </InputGroupAddon>
@@ -137,41 +137,45 @@ export function TransferGatePassesSection({
         />
       </InputGroup>
 
-      <Card size="sm" className="bg-muted/30 ring-border/60 py-4">
-        <CardContent className="flex flex-wrap items-end gap-x-5 gap-y-4 px-4">
-          <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground text-xs leading-none font-medium">
+      <Card size="sm" className="bg-muted/30 ring-border/60 min-w-0 overflow-hidden py-0">
+        <CardContent className="flex items-end gap-2 overflow-x-auto px-3 py-3 sm:flex-wrap sm:gap-x-5 sm:gap-y-4 sm:overflow-visible sm:px-4 sm:py-4">
+          <div className="flex shrink-0 flex-col gap-1.5 sm:gap-2">
+            <Label className="text-muted-foreground sr-only text-xs leading-none font-medium sm:not-sr-only">
               Sort by gate pass
             </Label>
-            <div className="flex h-10 items-center gap-1.5">
+            <div className="flex h-9 items-center gap-1.5 sm:h-10">
               <Button
                 type="button"
                 variant={matrix.voucherSort === 'asc' ? 'default' : 'outline'}
                 size="sm"
-                className="h-10 gap-1.5 px-3"
+                className="h-9 gap-1.5 px-3 sm:h-10"
                 onClick={() => matrix.setVoucherSort('asc')}
               >
                 <ArrowUp className="size-4" />
-                Ascending
+                <span className="sm:hidden">Asc</span>
+                <span className="hidden sm:inline">Ascending</span>
               </Button>
               <Button
                 type="button"
                 variant={matrix.voucherSort === 'desc' ? 'default' : 'outline'}
                 size="sm"
-                className="h-10 gap-1.5 px-3"
+                className="h-9 gap-1.5 px-3 sm:h-10"
                 onClick={() => matrix.setVoucherSort('desc')}
               >
                 <ArrowDown className="size-4" />
-                Descending
+                <span className="sm:hidden">Desc</span>
+                <span className="hidden sm:inline">Descending</span>
               </Button>
             </div>
           </div>
 
-          <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground text-xs leading-none font-medium">Sizes</Label>
+          <div className="flex shrink-0 flex-col gap-1.5 sm:gap-2">
+            <Label className="text-muted-foreground sr-only text-xs leading-none font-medium sm:not-sr-only">
+              Sizes
+            </Label>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button type="button" variant="outline" size="sm" className="h-10 gap-2">
+                <Button type="button" variant="outline" size="sm" className="h-9 gap-2 sm:h-10">
                   <Columns className="size-4" />
                   Sizes
                 </Button>
@@ -204,8 +208,8 @@ export function TransferGatePassesSection({
 
           {matrix.uniqueVarieties.length > 0 &&
             (matrix.varietyFilterMode === 'multi-optional' ? (
-              <div className="flex flex-col gap-2">
-                <Label className="text-muted-foreground text-xs leading-none font-medium">
+              <div className="flex shrink-0 flex-col gap-1.5 sm:gap-2">
+                <Label className="text-muted-foreground sr-only text-xs leading-none font-medium sm:not-sr-only">
                   Varieties
                 </Label>
                 <DropdownMenu>
@@ -214,7 +218,7 @@ export function TransferGatePassesSection({
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-10 max-w-56 gap-2"
+                      className="h-9 max-w-44 gap-2 sm:h-10 sm:max-w-56"
                       title={matrix.varietyVisibilityLabel}
                       aria-label={`Varieties: ${matrix.varietyVisibilityLabel}`}
                     >
@@ -250,7 +254,7 @@ export function TransferGatePassesSection({
             ) : (
               <div
                 className={cn(
-                  'flex flex-col gap-2 rounded-lg transition-[box-shadow,background-color,border-color]',
+                  'flex shrink-0 flex-col gap-1.5 rounded-lg transition-[box-shadow,background-color,border-color] sm:gap-2',
                   matrix.needsVarietySelection &&
                     'border-primary/50 bg-primary/5 ring-primary/25 border-2 p-2.5 shadow-sm ring-2',
                 )}
@@ -327,13 +331,15 @@ export function TransferGatePassesSection({
             />
           )}
 
-          <div className="flex flex-col gap-2">
-            <Label className="text-muted-foreground text-xs leading-none font-medium">Reset</Label>
+          <div className="flex shrink-0 flex-col gap-1.5 sm:gap-2">
+            <Label className="text-muted-foreground sr-only text-xs leading-none font-medium sm:not-sr-only">
+              Reset
+            </Label>
             <Button
               type="button"
               variant="outline"
               size="sm"
-              className="h-10 gap-2"
+              className="h-9 gap-2 sm:h-10"
               onClick={matrix.handleResetFilters}
             >
               <RotateCcw className="size-4" />
@@ -404,9 +410,11 @@ function MatrixRadioFilter({
   ariaLabel?: string;
 }) {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex shrink-0 flex-col gap-1.5 sm:gap-2">
       {label ? (
-        <Label className="text-muted-foreground text-xs leading-none font-medium">{label}</Label>
+        <Label className="text-muted-foreground sr-only text-xs leading-none font-medium sm:not-sr-only">
+          {label}
+        </Label>
       ) : null}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -414,7 +422,7 @@ function MatrixRadioFilter({
             type="button"
             variant="outline"
             size="sm"
-            className={cn('h-10 min-w-[100px] justify-between gap-2', triggerClassName)}
+            className={cn('h-9 min-w-[100px] justify-between gap-2 sm:h-10', triggerClassName)}
             aria-label={ariaLabel ?? `${label} filter`}
           >
             {Icon ? <Icon className="size-4 shrink-0" /> : null}
