@@ -5,6 +5,7 @@ export const objectId = z.string().length(24, 'Select a valid record from the li
 export type TransferStockFormSchemaConfig = {
   requireCustomMarka: boolean;
   requireStockFilter: boolean;
+  requireAmount: boolean;
 };
 
 function customMarkaSchema(requireCustomMarka: boolean) {
@@ -13,6 +14,26 @@ function customMarkaSchema(requireCustomMarka: boolean) {
 
 function stockFilterSchema(requireStockFilter: boolean) {
   return requireStockFilter ? z.string().min(1, 'Select a stock filter.') : z.string();
+}
+
+function amountSchema(requireAmount: boolean) {
+  if (!requireAmount) {
+    return z.string();
+  }
+
+  return z
+    .string()
+    .trim()
+    .min(1, 'Amount is required')
+    .superRefine((value, ctx) => {
+      const parsedAmount = Number(value);
+      if (!Number.isFinite(parsedAmount) || parsedAmount < 0.01) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Enter an amount of at least 0.01',
+        });
+      }
+    });
 }
 
 export const transferStockAllocationSchema = z.object({
@@ -35,6 +56,7 @@ export function createTransferStockFormSchema(config: TransferStockFormSchemaCon
       date: z.string().min(1, 'Date is required'),
       stockFilter: stockFilterSchema(config.requireStockFilter),
       customMarka: customMarkaSchema(config.requireCustomMarka),
+      amount: amountSchema(config.requireAmount),
       remarks: z.string().max(500),
       allocations: z
         .record(z.string(), z.number().int().min(1))
@@ -51,6 +73,7 @@ export function createTransferStockFormSchema(config: TransferStockFormSchemaCon
 export const transferStockFormSchema = createTransferStockFormSchema({
   requireCustomMarka: false,
   requireStockFilter: false,
+  requireAmount: false,
 });
 
 export type TransferStockFormValues = z.infer<typeof transferStockFormSchema>;

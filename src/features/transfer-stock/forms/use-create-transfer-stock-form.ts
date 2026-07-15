@@ -41,6 +41,7 @@ export function useCreateTransferStockForm({
       date: todayIso,
       stockFilter: '',
       customMarka: '',
+      amount: '',
       remarks: '',
       allocations: {} as Record<string, number>,
     },

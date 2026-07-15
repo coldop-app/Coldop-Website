@@ -49,7 +49,7 @@ export function AnalyticsStockSummaryTable({
 
     void navigate({
       to: '/analytics/variety-breakdown',
-      search: { variety, bagSize, tab: 'current' },
+      search: { variety, bagSize, tab: quantityMode },
     });
   };
 

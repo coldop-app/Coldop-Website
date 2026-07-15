@@ -148,6 +148,16 @@ function TransferReviewSummary({
           {values.customMarka ? (
             <DetailRow label="Custom marka" value={values.customMarka} />
           ) : null}
+          {values.amount.trim() ? (
+            <DetailRow
+              label="Amount"
+              value={Number(values.amount).toLocaleString('en-IN', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              })}
+              valueClassName="tabular-nums"
+            />
+          ) : null}
         </SummaryCard>
       </div>
 

@@ -125,12 +125,15 @@ const CreateTransferStock = () => {
   const showCustomMarka = shouldShowCustomMarka(preferences?.customMarka);
   const showStockFilter = shouldShowStockFilter(preferences?.stockFilter);
 
+  const requireAmount = Boolean(potatoAction);
+
   const schemaConfig = useMemo(
     () => ({
       requireCustomMarka: showCustomMarka,
       requireStockFilter: showStockFilter,
+      requireAmount,
     }),
-    [showCustomMarka, showStockFilter],
+    [showCustomMarka, showStockFilter, requireAmount],
   );
 
   const formSchema = useMemo(() => createTransferStockFormSchema(schemaConfig), [schemaConfig]);
@@ -191,26 +194,7 @@ const CreateTransferStock = () => {
     onOpenReview: () => setReviewOpen(true),
     onSubmitConfirmed: async (values, items) => {
       try {
-        let payloadOptions: Parameters<typeof buildCreateTransferStockPayload>[2];
-
-        if (potatoAction && farmerLinkId) {
-          const farmerLink = farmerStorageLinks.find((link) => link._id === farmerLinkId);
-          const costPerBag = farmerLink?.costPerBag;
-
-          if (!costPerBag || costPerBag <= 0) {
-            toast.error(
-              'Farmer has no valid cost per bag. Update the farmer account before submitting.',
-              { position: 'bottom-right' },
-            );
-            throw new Error('Missing cost per bag for potato transfer.');
-          }
-
-          payloadOptions = {
-            potatoAction,
-            costPerBag,
-          };
-        }
-
+        const payloadOptions = potatoAction ? { potatoAction } : undefined;
         const payload = buildCreateTransferStockPayload(values, items, payloadOptions);
         const created = await createTransferStock(payload);
 
@@ -437,6 +421,38 @@ const CreateTransferStock = () => {
                       );
                     }}
                   </form.Field>
+
+                  {requireAmount ? (
+                    <form.Field name="amount" validators={{ onChange: formSchema.shape.amount }}>
+                      {(field) => {
+                        const isInvalid = isFieldInvalid(field.state.meta);
+                        return (
+                          <Field data-invalid={isInvalid} className="@md/field-group:max-w-sm">
+                            <FieldLabel htmlFor="transfer-stock-amount">Amount</FieldLabel>
+                            <Input
+                              id="transfer-stock-amount"
+                              name={field.name}
+                              value={field.state.value}
+                              onBlur={field.handleBlur}
+                              onChange={(event) => field.handleChange(event.target.value)}
+                              aria-invalid={isInvalid}
+                              placeholder="0.00"
+                              className="tabular-nums"
+                              type="number"
+                              step="0.01"
+                              min={0.01}
+                              inputMode="decimal"
+                              onWheel={(event) => event.currentTarget.blur()}
+                            />
+                            <FieldDescription>
+                              Enter the potato transaction amount to record with this transfer.
+                            </FieldDescription>
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        );
+                      }}
+                    </form.Field>
+                  ) : null}
 
                   {showCustomMarka ? (
                     <form.Field

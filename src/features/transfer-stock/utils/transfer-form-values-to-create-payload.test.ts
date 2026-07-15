@@ -14,6 +14,7 @@ const values: TransferStockFormValues = {
   date: '2025-06-21T00:00:00.000Z',
   stockFilter: '',
   customMarka: '',
+  amount: '',
   remarks: '',
   allocations: {},
 };
@@ -54,6 +55,7 @@ describe('buildCreateTransferStockPayload', () => {
       items,
     );
     expect(withRemarks.remarks).toBe('Transfer note');
+    expect(withRemarks.narration).toBeUndefined();
 
     const withoutRemarks = buildCreateTransferStockPayload({ ...values, remarks: '   ' }, items);
     expect(withoutRemarks.remarks).toBeUndefined();
@@ -78,25 +80,43 @@ describe('buildCreateTransferStockPayload', () => {
     expect(payload).not.toHaveProperty('truckNumber');
   });
 
-  it('includes amount and isBuyPotato when potato options are provided', () => {
-    const payload = buildCreateTransferStockPayload(values, items, {
-      potatoAction: 'buy',
-      costPerBag: 25,
-    });
+  it('does not include amount or potato flags for ordinary transfers', () => {
+    const payload = buildCreateTransferStockPayload(
+      { ...values, amount: '1100', remarks: 'Ordinary note' },
+      items,
+    );
 
-    expect(payload.amount).toBe(250);
-    expect(payload.isBuyPotato).toBe(true);
+    expect(payload.amount).toBeUndefined();
+    expect(payload.isBuyPotato).toBeUndefined();
     expect(payload.isSellPotato).toBeUndefined();
+    expect(payload.narration).toBeUndefined();
+    expect(payload.remarks).toBe('Ordinary note');
   });
 
-  it('includes amount and isSellPotato when potato options are provided', () => {
-    const payload = buildCreateTransferStockPayload(values, items, {
-      potatoAction: 'sell',
-      costPerBag: 30,
-    });
+  it('includes user-entered amount and isBuyPotato when potato options are provided', () => {
+    const payload = buildCreateTransferStockPayload(
+      { ...values, amount: '1100.50', remarks: '  Buy potato note  ' },
+      items,
+      { potatoAction: 'buy' },
+    );
 
-    expect(payload.amount).toBe(300);
+    expect(payload.amount).toBe(1100.5);
+    expect(payload.isBuyPotato).toBe(true);
+    expect(payload.isSellPotato).toBeUndefined();
+    expect(payload.remarks).toBe('Buy potato note');
+    expect(payload.narration).toBe('Buy potato note');
+  });
+
+  it('includes user-entered amount and isSellPotato when potato options are provided', () => {
+    const payload = buildCreateTransferStockPayload(
+      { ...values, amount: '250' },
+      items,
+      { potatoAction: 'sell' },
+    );
+
+    expect(payload.amount).toBe(250);
     expect(payload.isSellPotato).toBe(true);
     expect(payload.isBuyPotato).toBeUndefined();
+    expect(payload.narration).toBeUndefined();
   });
 });

@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
@@ -16,7 +15,7 @@ import {
   useOutgoingGatePassReport,
   type OutgoingGatePassReportParams,
 } from './api/use-outgoing-gate-pass-report';
-import { getOutgoingReportColumns, type OutgoingQuantityMode } from './components/columns';
+import { getOutgoingReportColumns } from './components/columns';
 import { DataTable } from './components/data-table';
 import { ReportToolbar } from './components/report-toolbar';
 import {
@@ -37,7 +36,7 @@ const OutgoingReportPage = () => {
   const [dateTo, setDateTo] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isReportTableReady, setIsReportTableReady] = useState(false);
-  const [quantityMode, setQuantityMode] = useState<OutgoingQuantityMode>('issued');
+  const quantityMode = 'issued' as const;
   const [showLocation, setShowLocation] = useState(true);
   const [appliedParams, setAppliedParams] =
     useState<OutgoingGatePassReportParams>(DEFAULT_REPORT_PARAMS);
@@ -209,10 +208,6 @@ const OutgoingReportPage = () => {
     void refetch();
   }, [refetch]);
 
-  const handleQuantityModeChange = useCallback((value: string) => {
-    setQuantityMode(value as OutgoingQuantityMode);
-  }, []);
-
   const getPdfData = useCallback(() => {
     const reportTable = reportTableRef.current;
     if (!reportTable) return null;
@@ -326,13 +321,6 @@ const OutgoingReportPage = () => {
                 Show Location
               </Label>
             </div>
-
-            <Tabs value={quantityMode} onValueChange={handleQuantityModeChange}>
-              <TabsList aria-label="Quantity view">
-                <TabsTrigger value="issued">Issued Qty</TabsTrigger>
-                <TabsTrigger value="available">Available Qty</TabsTrigger>
-              </TabsList>
-            </Tabs>
 
             <Badge variant="outline" className="w-fit gap-1.5">
               <span className="tabular-nums">{visibleRowCount}</span>

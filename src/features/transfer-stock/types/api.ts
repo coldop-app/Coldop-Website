@@ -18,6 +18,7 @@ export type CreateTransferStockPayload = {
   items: CreateTransferStockItemPayload[];
   customMarka?: string;
   remarks?: string;
+  narration?: string;
   truckNumber?: string;
   amount?: number;
   isBuyPotato?: boolean;
