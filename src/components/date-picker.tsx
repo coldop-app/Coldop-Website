@@ -1,4 +1,5 @@
 import * as React from 'react';
+import { format } from 'date-fns';
 import { CalendarIcon } from 'lucide-react';
 
 import { Calendar } from '@/components/ui/calendar';
@@ -17,18 +18,30 @@ function formatDate(date: Date | undefined) {
     return '';
   }
 
-  return date.toLocaleDateString('en-US', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+  return format(date, 'do MMMM yyyy');
 }
 
-function isValidDate(date: Date | undefined) {
-  if (!date) {
-    return false;
+function parseDotSeparatedDate(value: string) {
+  const match = value.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{2})$/);
+  if (!match) {
+    return undefined;
   }
-  return !Number.isNaN(date.getTime());
+
+  const [, dayValue, monthValue, yearValue] = match;
+  const day = Number(dayValue);
+  const month = Number(monthValue);
+  const year = 2000 + Number(yearValue);
+  const parsed = new Date(year, month - 1, day);
+
+  if (
+    parsed.getFullYear() !== year ||
+    parsed.getMonth() !== month - 1 ||
+    parsed.getDate() !== day
+  ) {
+    return undefined;
+  }
+
+  return parsed;
 }
 
 export type DatePickerInputProps = {
@@ -97,10 +110,11 @@ export function DatePickerInput({
       return;
     }
 
-    const parsed = new Date(nextValue);
-    if (isValidDate(parsed)) {
+    const parsed = parseDotSeparatedDate(nextValue);
+    if (parsed) {
       setDate(parsed);
       setMonth(parsed);
+      setInputValue(formatDate(parsed));
     }
   };
 
