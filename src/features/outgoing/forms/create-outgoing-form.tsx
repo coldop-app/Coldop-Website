@@ -498,6 +498,7 @@ const CreateOutgoingForm = () => {
                               <TransferGatePassesSection
                                 key={`${farmerStorageLinkId || 'no-farmer'}-${stockFilter}`}
                                 varietyFilterMode="multi-optional"
+                                toolbarVariant="stacked"
                                 fromFarmerStorageLinkId={farmerStorageLinkId}
                                 allocations={allocField.state.value}
                                 onAllocationsChange={allocField.handleChange}

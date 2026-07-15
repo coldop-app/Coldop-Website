@@ -265,14 +265,14 @@ const CreateTransferStock = () => {
   };
 
   return (
-    <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
+    <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4">
       <DaybookBackButton />
       {potatoAction ? (
         <div className="border-border bg-muted/30 text-muted-foreground rounded-lg border px-4 py-3 text-sm">
           Transfer stock for {potatoAction === 'buy' ? 'Buy Potato' : 'Sell Potato'}
         </div>
       ) : null}
-      <Card className="w-full shadow-sm">
+      <Card className="w-full min-w-0 overflow-hidden shadow-sm">
         <CardHeader className="bg-muted/30 border-b pb-6">
           <CardTitle className="font-heading text-xl font-semibold tracking-tight sm:text-2xl">
             Transfer Stock
@@ -283,8 +283,8 @@ const CreateTransferStock = () => {
         </CardHeader>
 
         <form id="create-transfer-stock-form" noValidate onSubmit={(e) => e.preventDefault()}>
-          <CardContent className="pt-8 pb-8">
-            <FieldGroup className="@container/field-group gap-10">
+          <CardContent className="min-w-0 px-4 pt-6 pb-6 sm:px-6 sm:pt-8 sm:pb-8">
+            <FieldGroup className="@container/field-group min-w-0 gap-10">
               <FieldSet>
                 <FieldLegend className="font-heading text-base font-semibold">
                   Transfer details
@@ -477,14 +477,14 @@ const CreateTransferStock = () => {
                   const canShowGatePasses = !showStockFilter || stockFilter.trim().length > 0;
 
                   return (
-                    <FieldSet>
+                    <FieldSet className="min-w-0">
                       <FieldLegend className="font-heading text-base font-semibold">
                         Incoming gate pass
                       </FieldLegend>
                       <FieldDescription>
                         Select vouchers and quantities to transfer from the source account.
                       </FieldDescription>
-                      <div className="mt-5">
+                      <div className="mt-5 min-w-0">
                         {!canShowGatePasses ? (
                           <TransferGatePassesStockFilterPrompt />
                         ) : (
@@ -492,6 +492,7 @@ const CreateTransferStock = () => {
                             {(allocField) => (
                               <TransferGatePassesSection
                                 key={`${fromFarmerStorageLinkId || 'no-farmer'}-${stockFilter}`}
+                                toolbarVariant="stacked"
                                 fromFarmerStorageLinkId={fromFarmerStorageLinkId}
                                 allocations={allocField.state.value}
                                 onAllocationsChange={allocField.handleChange}
@@ -527,7 +528,7 @@ const CreateTransferStock = () => {
                             onChange={(e) => field.handleChange(e.target.value)}
                             aria-invalid={isInvalid}
                             placeholder="Add any additional comments or observations (optional)"
-                            className="min-h-[120px] resize-y text-base"
+                            className="min-h-[120px] resize-y"
                           />
                           {isInvalid && <FieldError errors={field.state.meta.errors} />}
                         </Field>

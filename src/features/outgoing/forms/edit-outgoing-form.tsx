@@ -382,6 +382,10 @@ function EditOutgoingFormLoaded({
                             <TransferGatePassesSection
                               key={`${farmerStorageLinkId}-${stockFilter}`}
                               varietyFilterMode="multi-optional"
+                              toolbarVariant="stacked"
+                              initialVariety={
+                                entry.variety ?? entry.incomingGatePassSnapshots?.[0]?.variety
+                              }
                               allocationMode="edit"
                               baselineAllocations={baselineAllocations}
                               fromFarmerStorageLinkId={farmerStorageLinkId}

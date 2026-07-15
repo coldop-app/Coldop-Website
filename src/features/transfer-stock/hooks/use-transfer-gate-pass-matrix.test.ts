@@ -66,6 +66,28 @@ describe('useTransferGatePassMatrix', () => {
     expect(result.current.displayGroups.flatMap((group) => group.passes)).toHaveLength(2);
   });
 
+  it('starts with the supplied variety selected in multi-optional mode', () => {
+    const passes = [
+      makePass('pass-chipsona', 'Chipsona', 10),
+      makePass('pass-kufri', 'Kufri Jyoti', 11),
+    ];
+
+    const { result } = renderHook(() =>
+      useTransferGatePassMatrix({
+        allPasses: passes,
+        allocations: {},
+        onAllocationsChange: vi.fn(),
+        varietyFilterMode: 'multi-optional',
+        initialVariety: 'Kufri Jyoti',
+      }),
+    );
+
+    expect(result.current.varietyVisibilityLabel).toBe('Kufri Jyoti');
+    expect(result.current.displayGroups.flatMap((group) => group.passes)).toEqual([
+      expect.objectContaining({ variety: 'Kufri Jyoti' }),
+    ]);
+  });
+
   it('requires variety selection in single-required mode when multiple varieties exist', () => {
     const passes = [
       makePass('pass-chipsona', 'Chipsona', 10),

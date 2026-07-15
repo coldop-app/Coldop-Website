@@ -232,6 +232,7 @@ describe('EditOutgoingForm', () => {
       expect.objectContaining({
         fromFarmerStorageLinkId: FARMER_LINK_ID,
         varietyFilterMode: 'multi-optional',
+        initialVariety: 'Kufri Jyoti',
         allocationMode: 'edit',
         baselineAllocations: { [allocationKeyValue]: 50 },
         allocations: { [allocationKeyValue]: 50 },

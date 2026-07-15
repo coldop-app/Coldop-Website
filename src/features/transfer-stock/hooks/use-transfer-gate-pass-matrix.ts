@@ -71,6 +71,8 @@ type UseTransferGatePassMatrixOptions = {
   varietyFilterMode?: VarietyFilterMode;
   /** When set, locks the matrix to this stock filter and hides the filter control. */
   stockFilter?: string;
+  /** Variety selected when the matrix first opens and when filters are reset. */
+  initialVariety?: string;
 };
 
 export function useTransferGatePassMatrix({
@@ -79,10 +81,16 @@ export function useTransferGatePassMatrix({
   onAllocationsChange,
   varietyFilterMode = 'single-required',
   stockFilter: controlledStockFilter,
+  initialVariety,
 }: UseTransferGatePassMatrixOptions) {
+  const initialVarietyVisibility = useMemo<VarietyVisibility>(
+    () => (initialVariety?.trim() ? new Set([initialVariety.trim()]) : 'all'),
+    [initialVariety],
+  );
   const [voucherSort, setVoucherSort] = useState<VoucherSort>('asc');
   const [varietyFilter, setVarietyFilter] = useState('');
-  const [varietyVisibility, setVarietyVisibility] = useState<VarietyVisibility>('all');
+  const [varietyVisibility, setVarietyVisibility] =
+    useState<VarietyVisibility>(initialVarietyVisibility);
   const [sizeVisibility, setSizeVisibility] = useState<SizeVisibility>('all');
   const [selectedPassIds, setSelectedPassIds] = useState<Set<string>>(() => new Set());
   const [locationFilters, setLocationFilters] = useState<LocationFilters>({
@@ -316,14 +324,14 @@ export function useTransferGatePassMatrix({
   const handleResetFilters = useCallback(() => {
     setVoucherSort('asc');
     setVarietyFilter('');
-    setVarietyVisibility('all');
+    setVarietyVisibility(initialVarietyVisibility);
     setGatePassSearch('');
     setStockFilterFilter('');
     setLocationFilters({ chamber: '', floor: '', row: '' });
     setSizeVisibility('all');
     setSelectedPassIds(new Set());
     onAllocationsChange({});
-  }, [onAllocationsChange]);
+  }, [initialVarietyVisibility, onAllocationsChange]);
 
   const handleAllocationChange = useCallback(
     (key: string, quantity: number) => {
