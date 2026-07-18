@@ -12,6 +12,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
+import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
 import {
   QuantityModeTabLabel,
   StockSummaryTabBar,
@@ -29,7 +30,7 @@ import { buildSizeDistribution } from '../utils/build-size-distribution';
 import { getSizeQuantityForMode } from '../utils/get-variety-breakdown-quantity';
 import { resolveBagSizeTabs } from '../utils/resolve-bag-size-tabs';
 import { resolveSelectedSize } from '../utils/resolve-selected-size';
-import { resolveVarietyBreakdownStockFilter } from '../utils/resolve-stock-filter';
+import { resolveVarietyBreakdownData } from '../utils/resolve-variety-breakdown-data';
 import { VarietyBreakdownFarmerShareChart } from './variety-breakdown-farmer-share-chart';
 import { VarietyBreakdownFarmerTable } from './variety-breakdown-farmer-table';
 import { VarietyBreakdownSizeChart } from './variety-breakdown-size-chart';
@@ -51,32 +52,75 @@ export function VarietyBreakdownTabContent({
   enabled,
   stockFilterTab,
 }: VarietyBreakdownTabContentProps) {
-  const { variety, bagSize, tab } = varietyBreakdownRouteApi.useSearch();
+  const {
+    variety,
+    bagSize,
+    tab,
+    stockFilter: stockFilterParam,
+    stockFilterTab: stockFilterTabParam,
+  } = varietyBreakdownRouteApi.useSearch();
   const navigate = varietyBreakdownRouteApi.useNavigate();
   const preferences = usePreferencesStore((state) => state.preferences);
   const commodities = preferences?.commodities ?? [];
+  const showStockFilterTabs = shouldShowStockFilter(preferences?.stockFilter);
 
-  const stockFilter = resolveVarietyBreakdownStockFilter(stockFilterTab);
+  const breakdown = useVarietyBreakdown(
+    { variety, stockFilter: showStockFilterTabs },
+    { enabled },
+  );
 
-  const breakdown = useVarietyBreakdown({ variety, stockFilter }, { enabled });
+  const resolvedData = useMemo(
+    () =>
+      resolveVarietyBreakdownData(
+        breakdown.response?.data,
+        stockFilterTab,
+        showStockFilterTabs,
+      ),
+    [breakdown.response?.data, showStockFilterTabs, stockFilterTab],
+  );
 
-  const apiSizes = breakdown.response?.data?.sizes ?? [];
+  const apiSizes = resolvedData?.sizes ?? [];
 
   const { tabs, activeBagSize } = useMemo(
     () => resolveBagSizeTabs(commodities, variety, apiSizes, quantityMode, bagSize),
     [apiSizes, bagSize, commodities, quantityMode, variety],
   );
 
+  const includeStockFilter = showStockFilterTabs || Boolean(stockFilterParam);
+
+  const buildSearch = (nextBagSize: string) => ({
+    variety,
+    bagSize: nextBagSize,
+    tab,
+    ...(includeStockFilter
+      ? {
+          stockFilter: true as const,
+          stockFilterTab: stockFilterTabParam ?? stockFilterTab,
+        }
+      : {}),
+  });
+
   useEffect(() => {
     if (!enabled || breakdown.isLoading) return;
     if (activeBagSize && activeBagSize !== bagSize) {
       void navigate({
-        search: { variety, bagSize: activeBagSize, tab },
+        search: buildSearch(activeBagSize),
         replace: true,
         ...preserveScroll,
       });
     }
-  }, [activeBagSize, bagSize, breakdown.isLoading, enabled, navigate, tab, variety]);
+  }, [
+    activeBagSize,
+    bagSize,
+    breakdown.isLoading,
+    enabled,
+    includeStockFilter,
+    navigate,
+    stockFilterTab,
+    stockFilterTabParam,
+    tab,
+    variety,
+  ]);
 
   const selectedSize = useMemo(
     () => resolveSelectedSize(apiSizes, activeBagSize),
@@ -104,7 +148,7 @@ export function VarietyBreakdownTabContent({
 
   const handleBagSizeChange = (value: string) => {
     void navigate({
-      search: { variety, bagSize: value, tab },
+      search: buildSearch(value),
       ...preserveScroll,
     });
   };

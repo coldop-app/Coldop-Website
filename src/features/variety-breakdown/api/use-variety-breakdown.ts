@@ -2,13 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 
 import apiClient, { getApiErrorMessage } from '@/lib/api-client';
 
-import type { VarietyBreakdownResponse, VarietyBreakdownStockFilter } from '../types';
+import type { VarietyBreakdownResponse } from '../types';
 
 export const VARIETY_BREAKDOWN_QUERY_KEY = ['analytics', 'variety-breakdown'] as const;
 
 export type VarietyBreakdownParams = {
   variety: string;
-  stockFilter?: VarietyBreakdownStockFilter;
+  stockFilter?: boolean;
 };
 
 function varietyBreakdownQueryKey(params: VarietyBreakdownParams) {
@@ -21,7 +21,7 @@ export async function fetchVarietyBreakdownApi(
   const { data } = await apiClient.get<VarietyBreakdownResponse>('/analytics/variety-breakdown', {
     params: {
       variety: params.variety,
-      ...(params.stockFilter ? { stockFilter: params.stockFilter } : {}),
+      ...(params.stockFilter === true ? { stockFilter: 'true' } : {}),
     },
   });
 

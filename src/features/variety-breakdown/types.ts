@@ -18,10 +18,12 @@ export type VarietyBreakdownData = {
   sizes: VarietyBreakdownSize[];
 };
 
-export type VarietyBreakdownResponse = {
-  success: boolean;
-  data: VarietyBreakdownData | null;
-  message?: string;
+export type VarietyBreakdownByFilterData = {
+  varietyBreakdownByFilter: Record<string, VarietyBreakdownData>;
 };
 
-export type VarietyBreakdownStockFilter = string;
+export type VarietyBreakdownResponse = {
+  success: boolean;
+  data: VarietyBreakdownData | VarietyBreakdownByFilterData | null;
+  message?: string;
+};

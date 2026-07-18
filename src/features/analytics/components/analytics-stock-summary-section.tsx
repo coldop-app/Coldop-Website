@@ -60,7 +60,11 @@ export function AnalyticsStockSummarySection({
         ) : null}
 
         <div className="p-3 sm:p-4">
-          <AnalyticsStockSummaryTable matrix={matrix} quantityMode={quantityMode} />
+          <AnalyticsStockSummaryTable
+            matrix={matrix}
+            quantityMode={quantityMode}
+            stockFilterTab={stockFilterTab}
+          />
         </div>
       </div>
     </section>

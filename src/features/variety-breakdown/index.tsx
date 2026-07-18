@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo } from 'react';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, Loader2, RefreshCw, Wheat } from 'lucide-react';
@@ -19,29 +19,81 @@ import { VarietyBreakdownTabContent } from './components/variety-breakdown-tab-c
 
 const varietyBreakdownRouteApi = getRouteApi('/_authenticated/analytics/variety-breakdown');
 
+function resolveStockFilterTabFromSearch(
+  stockFilterTabParam: string | undefined,
+  stockFilterTabs: StockFilterTab[],
+): StockFilterTab {
+  if (!stockFilterTabParam) return 'all';
+
+  const exact = stockFilterTabs.find((tab) => tab === stockFilterTabParam);
+  if (exact) return exact;
+
+  const normalized = stockFilterTabParam.trim().toUpperCase();
+  const caseInsensitive = stockFilterTabs.find(
+    (tab) => tab !== 'all' && tab.trim().toUpperCase() === normalized,
+  );
+  return caseInsensitive ?? 'all';
+}
+
 const VarietyBreakdownPage = () => {
-  const { variety, bagSize, tab } = varietyBreakdownRouteApi.useSearch();
+  const {
+    variety,
+    bagSize,
+    tab,
+    stockFilter: stockFilterParam,
+    stockFilterTab: stockFilterTabParam,
+  } = varietyBreakdownRouteApi.useSearch();
   const navigate = varietyBreakdownRouteApi.useNavigate();
   const queryClient = useQueryClient();
   const preferences = usePreferencesStore((state) => state.preferences);
   const showStockFilterTabs = shouldShowStockFilter(preferences?.stockFilter);
   const stockFilterOptions = preferences?.stockFilter?.options ?? [];
-  const [stockFilterTab, setStockFilterTab] = useState<StockFilterTab>('all');
 
   const isRefreshing = useIsFetching({ queryKey: VARIETY_BREAKDOWN_QUERY_KEY }) > 0;
 
-  const stockFilterTabs: StockFilterTab[] = showStockFilterTabs
-    ? ['all', ...stockFilterOptions]
-    : [];
+  const stockFilterTabs: StockFilterTab[] = useMemo(
+    () => (showStockFilterTabs ? ['all', ...stockFilterOptions] : []),
+    [showStockFilterTabs, stockFilterOptions],
+  );
+
+  const stockFilterTab = useMemo(
+    () => resolveStockFilterTabFromSearch(stockFilterTabParam, stockFilterTabs),
+    [stockFilterTabParam, stockFilterTabs],
+  );
+
+  const includeStockFilter = showStockFilterTabs || Boolean(stockFilterParam);
 
   const stockFilterTabItems = stockFilterTabs.map((filterTab) => ({
     value: filterTab,
     label: filterTab === 'all' ? 'All' : filterTab,
   }));
 
+  const buildSearch = (overrides: {
+    bagSize?: string;
+    tab?: AnalyticsTab;
+    stockFilterTab?: StockFilterTab;
+  } = {}) => ({
+    variety,
+    bagSize: overrides.bagSize ?? bagSize,
+    tab: overrides.tab ?? tab,
+    ...(includeStockFilter
+      ? {
+          stockFilter: true as const,
+          stockFilterTab: overrides.stockFilterTab ?? stockFilterTab,
+        }
+      : {}),
+  });
+
   const handleTabChange = (value: string) => {
     void navigate({
-      search: { variety, bagSize, tab: value as AnalyticsTab },
+      search: buildSearch({ tab: value as AnalyticsTab }),
+      ...preserveScroll,
+    });
+  };
+
+  const handleStockFilterTabChange = (value: string) => {
+    void navigate({
+      search: buildSearch({ stockFilterTab: value as StockFilterTab }),
       ...preserveScroll,
     });
   };
@@ -90,7 +142,7 @@ const VarietyBreakdownPage = () => {
             <div className="px-3 pt-3 sm:px-4 sm:pt-4">
               <StockSummaryTabBar
                 value={stockFilterTab}
-                onValueChange={(value) => setStockFilterTab(value as StockFilterTab)}
+                onValueChange={handleStockFilterTabChange}
                 items={stockFilterTabItems}
                 ariaLabel="Stock ownership filter"
               />

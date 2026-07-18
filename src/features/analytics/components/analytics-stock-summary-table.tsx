@@ -10,7 +10,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import { formatQuantity } from '@/features/daybook/utils/format';
+import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
 import {
   getCellClassName,
   getFooterClassName,
@@ -21,6 +23,7 @@ import {
   TABLE_GRID_CLASS,
 } from '@/features/people/components/farmer-stock-summary-table-styles';
 import type {
+  StockFilterTab,
   StockQuantityMode,
   StockSummaryMatrix,
 } from '@/features/people/utils/build-farmer-stock-summary';
@@ -29,13 +32,17 @@ import { cn } from '@/lib/utils';
 type AnalyticsStockSummaryTableProps = {
   matrix: StockSummaryMatrix;
   quantityMode: StockQuantityMode;
+  stockFilterTab: StockFilterTab;
 };
 
 export function AnalyticsStockSummaryTable({
   matrix,
   quantityMode,
+  stockFilterTab,
 }: AnalyticsStockSummaryTableProps) {
   const navigate = useNavigate();
+  const preferences = usePreferencesStore((state) => state.preferences);
+  const showStockFilter = shouldShowStockFilter(preferences?.stockFilter);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { sizeColumns, rows, footerBySize, grandTotal } = matrix;
@@ -49,7 +56,14 @@ export function AnalyticsStockSummaryTable({
 
     void navigate({
       to: '/analytics/variety-breakdown',
-      search: { variety, bagSize, tab: quantityMode },
+      search: {
+        variety,
+        bagSize,
+        tab: quantityMode,
+        ...(showStockFilter
+          ? { stockFilter: true, stockFilterTab }
+          : {}),
+      },
     });
   };
 
