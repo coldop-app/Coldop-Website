@@ -15,6 +15,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
+  Lock,
   MapPin,
   Package,
   Pencil,
@@ -115,6 +116,7 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
   const truckNumber = entry.truckNumber?.trim() ? entry.truckNumber.trim().toUpperCase() : '—';
   const accountLabel = `#${farmerLink.accountNumber.toLocaleString('en-IN')}`;
   const isTransfer = isIncomingTransferType(entry.type);
+  const isClosed = entry.status === 'CLOSED';
   const hasQuantityChanged = bagSizes.some((bag) => bag.initialQuantity !== bag.currentQuantity);
   const canEdit = entry.status === 'OPEN' && !hasQuantityChanged;
   const editDisabledTitle = hasQuantityChanged
@@ -189,7 +191,17 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
           <Badge variant="outline" className="bg-background text-xs" title={entry.variety}>
             {entry.variety}
           </Badge>
-          <Badge variant="outline" className="bg-background text-xs" title={entry.status}>
+          <Badge
+            variant={isClosed ? 'secondary' : 'outline'}
+            className={cn(
+              'text-xs',
+              isClosed
+                ? 'border-border bg-secondary text-secondary-foreground gap-1 font-semibold'
+                : 'bg-background',
+            )}
+            title={entry.status}
+          >
+            {isClosed ? <Lock className="size-3 shrink-0" aria-hidden /> : null}
             {entry.status}
           </Badge>
           {isTransfer ? (

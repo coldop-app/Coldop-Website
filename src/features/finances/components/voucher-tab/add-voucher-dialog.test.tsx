@@ -29,7 +29,12 @@ vi.mock('@/features/finances/api/use-create-voucher', () => ({
 
 function renderDialog(onOpenChange = vi.fn()) {
   renderWithProviders(
-    <AddVoucherDialog open onOpenChange={onOpenChange} ledgerOptions={ledgerOptions} />,
+    <AddVoucherDialog
+      open
+      onOpenChange={onOpenChange}
+      debitLedgerOptions={ledgerOptions}
+      creditLedgerOptions={ledgerOptions}
+    />,
   );
 
   return { onOpenChange };

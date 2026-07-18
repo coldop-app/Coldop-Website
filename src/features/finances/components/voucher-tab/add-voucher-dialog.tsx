@@ -38,7 +38,12 @@ const numericInputProps = {
 type AddVoucherDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  ledgerOptions: ComboboxOption[];
+  debitLedgerOptions: ComboboxOption[];
+  creditLedgerOptions: ComboboxOption[];
+  title?: string;
+  description?: string;
+  submitLabel?: string;
+  submittingLabel?: string;
 };
 
 type ComboboxUiState = {
@@ -59,7 +64,16 @@ function resetDialogState(
   resetComboboxState();
 }
 
-export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVoucherDialogProps) {
+export function AddVoucherDialog({
+  open,
+  onOpenChange,
+  debitLedgerOptions,
+  creditLedgerOptions,
+  title = 'Add Voucher',
+  description = 'Record a debit and credit entry with amount and narration.',
+  submitLabel = 'Add Voucher',
+  submittingLabel = 'Adding…',
+}: AddVoucherDialogProps) {
   const portalContainerRef = useRef<HTMLFormElement>(null);
   const [debitCombobox, setDebitCombobox] = useState(emptyComboboxState);
   const [creditCombobox, setCreditCombobox] = useState(emptyComboboxState);
@@ -89,13 +103,13 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
   });
 
   const sortedDebitLedgers = useMemo(
-    () => filterAndSortOptions(debitCombobox.search, ledgerOptions),
-    [debitCombobox.search, ledgerOptions],
+    () => filterAndSortOptions(debitCombobox.search, debitLedgerOptions),
+    [debitCombobox.search, debitLedgerOptions],
   );
 
   const sortedCreditLedgers = useMemo(
-    () => filterAndSortOptions(creditCombobox.search, ledgerOptions),
-    [creditCombobox.search, ledgerOptions],
+    () => filterAndSortOptions(creditCombobox.search, creditLedgerOptions),
+    [creditCombobox.search, creditLedgerOptions],
   );
 
   const handleOpenChange = (nextOpen: boolean) => {
@@ -118,10 +132,8 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
         }}
       >
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold tracking-tight">Add Voucher</DialogTitle>
-          <DialogDescription>
-            Record a debit and credit entry with amount and narration.
-          </DialogDescription>
+          <DialogTitle className="text-xl font-semibold tracking-tight">{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
         <form
@@ -171,7 +183,7 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
                       isInvalid={isInvalid}
                       placeholder="Search debit ledgers..."
                       emptyMessage="No ledgers found."
-                      options={ledgerOptions}
+                      options={debitLedgerOptions}
                       sortedOptions={sortedDebitLedgers}
                       search={debitCombobox.search}
                       setSearch={(search) =>
@@ -203,7 +215,7 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
                       isInvalid={isInvalid}
                       placeholder="Search credit ledgers..."
                       emptyMessage="No ledgers found."
-                      options={ledgerOptions}
+                      options={creditLedgerOptions}
                       sortedOptions={sortedCreditLedgers}
                       search={creditCombobox.search}
                       setSearch={(search) =>
@@ -276,7 +288,7 @@ export function AddVoucherDialog({ open, onOpenChange, ledgerOptions }: AddVouch
             selector={(state) => state.isSubmitting}
             children={(isSubmitting) => (
               <Button type="submit" form="add-voucher-form" disabled={isSubmitting}>
-                {isSubmitting ? 'Adding…' : 'Add Voucher'}
+                {isSubmitting ? submittingLabel : submitLabel}
               </Button>
             )}
           />

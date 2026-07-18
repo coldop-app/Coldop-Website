@@ -194,8 +194,11 @@ const CreateTransferStock = () => {
     onOpenReview: () => setReviewOpen(true),
     onSubmitConfirmed: async (values, items) => {
       try {
-        const payloadOptions = potatoAction ? { potatoAction } : undefined;
-        const payload = buildCreateTransferStockPayload(values, items, payloadOptions);
+        const payload = buildCreateTransferStockPayload(values, items, {
+          ...(potatoAction ? { potatoAction } : {}),
+          includeStockFilter: showStockFilter,
+          includeCustomMarka: showCustomMarka,
+        });
         const created = await createTransferStock(payload);
 
         toast.success(`Transfer #${created.gatePassNo.toLocaleString('en-IN')} created`, {

@@ -13,7 +13,7 @@ import { useLedgers } from '@/features/finances/api/use-ledgers';
 import { useVouchers } from '@/features/finances/api/use-vouchers';
 import type { VoucherFilters } from '@/features/finances/types';
 import { buildDateRangeFilters } from '@/features/finances/utils/date-filters';
-import { mapLedgersToComboboxOptions } from '@/features/finances/utils/ledger-options';
+import { isCashOrBankLedger, mapLedgersToComboboxOptions } from '@/features/finances/utils/ledger-options';
 import { cn } from '@/lib/utils';
 
 import { AddVoucherDialog } from './add-voucher-dialog';
@@ -30,6 +30,8 @@ type ComboboxUiState = {
   open: boolean;
 };
 
+type VoucherDialogMode = 'add' | 'general-expense';
+
 const emptyComboboxState = (): ComboboxUiState => ({
   search: '',
   open: false,
@@ -37,7 +39,7 @@ const emptyComboboxState = (): ComboboxUiState => ({
 
 const VoucherTab = () => {
   const [search, setSearch] = useState('');
-  const [addVoucherOpen, setAddVoucherOpen] = useState(false);
+  const [voucherDialogMode, setVoucherDialogMode] = useState<VoucherDialogMode | null>(null);
   const [editVoucherOpen, setEditVoucherOpen] = useState(false);
   const [voucherToEdit, setVoucherToEdit] = useState<Voucher | null>(null);
   const [deleteVoucherOpen, setDeleteVoucherOpen] = useState(false);
@@ -53,10 +55,28 @@ const VoucherTab = () => {
 
   const ledgerFilterOptions = useMemo(() => mapLedgersToComboboxOptions(ledgers), [ledgers]);
 
+  const generalExpenseDebitOptions = useMemo(
+    () => mapLedgersToComboboxOptions(ledgers.filter((ledger) => ledger.type === 'Expense')),
+    [ledgers],
+  );
+
+  const generalExpenseCreditOptions = useMemo(
+    () => mapLedgersToComboboxOptions(ledgers.filter(isCashOrBankLedger)),
+    [ledgers],
+  );
+
   const sortedLedgerOptions = useMemo(
     () => filterAndSortOptions(ledgerCombobox.search, ledgerFilterOptions),
     [ledgerCombobox.search, ledgerFilterOptions],
   );
+
+  const isGeneralExpenseDialog = voucherDialogMode === 'general-expense';
+  const voucherDialogDebitOptions = isGeneralExpenseDialog
+    ? generalExpenseDebitOptions
+    : ledgerFilterOptions;
+  const voucherDialogCreditOptions = isGeneralExpenseDialog
+    ? generalExpenseCreditOptions
+    : ledgerFilterOptions;
 
   const voucherColumns = useMemo(
     () =>
@@ -219,7 +239,7 @@ const VoucherTab = () => {
             <Button
               type="button"
               className="min-w-0 px-2.5 sm:px-3"
-              onClick={() => setAddVoucherOpen(true)}
+              onClick={() => setVoucherDialogMode('add')}
             >
               <Plus className="h-4 w-4 shrink-0 sm:mr-2" />
               <span className="truncate">Add New</span>
@@ -229,7 +249,7 @@ const VoucherTab = () => {
               type="button"
               variant="secondary"
               className="min-w-0 px-2.5 sm:px-3"
-              onClick={() => {}}
+              onClick={() => setVoucherDialogMode('general-expense')}
             >
               <Wallet className="h-4 w-4 shrink-0 sm:mr-2" />
               <span className="truncate">General Expense</span>
@@ -247,9 +267,21 @@ const VoucherTab = () => {
       )}
 
       <AddVoucherDialog
-        open={addVoucherOpen}
-        onOpenChange={setAddVoucherOpen}
-        ledgerOptions={ledgerFilterOptions}
+        open={voucherDialogMode !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setVoucherDialogMode(null);
+          }
+        }}
+        debitLedgerOptions={voucherDialogDebitOptions}
+        creditLedgerOptions={voucherDialogCreditOptions}
+        title={isGeneralExpenseDialog ? 'General Expense' : 'Add Voucher'}
+        description={
+          isGeneralExpenseDialog
+            ? 'Record an expense paid from cash or bank.'
+            : 'Record a debit and credit entry with amount and narration.'
+        }
+        submitLabel={isGeneralExpenseDialog ? 'Add Expense' : 'Add Voucher'}
       />
 
       {voucherToEdit ? (

@@ -61,18 +61,48 @@ describe('buildCreateTransferStockPayload', () => {
     expect(withoutRemarks.remarks).toBeUndefined();
   });
 
-  it('includes customMarka only when non-empty', () => {
+  it('includes customMarka only when preference is active and value is non-empty', () => {
     const withCustomMarka = buildCreateTransferStockPayload(
       { ...values, customMarka: '  ABC-123  ' },
       items,
+      { includeCustomMarka: true },
     );
     expect(withCustomMarka.customMarka).toBe('ABC-123');
 
     const withoutCustomMarka = buildCreateTransferStockPayload(
       { ...values, customMarka: '   ' },
       items,
+      { includeCustomMarka: true },
     );
     expect(withoutCustomMarka.customMarka).toBeUndefined();
+
+    const whenPreferenceInactive = buildCreateTransferStockPayload(
+      { ...values, customMarka: 'ABC-123' },
+      items,
+    );
+    expect(whenPreferenceInactive.customMarka).toBeUndefined();
+  });
+
+  it('includes stockFilter only when preference is active and value is non-empty', () => {
+    const withStockFilter = buildCreateTransferStockPayload(
+      { ...values, stockFilter: '  Grade-A  ' },
+      items,
+      { includeStockFilter: true },
+    );
+    expect(withStockFilter.stockFilter).toBe('Grade-A');
+
+    const withoutStockFilter = buildCreateTransferStockPayload(
+      { ...values, stockFilter: '   ' },
+      items,
+      { includeStockFilter: true },
+    );
+    expect(withoutStockFilter.stockFilter).toBeUndefined();
+
+    const whenPreferenceInactive = buildCreateTransferStockPayload(
+      { ...values, stockFilter: 'Grade-A' },
+      items,
+    );
+    expect(whenPreferenceInactive.stockFilter).toBeUndefined();
   });
 
   it('does not include truckNumber', () => {

@@ -2,12 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { DAYBOOK_QUERY_KEY } from '@/features/daybook/api/use-daybook';
 import { DAYBOOK_SEARCH_QUERY_KEY } from '@/features/daybook/api/use-daybook-search';
-import { FARMER_GATE_PASSES_QUERY_KEY } from '@/features/people/api/use-farmer-gate-passes';
+import { VOUCHERS_QUERY_KEY } from '@/features/finances/api/use-vouchers';
 import type {
   IncomingGatePassRecord,
   UpdateIncomingGatePassPayload,
   UpdateIncomingGatePassResponse,
 } from '@/features/incoming/types/api';
+import { FARMER_GATE_PASSES_QUERY_KEY } from '@/features/people/api/use-farmer-gate-passes';
 import apiClient, { getApiErrorMessage } from '@/lib/api-client';
 
 type UpdateIncomingGatePassInput = {
@@ -48,6 +49,7 @@ export function useUpdateIncomingGatePass() {
       void queryClient.invalidateQueries({
         queryKey: FARMER_GATE_PASSES_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: VOUCHERS_QUERY_KEY });
     },
   });
 }

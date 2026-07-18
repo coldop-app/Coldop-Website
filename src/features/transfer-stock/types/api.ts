@@ -16,6 +16,7 @@ export type CreateTransferStockPayload = {
   toFarmerStorageLinkId: string;
   date: string;
   items: CreateTransferStockItemPayload[];
+  stockFilter?: string;
   customMarka?: string;
   remarks?: string;
   narration?: string;
@@ -38,6 +39,7 @@ export type TransferStockRecord = {
   date: string;
   truckNumber?: string;
   items: TransferStockRecordItem[];
+  stockFilter?: string;
   customMarka?: string;
   remarks?: string;
   createdAt?: string;
