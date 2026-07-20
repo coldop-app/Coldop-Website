@@ -336,7 +336,7 @@ export function OutgoingGatePassCard({ entry }: OutgoingGatePassCardProps) {
             )}
           </div>
           <CardDescription className="text-xs">
-            {formatDaybookDateTime(entry.createdAt)}
+            {formatDaybookDateTime(entry.date)}
             {isNull && entry.nulledAt && (
               <>
                 {' · '}

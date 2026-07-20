@@ -1,4 +1,4 @@
-import type { RefObject } from 'react';
+import { useRef, type RefObject } from 'react';
 
 import {
   Combobox,
@@ -77,6 +77,8 @@ export function SearchableOptionCombobox({
 }: SearchableOptionComboboxProps) {
   const selected = options.find((option) => option.id === value) ?? null;
   const popupPlaceholder = popupSearchPlaceholder ?? placeholder;
+  // After selecting an option, focus returns to the trigger — skip reopening once.
+  const suppressOpenOnFocusRef = useRef(false);
 
   return (
     <Combobox
@@ -99,6 +101,7 @@ export function SearchableOptionCombobox({
       onValueChange={(val) => {
         onValueChange(val ? val.id : '');
         setSearch('');
+        suppressOpenOnFocusRef.current = true;
         setOpen(false);
       }}
     >
@@ -108,6 +111,15 @@ export function SearchableOptionCombobox({
           name={name}
           aria-invalid={isInvalid}
           onBlur={onBlur}
+          onFocus={() => {
+            if (suppressOpenOnFocusRef.current) {
+              suppressOpenOnFocusRef.current = false;
+              return;
+            }
+            if (!disabled) {
+              setOpen(true);
+            }
+          }}
           disabled={disabled}
           className={cn(
             'focus-visible:border-ring focus-visible:ring-ring/30 flex h-9 min-h-9 w-full min-w-0 flex-1 cursor-default items-center justify-between gap-2 rounded-4xl border border-transparent bg-transparent px-3 py-0 text-left text-sm font-normal shadow-none focus-visible:ring-3',

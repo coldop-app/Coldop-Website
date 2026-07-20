@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import {
   Field,
   FieldDescription,
@@ -8,12 +9,10 @@ import {
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  SearchableOptionCombobox,
+  filterAndSortOptions,
+  type ComboboxOption,
+} from '@/components/searchable-option-combobox';
 import { BagSizeSelectField, FixedBagSizeLabel } from '@/components/bag-quantity-size-field';
 import { Button } from '@/components/ui/button';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
@@ -35,7 +34,6 @@ import {
 import type { FarmerStorageLink } from '@/features/people/types';
 import { formatInr } from '@/features/finances/shared/format-currency';
 import { numericInputProps, normalizeUppercase, parseOptionalNumber } from '@/lib/form-utils';
-import { cn } from '@/lib/utils';
 import { Copy, Plus, Trash2 } from 'lucide-react';
 import * as z from 'zod';
 
@@ -48,7 +46,63 @@ const compactInputClass =
 
 const locationInputClass = `${compactInputClass} text-center uppercase`;
 
-const locationSelectTriggerClass = 'h-8 w-full px-1.5 text-xs sm:h-9 sm:px-3 sm:text-sm';
+function toComboboxOptions(values: string[]): ComboboxOption[] {
+  return values.map((value) => ({ id: value, label: value }));
+}
+
+type LocationOptionComboboxProps = {
+  id: string;
+  name: string;
+  value: string;
+  onValueChange: (value: string) => void;
+  onBlur: () => void;
+  isInvalid: boolean;
+  optionValues: string[];
+  placeholder: string;
+  popupSearchPlaceholder: string;
+  emptyMessage: string;
+  disabled?: boolean;
+};
+
+function LocationOptionCombobox({
+  id,
+  name,
+  value,
+  onValueChange,
+  onBlur,
+  isInvalid,
+  optionValues,
+  placeholder,
+  popupSearchPlaceholder,
+  emptyMessage,
+  disabled = false,
+}: LocationOptionComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState('');
+  const options = useMemo(() => toComboboxOptions(optionValues), [optionValues]);
+  const sortedOptions = useMemo(() => filterAndSortOptions(search, options), [search, options]);
+
+  return (
+    <SearchableOptionCombobox
+      id={id}
+      name={name}
+      value={value}
+      onValueChange={onValueChange}
+      onBlur={onBlur}
+      isInvalid={isInvalid}
+      placeholder={placeholder}
+      popupSearchPlaceholder={popupSearchPlaceholder}
+      emptyMessage={emptyMessage}
+      options={options}
+      sortedOptions={sortedOptions}
+      search={search}
+      setSearch={setSearch}
+      open={open}
+      setOpen={setOpen}
+      disabled={disabled}
+    />
+  );
+}
 
 type IncomingQuantitiesSectionProps = {
   form: IncomingFormApi;
@@ -266,8 +320,10 @@ export function IncomingQuantitiesSection({
                                 Chamber ({sizeLabel})
                               </FieldLabel>
                               {useLayoutSelects ? (
-                                <Select
-                                  value={subField.state.value || undefined}
+                                <LocationOptionCombobox
+                                  id={subField.name}
+                                  name={subField.name}
+                                  value={subField.state.value}
                                   onValueChange={(next) => {
                                     subField.handleChange(next);
                                     const floors = getStorageLayoutFloors(storageLayout, next);
@@ -277,24 +333,13 @@ export function IncomingQuantitiesSection({
                                       form.setFieldValue(`quantities[${index}].floor`, '');
                                     }
                                   }}
-                                >
-                                  <SelectTrigger
-                                    id={subField.name}
-                                    name={subField.name}
-                                    className={cn(locationSelectTriggerClass)}
-                                    onBlur={subField.handleBlur}
-                                    aria-invalid={isInvalid}
-                                  >
-                                    <SelectValue placeholder="Ch" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {options.map((option) => (
-                                      <SelectItem key={option} value={option}>
-                                        {option}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                  onBlur={subField.handleBlur}
+                                  isInvalid={isInvalid}
+                                  optionValues={options}
+                                  placeholder="Ch"
+                                  popupSearchPlaceholder="Search chamber..."
+                                  emptyMessage="No chambers found."
+                                />
                               ) : (
                                 <Input
                                   id={subField.name}
@@ -342,28 +387,19 @@ export function IncomingQuantitiesSection({
                                     Floor ({sizeLabel})
                                   </FieldLabel>
                                   {useLayoutSelects ? (
-                                    <Select
-                                      value={subField.state.value || undefined}
+                                    <LocationOptionCombobox
+                                      id={subField.name}
+                                      name={subField.name}
+                                      value={subField.state.value}
                                       onValueChange={subField.handleChange}
+                                      onBlur={subField.handleBlur}
+                                      isInvalid={isInvalid}
+                                      optionValues={floorOptions}
+                                      placeholder="Fl"
+                                      popupSearchPlaceholder="Search floor..."
+                                      emptyMessage="No floors found."
                                       disabled={!selectedChamber}
-                                    >
-                                      <SelectTrigger
-                                        id={subField.name}
-                                        name={subField.name}
-                                        className={cn(locationSelectTriggerClass)}
-                                        onBlur={subField.handleBlur}
-                                        aria-invalid={isInvalid}
-                                      >
-                                        <SelectValue placeholder="Fl" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {floorOptions.map((option) => (
-                                          <SelectItem key={option} value={option}>
-                                            {option}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
+                                    />
                                   ) : (
                                     <Input
                                       id={subField.name}

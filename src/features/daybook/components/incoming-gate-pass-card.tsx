@@ -174,7 +174,7 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
             )}
           </div>
           <CardDescription className="text-xs">
-            {formatDaybookDateTime(entry.createdAt)}
+            {formatDaybookDateTime(entry.date)}
           </CardDescription>
         </div>
 
