@@ -110,11 +110,13 @@ describe('outgoing report variety breakdown helpers', () => {
         variety: 'Atlantic',
         quantity: 20,
         locationLabel: '1/1/A',
+        paltaiLocationLabels: [],
       },
       {
         variety: 'Chipsona',
         quantity: 15,
         locationLabel: '2/1/B',
+        paltaiLocationLabels: [],
       },
     ]);
   });

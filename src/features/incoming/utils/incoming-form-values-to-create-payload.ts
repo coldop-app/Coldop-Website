@@ -1,6 +1,10 @@
 import type { IncomingBagSize } from '@/features/daybook/types';
 import type { IncomingQuantityRow } from '@/features/incoming/schemas/incoming-quantities-schema';
 import { hasCompleteIncomingQuantityLocation } from '@/features/incoming/schemas/incoming-quantities-schema';
+import {
+  mapFormPaltaiLocationsToApi,
+  normalizePaltaiLocations,
+} from '@/features/incoming/utils/paltai-location';
 import type {
   CreateIncomingGatePassBagSize,
   CreateIncomingGatePassPayload,
@@ -14,33 +18,14 @@ export function getActiveIncomingQuantityRows(
   return quantities.filter((row) => (row.qty ?? 0) > 0 && hasCompleteIncomingQuantityLocation(row));
 }
 
-function bagLocationKey(name: string, chamber: string, floor: string, row: string) {
-  return `${name}|${chamber.trim()}|${floor.trim()}|${row.trim()}`;
-}
-
 export function mapQuantityRowsToBagSizes(
   rows: IncomingQuantityRow[],
   originalBags: IncomingBagSize[] = [],
 ): CreateIncomingGatePassBagSize[] {
-  const paltaiByLocation = new Map<string, IncomingBagSize['paltaiLocation']>();
-
-  for (const bag of originalBags) {
-    if (!bag.paltaiLocation) continue;
-    const key = bagLocationKey(
-      bag.name,
-      bag.location.chamber,
-      bag.location.floor,
-      bag.location.row,
-    );
-    paltaiByLocation.set(key, bag.paltaiLocation);
-  }
-
   return rows.map((row) => {
     const chamber = row.chamber.trim();
     const floor = row.floor.trim();
     const rowValue = row.row.trim();
-    const key = bagLocationKey(row.size, chamber, floor, rowValue);
-    const paltaiLocation = paltaiByLocation.get(key);
 
     const bagSize: CreateIncomingGatePassBagSize = {
       name: row.size,
@@ -53,8 +38,23 @@ export function mapQuantityRowsToBagSizes(
       },
     };
 
-    if (paltaiLocation) {
+    const paltaiLocation = mapFormPaltaiLocationsToApi(row.paltaiLocations);
+    if (paltaiLocation.length > 0) {
       bagSize.paltaiLocation = paltaiLocation;
+      return bagSize;
+    }
+
+    const originalBag = originalBags.find(
+      (bag) =>
+        bag.name === row.size &&
+        bag.location.chamber.trim() === chamber &&
+        bag.location.floor.trim() === floor &&
+        bag.location.row.trim() === rowValue,
+    );
+    const hadOriginalPaltai = normalizePaltaiLocations(originalBag?.paltaiLocation).length > 0;
+
+    if (hadOriginalPaltai && row.paltaiLocations.length === 0) {
+      bagSize.paltaiLocation = [];
     }
 
     return bagSize;

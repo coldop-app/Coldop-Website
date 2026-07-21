@@ -10,6 +10,7 @@ import {
   formatDaybookDate,
   formatManualParchi,
   formatQuantity,
+  formatSizeQuantityLocationSubtext,
 } from '@/features/daybook/utils/format';
 import {
   getFarmerReportRowBagTotal,
@@ -119,7 +120,7 @@ function SizeQuantityCell({ row, size }: { row: FarmerReportTableRow; size: stri
         {lines.map((line, index) => (
           <div key={`${line.locationLabel}-${index}`} className="flex flex-col items-end gap-0.5">
             <span className="tabular-nums">{formatQuantity(line.quantity)}</span>
-            <span className="text-muted-foreground text-xs">({line.locationLabel})</span>
+            <LocationLabels line={line} />
           </div>
         ))}
       </div>
@@ -141,7 +142,7 @@ function SizeQuantityCell({ row, size }: { row: FarmerReportTableRow; size: stri
             className="flex flex-col items-end gap-0.5"
           >
             <span className="tabular-nums">{formatQuantity(line.quantity)}</span>
-            <span className="text-muted-foreground text-xs">({line.locationLabel})</span>
+            <LocationLabels line={line} />
             <span className="text-muted-foreground text-xs">({line.variety})</span>
           </div>
         ))}
@@ -160,7 +161,7 @@ function SizeQuantityCell({ row, size }: { row: FarmerReportTableRow; size: stri
       {lines.map((line, index) => (
         <div key={`${line.locationLabel}-${index}`} className="flex flex-col items-end gap-0.5">
           <span className="tabular-nums">{formatQuantity(line.quantity)}</span>
-          <span className="text-muted-foreground text-xs">({line.locationLabel})</span>
+          <LocationLabels line={line} />
         </div>
       ))}
     </div>
@@ -211,6 +212,27 @@ function VarietyCell({ row }: { row: FarmerReportTableRow }) {
 }
 
 const MemoizedSizeQuantityCell = memo(SizeQuantityCell);
+
+function LocationLabels({
+  line,
+}: {
+  line: { locationLabel: string; paltaiLocationLabels?: string[] };
+}) {
+  const subtext = formatSizeQuantityLocationSubtext({
+    locationLabel: line.locationLabel,
+    paltaiLocationLabels: line.paltaiLocationLabels ?? [],
+  });
+
+  if (!subtext) return null;
+
+  return (
+    <div className="text-muted-foreground flex flex-col items-end gap-0.5 text-xs whitespace-pre-line">
+      {subtext.split('\n').map((part, index) => (
+        <span key={`${part}-${index}`}>{part}</span>
+      ))}
+    </div>
+  );
+}
 
 function isOpeningBalanceRow(row: FarmerReportTableRow): boolean {
   return row.kind === 'opening-balance';

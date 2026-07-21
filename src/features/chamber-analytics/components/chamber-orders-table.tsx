@@ -22,9 +22,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDaybookDate, formatQuantity, locationKey } from '@/features/daybook/utils/format';
+import { formatPaltaiLocationsList } from '@/features/incoming/utils/paltai-location';
 import { cn } from '@/lib/utils';
 
 import type { FilteredChamberOrder } from '../utils/filter-chamber-orders';
+import { getEffectiveAnalyticsBagLocation } from '../utils/get-effective-analytics-location';
 
 type ChamberOrdersTableProps = {
   orders: FilteredChamberOrder[];
@@ -194,7 +196,9 @@ function bagSizeLabel(order: FilteredChamberOrder) {
 }
 
 function bagRowLabel(order: FilteredChamberOrder) {
-  return order.bagSizes.map((bag) => bag.location.row || '—').join(', ');
+  return order.bagSizes
+    .map((bag) => getEffectiveAnalyticsBagLocation(bag).row || '—')
+    .join(', ');
 }
 
 const columns: ColumnDef<FilteredChamberOrder, unknown>[] = [
@@ -262,14 +266,20 @@ const columns: ColumnDef<FilteredChamberOrder, unknown>[] = [
     ...sortText,
     cell: ({ row }) => (
       <ul className="space-y-1">
-        {row.original.bagSizes.map((bag) => (
-          <li
-            key={`row-${bag.name}-${locationKey(bag.location)}`}
-            className="text-foreground tabular-nums"
-          >
-            {bag.location.row || '—'}
-          </li>
-        ))}
+        {row.original.bagSizes.map((bag) => {
+          const effectiveLocation = getEffectiveAnalyticsBagLocation(bag);
+          const paltaiHistory = formatPaltaiLocationsList(bag.paltaiLocation);
+
+          return (
+            <li
+              key={`row-${bag.name}-${locationKey(bag.location)}`}
+              className="text-foreground tabular-nums"
+              title={paltaiHistory ? `Paltai: ${paltaiHistory}` : undefined}
+            >
+              {effectiveLocation.row || '—'}
+            </li>
+          );
+        })}
       </ul>
     ),
   },

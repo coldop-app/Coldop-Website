@@ -1,5 +1,6 @@
 import type { LocationAnalyticsOrder } from '../types';
 import type { LocationAnalyticsQuantityTab } from '../types';
+import { getEffectiveAnalyticsBagLocation } from './get-effective-analytics-location';
 import { getBagQuantity } from './get-location-quantity';
 
 export type FilteredChamberOrder = {
@@ -19,7 +20,9 @@ export function filterChamberOrders(
     const matchingBags =
       floor === 'all'
         ? order.bagSizes
-        : order.bagSizes.filter((bag) => bag.location.floor === floor);
+        : order.bagSizes.filter(
+            (bag) => getEffectiveAnalyticsBagLocation(bag).floor === floor,
+          );
 
     if (matchingBags.length === 0) continue;
 

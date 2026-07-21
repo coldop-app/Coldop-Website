@@ -38,6 +38,8 @@ import {
   formatLocation,
   formatManualParchi,
   formatQuantity,
+  formatSizeQuantityLocationSubtext,
+  getSizeQuantityLocationLabels,
   sumBagQuantities,
 } from '@/features/daybook/utils/format';
 import {
@@ -300,9 +302,24 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
                               {formatQuantity(bag.currentQuantity)}
                             </td>
                             <td className="text-muted-foreground px-3 py-2.5">
-                              <span className="inline-flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5 shrink-0" />
-                                {formatLocation(bag.location)}
+                              <span className="inline-flex items-start gap-1">
+                                <MapPin className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                                <span className="whitespace-pre-line">
+                                  {formatLocation(bag.location)}
+                                  {(() => {
+                                    const subtext = formatSizeQuantityLocationSubtext(
+                                      getSizeQuantityLocationLabels(
+                                        bag.location,
+                                        bag.paltaiLocation,
+                                      ),
+                                    );
+                                    if (!subtext) return '';
+                                    const paltaiLine = subtext
+                                      .split('\n')
+                                      .find((line) => line.startsWith('Paltai:'));
+                                    return paltaiLine ? `\n${paltaiLine}` : '';
+                                  })()}
+                                </span>
                               </span>
                             </td>
                           </tr>

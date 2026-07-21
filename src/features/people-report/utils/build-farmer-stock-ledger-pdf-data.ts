@@ -7,6 +7,7 @@ import {
   formatDaybookDate,
   formatManualParchi,
   formatQuantity,
+  formatSizeQuantityLocationSubtext,
 } from '@/features/daybook/utils/format';
 import type { FarmerGatePassSummaries } from '@/features/people/api/use-farmer-gate-passes';
 import type { PersonDetailSearch } from '@/features/people/search';
@@ -184,11 +185,12 @@ function mapOutgoingSizeValueForEntry(
 
     if (lines.length === 1) {
       const line = lines[0]!;
-      if (line.locationLabel) {
+      const subtext = formatSizeQuantityLocationSubtext(line);
+      if (subtext) {
         return {
           type: 'stacked',
           main: formatQuantity(line.quantity),
-          sub: `(${line.locationLabel})`,
+          sub: subtext,
         };
       }
 
@@ -197,7 +199,12 @@ function mapOutgoingSizeValueForEntry(
 
     const total = lines.reduce((sum, line) => sum + line.quantity, 0);
     const locations = lines
-      .map((line) => `${formatQuantity(line.quantity)} (${line.locationLabel})`)
+      .map((line) => {
+        const subtext = formatSizeQuantityLocationSubtext(line);
+        return subtext
+          ? `${formatQuantity(line.quantity)} ${subtext.replaceAll('\n', ', ')}`
+          : `${formatQuantity(line.quantity)}`;
+      })
       .join(', ');
 
     return {
@@ -277,11 +284,12 @@ function mapSizeValueForEntry(row: FarmerReportTableRow, size: string): PdfLedge
 
   if (lines.length === 1) {
     const line = lines[0]!;
-    if (line.locationLabel) {
+    const subtext = formatSizeQuantityLocationSubtext(line);
+    if (subtext) {
       return {
         type: 'stacked',
         main: formatQuantity(line.quantity),
-        sub: `(${line.locationLabel})`,
+        sub: subtext,
       };
     }
 
@@ -290,7 +298,12 @@ function mapSizeValueForEntry(row: FarmerReportTableRow, size: string): PdfLedge
 
   const total = lines.reduce((sum, line) => sum + line.quantity, 0);
   const locations = lines
-    .map((line) => `${formatQuantity(line.quantity)} (${line.locationLabel})`)
+    .map((line) => {
+      const subtext = formatSizeQuantityLocationSubtext(line);
+      return subtext
+        ? `${formatQuantity(line.quantity)} ${subtext.replaceAll('\n', ', ')}`
+        : `${formatQuantity(line.quantity)}`;
+    })
     .join(', ');
 
   return {

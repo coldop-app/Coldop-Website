@@ -33,6 +33,35 @@ const validQuantities = [
     chamber: 'A',
     floor: '1',
     row: '1',
+    paltaiLocations: [],
+  },
+];
+
+const validQuantitiesWithPaltai = [
+  {
+    ...validQuantities[0],
+    paltaiLocations: [
+      {
+        id: 'paltai-1',
+        chamber: 'B',
+        floor: '2',
+        row: '4',
+      },
+    ],
+  },
+];
+
+const invalidPartialPaltaiQuantities = [
+  {
+    ...validQuantities[0],
+    paltaiLocations: [
+      {
+        id: 'paltai-1',
+        chamber: 'B',
+        floor: '',
+        row: '',
+      },
+    ],
   },
 ];
 
@@ -66,13 +95,29 @@ vi.mock('@/features/incoming/api/use-update-incoming-gate-pass', () => ({
 
 vi.mock('@/features/incoming/forms/incoming-quantities-section', () => ({
   IncomingQuantitiesSection: ({ form }: { form: IncomingFormApi }) => (
-    <button
-      type="button"
-      data-testid="set-incoming-quantities"
-      onClick={() => form.setFieldValue('quantities', validQuantities)}
-    >
-      Set quantities
-    </button>
+    <div>
+      <button
+        type="button"
+        data-testid="set-incoming-quantities"
+        onClick={() => form.setFieldValue('quantities', validQuantities)}
+      >
+        Set quantities
+      </button>
+      <button
+        type="button"
+        data-testid="set-incoming-quantities-with-paltai"
+        onClick={() => form.setFieldValue('quantities', validQuantitiesWithPaltai)}
+      >
+        Set quantities with paltai
+      </button>
+      <button
+        type="button"
+        data-testid="set-incoming-quantities-with-partial-paltai"
+        onClick={() => form.setFieldValue('quantities', invalidPartialPaltaiQuantities)}
+      >
+        Set quantities with partial paltai
+      </button>
+    </div>
   ),
 }));
 
@@ -219,5 +264,43 @@ describe('IncomingForm optional field clearing', () => {
         payload: { remarks: '' },
       });
     });
+  });
+
+  it('includes paltai location in the update payload when edited', async () => {
+    renderEditForm();
+
+    await user.click(screen.getByTestId('set-incoming-quantities-with-paltai'));
+    await user.click(screen.getByRole('button', { name: /review changes/i }));
+    await screen.findByTestId('incoming-summary');
+    await user.click(screen.getByRole('button', { name: /confirm/i }));
+
+    await waitFor(() => {
+      expect(mockUpdateIncomingGatePass).toHaveBeenCalledWith({
+        id: GATE_PASS_ID,
+        payload: expect.objectContaining({
+          bagSizes: expect.arrayContaining([
+            expect.objectContaining({
+              paltaiLocation: [
+                {
+                  chamber: 'B',
+                  floor: '2',
+                  row: '4',
+                },
+              ],
+            }),
+          ]),
+        }),
+      });
+    });
+  });
+
+  it('blocks submit when paltai location is partially filled', async () => {
+    renderEditForm();
+
+    await user.click(screen.getByTestId('set-incoming-quantities-with-partial-paltai'));
+    await user.click(screen.getByRole('button', { name: /review changes/i }));
+
+    expect(screen.queryByTestId('incoming-summary')).not.toBeInTheDocument();
+    expect(mockUpdateIncomingGatePass).not.toHaveBeenCalled();
   });
 });

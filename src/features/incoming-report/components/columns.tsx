@@ -1,7 +1,9 @@
 import type { AggregationFn, ColumnDef, SortingFn } from '@tanstack/react-table';
 
 import type { IncomingBagSize } from '@/features/daybook/types';
+import { formatDashLocation, hasDaybookLocation } from '@/features/daybook/utils/format';
 import type { IncomingGatePassReportRecord } from '@/features/incoming-report/api/types';
+import { normalizePaltaiLocations } from '@/features/incoming/utils/paltai-location';
 
 const numberFormatter = new Intl.NumberFormat('en-IN');
 
@@ -99,8 +101,13 @@ export function getIncomingReportTotalBags(
   return quantityMode === 'current' ? row.currentTotal : row.initialTotal;
 }
 
-const formatLocation = (location: IncomingBagSize['location']) =>
-  [location.chamber, location.floor, location.row].filter(Boolean).join('-');
+const formatLocation = (location: IncomingBagSize['location']) => formatDashLocation(location);
+
+const formatPaltaiLocationsForReport = (paltaiLocation?: IncomingBagSize['paltaiLocation']) => {
+  const locations = normalizePaltaiLocations(paltaiLocation);
+  if (locations.length === 0) return null;
+  return locations.map(formatLocation).join(' → ');
+};
 
 const getBagSizeQuantity = (
   row: IncomingGatePassReportRecord,
@@ -116,9 +123,8 @@ const renderBagSizeValue = (
   quantityMode: IncomingQuantityMode,
   showLocation: boolean,
 ) => {
-  const location = showLocation ? formatLocation(bag.location) : null;
-  const paltaiLocation =
-    showLocation && bag.paltaiLocation ? formatLocation(bag.paltaiLocation) : null;
+  const location = showLocation && hasDaybookLocation(bag.location) ? formatLocation(bag.location) : null;
+  const paltaiLocation = showLocation ? formatPaltaiLocationsForReport(bag.paltaiLocation) : null;
   const quantity = getBagQuantity(bag, quantityMode);
 
   return (

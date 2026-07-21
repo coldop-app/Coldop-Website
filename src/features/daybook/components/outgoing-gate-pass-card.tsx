@@ -43,15 +43,19 @@ import type {
   IncomingGatePassSnapshot,
   OutgoingDaybookEntry,
   OutgoingOrderDetail,
+  OutgoingSnapshotBagSize,
 } from '@/features/daybook/types';
 import {
   formatDaybookDateTime,
   formatLocation,
   formatManualParchi,
   formatQuantity,
+  formatSizeQuantityLocationSubtext,
+  getSizeQuantityLocationLabels,
   locationKey,
   sumBagQuantities,
 } from '@/features/daybook/utils/format';
+import { bagMatchesLocation } from '@/features/incoming/utils/paltai-location';
 import {
   isOutgoingTransferType,
   TransferGatePassBadge,
@@ -85,15 +89,60 @@ type BreakdownRow = {
   issued: number;
 };
 
+function snapshotBagMatchesOrderLine(
+  bag: OutgoingSnapshotBagSize,
+  orderLine: OutgoingOrderDetail,
+): boolean {
+  return bagMatchesLocation(bag, orderLine.location) && bag.name === orderLine.size;
+}
+
+function findSnapshotBagForOrderLine(
+  snapshots: IncomingGatePassSnapshot[],
+  orderLine: OutgoingOrderDetail,
+): OutgoingSnapshotBagSize | undefined {
+  for (const snapshot of snapshots) {
+    const matchedBag = snapshot.bagSizes.find((bag) => snapshotBagMatchesOrderLine(bag, orderLine));
+    if (matchedBag) return matchedBag;
+  }
+
+  return undefined;
+}
+
 function findSnapshotForOrderLine(
   snapshots: IncomingGatePassSnapshot[],
   orderLine: OutgoingOrderDetail,
 ): IncomingGatePassSnapshot | undefined {
-  const key = `${orderLine.size}\u001f${locationKey(orderLine.location)}`;
-
   return snapshots.find((snapshot) =>
-    snapshot.bagSizes.some((bag) => `${bag.name}\u001f${locationKey(bag.location)}` === key),
+    snapshot.bagSizes.some((bag) => snapshotBagMatchesOrderLine(bag, orderLine)),
   );
+}
+
+function formatOutgoingOrderLineLocation(
+  orderLine: OutgoingOrderDetail,
+  matchedBag?: OutgoingSnapshotBagSize,
+): string {
+  const issuedLocation = formatLocation(orderLine.location);
+
+  if (!matchedBag?.paltaiLocation?.length) {
+    return issuedLocation;
+  }
+
+  const orderKey = locationKey(orderLine.location);
+  const bagPrimaryKey = locationKey(matchedBag.location);
+  const labels = getSizeQuantityLocationLabels(matchedBag.location, matchedBag.paltaiLocation);
+  const paltaiSubtext = formatSizeQuantityLocationSubtext(labels)
+    ?.split('\n')
+    .find((line) => line.startsWith('Paltai:'));
+
+  if (!paltaiSubtext) {
+    return issuedLocation;
+  }
+
+  if (orderKey === bagPrimaryKey) {
+    return `${issuedLocation}\n${paltaiSubtext}`;
+  }
+
+  return issuedLocation;
 }
 
 function buildBreakdownRows(entry: OutgoingDaybookEntry): BreakdownRow[] {
@@ -102,12 +151,13 @@ function buildBreakdownRows(entry: OutgoingDaybookEntry): BreakdownRow[] {
 
   return orderDetails.map((orderLine, index) => {
     const snapshot = findSnapshotForOrderLine(snapshots, orderLine);
+    const matchedBag = findSnapshotBagForOrderLine(snapshots, orderLine);
 
     return {
       key: `${orderLine.size}-${locationKey(orderLine.location)}-${index}`,
       size: orderLine.size,
       variety: snapshot?.variety ?? '—',
-      location: formatLocation(orderLine.location),
+      location: formatOutgoingOrderLineLocation(orderLine, matchedBag),
       refGatePassNo: snapshot?.gatePassNo ?? null,
       available: orderLine.quantityAvailable,
       issued: orderLine.quantityIssued,
@@ -153,7 +203,9 @@ function OutgoingDetailedBreakdown({ rows }: OutgoingDetailedBreakdownProps) {
               >
                 <td className="text-foreground px-3 py-2.5 font-medium">{row.size}</td>
                 <td className="text-foreground px-3 py-2.5">{row.variety}</td>
-                <td className="text-foreground px-3 py-2.5 font-mono text-sm">{row.location}</td>
+                <td className="text-foreground px-3 py-2.5 font-mono text-sm whitespace-pre-line">
+                  {row.location}
+                </td>
                 <td className="px-3 py-2.5">
                   {row.refGatePassNo !== null ? (
                     <span className="text-foreground inline-flex items-center gap-1.5 font-mono text-sm tabular-nums">

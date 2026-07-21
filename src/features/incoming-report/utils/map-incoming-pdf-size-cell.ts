@@ -2,11 +2,13 @@ import type { IncomingBagSize } from '@/features/daybook/types';
 import {
   formatCompactLocation,
   formatQuantity,
+  hasDaybookLocation,
   locationKey,
 } from '@/features/daybook/utils/format';
 import type { IncomingGatePassReportRecord } from '@/features/incoming-report/api/types';
 import type { IncomingQuantityMode } from '@/features/incoming-report/components/columns';
 import type { GatePassReportPdfCell } from '@/lib/gate-pass-report-pdf/types';
+import { normalizePaltaiLocations } from '@/features/incoming/utils/paltai-location';
 
 type LocationLine = {
   quantity: number;
@@ -15,7 +17,13 @@ type LocationLine = {
 };
 
 function hasLocation(location: IncomingBagSize['location']): boolean {
-  return Boolean(location.chamber || location.floor || location.row);
+  return hasDaybookLocation(location);
+}
+
+function formatPaltaiLabel(paltaiLocation?: IncomingBagSize['paltaiLocation']): string | null {
+  const locations = normalizePaltaiLocations(paltaiLocation);
+  if (locations.length === 0) return null;
+  return locations.map(formatCompactLocation).join(' → ');
 }
 
 function getBagQuantity(bag: IncomingBagSize, quantityMode: IncomingQuantityMode): number {
@@ -32,10 +40,7 @@ function buildMergedLocationLines(
     const qty = getBagQuantity(bag, quantityMode);
     const key = locationKey(bag.location);
     const locationLabel = hasLocation(bag.location) ? formatCompactLocation(bag.location) : null;
-    const paltaiLabel =
-      bag.paltaiLocation && hasLocation(bag.paltaiLocation)
-        ? formatCompactLocation(bag.paltaiLocation)
-        : null;
+    const paltaiLabel = formatPaltaiLabel(bag.paltaiLocation);
 
     const existing = merged.get(key);
 

@@ -84,7 +84,7 @@ describe('mapIncomingSizeCellForPdf', () => {
           initialQuantity: 500,
           currentQuantity: 500,
           location: { chamber: 'C1', floor: 'F2', row: 'R3' },
-          paltaiLocation: { chamber: 'P1', floor: 'P2', row: 'P3' },
+          paltaiLocation: [{ chamber: 'P1', floor: 'P2', row: 'P3' }],
         },
       ],
     });

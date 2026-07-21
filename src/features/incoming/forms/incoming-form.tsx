@@ -293,6 +293,7 @@ export function IncomingForm({
   const [stockFilterSearch, setStockFilterSearch] = useState('');
   const [stockFilterComboboxOpen, setStockFilterComboboxOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [highlightValidationErrors, setHighlightValidationErrors] = useState(false);
 
   const sortedFarmers = useMemo(
     () => filterAndSortOptions(farmerSearch, farmerOptions),
@@ -361,9 +362,10 @@ export function IncomingForm({
   const handleOpenReview = useCallback(() => {
     const result = formSchema.safeParse(form.state.values);
     if (!result.success) {
-      void form.handleSubmit({ submitAction: 'review' });
+      setHighlightValidationErrors(true);
       return;
     }
+    setHighlightValidationErrors(false);
     setReviewOpen(true);
   }, [form, formSchema]);
 
@@ -374,6 +376,7 @@ export function IncomingForm({
   }, [form]);
 
   const handleReset = useCallback(() => {
+    setHighlightValidationErrors(false);
     if (mode === 'edit' && editDefaultValues) {
       form.reset(editDefaultValues);
       setSelectedCommodityName(initialSelectedCommodity);
@@ -743,8 +746,10 @@ export function IncomingForm({
 
             <IncomingQuantitiesSection
               form={form}
+              mode={mode}
               bagSizes={bagSizes}
               farmerStorageLinks={farmerStorageLinks}
+              highlightValidationErrors={highlightValidationErrors}
             />
 
             <FieldSeparator />
@@ -822,7 +827,10 @@ export function IncomingForm({
                 parsed.success ? getFarmerCostPerBag(parsed.data.farmerIncomingLinkId) : undefined
               }
               showCommodity={showCommoditySelect}
-              onBack={() => setReviewOpen(false)}
+              onBack={() => {
+                setReviewOpen(false);
+                setHighlightValidationErrors(false);
+              }}
               onSubmit={handleConfirmSubmit}
               canSubmit={canSubmit && gatePassNoReady}
               isSubmitting={isSubmitting}

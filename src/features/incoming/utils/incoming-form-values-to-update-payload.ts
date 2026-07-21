@@ -1,6 +1,7 @@
 import type { IncomingBagSize } from '@/features/daybook/types';
 import type { UpdateIncomingGatePassPayload } from '@/features/incoming/types/api';
 import type { IncomingFormValues } from '@/features/incoming/types';
+import { normalizePaltaiLocations } from '@/features/incoming/utils/paltai-location';
 import { normalizeUppercase } from '@/lib/form-utils';
 import {
   getActiveIncomingQuantityRows,
@@ -27,13 +28,13 @@ function normalizeBagSizesForCompare(bags: IncomingBagSize[]) {
       floor: bag.location.floor.trim(),
       row: bag.location.row.trim(),
     },
-    ...(bag.paltaiLocation
+    ...(normalizePaltaiLocations(bag.paltaiLocation).length > 0
       ? {
-          paltaiLocation: {
-            chamber: bag.paltaiLocation.chamber.trim(),
-            floor: bag.paltaiLocation.floor.trim(),
-            row: bag.paltaiLocation.row.trim(),
-          },
+          paltaiLocation: normalizePaltaiLocations(bag.paltaiLocation).map((location) => ({
+            chamber: location.chamber.trim(),
+            floor: location.floor.trim(),
+            row: location.row.trim(),
+          })),
         }
       : {}),
   }));

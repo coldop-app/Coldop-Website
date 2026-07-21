@@ -33,6 +33,48 @@ export function formatCompactLocation(location: DaybookLocation): string {
   return `${location.chamber}/${location.floor}/${location.row}`;
 }
 
+export function hasDaybookLocation(location?: DaybookLocation | null): boolean {
+  if (!location) return false;
+  return Boolean(location.chamber.trim() || location.floor.trim() || location.row.trim());
+}
+
+export function formatDashLocation(location: DaybookLocation): string {
+  return [location.chamber, location.floor, location.row].filter(Boolean).join('-');
+}
+
+export type SizeQuantityLocationLabels = {
+  locationLabel: string;
+  paltaiLocationLabels: string[];
+};
+
+export function getSizeQuantityLocationLabels(
+  location: DaybookLocation,
+  paltaiLocation?: DaybookLocation[] | null,
+): SizeQuantityLocationLabels {
+  const paltaiLocations = (paltaiLocation ?? []).filter((entry) => hasDaybookLocation(entry));
+
+  return {
+    locationLabel: hasDaybookLocation(location) ? formatCompactLocation(location) : '',
+    paltaiLocationLabels: paltaiLocations.map(formatCompactLocation),
+  };
+}
+
+export function formatSizeQuantityLocationSubtext(
+  labels: Pick<SizeQuantityLocationLabels, 'locationLabel' | 'paltaiLocationLabels'>,
+): string | null {
+  const parts: string[] = [];
+
+  if (labels.locationLabel) {
+    parts.push(`(${labels.locationLabel})`);
+  }
+
+  if (labels.paltaiLocationLabels.length > 0) {
+    parts.push(`Paltai: (${labels.paltaiLocationLabels.join(' → ')})`);
+  }
+
+  return parts.length > 0 ? parts.join('\n') : null;
+}
+
 export function formatManualParchi(value: string | number | null | undefined): string {
   if (value == null || value === '') return '—';
   return String(value);

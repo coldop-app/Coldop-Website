@@ -2,6 +2,7 @@ import type { DaybookLocation, IncomingGatePassSnapshot } from '@/features/daybo
 import {
   formatCompactLocation,
   formatQuantity,
+  getSizeQuantityLocationLabels,
   locationKey,
 } from '@/features/daybook/utils/format';
 import type {
@@ -9,6 +10,7 @@ import type {
   OutgoingReportOrderDetail,
 } from '@/features/outgoing-report/api/types';
 import type { OutgoingQuantityMode } from '@/features/outgoing-report/components/columns';
+import { bagMatchesLocation } from '@/features/incoming/utils/paltai-location';
 
 export type OutgoingReportVarietyBreakdownLine = {
   variety: string;
@@ -19,7 +21,24 @@ export type OutgoingReportSizeDetailLine = {
   variety: string;
   quantity: number;
   locationLabel: string | null;
+  paltaiLocationLabels?: string[];
 };
+
+function findSnapshotBagForOrderLine(
+  snapshots: IncomingGatePassSnapshot[],
+  orderLine: OutgoingReportOrderDetail,
+) {
+  if (!orderLine.location) return undefined;
+
+  for (const snapshot of snapshots) {
+    const matchedBag = snapshot.bagSizes.find(
+      (bag) => bagMatchesLocation(bag, orderLine.location!) && bag.name === orderLine.size,
+    );
+    if (matchedBag) return matchedBag;
+  }
+
+  return undefined;
+}
 
 function findSnapshotForOrderLine(
   snapshots: IncomingGatePassSnapshot[],
@@ -27,10 +46,10 @@ function findSnapshotForOrderLine(
 ): IncomingGatePassSnapshot | undefined {
   if (!orderLine.location) return undefined;
 
-  const key = `${orderLine.size}\u001f${locationKey(orderLine.location)}`;
-
   return snapshots.find((snapshot) =>
-    snapshot.bagSizes.some((bag) => `${bag.name}\u001f${locationKey(bag.location)}` === key),
+    snapshot.bagSizes.some(
+      (bag) => bagMatchesLocation(bag, orderLine.location!) && bag.name === orderLine.size,
+    ),
   );
 }
 
@@ -198,6 +217,11 @@ export function getOutgoingReportSizeQuantityDetailLines(
     const locationKeyValue = orderLine.location
       ? locationKey(orderLine.location)
       : '__no_location__';
+    const matchedBag = findSnapshotBagForOrderLine(row.incomingGatePassSnapshots ?? [], orderLine);
+    const paltaiLocationLabels = matchedBag
+      ? getSizeQuantityLocationLabels(matchedBag.location, matchedBag.paltaiLocation)
+          .paltaiLocationLabels
+      : [];
 
     const varietyLocations =
       byVariety.get(variety) ?? new Map<string, OutgoingReportSizeDetailLine>();
@@ -206,11 +230,18 @@ export function getOutgoingReportSizeQuantityDetailLines(
 
     if (existing) {
       existing.quantity += quantity;
+      if (
+        (existing.paltaiLocationLabels?.length ?? 0) === 0 &&
+        paltaiLocationLabels.length > 0
+      ) {
+        existing.paltaiLocationLabels = paltaiLocationLabels;
+      }
     } else {
       varietyLocations.set(locationKeyValue, {
         variety,
         quantity,
         locationLabel,
+        paltaiLocationLabels,
       });
     }
 
@@ -243,8 +274,13 @@ export function formatOutgoingReportVarietyBreakdownForExport(
 export function formatOutgoingReportSizeDetailSubForExport(
   line: OutgoingReportSizeDetailLine,
 ): string {
+  const paltai =
+    line.paltaiLocationLabels && line.paltaiLocationLabels.length > 0
+      ? `, Paltai: ${line.paltaiLocationLabels.join(' → ')}`
+      : '';
+
   if (line.locationLabel) {
-    return `(${line.locationLabel}, ${line.variety})`;
+    return `(${line.locationLabel}${paltai}, ${line.variety})`;
   }
 
   return `(${line.variety})`;
@@ -255,9 +291,13 @@ export function formatOutgoingReportSizeDetailSegmentForExport(
   line: OutgoingReportSizeDetailLine,
 ): string {
   const quantity = formatQuantity(line.quantity);
+  const paltai =
+    line.paltaiLocationLabels && line.paltaiLocationLabels.length > 0
+      ? `, Paltai: ${line.paltaiLocationLabels.join(' → ')}`
+      : '';
 
   if (line.locationLabel) {
-    return `${quantity} (${line.locationLabel}, ${line.variety})`;
+    return `${quantity} (${line.locationLabel}${paltai}, ${line.variety})`;
   }
 
   return `${quantity} (${line.variety})`;

@@ -112,6 +112,8 @@ function formatLocationCell(value: string) {
   return trimmed.length > 0 ? trimmed : '—';
 }
 
+import { formatPaltaiLocationsList } from '@/features/incoming/utils/paltai-location';
+
 function IncomingReviewSummary({
   values,
   farmerLabel,
@@ -228,6 +230,7 @@ function IncomingReviewSummary({
                   <th className="text-muted-foreground h-10 px-3 font-medium">Chamber</th>
                   <th className="text-muted-foreground h-10 px-3 font-medium">Floor</th>
                   <th className="text-muted-foreground h-10 px-3 font-medium">Row</th>
+                  <th className="text-muted-foreground h-10 px-3 font-medium">Paltai</th>
                 </tr>
               </thead>
               <tbody>
@@ -248,6 +251,16 @@ function IncomingReviewSummary({
                     </td>
                     <td className="text-muted-foreground px-3 py-2.5 tabular-nums">
                       {formatLocationCell(row.row)}
+                    </td>
+                    <td className="text-muted-foreground px-3 py-2.5 tabular-nums">
+                      {formatPaltaiLocationsList(
+                        row.paltaiLocations.map((entry) => ({
+                          chamber: entry.chamber,
+                          floor: entry.floor,
+                          row: entry.row,
+                        })),
+                        { separator: ' → ' },
+                      ) || '—'}
                     </td>
                   </tr>
                 ))}

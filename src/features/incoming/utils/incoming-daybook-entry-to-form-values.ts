@@ -2,6 +2,7 @@ import type { CommodityPreference } from '@/features/auth/types';
 import type { IncomingDaybookEntry, IncomingBagSize } from '@/features/daybook/types';
 import type { IncomingQuantityRow } from '@/features/incoming/schemas/incoming-form-schema';
 import { resolveBagSizes } from '@/features/incoming/schemas/incoming-quantities-schema';
+import { normalizePaltaiLocations } from '@/features/incoming/utils/paltai-location';
 import type { IncomingFormValues } from '@/features/incoming/types';
 import {
   findCommodityByVariety,
@@ -34,6 +35,12 @@ function bagToQuantityRow(bag: IncomingBagSize, isExtra: boolean): IncomingQuant
     chamber: bag.location.chamber,
     floor: bag.location.floor,
     row: bag.location.row,
+    paltaiLocations: normalizePaltaiLocations(bag.paltaiLocation).map((location) => ({
+      id: crypto.randomUUID(),
+      chamber: location.chamber,
+      floor: location.floor,
+      row: location.row,
+    })),
   };
 }
 
@@ -47,6 +54,7 @@ function emptyQuantityRow(size: string): IncomingQuantityRow {
     chamber: '',
     floor: '',
     row: '',
+    paltaiLocations: [],
   };
 }
 

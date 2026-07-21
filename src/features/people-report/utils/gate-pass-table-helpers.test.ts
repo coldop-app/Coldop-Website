@@ -325,6 +325,32 @@ describe('getGatePassSizeQuantityLines', () => {
       {
         quantity: 100,
         locationLabel: '1/1/A',
+        paltaiLocationLabels: [],
+      },
+    ]);
+  });
+
+  it('includes paltai location on incoming entries when present', () => {
+    const lines = getGatePassSizeQuantityLines(
+      createIncomingPass({
+        bagSizes: [
+          {
+            name: 'Ration',
+            initialQuantity: 100,
+            currentQuantity: 80,
+            location: { chamber: '1', floor: '1', row: 'A' },
+            paltaiLocation: [{ chamber: '2', floor: '2', row: 'B' }],
+          },
+        ],
+      }),
+      'Ration',
+    );
+
+    expect(lines).toEqual([
+      {
+        quantity: 100,
+        locationLabel: '1/1/A',
+        paltaiLocationLabels: ['2/2/B'],
       },
     ]);
   });
@@ -354,6 +380,7 @@ describe('getGatePassSizeQuantityLines', () => {
       {
         quantity: 100,
         locationLabel: '1/1/A',
+        paltaiLocationLabels: [],
       },
     ]);
   });
@@ -365,6 +392,7 @@ describe('getGatePassSizeQuantityLines', () => {
       {
         quantity: 50,
         locationLabel: '1/2/B',
+        paltaiLocationLabels: [],
       },
     ]);
   });
@@ -376,6 +404,7 @@ describe('getGatePassSizeQuantityLines', () => {
       {
         quantity: 30,
         locationLabel: '1/1/A',
+        paltaiLocationLabels: [],
       },
     ]);
   });
@@ -401,12 +430,12 @@ describe('outgoing variety breakdown helpers', () => {
       {
         variety: 'Atlantic',
         quantity: 20,
-        locationLines: [{ quantity: 20, locationLabel: '1/1/A' }],
+        locationLines: [{ quantity: 20, locationLabel: '1/1/A', paltaiLocationLabels: [] }],
       },
       {
         variety: 'Chipsona',
         quantity: 15,
-        locationLines: [{ quantity: 15, locationLabel: '2/1/B' }],
+        locationLines: [{ quantity: 15, locationLabel: '2/1/B', paltaiLocationLabels: [] }],
       },
     ]);
   });
@@ -416,7 +445,7 @@ describe('outgoing variety breakdown helpers', () => {
       {
         variety: 'Chipsona',
         quantity: 10,
-        locationLines: [{ quantity: 10, locationLabel: '2/1/C' }],
+        locationLines: [{ quantity: 10, locationLabel: '2/1/C', paltaiLocationLabels: [] }],
       },
     ]);
   });
@@ -427,11 +456,13 @@ describe('outgoing variety breakdown helpers', () => {
         variety: 'Atlantic',
         quantity: 20,
         locationLabel: '1/1/A',
+        paltaiLocationLabels: [],
       },
       {
         variety: 'Chipsona',
         quantity: 15,
         locationLabel: '2/1/B',
+        paltaiLocationLabels: [],
       },
     ]);
   });
@@ -444,10 +475,10 @@ describe('outgoing variety breakdown helpers', () => {
 
   it('returns location lines for a single variety slice', () => {
     expect(getOutgoingSizeQuantityLinesForVariety(multiVarietyPass, 'Ration', 'Atlantic')).toEqual([
-      { quantity: 20, locationLabel: '1/1/A' },
+      { quantity: 20, locationLabel: '1/1/A', paltaiLocationLabels: [] },
     ]);
     expect(getOutgoingSizeQuantityLinesForVariety(multiVarietyPass, 'Goli', 'Chipsona')).toEqual([
-      { quantity: 10, locationLabel: '2/1/C' },
+      { quantity: 10, locationLabel: '2/1/C', paltaiLocationLabels: [] },
     ]);
   });
 

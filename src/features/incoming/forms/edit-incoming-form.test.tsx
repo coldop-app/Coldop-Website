@@ -134,7 +134,27 @@ describe('EditIncomingForm', () => {
   });
 
   it('renders IncomingForm in edit mode when entry is open and farmers are loaded', () => {
-    const entry = makeIncomingDaybookEntry();
+    const entry = makeIncomingDaybookEntry({
+      bagSizes: [
+        {
+          name: '50kg',
+          initialQuantity: 120,
+          currentQuantity: 120,
+          location: {
+            chamber: 'A',
+            floor: '1',
+            row: '3',
+          },
+          paltaiLocation: [
+            {
+              chamber: 'B',
+              floor: '2',
+              row: '4',
+            },
+          ],
+        },
+      ],
+    });
     mockUseIncomingDaybookEntry.mockReturnValue(entry);
 
     renderWithProviders(<EditIncomingForm gatePassId={GATE_PASS_ID} />);
@@ -153,6 +173,17 @@ describe('EditIncomingForm', () => {
           gatePassNo: entry.gatePassNo,
           farmerIncomingLinkId: FARMER_LINK_ID,
           variety: entry.variety,
+          quantities: expect.arrayContaining([
+            expect.objectContaining({
+              paltaiLocations: [
+                expect.objectContaining({
+                  chamber: 'B',
+                  floor: '2',
+                  row: '4',
+                }),
+              ],
+            }),
+          ]),
         }),
         editBaselineValues: expect.objectContaining({
           gatePassNo: entry.gatePassNo,

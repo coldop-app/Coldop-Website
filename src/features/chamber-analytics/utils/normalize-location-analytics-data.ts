@@ -2,49 +2,58 @@ import {
   NO_CHAMBER,
   NO_FLOOR,
   type LocationAnalyticsChamber,
-  type LocationAnalyticsFarmer,
+  type LocationAnalyticsData,
   type LocationAnalyticsFloor,
   type LocationAnalyticsOrder,
-  type LocationAnalyticsQuantityTab,
 } from '../types';
 import { getEffectiveAnalyticsBagLocation } from './get-effective-analytics-location';
 
-type FloorTotals = {
-  floor: string;
-  initialTotal: number;
-  currentTotal: number;
-};
-
 type ChamberAccum = {
   chamber: string;
-  floors: Map<string, FloorTotals>;
-  orders: LocationAnalyticsOrder[];
+  floors: Map<string, LocationAnalyticsFloor>;
+  orders: Map<string, LocationAnalyticsOrder & { bagSizes: LocationAnalyticsOrder['bagSizes'] }>;
 };
 
 function isSentinelLabel(label: string) {
   return label.startsWith('(');
 }
 
-/**
- * Build location-analytics chamber structures from a single farmer's orders
- * so the By Location utilization UI can be reused for farmer detail.
- */
-export function buildFarmerLocationChambers(
-  farmer: LocationAnalyticsFarmer,
-): LocationAnalyticsChamber[] {
+function collectUniqueOrders(data: LocationAnalyticsData): LocationAnalyticsOrder[] {
+  const orders = new Map<string, LocationAnalyticsOrder>();
+
+  for (const chamber of data.byLocation.chambers) {
+    for (const order of chamber.orders) {
+      orders.set(order._id, order);
+    }
+  }
+
+  for (const farmer of data.byFarmer) {
+    for (const order of farmer.orders) {
+      orders.set(order._id, order);
+    }
+  }
+
+  return [...orders.values()];
+}
+
+/** Rebuild location chambers using latest paltai as effective location when present. */
+export function rebuildLocationAnalyticsByEffectiveLocation(
+  data: LocationAnalyticsData,
+): LocationAnalyticsData {
+  const orders = collectUniqueOrders(data);
   const chambers = new Map<string, ChamberAccum>();
 
   const getChamber = (name: string): ChamberAccum => {
     let chamber = chambers.get(name);
     if (!chamber) {
-      chamber = { chamber: name, floors: new Map(), orders: [] };
+      chamber = { chamber: name, floors: new Map(), orders: new Map() };
       chambers.set(name, chamber);
     }
     return chamber;
   };
 
-  for (const order of farmer.orders) {
-    const bagsByChamber = new Map<string, typeof order.bagSizes>();
+  for (const order of orders) {
+    const bagsByChamber = new Map<string, LocationAnalyticsOrder['bagSizes']>();
 
     for (const bag of order.bagSizes) {
       const effectiveLocation = getEffectiveAnalyticsBagLocation(bag);
@@ -52,10 +61,10 @@ export function buildFarmerLocationChambers(
       const floorName = effectiveLocation.floor.trim() || NO_FLOOR;
 
       const chamber = getChamber(chamberName);
-      const existing = chamber.floors.get(floorName);
-      if (existing) {
-        existing.initialTotal += bag.initialQuantity;
-        existing.currentTotal += bag.currentQuantity;
+      const existingFloor = chamber.floors.get(floorName);
+      if (existingFloor) {
+        existingFloor.initialTotal += bag.initialQuantity;
+        existingFloor.currentTotal += bag.currentQuantity;
       } else {
         chamber.floors.set(floorName, {
           floor: floorName,
@@ -70,16 +79,22 @@ export function buildFarmerLocationChambers(
     }
 
     for (const [chamberName, bagSizes] of bagsByChamber) {
-      getChamber(chamberName).orders.push({
-        ...order,
-        bagSizes,
-      });
+      const chamber = getChamber(chamberName);
+      const existingOrder = chamber.orders.get(order._id);
+      if (existingOrder) {
+        existingOrder.bagSizes.push(...bagSizes);
+      } else {
+        chamber.orders.set(order._id, {
+          ...order,
+          bagSizes: [...bagSizes],
+        });
+      }
     }
   }
 
-  return [...chambers.values()]
+  const rebuiltChambers: LocationAnalyticsChamber[] = [...chambers.values()]
     .map((chamber): LocationAnalyticsChamber => {
-      const floors: LocationAnalyticsFloor[] = [...chamber.floors.values()].sort((a, b) => {
+      const floors = [...chamber.floors.values()].sort((a, b) => {
         const aSentinel = isSentinelLabel(a.floor);
         const bSentinel = isSentinelLabel(b.floor);
         if (aSentinel !== bSentinel) return aSentinel ? 1 : -1;
@@ -93,9 +108,9 @@ export function buildFarmerLocationChambers(
         chamber: chamber.chamber,
         initialTotal,
         currentTotal,
-        orderCount: chamber.orders.length,
+        orderCount: chamber.orders.size,
         floors,
-        orders: chamber.orders,
+        orders: [...chamber.orders.values()],
       };
     })
     .filter((chamber) => chamber.initialTotal > 0 || chamber.currentTotal > 0)
@@ -105,32 +120,15 @@ export function buildFarmerLocationChambers(
       if (aSentinel !== bSentinel) return aSentinel ? 1 : -1;
       return a.chamber.localeCompare(b.chamber, 'en-IN', { numeric: true });
     });
+
+  return {
+    ...data,
+    byLocation: {
+      chambers: rebuiltChambers,
+    },
+  };
 }
 
-/** Whether the farmer has any bags for the active quantity tab. */
-export function farmerHasStockForTab(
-  chambers: LocationAnalyticsChamber[],
-  tab: LocationAnalyticsQuantityTab,
-): boolean {
-  return chambers.some((chamber) =>
-    tab === 'current' ? chamber.currentTotal > 0 : chamber.initialTotal > 0,
-  );
-}
-
-export function filterFarmerRowsByName<T extends { farmerName: string }>(
-  rows: T[],
-  query: string,
-): T[] {
-  const normalized = query.trim().toLowerCase();
-  if (!normalized) return rows;
-  return rows.filter((row) => row.farmerName.toLowerCase().includes(normalized));
-}
-
-/** Recalculate share % against a filtered bag total. */
-export function withFilteredShares<T extends { totalBags: number; share: number }>(rows: T[]): T[] {
-  const grandTotal = rows.reduce((sum, row) => sum + row.totalBags, 0);
-  return rows.map((row) => ({
-    ...row,
-    share: grandTotal > 0 ? (row.totalBags / grandTotal) * 100 : 0,
-  }));
+export function normalizeLocationAnalyticsData(data: LocationAnalyticsData): LocationAnalyticsData {
+  return rebuildLocationAnalyticsByEffectiveLocation(data);
 }

@@ -12,6 +12,7 @@ export type LocationAnalyticsBagSize = {
   initialQuantity: number;
   currentQuantity: number;
   location: DaybookLocation;
+  paltaiLocation?: DaybookLocation[];
 };
 
 export type LocationAnalyticsOrder = {

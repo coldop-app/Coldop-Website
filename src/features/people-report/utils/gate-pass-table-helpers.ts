@@ -1,16 +1,17 @@
-import type { CommodityPreference } from '@/features/auth/types';
 import type {
-  DaybookEntry,
   IncomingGatePassSnapshot,
-  OutgoingDaybookEntry,
   OutgoingOrderDetail,
 } from '@/features/daybook/types';
-import { isIncomingDaybookEntry, isOutgoingDaybookEntry } from '@/features/daybook/types';
 import {
   formatCompactLocation,
   formatQuantity,
+  getSizeQuantityLocationLabels,
   locationKey,
 } from '@/features/daybook/utils/format';
+import { bagMatchesLocation } from '@/features/incoming/utils/paltai-location';
+import type { CommodityPreference } from '@/features/auth/types';
+import type { DaybookEntry, OutgoingDaybookEntry } from '@/features/daybook/types';
+import { isIncomingDaybookEntry, isOutgoingDaybookEntry } from '@/features/daybook/types';
 import {
   getMergedBagSizeOrder,
   sortSizeNamesByPreferenceOrder,
@@ -19,6 +20,7 @@ import {
 export type GatePassSizeQuantityLine = {
   quantity: number;
   locationLabel: string;
+  paltaiLocationLabels: string[];
 };
 
 export type OutgoingVarietyBreakdownLine = {
@@ -36,17 +38,30 @@ export type OutgoingSizeDetailLine = {
   variety: string;
   quantity: number;
   locationLabel: string;
+  paltaiLocationLabels?: string[];
 };
 
 function findSnapshotForOrderLine(
   snapshots: IncomingGatePassSnapshot[],
   orderLine: OutgoingOrderDetail,
 ): IncomingGatePassSnapshot | undefined {
-  const key = `${orderLine.size}\u001f${locationKey(orderLine.location)}`;
-
   return snapshots.find((snapshot) =>
-    snapshot.bagSizes.some((bag) => `${bag.name}\u001f${locationKey(bag.location)}` === key),
+    snapshot.bagSizes.some((bag) => bagMatchesLocation(bag, orderLine.location) && bag.name === orderLine.size),
   );
+}
+
+function findSnapshotBagForOrderLine(
+  snapshots: IncomingGatePassSnapshot[],
+  orderLine: OutgoingOrderDetail,
+) {
+  for (const snapshot of snapshots) {
+    const matchedBag = snapshot.bagSizes.find(
+      (bag) => bagMatchesLocation(bag, orderLine.location) && bag.name === orderLine.size,
+    );
+    if (matchedBag) return matchedBag;
+  }
+
+  return undefined;
 }
 
 export function getOutgoingOrderLineVariety(
@@ -105,13 +120,22 @@ export function getOutgoingSizeQuantityLinesByVariety(
 
     const locationKeyValue = locationKey(orderLine.location);
     const locationLine = existing.locations.get(locationKeyValue);
+    const matchedBag = findSnapshotBagForOrderLine(entry.incomingGatePassSnapshots ?? [], orderLine);
+    const paltaiLocationLabels = matchedBag
+      ? getSizeQuantityLocationLabels(matchedBag.location, matchedBag.paltaiLocation)
+          .paltaiLocationLabels
+      : [];
 
     if (locationLine) {
       locationLine.quantity += orderLine.quantityIssued;
+      if (locationLine.paltaiLocationLabels.length === 0 && paltaiLocationLabels.length > 0) {
+        locationLine.paltaiLocationLabels = paltaiLocationLabels;
+      }
     } else {
       existing.locations.set(locationKeyValue, {
         quantity: orderLine.quantityIssued,
         locationLabel: formatCompactLocation(orderLine.location),
+        paltaiLocationLabels,
       });
     }
 
@@ -136,6 +160,7 @@ export function getOutgoingSizeQuantityDetailLines(
       variety: line.variety,
       quantity: locationLine.quantity,
       locationLabel: locationLine.locationLabel,
+      paltaiLocationLabels: locationLine.paltaiLocationLabels,
     })),
   );
 }
@@ -276,15 +301,23 @@ export function getGatePassSizeQuantityLines(
 
       const key = locationKey(bag.location);
       const existing = merged.get(key);
+      const { locationLabel, paltaiLocationLabels } = getSizeQuantityLocationLabels(
+        bag.location,
+        bag.paltaiLocation,
+      );
 
       if (existing) {
         existing.quantity += bag.initialQuantity;
+        if (existing.paltaiLocationLabels.length === 0 && paltaiLocationLabels.length > 0) {
+          existing.paltaiLocationLabels = paltaiLocationLabels;
+        }
         continue;
       }
 
       merged.set(key, {
         quantity: bag.initialQuantity,
-        locationLabel: formatCompactLocation(bag.location),
+        locationLabel,
+        paltaiLocationLabels,
       });
     }
   } else if (isOutgoingDaybookEntry(entry)) {
@@ -293,15 +326,24 @@ export function getGatePassSizeQuantityLines(
 
       const key = locationKey(line.location);
       const existing = merged.get(key);
+      const matchedBag = findSnapshotBagForOrderLine(entry.incomingGatePassSnapshots ?? [], line);
+      const paltaiLocationLabels = matchedBag
+        ? getSizeQuantityLocationLabels(matchedBag.location, matchedBag.paltaiLocation)
+            .paltaiLocationLabels
+        : [];
 
       if (existing) {
         existing.quantity += line.quantityIssued;
+        if (existing.paltaiLocationLabels.length === 0 && paltaiLocationLabels.length > 0) {
+          existing.paltaiLocationLabels = paltaiLocationLabels;
+        }
         continue;
       }
 
       merged.set(key, {
         quantity: line.quantityIssued,
         locationLabel: formatCompactLocation(line.location),
+        paltaiLocationLabels,
       });
     }
   }

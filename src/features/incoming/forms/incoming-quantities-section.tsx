@@ -23,6 +23,7 @@ import {
   withLegacyOption,
 } from '@/features/auth/utils/storage-layout';
 import type { IncomingFormApi } from '@/features/incoming/forms/use-incoming-form';
+import { PaltaiLocationsPanel } from '@/features/incoming/forms/paltai-locations-panel';
 import { useCompleteLocationOrder } from '@/features/incoming/forms/use-complete-location-order';
 import {
   applyIncomingQuantityLocationToAll,
@@ -106,8 +107,10 @@ function LocationOptionCombobox({
 
 type IncomingQuantitiesSectionProps = {
   form: IncomingFormApi;
+  mode: 'create' | 'edit';
   bagSizes: string[];
   farmerStorageLinks: FarmerStorageLink[];
+  highlightValidationErrors?: boolean;
 };
 
 type QuantitiesBulkActionsProps = {
@@ -186,8 +189,10 @@ function QuantitiesBulkActions({
 
 export function IncomingQuantitiesSection({
   form,
+  mode,
   bagSizes,
   farmerStorageLinks,
+  highlightValidationErrors = false,
 }: IncomingQuantitiesSectionProps) {
   const storageLayout = useColdStorageStore((state) => state.coldStorage?.storageLayout);
   const useLayoutSelects = hasStorageLayout(storageLayout);
@@ -200,6 +205,7 @@ export function IncomingQuantitiesSection({
       (value) => bagSizes.length === 0 || bagSizes.includes(value),
       'Select a valid bag size.',
     );
+  const canEditPaltaiLocation = mode === 'edit';
 
   return (
     <FieldSet>
@@ -235,10 +241,8 @@ export function IncomingQuantitiesSection({
             <>
               <div className="divide-border divide-y">
                 {field.state.value.map((row, index) => (
-                  <div
-                    key={row.id}
-                    className="grid grid-cols-12 items-start gap-1 px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5"
-                  >
+                  <div key={row.id} className="px-2 py-2 sm:px-3 sm:py-2.5">
+                    <div className="grid grid-cols-12 items-start gap-1 sm:gap-2">
                     <div className="col-span-3 min-w-0">
                       {row.isExtra ? (
                         <form.Field
@@ -476,6 +480,21 @@ export function IncomingQuantitiesSection({
                         }}
                       </form.Field>
                     </div>
+                    </div>
+
+                    {canEditPaltaiLocation ? (
+                      <div className="mt-2">
+                        <PaltaiLocationsPanel
+                          form={form}
+                          quantityIndex={index}
+                          row={row}
+                          useLayoutSelects={useLayoutSelects}
+                          storageLayout={storageLayout}
+                          chamberOptions={chamberOptions}
+                          highlightValidationErrors={highlightValidationErrors}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

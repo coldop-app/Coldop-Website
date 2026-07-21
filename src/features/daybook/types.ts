@@ -22,7 +22,7 @@ export type IncomingBagSize = {
   initialQuantity: number;
   currentQuantity: number;
   location: DaybookLocation;
-  paltaiLocation?: DaybookLocation;
+  paltaiLocation?: DaybookLocation[];
 };
 
 export type IncomingDaybookEntry = {
@@ -52,6 +52,7 @@ export type OutgoingSnapshotBagSize = {
   type: string;
   quantityIssued: number;
   location: DaybookLocation;
+  paltaiLocation?: DaybookLocation[];
 };
 
 export type IncomingGatePassSnapshot = {

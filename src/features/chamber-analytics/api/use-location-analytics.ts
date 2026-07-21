@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import apiClient, { getApiErrorMessage } from '@/lib/api-client';
 
 import type { LocationAnalyticsResponse } from '../types';
+import { normalizeLocationAnalyticsData } from '../utils/normalize-location-analytics-data';
 
 export const LOCATION_ANALYTICS_QUERY_KEY = ['analytics', 'location-analytics'] as const;
 
@@ -13,7 +14,10 @@ export async function fetchLocationAnalyticsApi(): Promise<LocationAnalyticsResp
     throw new Error(data.message ?? 'Failed to load location analytics');
   }
 
-  return data;
+  return {
+    ...data,
+    data: normalizeLocationAnalyticsData(data.data),
+  };
 }
 
 async function fetchLocationAnalytics(): Promise<LocationAnalyticsResponse> {
