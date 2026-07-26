@@ -9,45 +9,45 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedDaybookRouteImport } from './routes/_authenticated/daybook'
-import { Route as AuthenticatedTransferIndexRouteImport } from './routes/_authenticated/transfer.index'
-import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
-import { Route as AuthenticatedPeopleIndexRouteImport } from './routes/_authenticated/people.index'
-import { Route as AuthenticatedOutgoingIndexRouteImport } from './routes/_authenticated/outgoing.index'
-import { Route as AuthenticatedIncomingIndexRouteImport } from './routes/_authenticated/incoming.index'
-import { Route as AuthenticatedFinancesIndexRouteImport } from './routes/_authenticated/finances.index'
 import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
-import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings.profile'
-import { Route as AuthenticatedSettingsPreferencesRouteImport } from './routes/_authenticated/settings.preferences'
-import { Route as AuthenticatedReportsTransferStockRouteImport } from './routes/_authenticated/reports.transfer-stock'
-import { Route as AuthenticatedReportsOutgoingRouteImport } from './routes/_authenticated/reports.outgoing'
-import { Route as AuthenticatedReportsIncomingRouteImport } from './routes/_authenticated/reports.incoming'
-import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
-import { Route as AuthenticatedOutgoingEditHistoryRouteImport } from './routes/_authenticated/outgoing.edit-history'
-import { Route as AuthenticatedOutgoingIdRouteImport } from './routes/_authenticated/outgoing.$id'
-import { Route as AuthenticatedIncomingEditHistoryRouteImport } from './routes/_authenticated/incoming.edit-history'
-import { Route as AuthenticatedIncomingIdRouteImport } from './routes/_authenticated/incoming.$id'
-import { Route as AuthenticatedAnalyticsVarietyBreakdownRouteImport } from './routes/_authenticated/analytics.variety-breakdown'
 import { Route as AuthenticatedAnalyticsAdvancedRouteImport } from './routes/_authenticated/analytics.advanced'
+import { Route as AuthenticatedAnalyticsVarietyBreakdownRouteImport } from './routes/_authenticated/analytics.variety-breakdown'
+import { Route as AuthenticatedFinancesIndexRouteImport } from './routes/_authenticated/finances.index'
+import { Route as AuthenticatedIncomingIndexRouteImport } from './routes/_authenticated/incoming.index'
+import { Route as AuthenticatedIncomingIdRouteImport } from './routes/_authenticated/incoming.$id'
+import { Route as AuthenticatedIncomingEditHistoryRouteImport } from './routes/_authenticated/incoming.edit-history'
+import { Route as AuthenticatedOutgoingIndexRouteImport } from './routes/_authenticated/outgoing.index'
+import { Route as AuthenticatedOutgoingIdRouteImport } from './routes/_authenticated/outgoing.$id'
+import { Route as AuthenticatedOutgoingEditHistoryRouteImport } from './routes/_authenticated/outgoing.edit-history'
+import { Route as AuthenticatedPeopleIndexRouteImport } from './routes/_authenticated/people.index'
+import { Route as AuthenticatedPeopleIdRouteImport } from './routes/_authenticated/people.$id'
+import { Route as AuthenticatedReportsIncomingRouteImport } from './routes/_authenticated/reports.incoming'
+import { Route as AuthenticatedReportsOutgoingRouteImport } from './routes/_authenticated/reports.outgoing'
+import { Route as AuthenticatedReportsTransferStockRouteImport } from './routes/_authenticated/reports.transfer-stock'
+import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings.index'
+import { Route as AuthenticatedSettingsPreferencesRouteImport } from './routes/_authenticated/settings.preferences'
+import { Route as AuthenticatedSettingsProfileRouteImport } from './routes/_authenticated/settings.profile'
+import { Route as AuthenticatedTransferIndexRouteImport } from './routes/_authenticated/transfer.index'
+import { Route as AuthenticatedFinancesLedgersIdRouteImport } from './routes/_authenticated/finances.ledgers.$id'
 import { Route as AuthenticatedPeopleIdIndexRouteImport } from './routes/_authenticated/people.$id.index'
 import { Route as AuthenticatedPeopleIdReportRouteImport } from './routes/_authenticated/people.$id.report'
-import { Route as AuthenticatedFinancesLedgersIdRouteImport } from './routes/_authenticated/finances.ledgers.$id'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedDaybookRoute = AuthenticatedDaybookRouteImport.update({
@@ -55,34 +55,22 @@ const AuthenticatedDaybookRoute = AuthenticatedDaybookRouteImport.update({
   path: '/daybook',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const AuthenticatedTransferIndexRoute =
-  AuthenticatedTransferIndexRouteImport.update({
-    id: '/transfer/',
-    path: '/transfer/',
+const AuthenticatedAnalyticsIndexRoute =
+  AuthenticatedAnalyticsIndexRouteImport.update({
+    id: '/analytics/',
+    path: '/analytics/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedSettingsIndexRoute =
-  AuthenticatedSettingsIndexRouteImport.update({
-    id: '/settings/',
-    path: '/settings/',
+const AuthenticatedAnalyticsAdvancedRoute =
+  AuthenticatedAnalyticsAdvancedRouteImport.update({
+    id: '/analytics/advanced',
+    path: '/analytics/advanced',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedPeopleIndexRoute =
-  AuthenticatedPeopleIndexRouteImport.update({
-    id: '/people/',
-    path: '/people/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedOutgoingIndexRoute =
-  AuthenticatedOutgoingIndexRouteImport.update({
-    id: '/outgoing/',
-    path: '/outgoing/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedIncomingIndexRoute =
-  AuthenticatedIncomingIndexRouteImport.update({
-    id: '/incoming/',
-    path: '/incoming/',
+const AuthenticatedAnalyticsVarietyBreakdownRoute =
+  AuthenticatedAnalyticsVarietyBreakdownRouteImport.update({
+    id: '/analytics/variety-breakdown',
+    path: '/analytics/variety-breakdown',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedFinancesIndexRoute =
@@ -91,56 +79,15 @@ const AuthenticatedFinancesIndexRoute =
     path: '/finances/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedAnalyticsIndexRoute =
-  AuthenticatedAnalyticsIndexRouteImport.update({
-    id: '/analytics/',
-    path: '/analytics/',
+const AuthenticatedIncomingIndexRoute =
+  AuthenticatedIncomingIndexRouteImport.update({
+    id: '/incoming/',
+    path: '/incoming/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedSettingsProfileRoute =
-  AuthenticatedSettingsProfileRouteImport.update({
-    id: '/settings/profile',
-    path: '/settings/profile',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedSettingsPreferencesRoute =
-  AuthenticatedSettingsPreferencesRouteImport.update({
-    id: '/settings/preferences',
-    path: '/settings/preferences',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedReportsTransferStockRoute =
-  AuthenticatedReportsTransferStockRouteImport.update({
-    id: '/reports/transfer-stock',
-    path: '/reports/transfer-stock',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedReportsOutgoingRoute =
-  AuthenticatedReportsOutgoingRouteImport.update({
-    id: '/reports/outgoing',
-    path: '/reports/outgoing',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedReportsIncomingRoute =
-  AuthenticatedReportsIncomingRouteImport.update({
-    id: '/reports/incoming',
-    path: '/reports/incoming',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
-  id: '/people/$id',
-  path: '/people/$id',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedOutgoingEditHistoryRoute =
-  AuthenticatedOutgoingEditHistoryRouteImport.update({
-    id: '/outgoing/edit-history',
-    path: '/outgoing/edit-history',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedOutgoingIdRoute = AuthenticatedOutgoingIdRouteImport.update({
-  id: '/outgoing/$id',
-  path: '/outgoing/$id',
+const AuthenticatedIncomingIdRoute = AuthenticatedIncomingIdRouteImport.update({
+  id: '/incoming/$id',
+  path: '/incoming/$id',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedIncomingEditHistoryRoute =
@@ -149,21 +96,80 @@ const AuthenticatedIncomingEditHistoryRoute =
     path: '/incoming/edit-history',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedIncomingIdRoute = AuthenticatedIncomingIdRouteImport.update({
-  id: '/incoming/$id',
-  path: '/incoming/$id',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
-const AuthenticatedAnalyticsVarietyBreakdownRoute =
-  AuthenticatedAnalyticsVarietyBreakdownRouteImport.update({
-    id: '/analytics/variety-breakdown',
-    path: '/analytics/variety-breakdown',
+const AuthenticatedOutgoingIndexRoute =
+  AuthenticatedOutgoingIndexRouteImport.update({
+    id: '/outgoing/',
+    path: '/outgoing/',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedAnalyticsAdvancedRoute =
-  AuthenticatedAnalyticsAdvancedRouteImport.update({
-    id: '/analytics/advanced',
-    path: '/analytics/advanced',
+const AuthenticatedOutgoingIdRoute = AuthenticatedOutgoingIdRouteImport.update({
+  id: '/outgoing/$id',
+  path: '/outgoing/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedOutgoingEditHistoryRoute =
+  AuthenticatedOutgoingEditHistoryRouteImport.update({
+    id: '/outgoing/edit-history',
+    path: '/outgoing/edit-history',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleIndexRoute =
+  AuthenticatedPeopleIndexRouteImport.update({
+    id: '/people/',
+    path: '/people/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPeopleIdRoute = AuthenticatedPeopleIdRouteImport.update({
+  id: '/people/$id',
+  path: '/people/$id',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedReportsIncomingRoute =
+  AuthenticatedReportsIncomingRouteImport.update({
+    id: '/reports/incoming',
+    path: '/reports/incoming',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedReportsOutgoingRoute =
+  AuthenticatedReportsOutgoingRouteImport.update({
+    id: '/reports/outgoing',
+    path: '/reports/outgoing',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedReportsTransferStockRoute =
+  AuthenticatedReportsTransferStockRouteImport.update({
+    id: '/reports/transfer-stock',
+    path: '/reports/transfer-stock',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsIndexRoute =
+  AuthenticatedSettingsIndexRouteImport.update({
+    id: '/settings/',
+    path: '/settings/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsPreferencesRoute =
+  AuthenticatedSettingsPreferencesRouteImport.update({
+    id: '/settings/preferences',
+    path: '/settings/preferences',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsProfileRoute =
+  AuthenticatedSettingsProfileRouteImport.update({
+    id: '/settings/profile',
+    path: '/settings/profile',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedTransferIndexRoute =
+  AuthenticatedTransferIndexRouteImport.update({
+    id: '/transfer/',
+    path: '/transfer/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedFinancesLedgersIdRoute =
+  AuthenticatedFinancesLedgersIdRouteImport.update({
+    id: '/finances/ledgers/$id',
+    path: '/finances/ledgers/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPeopleIdIndexRoute =
@@ -177,12 +183,6 @@ const AuthenticatedPeopleIdReportRoute =
     id: '/report',
     path: '/report',
     getParentRoute: () => AuthenticatedPeopleIdRoute,
-  } as any)
-const AuthenticatedFinancesLedgersIdRoute =
-  AuthenticatedFinancesLedgersIdRouteImport.update({
-    id: '/finances/ledgers/$id',
-    path: '/finances/ledgers/$id',
-    getParentRoute: () => AuthenticatedRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -359,11 +359,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated': {
@@ -373,11 +373,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/daybook': {
@@ -387,48 +387,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDaybookRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/transfer/': {
-      id: '/_authenticated/transfer/'
-      path: '/transfer'
-      fullPath: '/transfer/'
-      preLoaderRoute: typeof AuthenticatedTransferIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/settings/': {
-      id: '/_authenticated/settings/'
-      path: '/settings'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/people/': {
-      id: '/_authenticated/people/'
-      path: '/people'
-      fullPath: '/people/'
-      preLoaderRoute: typeof AuthenticatedPeopleIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/outgoing/': {
-      id: '/_authenticated/outgoing/'
-      path: '/outgoing'
-      fullPath: '/outgoing/'
-      preLoaderRoute: typeof AuthenticatedOutgoingIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/incoming/': {
-      id: '/_authenticated/incoming/'
-      path: '/incoming'
-      fullPath: '/incoming/'
-      preLoaderRoute: typeof AuthenticatedIncomingIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/finances/': {
-      id: '/_authenticated/finances/'
-      path: '/finances'
-      fullPath: '/finances/'
-      preLoaderRoute: typeof AuthenticatedFinancesIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/_authenticated/analytics/': {
       id: '/_authenticated/analytics/'
       path: '/analytics'
@@ -436,74 +394,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAnalyticsIndexRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/settings/profile': {
-      id: '/_authenticated/settings/profile'
-      path: '/settings/profile'
-      fullPath: '/settings/profile'
-      preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/settings/preferences': {
-      id: '/_authenticated/settings/preferences'
-      path: '/settings/preferences'
-      fullPath: '/settings/preferences'
-      preLoaderRoute: typeof AuthenticatedSettingsPreferencesRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/reports/transfer-stock': {
-      id: '/_authenticated/reports/transfer-stock'
-      path: '/reports/transfer-stock'
-      fullPath: '/reports/transfer-stock'
-      preLoaderRoute: typeof AuthenticatedReportsTransferStockRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/reports/outgoing': {
-      id: '/_authenticated/reports/outgoing'
-      path: '/reports/outgoing'
-      fullPath: '/reports/outgoing'
-      preLoaderRoute: typeof AuthenticatedReportsOutgoingRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/reports/incoming': {
-      id: '/_authenticated/reports/incoming'
-      path: '/reports/incoming'
-      fullPath: '/reports/incoming'
-      preLoaderRoute: typeof AuthenticatedReportsIncomingRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/people/$id': {
-      id: '/_authenticated/people/$id'
-      path: '/people/$id'
-      fullPath: '/people/$id'
-      preLoaderRoute: typeof AuthenticatedPeopleIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/outgoing/edit-history': {
-      id: '/_authenticated/outgoing/edit-history'
-      path: '/outgoing/edit-history'
-      fullPath: '/outgoing/edit-history'
-      preLoaderRoute: typeof AuthenticatedOutgoingEditHistoryRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/outgoing/$id': {
-      id: '/_authenticated/outgoing/$id'
-      path: '/outgoing/$id'
-      fullPath: '/outgoing/$id'
-      preLoaderRoute: typeof AuthenticatedOutgoingIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/incoming/edit-history': {
-      id: '/_authenticated/incoming/edit-history'
-      path: '/incoming/edit-history'
-      fullPath: '/incoming/edit-history'
-      preLoaderRoute: typeof AuthenticatedIncomingEditHistoryRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/incoming/$id': {
-      id: '/_authenticated/incoming/$id'
-      path: '/incoming/$id'
-      fullPath: '/incoming/$id'
-      preLoaderRoute: typeof AuthenticatedIncomingIdRouteImport
+    '/_authenticated/analytics/advanced': {
+      id: '/_authenticated/analytics/advanced'
+      path: '/analytics/advanced'
+      fullPath: '/analytics/advanced'
+      preLoaderRoute: typeof AuthenticatedAnalyticsAdvancedRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/analytics/variety-breakdown': {
@@ -513,11 +408,123 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAnalyticsVarietyBreakdownRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/analytics/advanced': {
-      id: '/_authenticated/analytics/advanced'
-      path: '/analytics/advanced'
-      fullPath: '/analytics/advanced'
-      preLoaderRoute: typeof AuthenticatedAnalyticsAdvancedRouteImport
+    '/_authenticated/finances/': {
+      id: '/_authenticated/finances/'
+      path: '/finances'
+      fullPath: '/finances/'
+      preLoaderRoute: typeof AuthenticatedFinancesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/incoming/': {
+      id: '/_authenticated/incoming/'
+      path: '/incoming'
+      fullPath: '/incoming/'
+      preLoaderRoute: typeof AuthenticatedIncomingIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/incoming/$id': {
+      id: '/_authenticated/incoming/$id'
+      path: '/incoming/$id'
+      fullPath: '/incoming/$id'
+      preLoaderRoute: typeof AuthenticatedIncomingIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/incoming/edit-history': {
+      id: '/_authenticated/incoming/edit-history'
+      path: '/incoming/edit-history'
+      fullPath: '/incoming/edit-history'
+      preLoaderRoute: typeof AuthenticatedIncomingEditHistoryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/outgoing/': {
+      id: '/_authenticated/outgoing/'
+      path: '/outgoing'
+      fullPath: '/outgoing/'
+      preLoaderRoute: typeof AuthenticatedOutgoingIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/outgoing/$id': {
+      id: '/_authenticated/outgoing/$id'
+      path: '/outgoing/$id'
+      fullPath: '/outgoing/$id'
+      preLoaderRoute: typeof AuthenticatedOutgoingIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/outgoing/edit-history': {
+      id: '/_authenticated/outgoing/edit-history'
+      path: '/outgoing/edit-history'
+      fullPath: '/outgoing/edit-history'
+      preLoaderRoute: typeof AuthenticatedOutgoingEditHistoryRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/': {
+      id: '/_authenticated/people/'
+      path: '/people'
+      fullPath: '/people/'
+      preLoaderRoute: typeof AuthenticatedPeopleIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/people/$id': {
+      id: '/_authenticated/people/$id'
+      path: '/people/$id'
+      fullPath: '/people/$id'
+      preLoaderRoute: typeof AuthenticatedPeopleIdRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reports/incoming': {
+      id: '/_authenticated/reports/incoming'
+      path: '/reports/incoming'
+      fullPath: '/reports/incoming'
+      preLoaderRoute: typeof AuthenticatedReportsIncomingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reports/outgoing': {
+      id: '/_authenticated/reports/outgoing'
+      path: '/reports/outgoing'
+      fullPath: '/reports/outgoing'
+      preLoaderRoute: typeof AuthenticatedReportsOutgoingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/reports/transfer-stock': {
+      id: '/_authenticated/reports/transfer-stock'
+      path: '/reports/transfer-stock'
+      fullPath: '/reports/transfer-stock'
+      preLoaderRoute: typeof AuthenticatedReportsTransferStockRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/': {
+      id: '/_authenticated/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AuthenticatedSettingsIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/preferences': {
+      id: '/_authenticated/settings/preferences'
+      path: '/settings/preferences'
+      fullPath: '/settings/preferences'
+      preLoaderRoute: typeof AuthenticatedSettingsPreferencesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/profile': {
+      id: '/_authenticated/settings/profile'
+      path: '/settings/profile'
+      fullPath: '/settings/profile'
+      preLoaderRoute: typeof AuthenticatedSettingsProfileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/transfer/': {
+      id: '/_authenticated/transfer/'
+      path: '/transfer'
+      fullPath: '/transfer/'
+      preLoaderRoute: typeof AuthenticatedTransferIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/finances/ledgers/$id': {
+      id: '/_authenticated/finances/ledgers/$id'
+      path: '/finances/ledgers/$id'
+      fullPath: '/finances/ledgers/$id'
+      preLoaderRoute: typeof AuthenticatedFinancesLedgersIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/people/$id/': {
@@ -533,13 +540,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/people/$id/report'
       preLoaderRoute: typeof AuthenticatedPeopleIdReportRouteImport
       parentRoute: typeof AuthenticatedPeopleIdRoute
-    }
-    '/_authenticated/finances/ledgers/$id': {
-      id: '/_authenticated/finances/ledgers/$id'
-      path: '/finances/ledgers/$id'
-      fullPath: '/finances/ledgers/$id'
-      preLoaderRoute: typeof AuthenticatedFinancesLedgersIdRouteImport
-      parentRoute: typeof AuthenticatedRoute
     }
   }
 }
