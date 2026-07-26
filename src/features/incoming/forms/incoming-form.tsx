@@ -93,6 +93,8 @@ export type IncomingFormProps = {
   editBaselineValues?: IncomingFormValues;
   originalBagSizes?: IncomingBagSize[];
   rentEntryVoucherId?: string;
+  /** When stock has moved (current ≠ initial), farmer and quantities cannot change. */
+  lockFarmerAndQuantity?: boolean;
 };
 
 export function IncomingForm({
@@ -117,6 +119,7 @@ export function IncomingForm({
   editBaselineValues,
   originalBagSizes = [],
   rentEntryVoucherId,
+  lockFarmerAndQuantity = false,
 }: IncomingFormProps) {
   const [todayIso] = useState(() => new Date().toISOString());
   const preferences = usePreferencesStore((s) => s.preferences);
@@ -209,6 +212,7 @@ export function IncomingForm({
           costPerBag,
           rentEntryVoucherId,
           originalBagSizes,
+          lockFarmerAndQuantity,
         });
 
         if (!payload) {
@@ -237,6 +241,7 @@ export function IncomingForm({
       showFinances,
       rentEntryVoucherId,
       originalBagSizes,
+      lockFarmerAndQuantity,
       updateIncomingGatePass,
       navigate,
     ],
@@ -325,6 +330,8 @@ export function IncomingForm({
 
   const handleCommodityChange = useCallback(
     (commodityName: string) => {
+      if (lockFarmerAndQuantity) return;
+
       const commodity = getCommodityByName(commodities, commodityName);
       setSelectedCommodityName(commodityName);
       form.setFieldValue('variety', '');
@@ -333,7 +340,7 @@ export function IncomingForm({
       form.setFieldValue('quantities', createQuantitiesForSizes(commodity?.sizes ?? []));
       resetCropComboboxState();
     },
-    [commodities, form, resetCropComboboxState],
+    [commodities, form, lockFarmerAndQuantity, resetCropComboboxState],
   );
 
   const getFarmerLabel = useCallback(
@@ -409,7 +416,9 @@ export function IncomingForm({
   const title = mode === 'edit' ? 'Edit Incoming Gate Pass' : 'Incoming Gate Pass';
   const description =
     mode === 'edit'
-      ? 'Update crop and account details for this incoming gate pass.'
+      ? lockFarmerAndQuantity
+        ? 'Stock has changed on this gate pass, so farmer and bag quantities are locked. You can still update other details and location (including paltai).'
+        : 'Update crop and account details for this incoming gate pass.'
       : 'Record crop and account details for a new incoming gate pass.';
 
   return (
@@ -547,7 +556,9 @@ export function IncomingForm({
                               onValueChange={field.handleChange}
                               onBlur={field.handleBlur}
                               isInvalid={isInvalid}
-                              disabled={isFarmersLoading || isFarmersError}
+                              disabled={
+                                lockFarmerAndQuantity || isFarmersLoading || isFarmersError
+                              }
                               placeholder={
                                 isFarmersLoading ? 'Loading farmers...' : 'Search farmers...'
                               }
@@ -566,11 +577,17 @@ export function IncomingForm({
                             className="h-auto min-h-9 shrink-0 gap-1.5 px-3"
                             onClick={() => setAddFarmerOpen(true)}
                             aria-label="Add farmer"
+                            disabled={lockFarmerAndQuantity}
                           >
                             <UserPlus className="size-4 shrink-0" />
                             <span className="hidden sm:inline">Add Farmer</span>
                           </Button>
                         </div>
+                        {lockFarmerAndQuantity ? (
+                          <FieldDescription>
+                            Farmer cannot be changed because stock has moved on this gate pass.
+                          </FieldDescription>
+                        ) : null}
                         {isFarmersError && (
                           <FieldDescription className="text-destructive">
                             {farmersError instanceof Error
@@ -627,6 +644,7 @@ export function IncomingForm({
                             }}
                             onBlur={field.handleBlur}
                             isInvalid={isInvalid}
+                            disabled={lockFarmerAndQuantity}
                             placeholder="Search commodities..."
                             emptyMessage="No commodities found."
                             options={commodityOptions}
@@ -746,6 +764,7 @@ export function IncomingForm({
               bagSizes={bagSizes}
               farmerStorageLinks={farmerStorageLinks}
               enablePaltai={mode === 'edit'}
+              lockQuantities={lockFarmerAndQuantity}
             />
 
             <FieldSeparator />

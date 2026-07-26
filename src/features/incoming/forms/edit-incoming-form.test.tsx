@@ -149,6 +149,7 @@ describe('EditIncomingForm', () => {
         userId: USER_ID,
         originalBagSizes: entry.bagSizes,
         rentEntryVoucherId: entry.rentEntryVoucherId,
+        lockFarmerAndQuantity: false,
         editDefaultValues: expect.objectContaining({
           gatePassNo: entry.gatePassNo,
           farmerIncomingLinkId: FARMER_LINK_ID,
@@ -157,6 +158,32 @@ describe('EditIncomingForm', () => {
         editBaselineValues: expect.objectContaining({
           gatePassNo: entry.gatePassNo,
         }),
+      }),
+    );
+  });
+
+  it('locks farmer and quantity when current quantity differs from initial', () => {
+    const entry = makeIncomingDaybookEntry({
+      bagSizes: [
+        {
+          name: '50kg',
+          initialQuantity: 120,
+          currentQuantity: 80,
+          location: {
+            chamber: 'A',
+            floor: '1',
+            row: '3',
+          },
+        },
+      ],
+    });
+    mockUseIncomingDaybookEntry.mockReturnValue(entry);
+
+    renderWithProviders(<EditIncomingForm gatePassId={GATE_PASS_ID} />);
+
+    expect(mockIncomingForm).toHaveBeenCalledWith(
+      expect.objectContaining({
+        lockFarmerAndQuantity: true,
       }),
     );
   });

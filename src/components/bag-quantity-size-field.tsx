@@ -39,6 +39,7 @@ type BagSizeSelectFieldProps = {
   errors?: Array<{ message?: string } | undefined>;
   labelClassName?: string;
   triggerClassName?: string;
+  disabled?: boolean;
   onBlur: () => void;
   onValueChange: (value: BagSizeSelectValue) => void;
 };
@@ -54,6 +55,7 @@ export function BagSizeSelectField({
   errors,
   labelClassName = 'md:sr-only',
   triggerClassName,
+  disabled = false,
   onBlur,
   onValueChange,
 }: BagSizeSelectFieldProps) {
@@ -65,6 +67,7 @@ export function BagSizeSelectField({
       <Select
         value={value || undefined}
         onValueChange={(next) => onValueChange(next as BagSizeSelectValue)}
+        disabled={disabled}
       >
         <SelectTrigger
           id={id}
@@ -72,6 +75,7 @@ export function BagSizeSelectField({
           className={cn('w-full', triggerClassName)}
           onBlur={onBlur}
           aria-invalid={isInvalid}
+          disabled={disabled}
         >
           <SelectValue placeholder="Select size" />
         </SelectTrigger>

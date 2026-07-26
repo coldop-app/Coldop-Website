@@ -1,6 +1,7 @@
 import type { IncomingBagSize } from '@/features/daybook/types';
 import type { UpdateIncomingGatePassPayload } from '@/features/incoming/types/api';
 import type { IncomingFormValues } from '@/features/incoming/types';
+import type { IncomingQuantityRow } from '@/features/incoming/schemas/incoming-quantities-schema';
 import { normalizeUppercase } from '@/lib/form-utils';
 import {
   getActiveIncomingQuantityRows,
@@ -15,6 +16,14 @@ function normalizeIsoDateTime(value: string): string {
 
 function formatManualParchiNumber(value: number | undefined): string {
   return value != null ? String(value) : '';
+}
+
+function normalizePreviousLocation(locations: IncomingQuantityRow['previousLocation']) {
+  return (locations ?? []).map((location) => ({
+    chamber: location.chamber.trim(),
+    floor: location.floor.trim(),
+    row: location.row.trim(),
+  }));
 }
 
 function normalizeBagSizesForCompare(bags: IncomingBagSize[]) {
@@ -46,11 +55,57 @@ function bagSizesEqual(current: IncomingBagSize[], baseline: IncomingBagSize[]):
   );
 }
 
+/**
+ * When quantities are locked (current ≠ initial), preserve original bag counts
+ * and only apply location / previousLocation updates from the form rows.
+ */
+function mergeLocationOntoOriginalBagSizes(
+  rows: IncomingQuantityRow[],
+  originalBags: IncomingBagSize[],
+): IncomingBagSize[] {
+  const usedRowIndexes = new Set<number>();
+
+  return originalBags.map((bag) => {
+    const rowIndex = rows.findIndex(
+      (row, index) =>
+        !usedRowIndexes.has(index) &&
+        row.size === bag.name &&
+        (row.qty ?? 0) === bag.initialQuantity,
+    );
+
+    if (rowIndex === -1) {
+      return bag;
+    }
+
+    usedRowIndexes.add(rowIndex);
+    const row = rows[rowIndex];
+    const previousLocation = normalizePreviousLocation(row.previousLocation);
+
+    const next: IncomingBagSize = {
+      name: bag.name,
+      initialQuantity: bag.initialQuantity,
+      currentQuantity: bag.currentQuantity,
+      location: {
+        chamber: row.chamber.trim(),
+        floor: row.floor.trim(),
+        row: row.row.trim(),
+      },
+    };
+
+    if (previousLocation.length > 0) {
+      next.previousLocation = previousLocation;
+    }
+
+    return next;
+  });
+}
+
 type BuildUpdateIncomingGatePassPayloadOptions = {
   showFinances: boolean;
   costPerBag?: number;
   rentEntryVoucherId?: string;
   originalBagSizes: IncomingBagSize[];
+  lockFarmerAndQuantity?: boolean;
 };
 
 export function buildUpdateIncomingGatePassPayload(
@@ -61,11 +116,15 @@ export function buildUpdateIncomingGatePassPayload(
     costPerBag,
     rentEntryVoucherId,
     originalBagSizes,
+    lockFarmerAndQuantity = false,
   }: BuildUpdateIncomingGatePassPayloadOptions,
 ): UpdateIncomingGatePassPayload | null {
   const payload: UpdateIncomingGatePassPayload = {};
 
-  if (current.farmerIncomingLinkId !== baseline.farmerIncomingLinkId) {
+  if (
+    !lockFarmerAndQuantity &&
+    current.farmerIncomingLinkId !== baseline.farmerIncomingLinkId
+  ) {
     payload.farmerStorageLinkId = current.farmerIncomingLinkId;
   }
 
@@ -100,13 +159,17 @@ export function buildUpdateIncomingGatePassPayload(
   }
 
   const activeRows = getActiveIncomingQuantityRows(current.quantities);
-  const nextBagSizes = mapQuantityRowsToBagSizes(activeRows, originalBagSizes);
+  const nextBagSizes = lockFarmerAndQuantity
+    ? mergeLocationOntoOriginalBagSizes(activeRows, originalBagSizes)
+    : mapQuantityRowsToBagSizes(activeRows, originalBagSizes);
 
   if (!bagSizesEqual(nextBagSizes, originalBagSizes)) {
     payload.bagSizes = nextBagSizes;
   }
 
-  const affectsAmount = payload.bagSizes !== undefined || payload.farmerStorageLinkId !== undefined;
+  const affectsAmount =
+    !lockFarmerAndQuantity &&
+    (payload.bagSizes !== undefined || payload.farmerStorageLinkId !== undefined);
 
   if (showFinances && rentEntryVoucherId && affectsAmount) {
     if (typeof costPerBag !== 'number' || costPerBag <= 0) {

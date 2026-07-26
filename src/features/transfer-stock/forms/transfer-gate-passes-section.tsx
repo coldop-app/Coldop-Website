@@ -52,8 +52,12 @@ type TransferGatePassesSectionProps = {
   passesOverride?: StorageGatePass[];
   passesLoading?: boolean;
   passesError?: Error | null;
-  /** When set, locks the matrix to this stock filter (hides stock filter dropdown). */
+  /**
+   * When set, locks the matrix to this stock filter.
+   * Provide `onStockFilterChange` to show a required/highlighted picker in the toolbar.
+   */
   stockFilter?: string;
+  onStockFilterChange?: (value: string) => void;
   initialVariety?: string;
   toolbarVariant?: 'default' | 'stacked';
 };
@@ -70,6 +74,7 @@ export function TransferGatePassesSection({
   passesLoading: passesLoadingOverride,
   passesError: passesErrorOverride,
   stockFilter,
+  onStockFilterChange,
   initialVariety,
   toolbarVariant = 'default',
 }: TransferGatePassesSectionProps) {
@@ -88,6 +93,7 @@ export function TransferGatePassesSection({
     onAllocationsChange,
     varietyFilterMode,
     stockFilter,
+    onStockFilterChange,
     initialVariety,
   });
 
@@ -175,6 +181,54 @@ export function TransferGatePassesSection({
                 'grid grid-cols-2 items-stretch gap-x-3 gap-y-3 overflow-visible px-4 pt-2 pb-4 sm:flex sm:items-end sm:pt-3 [&>div]:min-w-0 [&>div>button]:w-full',
             )}
           >
+            {onStockFilterChange && matrix.showStockFilter && matrix.stockFilterOptions.length > 0 ? (
+              <div
+                className={cn(
+                  'flex shrink-0 flex-col gap-1.5 rounded-lg transition-[box-shadow,background-color,border-color] sm:gap-2',
+                  toolbarVariant === 'stacked' && 'order-1 col-span-2 sm:col-span-1',
+                  matrix.needsStockFilterSelection &&
+                    'border-primary/50 bg-primary/5 ring-primary/25 border-2 p-2.5 shadow-sm ring-2',
+                )}
+              >
+                <div className="flex flex-col gap-0.5">
+                  <Label
+                    className={cn(
+                      'text-xs leading-none font-medium',
+                      matrix.needsStockFilterSelection ? 'text-primary' : 'text-muted-foreground',
+                    )}
+                  >
+                    Stock filter
+                    {matrix.needsStockFilterSelection ? (
+                      <span className="text-destructive ml-0.5 font-semibold">*</span>
+                    ) : null}
+                  </Label>
+                  {matrix.needsStockFilterSelection ? (
+                    <p className="text-muted-foreground max-w-64 text-xs leading-snug">
+                      Choose a stock filter to show gate passes below.
+                    </p>
+                  ) : null}
+                </div>
+                <MatrixRadioFilter
+                  value={matrix.stockFilterFilter}
+                  options={matrix.stockFilterOptions}
+                  onChange={matrix.setStockFilterFilter}
+                  icon={Filter}
+                  allowAll={!matrix.needsStockFilterSelection}
+                  emptyLabel="Select…"
+                  triggerClassName={cn(
+                    'min-w-[140px]',
+                    matrix.needsStockFilterSelection &&
+                      'border-primary/60 bg-background text-primary hover:bg-primary/10',
+                  )}
+                  ariaLabel={
+                    matrix.needsStockFilterSelection
+                      ? 'Stock filter — required'
+                      : 'Stock filter'
+                  }
+                />
+              </div>
+            ) : null}
+
             <div
               className={cn(
                 'flex shrink-0 flex-col gap-1.5 sm:gap-2',
@@ -234,6 +288,7 @@ export function TransferGatePassesSection({
             </div>
 
             {matrix.uniqueVarieties.length > 0 &&
+              !matrix.needsStockFilterSelection &&
               (matrix.varietyFilterMode === 'multi-optional' ? (
                 <div
                   className={cn(
@@ -413,7 +468,9 @@ export function TransferGatePassesSection({
                 )}
               </div>
 
-              {matrix.showStockFilter && matrix.stockFilterOptions.length > 0 && (
+              {!onStockFilterChange &&
+                matrix.showStockFilter &&
+                matrix.stockFilterOptions.length > 0 && (
                 <MatrixRadioFilter
                   label="Stock filter"
                   value={matrix.stockFilterFilter}
@@ -503,6 +560,7 @@ export function TransferGatePassesSection({
         hasFilteredData={matrix.hasFilteredData}
         hasActiveFilters={matrix.hasActiveFilters}
         varietyFilterMode={matrix.varietyFilterMode}
+        needsStockFilterSelection={matrix.needsStockFilterSelection}
         allocationMode={allocationMode}
         baselineAllocations={baselineAllocations}
       />
@@ -545,6 +603,8 @@ function MatrixRadioFilter({
   ariaLabel,
   showLabel = false,
   groupClassName,
+  allowAll = true,
+  emptyLabel = 'All',
 }: {
   label?: string;
   value: string;
@@ -555,6 +615,8 @@ function MatrixRadioFilter({
   ariaLabel?: string;
   showLabel?: boolean;
   groupClassName?: string;
+  allowAll?: boolean;
+  emptyLabel?: string;
 }) {
   return (
     <div className={cn('flex shrink-0 flex-col gap-1.5 sm:gap-2', groupClassName)}>
@@ -578,12 +640,14 @@ function MatrixRadioFilter({
             aria-label={ariaLabel ?? `${label} filter`}
           >
             {Icon ? <Icon className="size-4 shrink-0" /> : null}
-            {value || 'All'}
+            {value || emptyLabel}
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-48">
           <DropdownMenuRadioGroup value={value} onValueChange={(v) => onChange(v ?? '')}>
-            <DropdownMenuRadioItem value="">All</DropdownMenuRadioItem>
+            {allowAll ? (
+              <DropdownMenuRadioItem value="">{emptyLabel}</DropdownMenuRadioItem>
+            ) : null}
             {options.map((opt) => (
               <DropdownMenuRadioItem key={opt} value={opt}>
                 {opt}

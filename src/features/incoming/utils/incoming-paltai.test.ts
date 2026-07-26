@@ -171,4 +171,55 @@ describe('buildUpdateIncomingGatePassPayload previousLocation', () => {
     expect(payload?.farmerStorageLinkId).toBeUndefined();
     expect(FARMER_LINK_ID).toBeTruthy();
   });
+
+  it('preserves currentQuantity and omits farmer when lockFarmerAndQuantity is set', () => {
+    const entry = makeIncomingDaybookEntry({
+      bagSizes: [
+        {
+          name: '50kg',
+          initialQuantity: 120,
+          currentQuantity: 80,
+          location: { chamber: 'A', floor: '1', row: '3' },
+        },
+      ],
+    });
+    const preferences = makePreferences();
+    const farmerLinks = [makeFarmerStorageLink()];
+    const baseline = incomingDaybookEntryToFormValues({
+      entry,
+      commodities: preferences.commodities,
+      farmerStorageLinks: farmerLinks,
+      userId: USER_ID,
+    });
+
+    const current = {
+      ...baseline,
+      farmerIncomingLinkId: 'other-farmer-link',
+      quantities: baseline.quantities.map((row) =>
+        row.size === '50kg' && row.qty === 120
+          ? applyIncomingPaltaiLocation(row, { chamber: 'B', floor: '2', row: 'R4' })
+          : row,
+      ),
+    };
+
+    const payload = buildUpdateIncomingGatePassPayload(current, baseline, {
+      showFinances: true,
+      costPerBag: 10,
+      originalBagSizes: entry.bagSizes ?? [],
+      rentEntryVoucherId: entry.rentEntryVoucherId,
+      lockFarmerAndQuantity: true,
+    });
+
+    expect(payload?.farmerStorageLinkId).toBeUndefined();
+    expect(payload?.amount).toBeUndefined();
+    expect(payload?.bagSizes).toEqual([
+      {
+        name: '50kg',
+        initialQuantity: 120,
+        currentQuantity: 80,
+        location: { chamber: 'B', floor: '2', row: 'R4' },
+        previousLocation: [{ chamber: 'A', floor: '1', row: '3' }],
+      },
+    ]);
+  });
 });

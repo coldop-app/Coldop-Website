@@ -120,6 +120,10 @@ const EditIncomingForm = ({ gatePassId }: EditIncomingFormProps) => {
     );
   }
 
+  const lockFarmerAndQuantity = (entry.bagSizes ?? []).some(
+    (bag) => bag.initialQuantity !== bag.currentQuantity,
+  );
+
   return (
     <EditIncomingFormLayout>
       <IncomingForm
@@ -133,6 +137,7 @@ const EditIncomingForm = ({ gatePassId }: EditIncomingFormProps) => {
         editBaselineValues={mapped.editDefaultValues}
         originalBagSizes={entry.bagSizes ?? []}
         rentEntryVoucherId={entry.rentEntryVoucherId}
+        lockFarmerAndQuantity={lockFarmerAndQuantity}
         initialSelectedCommodity={mapped.initialSelectedCommodity}
         initialFarmerSearch={mapped.initialFarmerSearch}
         farmerLinkWarning={mapped.farmerLinkWarning}

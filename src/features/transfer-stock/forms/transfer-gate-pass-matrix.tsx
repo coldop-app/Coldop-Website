@@ -339,6 +339,7 @@ type TransferGatePassMatrixProps = {
   hasFilteredData?: boolean;
   hasActiveFilters?: boolean;
   varietyFilterMode?: VarietyFilterMode;
+  needsStockFilterSelection?: boolean;
   allocationMode?: 'create' | 'edit';
   baselineAllocations?: Record<string, number>;
 };
@@ -354,6 +355,7 @@ export function TransferGatePassMatrix({
   hasFilteredData = true,
   hasActiveFilters = false,
   varietyFilterMode = 'single-required',
+  needsStockFilterSelection = false,
   allocationMode = 'create',
   baselineAllocations = {},
 }: TransferGatePassMatrixProps) {
@@ -400,14 +402,20 @@ export function TransferGatePassMatrix({
                 <ClipboardList />
               </EmptyMedia>
               <EmptyTitle>
-                {hasActiveFilters ? 'No matching gate passes' : 'No gate passes to show'}
+                {needsStockFilterSelection
+                  ? 'Select a stock filter'
+                  : hasActiveFilters
+                    ? 'No matching gate passes'
+                    : 'No gate passes to show'}
               </EmptyTitle>
               <EmptyDescription>
-                {hasActiveFilters
-                  ? 'Try different filters or clear the search.'
-                  : varietyFilterMode === 'multi-optional'
-                    ? 'No gate passes match the current filters, or check back when stock is available.'
-                    : 'Choose a variety to display gate passes, or check back when stock is available.'}
+                {needsStockFilterSelection
+                  ? 'Choose a stock filter above to view incoming gate passes for this transfer.'
+                  : hasActiveFilters
+                    ? 'Try different filters or clear the search.'
+                    : varietyFilterMode === 'multi-optional'
+                      ? 'No gate passes match the current filters, or check back when stock is available.'
+                      : 'Choose a variety to display gate passes, or check back when stock is available.'}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

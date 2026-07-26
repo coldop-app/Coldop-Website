@@ -31,7 +31,11 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
-import type { IncomingDaybookEntry } from '@/features/daybook/types';
+import type {
+  DaybookLocation,
+  IncomingBagSize,
+  IncomingDaybookEntry,
+} from '@/features/daybook/types';
 import {
   formatDaybookDateTime,
   formatIncomingLotNo,
@@ -89,6 +93,70 @@ const SummaryField = ({ label, value, icon: Icon, valueClassName }: SummaryField
   </div>
 );
 
+type LocationTrailStop = {
+  location: DaybookLocation;
+  isCurrent: boolean;
+};
+
+function getLocationTrail(bag: IncomingBagSize): LocationTrailStop[] {
+  const history = bag.previousLocation ?? [];
+  return [
+    ...history.map((location) => ({ location, isCurrent: false })),
+    { location: bag.location, isCurrent: true },
+  ];
+}
+
+function BagLocationTrail({ bag }: { bag: IncomingBagSize }) {
+  const trail = getLocationTrail(bag);
+  const hasHistory = trail.length > 1;
+
+  return (
+    <ol className="min-w-48" aria-label="Location">
+      {trail.map((stop, index) => {
+        const label = formatLocation(stop.location);
+        const isLast = index === trail.length - 1;
+
+        return (
+          <li key={`${label}-${index}`} className="relative flex gap-2">
+            <div className="flex w-3.5 shrink-0 flex-col items-center pt-0.5" aria-hidden>
+              <MapPin
+                className={cn(
+                  'size-3.5 shrink-0',
+                  stop.isCurrent ? 'text-primary' : 'text-muted-foreground/60',
+                )}
+              />
+              {hasHistory && !isLast ? (
+                <span className="bg-border/80 mt-1 mb-0.5 w-px min-h-3 flex-1" />
+              ) : null}
+            </div>
+            <div
+              className={cn(
+                'min-w-0',
+                hasHistory && !isLast ? 'pb-2' : undefined,
+                stop.isCurrent
+                  ? 'text-foreground font-semibold'
+                  : 'text-muted-foreground font-medium',
+              )}
+            >
+              <p className="inline-flex flex-wrap items-center gap-1.5 text-xs leading-snug sm:text-sm">
+                <span title={label}>{label}</span>
+                {stop.isCurrent && hasHistory ? (
+                  <Badge
+                    variant="outline"
+                    className="border-primary/30 bg-primary/5 text-primary h-5 px-1.5 text-[10px] font-semibold tracking-wide uppercase"
+                  >
+                    Current
+                  </Badge>
+                ) : null}
+              </p>
+            </div>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 interface IncomingGatePassCardProps {
   entry: IncomingDaybookEntry;
 }
@@ -118,12 +186,13 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
   const isTransfer = isIncomingTransferType(entry.type);
   const isClosed = entry.status === 'CLOSED';
   const hasQuantityChanged = bagSizes.some((bag) => bag.initialQuantity !== bag.currentQuantity);
-  const canEdit = entry.status === 'OPEN' && !hasQuantityChanged;
-  const editDisabledTitle = hasQuantityChanged
-    ? 'Cannot edit when initial and current quantities differ'
-    : entry.status !== 'OPEN'
+  const canEdit = entry.status === 'OPEN';
+  const editDisabledTitle =
+    entry.status !== 'OPEN'
       ? 'Only open gate passes can be edited'
-      : undefined;
+      : hasQuantityChanged
+        ? 'Farmer and quantities are locked because stock has changed; other fields can still be edited'
+        : undefined;
 
   const handlePrint = useCallback(async () => {
     if (!coldStorageName) {
@@ -299,11 +368,8 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
                             <td className="text-foreground px-3 py-2.5 text-right font-medium tabular-nums">
                               {formatQuantity(bag.currentQuantity)}
                             </td>
-                            <td className="text-muted-foreground px-3 py-2.5">
-                              <span className="inline-flex items-center gap-1">
-                                <MapPin className="h-3.5 w-3.5 shrink-0" />
-                                {formatLocation(bag.location)}
-                              </span>
+                            <td className="px-3 py-2.5 align-top">
+                              <BagLocationTrail bag={bag} />
                             </td>
                           </tr>
                         ))}

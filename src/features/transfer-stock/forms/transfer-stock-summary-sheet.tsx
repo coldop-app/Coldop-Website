@@ -142,8 +142,11 @@ function TransferReviewSummary({
         <SectionLabel icon={Calendar}>Transfer date</SectionLabel>
         <SummaryCard>
           <DetailRow label="Date" value={formatReviewDate(values.date)} icon={Calendar} />
+          {values.gatePassStockFilter ? (
+            <DetailRow label="Gate pass filter" value={values.gatePassStockFilter} />
+          ) : null}
           {values.stockFilter ? (
-            <DetailRow label="Stock filter" value={values.stockFilter} />
+            <DetailRow label="Destination stock filter" value={values.stockFilter} />
           ) : null}
           {values.customMarka ? (
             <DetailRow label="Custom marka" value={values.customMarka} />

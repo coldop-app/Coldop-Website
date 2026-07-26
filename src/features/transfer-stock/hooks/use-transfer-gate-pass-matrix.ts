@@ -69,8 +69,12 @@ type UseTransferGatePassMatrixOptions = {
   allocations: Record<string, number>;
   onAllocationsChange: (next: Record<string, number>) => void;
   varietyFilterMode?: VarietyFilterMode;
-  /** When set, locks the matrix to this stock filter and hides the filter control. */
+  /**
+   * When set, locks the matrix to this stock filter.
+   * Pass `onStockFilterChange` to keep the filter control visible (e.g. transfer create).
+   */
   stockFilter?: string;
+  onStockFilterChange?: (value: string) => void;
   /** Variety selected when the matrix first opens and when filters are reset. */
   initialVariety?: string;
 };
@@ -81,6 +85,7 @@ export function useTransferGatePassMatrix({
   onAllocationsChange,
   varietyFilterMode = 'single-required',
   stockFilter: controlledStockFilter,
+  onStockFilterChange,
   initialVariety,
 }: UseTransferGatePassMatrixOptions) {
   const initialVarietyVisibility = useMemo<VarietyVisibility>(
@@ -103,12 +108,19 @@ export function useTransferGatePassMatrix({
 
   const preferences = usePreferencesStore((state) => state.preferences);
   const commodities = preferences?.commodities ?? [];
-  const showStockFilter = shouldShowStockFilter(preferences?.stockFilter);
+  const stockFilterPreferenceEnabled = shouldShowStockFilter(preferences?.stockFilter);
   const stockFilterOptions = preferences?.stockFilter?.options ?? [];
   const isStockFilterControlled = controlledStockFilter !== undefined;
   const effectiveStockFilter = isStockFilterControlled
     ? controlledStockFilter.trim()
     : stockFilterFilter.trim();
+  const showStockFilterControl =
+    stockFilterPreferenceEnabled && (!isStockFilterControlled || onStockFilterChange != null);
+  const needsStockFilterSelection =
+    Boolean(onStockFilterChange) &&
+    stockFilterPreferenceEnabled &&
+    isStockFilterControlled &&
+    effectiveStockFilter === '';
 
   const varietyForSizeOrder = useMemo(() => {
     if (varietyFilterMode === 'multi-optional') {
@@ -241,11 +253,12 @@ export function useTransferGatePassMatrix({
   );
 
   const needsVarietySelection =
+    !needsStockFilterSelection &&
     varietyFilterMode === 'single-required' &&
     uniqueVarieties.length > 0 &&
     varietyFilter.trim() === '';
 
-  const varietySelected = !needsVarietySelection;
+  const varietySelected = !needsStockFilterSelection && !needsVarietySelection;
   const hasFilteredData = varietySelected && filteredPasses.length > 0 && visibleSizes.length > 0;
 
   const hasActiveFilters =
@@ -331,7 +344,19 @@ export function useTransferGatePassMatrix({
     setSizeVisibility('all');
     setSelectedPassIds(new Set());
     onAllocationsChange({});
-  }, [initialVarietyVisibility, onAllocationsChange]);
+    onStockFilterChange?.('');
+  }, [initialVarietyVisibility, onAllocationsChange, onStockFilterChange]);
+
+  const handleStockFilterChange = useCallback(
+    (value: string) => {
+      if (onStockFilterChange) {
+        onStockFilterChange(value);
+        return;
+      }
+      setStockFilterFilter(value);
+    },
+    [onStockFilterChange],
+  );
 
   const handleAllocationChange = useCallback(
     (key: string, quantity: number) => {
@@ -388,6 +413,7 @@ export function useTransferGatePassMatrix({
     hasFilteredData,
     hasActiveFilters,
     needsVarietySelection,
+    needsStockFilterSelection,
     varietyFilterMode,
     voucherSort,
     setVoucherSort,
@@ -398,9 +424,9 @@ export function useTransferGatePassMatrix({
     varietyVisibilityLabel,
     gatePassSearch,
     setGatePassSearch,
-    stockFilterFilter,
-    setStockFilterFilter,
-    showStockFilter: showStockFilter && !isStockFilterControlled,
+    stockFilterFilter: effectiveStockFilter,
+    setStockFilterFilter: handleStockFilterChange,
+    showStockFilter: showStockFilterControl,
     isStockFilterControlled,
     stockFilterOptions,
     locationFilters,

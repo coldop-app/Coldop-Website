@@ -54,6 +54,9 @@ export function createTransferStockFormSchema(config: TransferStockFormSchemaCon
       fromFarmerStorageLinkId: objectId,
       toFarmerStorageLinkId: objectId,
       date: z.string().min(1, 'Date is required'),
+      /** Filters which source gate passes are shown for allocation. */
+      gatePassStockFilter: stockFilterSchema(config.requireStockFilter),
+      /** Applied to the new incoming gate pass created for the destination account. */
       stockFilter: stockFilterSchema(config.requireStockFilter),
       customMarka: customMarkaSchema(config.requireCustomMarka),
       amount: amountSchema(config.requireAmount),

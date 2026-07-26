@@ -112,6 +112,8 @@ type IncomingQuantitiesSectionProps = {
   bagSizes: string[];
   farmerStorageLinks: FarmerStorageLink[];
   enablePaltai?: boolean;
+  /** Disable quantity/structure edits while still allowing location and paltai. */
+  lockQuantities?: boolean;
 };
 
 type QuantitiesBulkActionsProps = {
@@ -119,6 +121,7 @@ type QuantitiesBulkActionsProps = {
   quantities: IncomingQuantityRow[];
   bagSizes: string[];
   onAddRow: () => void;
+  lockQuantities?: boolean;
 };
 
 function QuantitiesBulkActionsContent({
@@ -126,12 +129,13 @@ function QuantitiesBulkActionsContent({
   quantities,
   bagSizes,
   onAddRow,
+  lockQuantities = false,
 }: QuantitiesBulkActionsProps) {
   const { sourceRow, canApplyToAll, resetCompletionOrder } = useCompleteLocationOrder(quantities);
 
   return (
     <div className="border-border flex flex-wrap gap-3 border-t px-2 py-3 sm:px-3">
-      <Button type="button" variant="outline" onClick={onAddRow}>
+      <Button type="button" variant="outline" onClick={onAddRow} disabled={lockQuantities}>
         <Plus className="mr-2 size-4" aria-hidden />
         Add more
       </Button>
@@ -158,6 +162,7 @@ function QuantitiesBulkActionsContent({
       <Button
         type="button"
         variant="outline"
+        disabled={lockQuantities}
         onClick={() => {
           resetCompletionOrder();
           form.setFieldValue('quantities', createDefaultIncomingQuantities(bagSizes));
@@ -173,6 +178,7 @@ function QuantitiesBulkActions({
   form,
   bagSizes,
   onAddRow,
+  lockQuantities = false,
 }: Omit<QuantitiesBulkActionsProps, 'quantities'>) {
   return (
     <form.Subscribe selector={(state) => state.values.quantities}>
@@ -182,6 +188,7 @@ function QuantitiesBulkActions({
           quantities={quantities}
           bagSizes={bagSizes}
           onAddRow={onAddRow}
+          lockQuantities={lockQuantities}
         />
       )}
     </form.Subscribe>
@@ -193,6 +200,7 @@ export function IncomingQuantitiesSection({
   bagSizes,
   farmerStorageLinks,
   enablePaltai = false,
+  lockQuantities = false,
 }: IncomingQuantitiesSectionProps) {
   const storageLayout = useColdStorageStore((state) => state.coldStorage?.storageLayout);
   const useLayoutSelects = hasStorageLayout(storageLayout);
@@ -219,6 +227,9 @@ export function IncomingQuantitiesSection({
         Enter bag counts by size and assign chamber, floor, and row for each line. Use Add more for
         another row with the same size but a different location. Use Apply to all to copy the first
         completed location to every row. Rows with zero or empty quantity are ignored on submit.
+        {lockQuantities
+          ? ' Bag quantities are locked because stock has moved; you can still update location and add paltai.'
+          : null}
         {enablePaltai
           ? ' Use Add Paltai to move stock to a new location and keep the previous location in history.'
           : null}
@@ -291,6 +302,7 @@ export function IncomingQuantitiesSection({
                               errors={subField.state.meta.errors}
                               onBlur={subField.handleBlur}
                               onValueChange={subField.handleChange}
+                              disabled={lockQuantities}
                             />
                           )}
                         </form.Field>
@@ -326,6 +338,12 @@ export function IncomingQuantitiesSection({
                                   subField.handleChange(parseOptionalNumber(e.target.value))
                                 }
                                 aria-invalid={isInvalid}
+                                disabled={lockQuantities}
+                                title={
+                                  lockQuantities
+                                    ? 'Quantity cannot be changed because stock has moved'
+                                    : undefined
+                                }
                                 className={`${compactInputClass} tabular-nums`}
                               />
                               {isInvalid && <FieldError errors={subField.state.meta.errors} />}
@@ -472,7 +490,13 @@ export function IncomingQuantitiesSection({
                               <FieldLabel htmlFor={subField.name} className="sr-only">
                                 Row ({sizeLabel})
                               </FieldLabel>
-                              <div className={row.isExtra ? 'flex items-start gap-1' : undefined}>
+                              <div
+                                className={
+                                  row.isExtra && !lockQuantities
+                                    ? 'flex items-start gap-1'
+                                    : undefined
+                                }
+                              >
                                 <Input
                                   id={subField.name}
                                   name={subField.name}
@@ -485,12 +509,12 @@ export function IncomingQuantitiesSection({
                                   placeholder="R"
                                   autoComplete="off"
                                   className={
-                                    row.isExtra
+                                    row.isExtra && !lockQuantities
                                       ? `${locationInputClass} min-w-0 flex-1`
                                       : locationInputClass
                                   }
                                 />
-                                {row.isExtra ? (
+                                {row.isExtra && !lockQuantities ? (
                                   <Button
                                     type="button"
                                     variant="outline"
@@ -539,6 +563,7 @@ export function IncomingQuantitiesSection({
                 form={form}
                 bagSizes={bagSizes}
                 onAddRow={() => field.pushValue(createEmptyIncomingQuantityRow())}
+                lockQuantities={lockQuantities}
               />
 
               {enablePaltai ? (

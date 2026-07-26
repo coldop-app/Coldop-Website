@@ -39,6 +39,7 @@ export function useCreateTransferStockForm({
       fromFarmerStorageLinkId: '',
       toFarmerStorageLinkId: '',
       date: todayIso,
+      gatePassStockFilter: '',
       stockFilter: '',
       customMarka: '',
       amount: '',

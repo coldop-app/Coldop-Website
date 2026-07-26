@@ -12,6 +12,7 @@ const values: TransferStockFormValues = {
   fromFarmerStorageLinkId: FROM_ID,
   toFarmerStorageLinkId: TO_ID,
   date: '2025-06-21T00:00:00.000Z',
+  gatePassStockFilter: '',
   stockFilter: '',
   customMarka: '',
   amount: '',
@@ -103,6 +104,17 @@ describe('buildCreateTransferStockPayload', () => {
       items,
     );
     expect(whenPreferenceInactive.stockFilter).toBeUndefined();
+  });
+
+  it('does not include gatePassStockFilter in the create payload', () => {
+    const payload = buildCreateTransferStockPayload(
+      { ...values, gatePassStockFilter: 'Owned', stockFilter: 'Farmer' },
+      items,
+      { includeStockFilter: true },
+    );
+
+    expect(payload.stockFilter).toBe('Farmer');
+    expect(payload).not.toHaveProperty('gatePassStockFilter');
   });
 
   it('does not include truckNumber', () => {

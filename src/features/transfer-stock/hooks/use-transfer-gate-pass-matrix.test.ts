@@ -9,7 +9,15 @@ import type { StorageGatePass } from '@/features/transfer-stock/types/storage-ga
 
 vi.mock('@/features/auth/store/use-preferences-store', () => ({
   usePreferencesStore: (selector: (state: unknown) => unknown) =>
-    selector({ preferences: { commodities: [] } }),
+    selector({
+      preferences: {
+        commodities: [],
+        stockFilter: {
+          enabled: true,
+          options: ['Owned', 'Farmer'],
+        },
+      },
+    }),
 }));
 
 function makePass(
@@ -375,5 +383,40 @@ describe('useTransferGatePassMatrix controlled stockFilter', () => {
     );
 
     expect(result.current.uniqueVarieties).toEqual(['Chipsona']);
+  });
+
+  it('shows a required stock filter control when onStockFilterChange is provided', () => {
+    const passes = [
+      {
+        ...makePass('pass-owned', 'Kufri Jyoti', 10),
+        stockFilter: 'Owned',
+      },
+      {
+        ...makePass('pass-farmer', 'Kufri Jyoti', 11),
+        stockFilter: 'Farmer',
+      },
+    ];
+    const onStockFilterChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useTransferGatePassMatrix({
+        allPasses: passes,
+        allocations: {},
+        onAllocationsChange: vi.fn(),
+        varietyFilterMode: 'single-required',
+        stockFilter: '',
+        onStockFilterChange,
+      }),
+    );
+
+    expect(result.current.showStockFilter).toBe(true);
+    expect(result.current.needsStockFilterSelection).toBe(true);
+    expect(result.current.hasFilteredData).toBe(false);
+
+    act(() => {
+      result.current.setStockFilterFilter('Owned');
+    });
+
+    expect(onStockFilterChange).toHaveBeenCalledWith('Owned');
   });
 });
