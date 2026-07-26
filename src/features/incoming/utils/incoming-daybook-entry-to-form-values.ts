@@ -34,6 +34,7 @@ function bagToQuantityRow(bag: IncomingBagSize, isExtra: boolean): IncomingQuant
     chamber: bag.location.chamber,
     floor: bag.location.floor,
     row: bag.location.row,
+    previousLocation: bag.previousLocation ?? [],
   };
 }
 
@@ -47,6 +48,7 @@ function emptyQuantityRow(size: string): IncomingQuantityRow {
     chamber: '',
     floor: '',
     row: '',
+    previousLocation: [],
   };
 }
 

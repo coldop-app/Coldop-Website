@@ -1,13 +1,10 @@
 import type {
   DaybookCreatedBy,
   DaybookFarmerStorageLink,
-  DaybookLocation,
   IncomingBagSize,
 } from '@/features/daybook/types';
 
-export type CreateIncomingGatePassBagSize = IncomingBagSize & {
-  paltaiLocation?: DaybookLocation;
-};
+export type CreateIncomingGatePassBagSize = IncomingBagSize;
 
 export type CreateIncomingGatePassPayload = {
   farmerStorageLinkId: string;

@@ -745,6 +745,7 @@ export function IncomingForm({
               form={form}
               bagSizes={bagSizes}
               farmerStorageLinks={farmerStorageLinks}
+              enablePaltai={mode === 'edit'}
             />
 
             <FieldSeparator />

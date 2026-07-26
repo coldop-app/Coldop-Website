@@ -22,7 +22,7 @@ export type IncomingBagSize = {
   initialQuantity: number;
   currentQuantity: number;
   location: DaybookLocation;
-  paltaiLocation?: DaybookLocation;
+  previousLocation?: DaybookLocation[];
 };
 
 export type IncomingDaybookEntry = {

@@ -14,33 +14,23 @@ export function getActiveIncomingQuantityRows(
   return quantities.filter((row) => (row.qty ?? 0) > 0 && hasCompleteIncomingQuantityLocation(row));
 }
 
-function bagLocationKey(name: string, chamber: string, floor: string, row: string) {
-  return `${name}|${chamber.trim()}|${floor.trim()}|${row.trim()}`;
+function normalizePreviousLocation(locations: IncomingQuantityRow['previousLocation']) {
+  return (locations ?? []).map((location) => ({
+    chamber: location.chamber.trim(),
+    floor: location.floor.trim(),
+    row: location.row.trim(),
+  }));
 }
 
 export function mapQuantityRowsToBagSizes(
   rows: IncomingQuantityRow[],
-  originalBags: IncomingBagSize[] = [],
+  _originalBags: IncomingBagSize[] = [],
 ): CreateIncomingGatePassBagSize[] {
-  const paltaiByLocation = new Map<string, IncomingBagSize['paltaiLocation']>();
-
-  for (const bag of originalBags) {
-    if (!bag.paltaiLocation) continue;
-    const key = bagLocationKey(
-      bag.name,
-      bag.location.chamber,
-      bag.location.floor,
-      bag.location.row,
-    );
-    paltaiByLocation.set(key, bag.paltaiLocation);
-  }
-
   return rows.map((row) => {
     const chamber = row.chamber.trim();
     const floor = row.floor.trim();
     const rowValue = row.row.trim();
-    const key = bagLocationKey(row.size, chamber, floor, rowValue);
-    const paltaiLocation = paltaiByLocation.get(key);
+    const previousLocation = normalizePreviousLocation(row.previousLocation);
 
     const bagSize: CreateIncomingGatePassBagSize = {
       name: row.size,
@@ -53,8 +43,8 @@ export function mapQuantityRowsToBagSizes(
       },
     };
 
-    if (paltaiLocation) {
-      bagSize.paltaiLocation = paltaiLocation;
+    if (previousLocation.length > 0) {
+      bagSize.previousLocation = previousLocation;
     }
 
     return bagSize;

@@ -27,13 +27,13 @@ function normalizeBagSizesForCompare(bags: IncomingBagSize[]) {
       floor: bag.location.floor.trim(),
       row: bag.location.row.trim(),
     },
-    ...(bag.paltaiLocation
+    ...(bag.previousLocation && bag.previousLocation.length > 0
       ? {
-          paltaiLocation: {
-            chamber: bag.paltaiLocation.chamber.trim(),
-            floor: bag.paltaiLocation.floor.trim(),
-            row: bag.paltaiLocation.row.trim(),
-          },
+          previousLocation: bag.previousLocation.map((location) => ({
+            chamber: location.chamber.trim(),
+            floor: location.floor.trim(),
+            row: location.row.trim(),
+          })),
         }
       : {}),
   }));

@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react';
+import { Copy, Plus, Trash2 } from 'lucide-react';
+import * as z from 'zod';
 import {
   Field,
   FieldDescription,
@@ -14,6 +16,7 @@ import {
   type ComboboxOption,
 } from '@/components/searchable-option-combobox';
 import { BagSizeSelectField, FixedBagSizeLabel } from '@/components/bag-quantity-size-field';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
 import {
@@ -22,9 +25,11 @@ import {
   hasStorageLayout,
   withLegacyOption,
 } from '@/features/auth/utils/storage-layout';
+import { AddPaltaiDialog } from '@/features/incoming/forms/add-paltai-dialog';
 import type { IncomingFormApi } from '@/features/incoming/forms/use-incoming-form';
 import { useCompleteLocationOrder } from '@/features/incoming/forms/use-complete-location-order';
 import {
+  applyIncomingPaltaiLocation,
   applyIncomingQuantityLocationToAll,
   createDefaultIncomingQuantities,
   createEmptyIncomingQuantityRow,
@@ -34,8 +39,6 @@ import {
 import type { FarmerStorageLink } from '@/features/people/types';
 import { formatInr } from '@/features/finances/shared/format-currency';
 import { numericInputProps, normalizeUppercase, parseOptionalNumber } from '@/lib/form-utils';
-import { Copy, Plus, Trash2 } from 'lucide-react';
-import * as z from 'zod';
 
 function isFieldInvalid(meta: { isTouched: boolean; isValid: boolean }) {
   return meta.isTouched && !meta.isValid;
@@ -108,6 +111,7 @@ type IncomingQuantitiesSectionProps = {
   form: IncomingFormApi;
   bagSizes: string[];
   farmerStorageLinks: FarmerStorageLink[];
+  enablePaltai?: boolean;
 };
 
 type QuantitiesBulkActionsProps = {
@@ -188,10 +192,12 @@ export function IncomingQuantitiesSection({
   form,
   bagSizes,
   farmerStorageLinks,
+  enablePaltai = false,
 }: IncomingQuantitiesSectionProps) {
   const storageLayout = useColdStorageStore((state) => state.coldStorage?.storageLayout);
   const useLayoutSelects = hasStorageLayout(storageLayout);
   const chamberOptions = getStorageLayoutChambers(storageLayout);
+  const [paltaiRowIndex, setPaltaiRowIndex] = useState<number | null>(null);
 
   const allowedSizeSchema = z
     .string()
@@ -201,6 +207,11 @@ export function IncomingQuantitiesSection({
       'Select a valid bag size.',
     );
 
+  const sizeColClass = enablePaltai ? 'col-span-2' : 'col-span-3';
+  const qtyColClass = enablePaltai ? 'col-span-2' : 'col-span-3';
+  const locationColClass = 'col-span-2';
+  const paltaiColClass = 'col-span-2';
+
   return (
     <FieldSet>
       <FieldLegend className="font-heading text-base font-semibold">Enter Quantities</FieldLegend>
@@ -208,30 +219,52 @@ export function IncomingQuantitiesSection({
         Enter bag counts by size and assign chamber, floor, and row for each line. Use Add more for
         another row with the same size but a different location. Use Apply to all to copy the first
         completed location to every row. Rows with zero or empty quantity are ignored on submit.
+        {enablePaltai
+          ? ' Use Add Paltai to move stock to a new location and keep the previous location in history.'
+          : null}
       </FieldDescription>
 
       <div className="border-border mt-5 overflow-x-auto rounded-lg border">
         <div className="border-border bg-muted/50 grid grid-cols-12 gap-1 border-b px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5">
-          <div className="text-muted-foreground col-span-3 text-xs font-medium sm:text-sm">
+          <div className={`text-muted-foreground ${sizeColClass} text-xs font-medium sm:text-sm`}>
             Size
           </div>
-          <div className="text-muted-foreground col-span-3 text-xs font-medium sm:text-sm">Qty</div>
-          <div className="text-muted-foreground col-span-2 text-center text-xs font-medium sm:text-left sm:text-sm">
+          <div className={`text-muted-foreground ${qtyColClass} text-xs font-medium sm:text-sm`}>
+            Qty
+          </div>
+          <div
+            className={`text-muted-foreground ${locationColClass} text-center text-xs font-medium sm:text-left sm:text-sm`}
+          >
             <span className="sm:hidden">Ch</span>
             <span className="hidden sm:inline">Chamber</span>
           </div>
-          <div className="text-muted-foreground col-span-2 text-center text-xs font-medium sm:text-left sm:text-sm">
+          <div
+            className={`text-muted-foreground ${locationColClass} text-center text-xs font-medium sm:text-left sm:text-sm`}
+          >
             <span className="sm:hidden">Fl</span>
             <span className="hidden sm:inline">Floor</span>
           </div>
-          <div className="text-muted-foreground col-span-2 text-center text-xs font-medium sm:text-left sm:text-sm">
+          <div
+            className={`text-muted-foreground ${locationColClass} text-center text-xs font-medium sm:text-left sm:text-sm`}
+          >
             <span className="sm:hidden">R</span>
             <span className="hidden sm:inline">Row</span>
           </div>
+          {enablePaltai ? (
+            <div
+              className={`text-muted-foreground ${paltaiColClass} text-center text-xs font-medium sm:text-left sm:text-sm`}
+            >
+              Paltai
+            </div>
+          ) : null}
         </div>
 
         <form.Field name="quantities" mode="array">
-          {(field) => (
+          {(field) => {
+            const paltaiRow =
+              paltaiRowIndex != null ? (field.state.value[paltaiRowIndex] ?? null) : null;
+
+            return (
             <>
               <div className="divide-border divide-y">
                 {field.state.value.map((row, index) => (
@@ -239,7 +272,7 @@ export function IncomingQuantitiesSection({
                     key={row.id}
                     className="grid grid-cols-12 items-start gap-1 px-2 py-2 sm:gap-2 sm:px-3 sm:py-2.5"
                   >
-                    <div className="col-span-3 min-w-0">
+                    <div className={`${sizeColClass} min-w-0`}>
                       {row.isExtra ? (
                         <form.Field
                           name={`quantities[${index}].size`}
@@ -266,7 +299,7 @@ export function IncomingQuantitiesSection({
                       )}
                     </div>
 
-                    <div className="col-span-3">
+                    <div className={qtyColClass}>
                       <form.Field
                         name={`quantities[${index}].qty`}
                         validators={{
@@ -302,7 +335,7 @@ export function IncomingQuantitiesSection({
                       </form.Field>
                     </div>
 
-                    <div className="col-span-2">
+                    <div className={locationColClass}>
                       <form.Field
                         name={`quantities[${index}].chamber`}
                         validators={{
@@ -362,7 +395,7 @@ export function IncomingQuantitiesSection({
                       </form.Field>
                     </div>
 
-                    <div className="col-span-2">
+                    <div className={locationColClass}>
                       <form.Subscribe
                         selector={(state) => state.values.quantities[index]?.chamber ?? ''}
                       >
@@ -424,7 +457,7 @@ export function IncomingQuantitiesSection({
                       </form.Subscribe>
                     </div>
 
-                    <div className="col-span-2">
+                    <div className={locationColClass}>
                       <form.Field
                         name={`quantities[${index}].row`}
                         validators={{
@@ -476,6 +509,28 @@ export function IncomingQuantitiesSection({
                         }}
                       </form.Field>
                     </div>
+
+                    {enablePaltai ? (
+                      <div className={paltaiColClass}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-8 w-full px-1.5 text-xs sm:h-9 sm:px-2 sm:text-sm"
+                          disabled={(row.qty ?? 0) <= 0}
+                          onClick={() => setPaltaiRowIndex(index)}
+                        >
+                          <span className="truncate">Add Paltai</span>
+                          {(row.previousLocation?.length ?? 0) > 0 ? (
+                            <Badge
+                              variant="secondary"
+                              className="ml-1 shrink-0 px-1.5 py-0 text-[10px] tabular-nums"
+                            >
+                              {row.previousLocation.length}
+                            </Badge>
+                          ) : null}
+                        </Button>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -485,8 +540,30 @@ export function IncomingQuantitiesSection({
                 bagSizes={bagSizes}
                 onAddRow={() => field.pushValue(createEmptyIncomingQuantityRow())}
               />
+
+              {enablePaltai ? (
+                <AddPaltaiDialog
+                  open={paltaiRowIndex != null && paltaiRow != null}
+                  onOpenChange={(open) => {
+                    if (!open) setPaltaiRowIndex(null);
+                  }}
+                  bagSizeLabel={paltaiRow?.size ?? ''}
+                  currentChamber={paltaiRow?.chamber ?? ''}
+                  currentFloor={paltaiRow?.floor ?? ''}
+                  previousLocation={paltaiRow?.previousLocation ?? []}
+                  onConfirm={(nextLocation) => {
+                    if (paltaiRowIndex == null) return;
+                    const current = field.state.value[paltaiRowIndex];
+                    if (!current) return;
+                    const nextRows = [...field.state.value];
+                    nextRows[paltaiRowIndex] = applyIncomingPaltaiLocation(current, nextLocation);
+                    form.setFieldValue('quantities', nextRows);
+                  }}
+                />
+              ) : null}
             </>
-          )}
+            );
+          }}
         </form.Field>
       </div>
 

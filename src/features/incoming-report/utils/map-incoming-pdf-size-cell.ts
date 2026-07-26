@@ -18,6 +18,12 @@ function hasLocation(location: IncomingBagSize['location']): boolean {
   return Boolean(location.chamber || location.floor || location.row);
 }
 
+function getLatestPreviousLocation(bag: IncomingBagSize) {
+  const history = bag.previousLocation;
+  if (!history || history.length === 0) return null;
+  return history[history.length - 1] ?? null;
+}
+
 function getBagQuantity(bag: IncomingBagSize, quantityMode: IncomingQuantityMode): number {
   return quantityMode === 'current' ? bag.currentQuantity : bag.initialQuantity;
 }
@@ -32,9 +38,10 @@ function buildMergedLocationLines(
     const qty = getBagQuantity(bag, quantityMode);
     const key = locationKey(bag.location);
     const locationLabel = hasLocation(bag.location) ? formatCompactLocation(bag.location) : null;
+    const latestPrevious = getLatestPreviousLocation(bag);
     const paltaiLabel =
-      bag.paltaiLocation && hasLocation(bag.paltaiLocation)
-        ? formatCompactLocation(bag.paltaiLocation)
+      latestPrevious && hasLocation(latestPrevious)
+        ? formatCompactLocation(latestPrevious)
         : null;
 
     const existing = merged.get(key);

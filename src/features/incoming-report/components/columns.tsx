@@ -102,6 +102,12 @@ export function getIncomingReportTotalBags(
 const formatLocation = (location: IncomingBagSize['location']) =>
   [location.chamber, location.floor, location.row].filter(Boolean).join('-');
 
+const getLatestPreviousLocation = (bag: IncomingBagSize) => {
+  const history = bag.previousLocation;
+  if (!history || history.length === 0) return null;
+  return history[history.length - 1] ?? null;
+};
+
 const getBagSizeQuantity = (
   row: IncomingGatePassReportRecord,
   sizeName: string,
@@ -117,8 +123,8 @@ const renderBagSizeValue = (
   showLocation: boolean,
 ) => {
   const location = showLocation ? formatLocation(bag.location) : null;
-  const paltaiLocation =
-    showLocation && bag.paltaiLocation ? formatLocation(bag.paltaiLocation) : null;
+  const latestPrevious = showLocation ? getLatestPreviousLocation(bag) : null;
+  const paltaiLocation = latestPrevious ? formatLocation(latestPrevious) : null;
   const quantity = getBagQuantity(bag, quantityMode);
 
   return (

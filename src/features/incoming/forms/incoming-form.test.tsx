@@ -33,6 +33,7 @@ const validQuantities = [
     chamber: 'A',
     floor: '1',
     row: '1',
+    previousLocation: [],
   },
 ];
 

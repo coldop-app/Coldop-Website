@@ -1,6 +1,12 @@
 import * as z from 'zod';
 import { BAG_SIZES, BAG_TYPES, DEFAULT_BAG_TYPE } from '@/lib/constants';
 
+export const incomingLocationSchema = z.object({
+  chamber: z.string(),
+  floor: z.string(),
+  row: z.string(),
+});
+
 export const incomingQuantityRowSchema = z.object({
   id: z.string(),
   size: z.string(),
@@ -10,6 +16,7 @@ export const incomingQuantityRowSchema = z.object({
   chamber: z.string(),
   floor: z.string(),
   row: z.string(),
+  previousLocation: z.array(incomingLocationSchema).default([]),
 });
 
 export function createIncomingQuantitiesSchema(allowedSizes: string[] = []) {
@@ -99,6 +106,25 @@ export function applyIncomingQuantityLocationToAll(
   return rows.map((row) => ({ ...row, ...location }));
 }
 
+export function applyIncomingPaltaiLocation(
+  row: IncomingQuantityRow,
+  nextLocation: IncomingQuantityLocation,
+): IncomingQuantityRow {
+  const currentLocation: IncomingQuantityLocation = {
+    chamber: row.chamber.trim(),
+    floor: row.floor.trim(),
+    row: row.row.trim(),
+  };
+
+  return {
+    ...row,
+    previousLocation: [...(row.previousLocation ?? []), currentLocation],
+    chamber: nextLocation.chamber.trim(),
+    floor: nextLocation.floor.trim(),
+    row: nextLocation.row.trim(),
+  };
+}
+
 export function resolveBagSizes(sizes: string[]): string[] {
   return sizes.length > 0 ? sizes : [...BAG_SIZES];
 }
@@ -113,6 +139,7 @@ export function createDefaultIncomingQuantities(sizes: string[] = []): IncomingQ
     chamber: '',
     floor: '',
     row: '',
+    previousLocation: [],
   }));
 }
 
@@ -126,5 +153,6 @@ export function createEmptyIncomingQuantityRow(): IncomingQuantityRow {
     chamber: '',
     floor: '',
     row: '',
+    previousLocation: [],
   };
 }
