@@ -33,8 +33,9 @@ export default defineConfig({
     // exceljs is large and lazy-loaded on export only.
     // Do NOT isolate @react-pdf in its own chunk: it breaks in production
     // ("re is not a function" – React.createElement ref). PDF code is only
-    // loaded via dynamic import() when generating PDFs.
-    chunkSizeWarningLimit: 1000,
+    // loaded via dynamic import() when generating PDFs. @react-pdf itself is
+    // ~1.4MB minified; PDF fonts ship as separate .ttf assets.
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         manualChunks(id) {

@@ -5,6 +5,7 @@ import {
   buildFarmerStockLedgerPdfData,
   type BuildFarmerStockLedgerPdfDataInput,
 } from '@/features/people-report/utils/build-farmer-stock-ledger-pdf-data';
+import { registerColdopPdfFonts } from '@/lib/pdf/register-pdf-fonts';
 
 export type GenerateFarmerStockLedgerPdfInput = BuildFarmerStockLedgerPdfDataInput & {
   coldStorageName: string;
@@ -18,6 +19,8 @@ export async function generateFarmerStockLedgerPdf({
   coldStorageLogo,
   ...buildInput
 }: GenerateFarmerStockLedgerPdfInput): Promise<Blob> {
+  await registerColdopPdfFonts();
+
   const pdfData = buildFarmerStockLedgerPdfData({
     ...buildInput,
     generatedAt: new Date(),

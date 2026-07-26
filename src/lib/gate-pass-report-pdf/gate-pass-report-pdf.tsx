@@ -6,7 +6,6 @@ import {
   GATE_PASS_REPORT_LEDGER_ROWS_PER_PAGE,
   GATE_PASS_REPORT_ROWS_PER_PAGE,
 } from '@/lib/gate-pass-report-pdf/chunk-report-rows';
-import { registerGatePassReportPdfFonts } from '@/lib/gate-pass-report-pdf/register-pdf-fonts';
 import type {
   GatePassReportPdfCell,
   GatePassReportPdfColumn,
@@ -17,8 +16,6 @@ import type {
   GenerateGatePassReportPdfInput,
 } from '@/lib/gate-pass-report-pdf/types';
 import { COLDOP_BRANDING } from '@/lib/export-report-theme';
-
-registerGatePassReportPdfFonts();
 
 const COLOR = {
   ink: '#09090b',

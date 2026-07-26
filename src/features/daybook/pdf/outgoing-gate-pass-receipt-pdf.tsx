@@ -1,10 +1,7 @@
 import { Document, Image, Page, StyleSheet, Text, View } from '@react-pdf/renderer';
 
 import type { OutgoingGatePassReceiptPdfData } from '@/features/daybook/utils/build-outgoing-gate-pass-pdf-data';
-import { registerGatePassReportPdfFonts } from '@/lib/gate-pass-report-pdf/register-pdf-fonts';
 import { COLDOP_BRANDING } from '@/lib/export-report-theme';
-
-registerGatePassReportPdfFonts();
 
 export type OutgoingGatePassReceiptPdfProps = OutgoingGatePassReceiptPdfData & {
   coldStorageName: string;

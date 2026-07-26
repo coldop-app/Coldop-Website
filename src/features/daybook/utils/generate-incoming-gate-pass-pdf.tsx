@@ -5,6 +5,7 @@ import {
   buildIncomingGatePassPdfData,
   type BuildIncomingGatePassPdfDataInput,
 } from '@/features/daybook/utils/build-incoming-gate-pass-pdf-data';
+import { registerGatePassReportPdfFonts } from '@/lib/gate-pass-report-pdf/register-pdf-fonts';
 
 export type GenerateIncomingGatePassPdfInput = BuildIncomingGatePassPdfDataInput & {
   coldStorageName: string;
@@ -18,6 +19,8 @@ export async function generateIncomingGatePassPdf({
   coldStorageLogo,
   ...buildInput
 }: GenerateIncomingGatePassPdfInput): Promise<Blob> {
+  await registerGatePassReportPdfFonts();
+
   const pdfData = buildIncomingGatePassPdfData(buildInput);
 
   const doc = (

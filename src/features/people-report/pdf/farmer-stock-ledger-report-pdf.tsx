@@ -21,9 +21,6 @@ import {
 } from '@/features/people-report/utils/build-farmer-stock-ledger-excel';
 import type { LedgerExportColumn } from '@/features/people-report/utils/export-cell-value';
 import type { StockSummaryMatrix } from '@/features/people/utils/build-farmer-stock-summary';
-import { registerColdopPdfFonts } from '@/lib/pdf/register-pdf-fonts';
-
-registerColdopPdfFonts();
 
 export type FarmerStockLedgerReportProps = FarmerStockLedgerPdfData & {
   coldStorageName: string;
