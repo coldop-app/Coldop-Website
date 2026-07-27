@@ -1,16 +1,5 @@
 User-agent: *
-Allow: /
+Disallow: /
 
-Disallow: /login
-Disallow: /daybook
-Disallow: /people
-Disallow: /incoming
-Disallow: /outgoing
-Disallow: /transfer
-Disallow: /analytics
-Disallow: /finances
-Disallow: /reports
-Disallow: /settings
-Disallow: /api
-
-Sitemap: https://coldop.in/sitemap.xml
+# Product app (app.coldop.in) — not indexed.
+# Marketing site and sitemap live on https://coldop.in

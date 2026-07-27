@@ -1,5 +1,4 @@
 import { HeadContent, Outlet, createRootRouteWithContext } from '@tanstack/react-router';
-import { Analytics } from '@/components/analytics';
 import { NotFoundPage } from '@/components/not-found-page';
 import { RouteErrorPage } from '@/components/route-error-page';
 import type { RouterContext } from '../lib/router-context';
@@ -10,7 +9,7 @@ const rootMeta = buildPageMeta({
   title: HOME_TITLE,
   description: HOME_DESCRIPTION,
   path: '/',
-  robots: 'index, follow',
+  robots: 'noindex, nofollow',
 });
 
 const rootHead = asRouteHead({
@@ -40,7 +39,6 @@ function RootComponent() {
     <>
       <HeadContent />
       <Outlet />
-      <Analytics />
     </>
   );
 }

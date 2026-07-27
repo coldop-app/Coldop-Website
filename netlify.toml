@@ -1,17 +1,15 @@
 [build]
-  command = "pnpm exec playwright install chromium && pnpm build"
+  command = "pnpm build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
-  # Ensure Chromium is available for post-build prerender on Netlify
-  PLAYWRIGHT_BROWSERS_PATH = "0"
 
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
-  # Static files (robots.txt, sitemap.xml, icons, assets) are served first by Netlify
+  # Static files (robots.txt, icons, assets) are served first by Netlify
 
 [[headers]]
   for = "/*"
@@ -20,11 +18,10 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     X-Frame-Options = "DENY"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
-    # Baseline CSP — allow app, Cloudinary assets, and landing embeds (YouTube/Instagram).
-    # PDF generation (@react-pdf) needs:
+    # App CSP — Cloudinary assets + PDF generation (@react-pdf).
     # - script-src 'wasm-unsafe-eval' for Yoga layout WASM
     # - connect-src data: for inlined WASM/font fetches (react-pdf uses fetch())
-    Content-Security-Policy = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob: https://res.cloudinary.com https://*.ytimg.com https://*.instagram.com https://www.googletagmanager.com; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.clarity.ms; connect-src 'self' data: blob: https: wss:; frame-src https://www.youtube.com https://www.youtube-nocookie.com https://www.instagram.com https://www.googletagmanager.com; worker-src 'self' blob:;"
+    Content-Security-Policy = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; img-src 'self' data: blob: https://res.cloudinary.com; font-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'; connect-src 'self' data: blob: https: wss:; worker-src 'self' blob:;"
 
 [[headers]]
   for = "/assets/*"
@@ -33,10 +30,5 @@
 
 [[headers]]
   for = "/robots.txt"
-  [headers.values]
-    Cache-Control = "public, max-age=3600"
-
-[[headers]]
-  for = "/sitemap.xml"
   [headers.values]
     Cache-Control = "public, max-age=3600"

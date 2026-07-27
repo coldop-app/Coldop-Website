@@ -1,11 +1,9 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { useAuthStore } from '@/features/auth/store/use-auth-store';
 import { DEFAULT_DAYBOOK_SEARCH } from '@/features/daybook/search';
-import { LandingPage } from '@/features/landing';
-import { homeJsonLd } from '@/lib/seo/json-ld';
-import { asRouteHead, buildHomeHead } from '@/lib/seo/meta';
+import { asRouteHead, buildNoIndexHead } from '@/lib/seo/meta';
 
-const homeHead = asRouteHead(buildHomeHead(homeJsonLd()));
+const homeHead = asRouteHead(buildNoIndexHead('Coldop', '/'));
 
 export const Route = createFileRoute('/')({
   head: () => homeHead,
@@ -13,9 +11,10 @@ export const Route = createFileRoute('/')({
     const isAuthenticated =
       context.auth.isAuthenticated || useAuthStore.getState().isAuthenticated();
 
-    if (!isAuthenticated) return;
+    if (isAuthenticated) {
+      throw redirect({ to: '/daybook', search: DEFAULT_DAYBOOK_SEARCH });
+    }
 
-    throw redirect({ to: '/daybook', search: DEFAULT_DAYBOOK_SEARCH });
+    throw redirect({ to: '/login' });
   },
-  component: LandingPage,
 });

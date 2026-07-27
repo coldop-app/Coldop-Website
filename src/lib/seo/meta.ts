@@ -1,7 +1,6 @@
 import type { MetaDescriptor } from '@tanstack/react-router';
 import {
   HOME_DESCRIPTION,
-  HOME_TITLE,
   OG_IMAGE_PATH,
   SITE_LOCALE_OG,
   SITE_NAME,
@@ -40,7 +39,7 @@ export function buildPageMeta({
   title,
   description = HOME_DESCRIPTION,
   path = '/',
-  robots = 'index, follow',
+  robots = 'noindex, nofollow',
   image,
   type = 'website',
 }: PageMetaInput): TanStackHeadResult {
@@ -74,21 +73,6 @@ export function buildPageMeta({
     ],
     links: [{ rel: 'canonical', href: url }],
   };
-}
-
-export function buildHomeHead(jsonLd?: Record<string, unknown>): TanStackHeadResult {
-  const base = buildPageMeta({
-    title: HOME_TITLE,
-    description: HOME_DESCRIPTION,
-    path: '/',
-    robots: 'index, follow',
-  });
-
-  if (jsonLd) {
-    base.meta.push({ 'script:ld+json': jsonLd });
-  }
-
-  return base;
 }
 
 export function buildNoIndexHead(title: string, path: string): TanStackHeadResult {

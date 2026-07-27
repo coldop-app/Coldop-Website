@@ -16,8 +16,8 @@ export function sanitizeRedirectPath(value: string | undefined | null): string |
   if (!trimmed.startsWith('/')) return undefined;
 
   try {
-    const url = new URL(trimmed, 'https://coldop.in');
-    if (url.origin !== 'https://coldop.in') return undefined;
+    const url = new URL(trimmed, 'https://app.coldop.in');
+    if (url.origin !== 'https://app.coldop.in') return undefined;
     return `${url.pathname}${url.search}${url.hash}` || '/';
   } catch {
     return undefined;

@@ -7,18 +7,66 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+.pnpm-store
+.pnp
+.pnp.js
+.npm
+
+# Alternate package-manager lockfiles (this repo uses pnpm)
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb
+
+# Build / output
 dist
 dist-ssr
-.env
-.env.*.local
+build
+out
 *.local
+
+# Env / secrets — keep .env.example committable if added later
+.env
+.env.*
+!.env.example
+
+# Marketing site extract (coldop.in Next.js app — not part of app.coldop.in)
+next-js-app-assets
+
+# Caches & tooling
+.tanstack
+.vite
+.cache
+.turbo
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+vite.config.ts.timestamp-*
+vite.config.*.timestamp-*
+
+# Test / coverage
+coverage
+coverage-ts
+.nyc_output
+playwright-report
+test-results
+blob-report
+
+# Deploy / hosting local state
+.netlify
+.vercel
+
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
 *.suo
 *.ntvs*
 *.njsproj
