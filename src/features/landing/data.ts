@@ -186,10 +186,49 @@ export const FEATURES = [
   },
 ];
 
+export const PLANS = [
+  {
+    id: 'base',
+    name: 'Base Plan',
+    badge: 'Ready to run',
+    tagline:
+      'A clear plan for cold storages that want digital gate passes, stock, and books — without the noise.',
+    features: [
+      'Incoming and outgoing gate passes',
+      'Transfer stock between accounts',
+      'Cold storage finances',
+      'Clear reports and PDFs',
+      'Analytics by chamber, floor, variety, and bag size',
+      'Farmer ledgers that update themselves',
+    ],
+    cta: { label: 'Get started', href: '/login', kind: 'link' as const },
+  },
+  {
+    id: 'enterprise',
+    name: 'Enterprise Plan',
+    badge: 'Built for you',
+    tagline:
+      'A plan for you — tailored to your workflows, your team, and how far you want modules linked.',
+    features: [
+      'Fully customisable to how you operate',
+      'Role-based access control (RBAC) for every person on your team',
+      'No limit on devices — use Coldop anywhere',
+      'Link modules from seed to dispatch — completely or only the parts you need',
+      'Seed, incoming, grading, storage, dispatch, and booking flows',
+      'Dynamic reports for each module — with grouping, filtering, and advanced controls by module type',
+      'Finances shaped around your books',
+      'Area-wise insights and season-long wastage tracking',
+      'Priority support when you need us — around the clock',
+    ],
+    cta: { label: "Let's build yours", href: 'tel:+919877069258', kind: 'tel' as const },
+  },
+] as const;
+
 export const NAV_LINKS = [
   { label: 'Home', id: 'home' },
   { label: 'How It Works', id: 'how-it-works' },
   { label: 'Chamber Map', id: 'chamber-map' },
   { label: 'Features', id: 'features' },
+  { label: 'Plans', id: 'plans' },
   { label: 'In the Field', id: 'in-the-field' },
 ];

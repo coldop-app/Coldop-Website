@@ -7,6 +7,7 @@ import { Stats } from './Stats';
 import { HowItWorks } from './HowItWorks';
 import { ChamberMap } from './ChamberMap';
 import { Features } from './Features';
+import { Plans } from './Plans';
 import { CtaBand } from './CtaBand';
 import { Footer } from './Footer';
 
@@ -32,6 +33,7 @@ export function LandingPage() {
         <HowItWorks />
         <ChamberMap />
         <Features />
+        <Plans />
         <Suspense
           fallback={
             <section className="border-b py-20" aria-hidden>
