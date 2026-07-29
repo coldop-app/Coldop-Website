@@ -53,7 +53,9 @@ export function LoginForm() {
   return (
     <div className="bg-background relative flex min-h-screen w-full items-center justify-center px-4 py-8">
       <div className="absolute top-4 left-4 z-10 sm:top-6 sm:left-6">
-        <BrandMark />
+        <a href="https://coldop.in" aria-label="Coldop home">
+          <BrandMark />
+        </a>
       </div>
 
       <Card className="w-full max-w-sm">
