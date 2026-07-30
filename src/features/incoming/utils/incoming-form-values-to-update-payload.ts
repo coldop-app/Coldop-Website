@@ -105,6 +105,10 @@ type BuildUpdateIncomingGatePassPayloadOptions = {
   costPerBag?: number;
   rentEntryVoucherId?: string;
   originalBagSizes: IncomingBagSize[];
+  /**
+   * When stock has moved (current ≠ initial), omit farmer / date / variety /
+   * stock filter / custom marka / quantity changes from the payload.
+   */
   lockFarmerAndQuantity?: boolean;
 };
 
@@ -128,11 +132,14 @@ export function buildUpdateIncomingGatePassPayload(
     payload.farmerStorageLinkId = current.farmerIncomingLinkId;
   }
 
-  if (normalizeIsoDateTime(current.date) !== normalizeIsoDateTime(baseline.date)) {
+  if (
+    !lockFarmerAndQuantity &&
+    normalizeIsoDateTime(current.date) !== normalizeIsoDateTime(baseline.date)
+  ) {
     payload.date = current.date;
   }
 
-  if (current.variety !== baseline.variety) {
+  if (!lockFarmerAndQuantity && current.variety !== baseline.variety) {
     payload.variety = current.variety;
   }
 
@@ -150,11 +157,11 @@ export function buildUpdateIncomingGatePassPayload(
     payload.manualParchiNumber = currentManual;
   }
 
-  if (current.stockFilter.trim() !== baseline.stockFilter.trim()) {
+  if (!lockFarmerAndQuantity && current.stockFilter.trim() !== baseline.stockFilter.trim()) {
     payload.stockFilter = current.stockFilter.trim();
   }
 
-  if (current.customMarka.trim() !== baseline.customMarka.trim()) {
+  if (!lockFarmerAndQuantity && current.customMarka.trim() !== baseline.customMarka.trim()) {
     payload.customMarka = current.customMarka.trim();
   }
 

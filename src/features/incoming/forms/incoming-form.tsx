@@ -93,7 +93,10 @@ export type IncomingFormProps = {
   editBaselineValues?: IncomingFormValues;
   originalBagSizes?: IncomingBagSize[];
   rentEntryVoucherId?: string;
-  /** When stock has moved (current ≠ initial), farmer and quantities cannot change. */
+  /**
+   * When stock has moved (current ≠ initial), lock farmer, quantities, crop details,
+   * and date. Truck, remarks, manual parchi, and location/paltai stay editable.
+   */
   lockFarmerAndQuantity?: boolean;
 };
 
@@ -411,13 +414,14 @@ export function IncomingForm({
     onRefetchGatePassNo,
   ]);
 
-  const cropFieldsDisabled = commodities.length === 0 || !selectedCommodity;
+  const cropFieldsDisabled =
+    lockFarmerAndQuantity || commodities.length === 0 || !selectedCommodity;
 
   const title = mode === 'edit' ? 'Edit Incoming Gate Pass' : 'Incoming Gate Pass';
   const description =
     mode === 'edit'
       ? lockFarmerAndQuantity
-        ? 'Stock has changed on this gate pass, so farmer and bag quantities are locked. You can still update other details and location (including paltai).'
+        ? 'Stock has changed on this gate pass, so farmer, quantities, crop details, and date are locked. You can still update truck, remarks, and location (including paltai).'
         : 'Update crop and account details for this incoming gate pass.'
       : 'Record crop and account details for a new incoming gate pass.';
 
@@ -502,6 +506,7 @@ export function IncomingForm({
                           onChange={(date) => field.handleChange(date ? date.toISOString() : '')}
                           onBlur={field.handleBlur}
                           aria-invalid={isInvalid}
+                          disabled={lockFarmerAndQuantity}
                           placeholder="Pick a date"
                         />
                         {isInvalid && <FieldError errors={field.state.meta.errors} />}

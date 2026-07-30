@@ -162,7 +162,7 @@ describe('EditIncomingForm', () => {
     );
   });
 
-  it('locks farmer and quantity when current quantity differs from initial', () => {
+  it('locks core fields when current quantity differs from initial', () => {
     const entry = makeIncomingDaybookEntry({
       bagSizes: [
         {

@@ -172,7 +172,7 @@ describe('buildUpdateIncomingGatePassPayload previousLocation', () => {
     expect(FARMER_LINK_ID).toBeTruthy();
   });
 
-  it('preserves currentQuantity and omits farmer when lockFarmerAndQuantity is set', () => {
+  it('preserves currentQuantity and omits locked fields when lockFarmerAndQuantity is set', () => {
     const entry = makeIncomingDaybookEntry({
       bagSizes: [
         {
@@ -195,6 +195,10 @@ describe('buildUpdateIncomingGatePassPayload previousLocation', () => {
     const current = {
       ...baseline,
       farmerIncomingLinkId: 'other-farmer-link',
+      date: '2026-07-01T08:30:00.000Z',
+      variety: 'Other Variety',
+      stockFilter: 'Changed Filter',
+      customMarka: 'Changed Marka',
       quantities: baseline.quantities.map((row) =>
         row.size === '50kg' && row.qty === 120
           ? applyIncomingPaltaiLocation(row, { chamber: 'B', floor: '2', row: 'R4' })
@@ -211,6 +215,10 @@ describe('buildUpdateIncomingGatePassPayload previousLocation', () => {
     });
 
     expect(payload?.farmerStorageLinkId).toBeUndefined();
+    expect(payload?.date).toBeUndefined();
+    expect(payload?.variety).toBeUndefined();
+    expect(payload?.stockFilter).toBeUndefined();
+    expect(payload?.customMarka).toBeUndefined();
     expect(payload?.amount).toBeUndefined();
     expect(payload?.bagSizes).toEqual([
       {

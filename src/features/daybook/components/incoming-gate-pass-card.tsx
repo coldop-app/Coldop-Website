@@ -191,7 +191,7 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
     entry.status !== 'OPEN'
       ? 'Only open gate passes can be edited'
       : hasQuantityChanged
-        ? 'Farmer and quantities are locked because stock has changed; other fields can still be edited'
+        ? 'Farmer, quantities, crop details, and date are locked because stock has changed; truck, remarks, and location can still be edited'
         : undefined;
 
   const handlePrint = useCallback(async () => {
