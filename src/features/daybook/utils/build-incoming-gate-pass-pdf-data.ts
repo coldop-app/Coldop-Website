@@ -14,6 +14,7 @@ import {
 export type IncomingGatePassReceiptBagRow = {
   bagSize: string;
   location: string;
+  previousLocations: string[];
   currentQty: number;
   initialQty: number;
 };
@@ -67,6 +68,7 @@ export function buildIncomingGatePassPdfData({
     bagRows: bagSizes.map((bag) => ({
       bagSize: bag.name,
       location: formatCompactLocation(bag.location),
+      previousLocations: (bag.previousLocation ?? []).map(formatCompactLocation),
       currentQty: bag.currentQuantity,
       initialQty: bag.initialQuantity,
     })),

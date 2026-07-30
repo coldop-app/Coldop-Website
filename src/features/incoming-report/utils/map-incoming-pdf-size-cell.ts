@@ -11,17 +11,10 @@ import type { GatePassReportPdfCell } from '@/lib/gate-pass-report-pdf/types';
 type LocationLine = {
   quantity: number;
   locationLabel: string | null;
-  paltaiLabel: string | null;
 };
 
 function hasLocation(location: IncomingBagSize['location']): boolean {
   return Boolean(location.chamber || location.floor || location.row);
-}
-
-function getLatestPreviousLocation(bag: IncomingBagSize) {
-  const history = bag.previousLocation;
-  if (!history || history.length === 0) return null;
-  return history[history.length - 1] ?? null;
 }
 
 function getBagQuantity(bag: IncomingBagSize, quantityMode: IncomingQuantityMode): number {
@@ -38,26 +31,17 @@ function buildMergedLocationLines(
     const qty = getBagQuantity(bag, quantityMode);
     const key = locationKey(bag.location);
     const locationLabel = hasLocation(bag.location) ? formatCompactLocation(bag.location) : null;
-    const latestPrevious = getLatestPreviousLocation(bag);
-    const paltaiLabel =
-      latestPrevious && hasLocation(latestPrevious)
-        ? formatCompactLocation(latestPrevious)
-        : null;
 
     const existing = merged.get(key);
 
     if (existing) {
       existing.quantity += qty;
-      if (paltaiLabel && !existing.paltaiLabel) {
-        existing.paltaiLabel = paltaiLabel;
-      }
       continue;
     }
 
     merged.set(key, {
       quantity: qty,
       locationLabel,
-      paltaiLabel,
     });
   }
 
@@ -65,17 +49,8 @@ function buildMergedLocationLines(
 }
 
 function formatLocationSub(line: LocationLine): string | undefined {
-  const parts: string[] = [];
-
-  if (line.locationLabel) {
-    parts.push(`(${line.locationLabel})`);
-  }
-
-  if (line.paltaiLabel) {
-    parts.push(`Paltai: (${line.paltaiLabel})`);
-  }
-
-  return parts.length > 0 ? parts.join('\n') : undefined;
+  if (!line.locationLabel) return undefined;
+  return `(${line.locationLabel})`;
 }
 
 function formatMultiLocationSegment(line: LocationLine): string {
@@ -83,10 +58,6 @@ function formatMultiLocationSegment(line: LocationLine): string {
 
   if (!line.locationLabel) {
     return quantity;
-  }
-
-  if (line.paltaiLabel) {
-    return `${quantity} (${line.locationLabel}, Paltai: ${line.paltaiLabel})`;
   }
 
   return `${quantity} (${line.locationLabel})`;
@@ -114,9 +85,7 @@ export function mapIncomingSizeCellForPdf(
 
   const lines = buildMergedLocationLines(bags, quantityMode);
   const total = lines.reduce((sum, line) => sum + line.quantity, 0);
-  const hasAnyLocation = lines.some(
-    (line) => line.locationLabel != null || line.paltaiLabel != null,
-  );
+  const hasAnyLocation = lines.some((line) => line.locationLabel != null);
 
   if (!hasAnyLocation) {
     return { text: formatQuantity(total), align };

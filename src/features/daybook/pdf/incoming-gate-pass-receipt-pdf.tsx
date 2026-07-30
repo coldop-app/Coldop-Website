@@ -476,18 +476,25 @@ function IncomingGatePassReceiptPage({
             <Text style={[styles.col3, styles.colTextHeader]}>Quantity</Text>
           </View>
 
-          {bagRows.map((row, index) => (
-            <View
-              key={`${row.bagSize}-${index}`}
-              style={[styles.tableRow, ...(index % 2 === 1 ? [styles.tableRowAlt] : [])]}
-            >
-              <Text style={[styles.col1, styles.colTextData]}>{row.bagSize}</Text>
-              <Text style={[styles.col2, styles.colTextMuted]}>{row.location}</Text>
-              <Text style={[styles.col3, styles.colTextData]}>
-                {row.initialQty.toLocaleString('en-IN')}
-              </Text>
-            </View>
-          ))}
+          {bagRows.map((row, index) => {
+            const locationTrail =
+              row.previousLocations.length > 0
+                ? [...row.previousLocations, row.location].join(' → ')
+                : row.location;
+
+            return (
+              <View
+                key={`${row.bagSize}-${index}`}
+                style={[styles.tableRow, ...(index % 2 === 1 ? [styles.tableRowAlt] : [])]}
+              >
+                <Text style={[styles.col1, styles.colTextData]}>{row.bagSize}</Text>
+                <Text style={[styles.col2, styles.colTextMuted]}>{locationTrail}</Text>
+                <Text style={[styles.col3, styles.colTextData]}>
+                  {row.initialQty.toLocaleString('en-IN')}
+                </Text>
+              </View>
+            );
+          })}
 
           <View style={styles.tableTotalRow}>
             <Text style={[styles.col1, styles.colTextTotalAccent]}>Total</Text>

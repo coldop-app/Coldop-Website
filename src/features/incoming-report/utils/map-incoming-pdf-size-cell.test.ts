@@ -76,7 +76,7 @@ describe('mapIncomingSizeCellForPdf', () => {
     });
   });
 
-  it('includes paltai location in sub text', () => {
+  it('omits previousLocation from location sub text', () => {
     const row = createRow({
       bagSizes: [
         {
@@ -92,10 +92,7 @@ describe('mapIncomingSizeCellForPdf', () => {
     expect(mapIncomingSizeCellForPdf(row, 'size-Jumbo', 'current', true)).toEqual({
       text: '500',
       align: 'right',
-      stack: {
-        main: '500',
-        sub: '(C1/F2/R3)\nPaltai: (P1/P2/P3)',
-      },
+      stack: { main: '500', sub: '(C1/F2/R3)' },
     });
   });
 
