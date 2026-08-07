@@ -35,6 +35,14 @@ export function readThemeCookie(): ThemePreference | null {
 export function writeThemeCookie(theme: string): void {
   if (typeof document === 'undefined' || !isThemePreference(theme)) return;
 
+  const domain = cookieDomain();
+
+  // Expire a host-only duplicate so document.cookie cannot return a stale
+  // first match alongside the shared parent-domain cookie.
+  if (domain) {
+    document.cookie = `${THEME_COOKIE_NAME}=; path=/; max-age=0; SameSite=Lax`;
+  }
+
   const parts = [
     `${THEME_COOKIE_NAME}=${encodeURIComponent(theme)}`,
     'path=/',
@@ -42,7 +50,6 @@ export function writeThemeCookie(theme: string): void {
     'SameSite=Lax',
   ];
 
-  const domain = cookieDomain();
   if (domain) {
     parts.push(`domain=${domain}`);
   }

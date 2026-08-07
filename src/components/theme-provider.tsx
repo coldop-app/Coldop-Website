@@ -1,5 +1,5 @@
 import { ThemeProvider as NextThemesProvider, useTheme } from 'next-themes';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import {
   hydrateThemeStorageFromCookie,
   readThemeCookie,
@@ -8,24 +8,23 @@ import {
 
 function ThemeCookieSync({ children }: { children: React.ReactNode }) {
   const { theme, setTheme } = useTheme();
-  const [canPersist, setCanPersist] = useState(false);
+  const didSeed = useRef(false);
 
-  // Seed from shared cookie after mount (wins over stale per-origin localStorage).
-  // Defer cookie writes until the next task so we don't clobber the cookie with
-  // defaultTheme before setTheme(cookie) has applied.
+  // Seed exactly once. next-themes recreates setTheme when theme changes; without
+  // the ref, re-applying a stale cookie fights the user toggle and flickers forever.
   useEffect(() => {
+    if (didSeed.current) return;
+    didSeed.current = true;
     const cookieTheme = hydrateThemeStorageFromCookie() ?? readThemeCookie();
     if (cookieTheme) {
       setTheme(cookieTheme);
     }
-    const id = window.setTimeout(() => setCanPersist(true), 0);
-    return () => window.clearTimeout(id);
   }, [setTheme]);
 
   useEffect(() => {
-    if (!canPersist || !theme) return;
+    if (!didSeed.current || !theme) return;
     writeThemeCookie(theme);
-  }, [theme, canPersist]);
+  }, [theme]);
 
   return children;
 }
