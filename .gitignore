@@ -58,7 +58,6 @@ blob-report
 .netlify
 .vercel
 
-
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -74,3 +73,4 @@ Desktop.ini
 *.sw?
 .qodo
 .cursor
+COLDOP_PRODUCT_INFORMATION.MD

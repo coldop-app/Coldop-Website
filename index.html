@@ -37,6 +37,43 @@
   </head>
   <body>
     <div id="root"></div>
+    <!-- Hydrate theme from shared .coldop.in cookie before React/next-themes boot -->
+    <script>
+      (function () {
+        try {
+          var cookieName = 'coldop-theme';
+          var storageKey = 'theme';
+          var match = document.cookie.match(
+            new RegExp('(?:^|; )' + cookieName + '=([^;]*)'),
+          );
+          var cookieTheme = match ? decodeURIComponent(match[1]) : null;
+          var stored = null;
+          try {
+            stored = localStorage.getItem(storageKey);
+          } catch (e) {}
+          var theme = cookieTheme || stored;
+          if (
+            cookieTheme &&
+            cookieTheme !== stored &&
+            (cookieTheme === 'light' ||
+              cookieTheme === 'dark' ||
+              cookieTheme === 'system')
+          ) {
+            try {
+              localStorage.setItem(storageKey, cookieTheme);
+            } catch (e) {}
+            theme = cookieTheme;
+          }
+          var prefersDark =
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches;
+          var isDark =
+            theme === 'dark' || ((theme === 'system' || !theme) && prefersDark);
+          if (isDark) document.documentElement.classList.add('dark');
+          else document.documentElement.classList.remove('dark');
+        } catch (e) {}
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

@@ -1,4 +1,5 @@
 import { queryClient } from '@/lib/queryClient';
+import { THEME_STORAGE_KEY } from '@/lib/theme-persistence';
 import { useAuthStore } from './use-auth-store';
 import { useColdStorageStore } from './use-cold-storage-store';
 import { usePreferencesStore } from './use-preferences-store';
@@ -22,7 +23,12 @@ export function clearSession() {
   }
 
   if (typeof window !== 'undefined') {
+    // Appearance is a device preference — keep it across logout/401 wipes.
+    const theme = localStorage.getItem(THEME_STORAGE_KEY);
     localStorage.clear();
+    if (theme) {
+      localStorage.setItem(THEME_STORAGE_KEY, theme);
+    }
   }
 
   queryClient.clear();

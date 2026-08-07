@@ -15,7 +15,7 @@ export function Providers() {
   const user = useStoreAdminStore((s) => s.storeAdmin);
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="theme">
       <TooltipProvider delayDuration={0}>
         <QueryClientProvider client={queryClient}>
           <RouterProvider
