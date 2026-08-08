@@ -1,13 +1,14 @@
 import { Outlet } from '@tanstack/react-router';
+import { AppBottomNav } from '@/components/app-bottom-nav';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppTopbar } from '@/components/app-topbar';
 import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
 
 export function AuthenticatedLayout() {
   return (
-    <SidebarProvider>
+    <SidebarProvider className="h-svh max-h-svh overflow-hidden">
       <AppSidebar />
-      <SidebarInset className="!mt-0 md:!mt-0 md:rounded-t-none">
+      <SidebarInset className="mt-0! max-h-svh overflow-hidden md:mt-0! md:rounded-t-none">
         <AppTopbar />
         <section
           data-main-scroll
@@ -17,6 +18,7 @@ export function AuthenticatedLayout() {
             <Outlet />
           </div>
         </section>
+        <AppBottomNav className="md:hidden" />
       </SidebarInset>
     </SidebarProvider>
   );

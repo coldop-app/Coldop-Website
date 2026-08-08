@@ -37,6 +37,7 @@ const routeTitles: Record<string, string> = {
   '/settings/': 'Settings',
   '/settings/preferences': 'Preferences',
   '/settings/profile': 'Profile',
+  '/more': 'More',
   '/reports/incoming': 'Incoming Report',
   '/reports/outgoing': 'Outgoing Report',
   '/reports/transfer-stock': 'Transfer Stock Reports',
@@ -187,11 +188,11 @@ export function AppTopbar() {
   return (
     <header className={cn('bg-background flex h-14 shrink-0 items-center border-b px-4')}>
       <div className="flex min-w-0 flex-1 items-center gap-1">
-        <SidebarTrigger className="-ml-1" />
+        <SidebarTrigger className="-ml-1 hidden md:inline-flex" />
         <div
           role="separator"
           aria-orientation="vertical"
-          className="bg-muted-foreground/25 mx-2 h-6 w-px shrink-0 rounded-full"
+          className="bg-muted-foreground/25 mx-2 hidden h-6 w-px shrink-0 rounded-full md:block"
         />
         <h1 className="truncate text-lg font-semibold tracking-tight" title={pageTitle}>
           {pageTitle}

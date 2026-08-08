@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedDaybookRouteImport } from './routes/_authenticated/daybook'
+import { Route as AuthenticatedMoreRouteImport } from './routes/_authenticated/more'
 import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
 import { Route as AuthenticatedAnalyticsAdvancedRouteImport } from './routes/_authenticated/analytics.advanced'
 import { Route as AuthenticatedAnalyticsVarietyBreakdownRouteImport } from './routes/_authenticated/analytics.variety-breakdown'
@@ -53,6 +54,11 @@ const LoginRoute = LoginRouteImport.update({
 const AuthenticatedDaybookRoute = AuthenticatedDaybookRouteImport.update({
   id: '/daybook',
   path: '/daybook',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedMoreRoute = AuthenticatedMoreRouteImport.update({
+  id: '/more',
+  path: '/more',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedAnalyticsIndexRoute =
@@ -189,6 +195,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/daybook': typeof AuthenticatedDaybookRoute
+  '/more': typeof AuthenticatedMoreRoute
   '/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
   '/incoming/$id': typeof AuthenticatedIncomingIdRoute
@@ -216,6 +223,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/daybook': typeof AuthenticatedDaybookRoute
+  '/more': typeof AuthenticatedMoreRoute
   '/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
   '/incoming/$id': typeof AuthenticatedIncomingIdRoute
@@ -244,6 +252,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/login': typeof LoginRoute
   '/_authenticated/daybook': typeof AuthenticatedDaybookRoute
+  '/_authenticated/more': typeof AuthenticatedMoreRoute
   '/_authenticated/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/_authenticated/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
   '/_authenticated/incoming/$id': typeof AuthenticatedIncomingIdRoute
@@ -273,6 +282,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/daybook'
+    | '/more'
     | '/analytics/advanced'
     | '/analytics/variety-breakdown'
     | '/incoming/$id'
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/daybook'
+    | '/more'
     | '/analytics/advanced'
     | '/analytics/variety-breakdown'
     | '/incoming/$id'
@@ -327,6 +338,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/login'
     | '/_authenticated/daybook'
+    | '/_authenticated/more'
     | '/_authenticated/analytics/advanced'
     | '/_authenticated/analytics/variety-breakdown'
     | '/_authenticated/incoming/$id'
@@ -385,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/daybook'
       fullPath: '/daybook'
       preLoaderRoute: typeof AuthenticatedDaybookRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/more': {
+      id: '/_authenticated/more'
+      path: '/more'
+      fullPath: '/more'
+      preLoaderRoute: typeof AuthenticatedMoreRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/analytics/': {
@@ -561,6 +580,7 @@ const AuthenticatedPeopleIdRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDaybookRoute: typeof AuthenticatedDaybookRoute
+  AuthenticatedMoreRoute: typeof AuthenticatedMoreRoute
   AuthenticatedAnalyticsAdvancedRoute: typeof AuthenticatedAnalyticsAdvancedRoute
   AuthenticatedAnalyticsVarietyBreakdownRoute: typeof AuthenticatedAnalyticsVarietyBreakdownRoute
   AuthenticatedIncomingIdRoute: typeof AuthenticatedIncomingIdRoute
@@ -585,6 +605,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDaybookRoute: AuthenticatedDaybookRoute,
+  AuthenticatedMoreRoute: AuthenticatedMoreRoute,
   AuthenticatedAnalyticsAdvancedRoute: AuthenticatedAnalyticsAdvancedRoute,
   AuthenticatedAnalyticsVarietyBreakdownRoute:
     AuthenticatedAnalyticsVarietyBreakdownRoute,
