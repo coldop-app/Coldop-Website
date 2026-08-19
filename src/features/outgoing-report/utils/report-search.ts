@@ -22,6 +22,7 @@ function buildOutgoingReportSearchText(row: OutgoingGatePassReportRecord): strin
     getOutgoingReportType(row),
     getOutgoingReportVariety(row),
     row.stockFilter,
+    row.customMarka,
     row.from,
     row.to,
     row.remarks,

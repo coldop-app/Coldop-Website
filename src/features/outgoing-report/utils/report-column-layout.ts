@@ -8,6 +8,7 @@ const OUTGOING_REPORT_COLUMN_WIDTHS = {
   type: '7rem',
   variety: '8rem',
   stockFilter: '7.5rem',
+  customMarka: '7.5rem',
   from: '8rem',
   to: '8rem',
   truckNumber: '8rem',

@@ -8,7 +8,10 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
-import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
+import {
+  shouldShowCustomMarka,
+  shouldShowStockFilter,
+} from '@/features/incoming/utils/incoming-preferences';
 import type { OutgoingGatePassReportRecord } from '@/features/outgoing-report/api/types';
 
 import {
@@ -47,10 +50,12 @@ const OutgoingReportPage = () => {
 
   const coldStorageName = useColdStorageStore((s) => s.coldStorage?.name);
   const stockFilterPreference = usePreferencesStore((state) => state.preferences?.stockFilter);
+  const customMarkaPreference = usePreferencesStore((state) => state.preferences?.customMarka);
   const showViewFilters = usePreferencesStore(
     (state) => state.preferences?.showViewFilters ?? false,
   );
   const showStockFilter = shouldShowStockFilter(stockFilterPreference);
+  const showCustomMarka = shouldShowCustomMarka(customMarkaPreference);
   const { data, error, isFetching, isLoading, refetch } = useOutgoingGatePassReport(appliedParams);
 
   const reportRows = useMemo(
@@ -63,8 +68,15 @@ const OutgoingReportPage = () => {
     [deferredSearchQuery, searchIndex],
   );
   const tableColumns = useMemo(
-    () => getOutgoingReportColumns(reportRows, quantityMode, showStockFilter, showLocation),
-    [quantityMode, reportRows, showStockFilter, showLocation],
+    () =>
+      getOutgoingReportColumns(
+        reportRows,
+        quantityMode,
+        showCustomMarka,
+        showStockFilter,
+        showLocation,
+      ),
+    [quantityMode, reportRows, showCustomMarka, showStockFilter, showLocation],
   );
 
   const handleTableReady = useCallback((table: TanStackTable<OutgoingGatePassReportRecord>) => {

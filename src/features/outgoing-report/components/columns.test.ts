@@ -24,12 +24,22 @@ function columnKey(column: { id?: string; accessorKey?: string }) {
 
 describe('getOutgoingReportColumns', () => {
   it('includes stock filter column when preference is enabled', () => {
-    const columns = getOutgoingReportColumns([sampleRow], 'issued', true);
+    const columns = getOutgoingReportColumns([sampleRow], 'issued', false, true);
     expect(columns.some((column) => columnKey(column) === 'stockFilter')).toBe(true);
   });
 
   it('omits stock filter column when preference is disabled', () => {
-    const columns = getOutgoingReportColumns([sampleRow], 'issued', false);
+    const columns = getOutgoingReportColumns([sampleRow], 'issued', false, false);
     expect(columns.some((column) => columnKey(column) === 'stockFilter')).toBe(false);
+  });
+
+  it('includes custom marka column when preference is enabled', () => {
+    const columns = getOutgoingReportColumns([sampleRow], 'issued', true);
+    expect(columns.some((column) => columnKey(column) === 'customMarka')).toBe(true);
+  });
+
+  it('omits custom marka column when preference is disabled', () => {
+    const columns = getOutgoingReportColumns([sampleRow], 'issued', false);
+    expect(columns.some((column) => columnKey(column) === 'customMarka')).toBe(false);
   });
 });
