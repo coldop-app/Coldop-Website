@@ -9,9 +9,9 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import type { AnalyticsTab } from '@/features/analytics/search';
-import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
+import { shouldShowGeneration, shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
 import { StockSummaryTabBar } from '@/features/people/components/farmer-stock-summary-tabs';
-import type { StockFilterTab } from '@/features/people/utils/build-farmer-stock-summary';
+import type { GenerationTab, StockFilterTab } from '@/features/people/utils/build-farmer-stock-summary';
 import { preserveScroll } from '@/lib/preserve-scroll';
 
 import { VARIETY_BREAKDOWN_QUERY_KEY } from './api/use-variety-breakdown';
@@ -19,17 +19,17 @@ import { VarietyBreakdownTabContent } from './components/variety-breakdown-tab-c
 
 const varietyBreakdownRouteApi = getRouteApi('/_authenticated/analytics/variety-breakdown');
 
-function resolveStockFilterTabFromSearch(
-  stockFilterTabParam: string | undefined,
-  stockFilterTabs: StockFilterTab[],
-): StockFilterTab {
-  if (!stockFilterTabParam) return 'all';
+function resolvePreferenceTabFromSearch(
+  tabParam: string | undefined,
+  tabs: Array<StockFilterTab | GenerationTab>,
+): StockFilterTab | GenerationTab {
+  if (!tabParam) return 'all';
 
-  const exact = stockFilterTabs.find((tab) => tab === stockFilterTabParam);
+  const exact = tabs.find((tab) => tab === tabParam);
   if (exact) return exact;
 
-  const normalized = stockFilterTabParam.trim().toUpperCase();
-  const caseInsensitive = stockFilterTabs.find(
+  const normalized = tabParam.trim().toUpperCase();
+  const caseInsensitive = tabs.find(
     (tab) => tab !== 'all' && tab.trim().toUpperCase() === normalized,
   );
   return caseInsensitive ?? 'all';
@@ -42,12 +42,16 @@ const VarietyBreakdownPage = () => {
     tab,
     stockFilter: stockFilterParam,
     stockFilterTab: stockFilterTabParam,
+    generation: generationParam,
+    generationTab: generationTabParam,
   } = varietyBreakdownRouteApi.useSearch();
   const navigate = varietyBreakdownRouteApi.useNavigate();
   const queryClient = useQueryClient();
   const preferences = usePreferencesStore((state) => state.preferences);
   const showStockFilterTabs = shouldShowStockFilter(preferences?.stockFilter);
+  const showGenerationTabs = shouldShowGeneration(preferences?.generation);
   const stockFilterOptions = preferences?.stockFilter?.options ?? [];
+  const generationOptions = preferences?.generation?.options ?? [];
 
   const isRefreshing = useIsFetching({ queryKey: VARIETY_BREAKDOWN_QUERY_KEY }) > 0;
 
@@ -57,22 +61,41 @@ const VarietyBreakdownPage = () => {
   );
 
   const stockFilterTab = useMemo(
-    () => resolveStockFilterTabFromSearch(stockFilterTabParam, stockFilterTabs),
+    () => resolvePreferenceTabFromSearch(stockFilterTabParam, stockFilterTabs) as StockFilterTab,
     [stockFilterTabParam, stockFilterTabs],
   );
 
+  const generationTabs: GenerationTab[] = useMemo(
+    () => (showGenerationTabs ? ['all', ...generationOptions] : []),
+    [showGenerationTabs, generationOptions],
+  );
+
+  const generationTab = useMemo(
+    () => resolvePreferenceTabFromSearch(generationTabParam, generationTabs) as GenerationTab,
+    [generationTabParam, generationTabs],
+  );
+
   const includeStockFilter = showStockFilterTabs || Boolean(stockFilterParam);
+  const includeGeneration = showGenerationTabs || Boolean(generationParam);
 
   const stockFilterTabItems = stockFilterTabs.map((filterTab) => ({
     value: filterTab,
     label: filterTab === 'all' ? 'All' : filterTab,
   }));
 
-  const buildSearch = (overrides: {
-    bagSize?: string;
-    tab?: AnalyticsTab;
-    stockFilterTab?: StockFilterTab;
-  } = {}) => ({
+  const generationTabItems = generationTabs.map((filterTab) => ({
+    value: filterTab,
+    label: filterTab === 'all' ? 'All' : filterTab,
+  }));
+
+  const buildSearch = (
+    overrides: {
+      bagSize?: string;
+      tab?: AnalyticsTab;
+      stockFilterTab?: StockFilterTab;
+      generationTab?: GenerationTab;
+    } = {},
+  ) => ({
     variety,
     bagSize: overrides.bagSize ?? bagSize,
     tab: overrides.tab ?? tab,
@@ -80,6 +103,12 @@ const VarietyBreakdownPage = () => {
       ? {
           stockFilter: true as const,
           stockFilterTab: overrides.stockFilterTab ?? stockFilterTab,
+        }
+      : {}),
+    ...(includeGeneration
+      ? {
+          generation: true as const,
+          generationTab: overrides.generationTab ?? generationTab,
         }
       : {}),
   });
@@ -94,6 +123,13 @@ const VarietyBreakdownPage = () => {
   const handleStockFilterTabChange = (value: string) => {
     void navigate({
       search: buildSearch({ stockFilterTab: value as StockFilterTab }),
+      ...preserveScroll,
+    });
+  };
+
+  const handleGenerationTabChange = (value: string) => {
+    void navigate({
+      search: buildSearch({ generationTab: value as GenerationTab }),
       ...preserveScroll,
     });
   };
@@ -136,18 +172,35 @@ const VarietyBreakdownPage = () => {
         </ItemActions>
       </Item>
 
-      {showStockFilterTabs ? (
+      {showStockFilterTabs || showGenerationTabs ? (
         <div className="border-border bg-card text-card-foreground overflow-hidden rounded-xl border shadow-sm">
           <div className="bg-muted/20 space-y-0">
-            <div className="px-3 pt-3 sm:px-4 sm:pt-4">
-              <StockSummaryTabBar
-                value={stockFilterTab}
-                onValueChange={handleStockFilterTabChange}
-                items={stockFilterTabItems}
-                ariaLabel="Stock ownership filter"
-              />
-            </div>
-            <Separator />
+            {showStockFilterTabs ? (
+              <>
+                <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+                  <StockSummaryTabBar
+                    value={stockFilterTab}
+                    onValueChange={handleStockFilterTabChange}
+                    items={stockFilterTabItems}
+                    ariaLabel="Stock ownership filter"
+                  />
+                </div>
+                <Separator />
+              </>
+            ) : null}
+            {showGenerationTabs ? (
+              <>
+                <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+                  <StockSummaryTabBar
+                    value={generationTab}
+                    onValueChange={handleGenerationTabChange}
+                    items={generationTabItems}
+                    ariaLabel="Generation filter"
+                  />
+                </div>
+                <Separator />
+              </>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -164,6 +217,7 @@ const VarietyBreakdownPage = () => {
             quantityMode="current"
             enabled={tab === 'current'}
             stockFilterTab={stockFilterTab}
+            generationTab={generationTab}
           />
         </TabsContent>
 
@@ -172,6 +226,7 @@ const VarietyBreakdownPage = () => {
             quantityMode="initial"
             enabled={tab === 'initial'}
             stockFilterTab={stockFilterTab}
+            generationTab={generationTab}
           />
         </TabsContent>
 
@@ -180,6 +235,7 @@ const VarietyBreakdownPage = () => {
             quantityMode="outgoing"
             enabled={tab === 'outgoing'}
             stockFilterTab={stockFilterTab}
+            generationTab={generationTab}
           />
         </TabsContent>
       </Tabs>

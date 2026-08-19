@@ -18,6 +18,7 @@ import type {
 import { FarmerStockSummaryCellBreakdownDialog } from '@/features/people/components/farmer-stock-summary-cell-breakdown-dialog';
 import {
   buildStockSummaryCellBreakdown,
+  type GenerationTab,
   type StockFilterTab,
   type StockQuantityMode,
   type StockSummaryMatrix,
@@ -47,6 +48,7 @@ type FarmerStockSummaryTableProps = {
   outgoingPasses?: OutgoingDaybookEntry[];
   allEntries?: DaybookEntry[];
   stockFilterTab: StockFilterTab;
+  generationTab: GenerationTab;
   quantityMode: StockQuantityMode;
 };
 
@@ -56,6 +58,7 @@ export function FarmerStockSummaryTable({
   outgoingPasses,
   allEntries,
   stockFilterTab,
+  generationTab,
   quantityMode,
 }: FarmerStockSummaryTableProps) {
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
@@ -75,11 +78,12 @@ export function FarmerStockSummaryTable({
       outgoingPasses,
       allEntries,
       stockFilterTab,
+      generationTab,
       quantityMode,
       variety: selectedCell.variety,
       size: selectedCell.size,
     });
-  }, [allEntries, outgoingPasses, passes, quantityMode, selectedCell, stockFilterTab]);
+  }, [allEntries, outgoingPasses, passes, quantityMode, selectedCell, stockFilterTab, generationTab]);
 
   const handleTableScroll = useCallback(() => {
     const el = scrollContainerRef.current;
@@ -90,7 +94,7 @@ export function FarmerStockSummaryTable({
 
   useEffect(() => {
     setSelectedCell(null);
-  }, [quantityMode, stockFilterTab]);
+  }, [quantityMode, stockFilterTab, generationTab]);
 
   useEffect(() => {
     handleTableScroll();

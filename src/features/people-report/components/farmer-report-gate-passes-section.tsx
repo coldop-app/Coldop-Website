@@ -42,6 +42,7 @@ import { usePreferencesStore } from '@/features/auth/store/use-preferences-store
 import { isIncomingDaybookEntry, isOutgoingDaybookEntry } from '@/features/daybook/types';
 import {
   shouldShowCustomMarka,
+  shouldShowGeneration,
   shouldShowStockFilter,
 } from '@/features/incoming/utils/incoming-preferences';
 import { useFarmerGatePasses } from '@/features/people/api/use-farmer-gate-passes';
@@ -214,6 +215,7 @@ export function FarmerReportGatePassesSection({
   const commodities = usePreferencesStore((state) => state.preferences?.commodities ?? []);
   const customMarkaPreference = usePreferencesStore((state) => state.preferences?.customMarka);
   const stockFilterPreference = usePreferencesStore((state) => state.preferences?.stockFilter);
+  const generationPreference = usePreferencesStore((state) => state.preferences?.generation);
   const showViewFilters = usePreferencesStore(
     (state) => state.preferences?.showViewFilters ?? false,
   );
@@ -221,6 +223,7 @@ export function FarmerReportGatePassesSection({
   const coldStorageAddress = useColdStorageStore((state) => state.coldStorage?.address);
   const showCustomMarka = shouldShowCustomMarka(customMarkaPreference);
   const showStockFilter = shouldShowStockFilter(stockFilterPreference);
+  const showGeneration = shouldShowGeneration(generationPreference);
 
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
@@ -248,10 +251,12 @@ export function FarmerReportGatePassesSection({
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
   const activeGrouping = useMemo(() => {
-    if (showStockFilter) return viewState.grouping;
-
-    return viewState.grouping.filter((id) => id !== FARMER_REPORT_GROUP_COLUMN_IDS.stockFilter);
-  }, [viewState.grouping, showStockFilter]);
+    return viewState.grouping.filter((id) => {
+      if (!showStockFilter && id === FARMER_REPORT_GROUP_COLUMN_IDS.stockFilter) return false;
+      if (!showGeneration && id === FARMER_REPORT_GROUP_COLUMN_IDS.generation) return false;
+      return true;
+    });
+  }, [viewState.grouping, showStockFilter, showGeneration]);
 
   const onColumnFiltersChange = useCallback<OnChangeFn<ColumnFiltersState>>((updater) => {
     setViewState((current) => ({
@@ -357,8 +362,9 @@ export function FarmerReportGatePassesSection({
         bagSizeSignature ? bagSizeSignature.split('\0') : [],
         showCustomMarka,
         showStockFilter,
+        showGeneration,
       ),
-    [bagSizeSignature, showCustomMarka, showStockFilter],
+    [bagSizeSignature, showCustomMarka, showStockFilter, showGeneration],
   );
 
   useEffect(() => {
@@ -463,6 +469,7 @@ export function FarmerReportGatePassesSection({
       commodities,
       search,
       showStockFilter,
+      showGeneration,
       showCustomMarka,
       grouping: activeGrouping,
       incomingSorting,
@@ -483,6 +490,7 @@ export function FarmerReportGatePassesSection({
     search,
     showCustomMarka,
     showStockFilter,
+    showGeneration,
     visibleColumnIds,
   ]);
 
@@ -668,6 +676,7 @@ export function FarmerReportGatePassesSection({
           onSearchChange={setSearchQuery}
           grouping={activeGrouping}
           showStockFilterGrouping={showStockFilter}
+          showGenerationGrouping={showGeneration}
           onToggleGrouping={handleToggleGrouping}
           isLoading={gatePasses.isLoading}
           isRefreshing={gatePasses.isFetching}

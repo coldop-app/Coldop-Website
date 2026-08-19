@@ -1,28 +1,43 @@
 import { mapStockFilterOptionToBucketKey } from '@/features/analytics/utils/resolve-analytics-summary-data';
-import type { StockFilterTab } from '@/features/people/utils/build-farmer-stock-summary';
+import type {
+  GenerationTab,
+  StockFilterTab,
+} from '@/features/people/utils/build-farmer-stock-summary';
 
 import type {
+  VarietyBreakdownByFilterAndGenerationData,
   VarietyBreakdownByFilterData,
+  VarietyBreakdownByGenerationData,
   VarietyBreakdownData,
   VarietyBreakdownFarmer,
+  VarietyBreakdownGroupedData,
   VarietyBreakdownSize,
 } from '../types';
 
 export function isVarietyBreakdownByFilterData(
-  data: VarietyBreakdownData | VarietyBreakdownByFilterData,
+  data: VarietyBreakdownData | VarietyBreakdownGroupedData,
 ): data is VarietyBreakdownByFilterData {
   return 'varietyBreakdownByFilter' in data;
 }
 
-function findStockFilterBucket(
-  byFilter: Record<string, VarietyBreakdownData>,
-  stockFilterTab: string,
-): VarietyBreakdownData | null {
-  const exact = byFilter[stockFilterTab];
+export function isVarietyBreakdownByGenerationData(
+  data: VarietyBreakdownData | VarietyBreakdownGroupedData,
+): data is VarietyBreakdownByGenerationData {
+  return 'varietyBreakdownByGeneration' in data;
+}
+
+export function isVarietyBreakdownByFilterAndGenerationData(
+  data: VarietyBreakdownData | VarietyBreakdownGroupedData,
+): data is VarietyBreakdownByFilterAndGenerationData {
+  return 'varietyBreakdownByFilterAndGeneration' in data;
+}
+
+function findNamedBucket<T>(byKey: Record<string, T>, tab: string): T | null {
+  const exact = byKey[tab];
   if (exact) return exact;
 
-  const normalized = stockFilterTab.trim().toUpperCase();
-  for (const [key, bucket] of Object.entries(byFilter)) {
+  const normalized = tab.trim().toUpperCase();
+  for (const [key, bucket] of Object.entries(byKey)) {
     if (key.trim().toUpperCase() === normalized) return bucket;
   }
 
@@ -72,10 +87,9 @@ function mergeSizes(sizesList: VarietyBreakdownSize[][]): VarietyBreakdownSize[]
   }));
 }
 
-export function mergeVarietyBreakdownFilterBuckets(
-  data: VarietyBreakdownByFilterData,
+export function mergeVarietyBreakdownBuckets(
+  buckets: VarietyBreakdownData[],
 ): VarietyBreakdownData | null {
-  const buckets = Object.values(data.varietyBreakdownByFilter).filter(Boolean);
   if (buckets.length === 0) return null;
 
   return {
@@ -84,25 +98,90 @@ export function mergeVarietyBreakdownFilterBuckets(
   };
 }
 
+export function mergeVarietyBreakdownFilterBuckets(
+  data: VarietyBreakdownByFilterData,
+): VarietyBreakdownData | null {
+  return mergeVarietyBreakdownBuckets(Object.values(data.varietyBreakdownByFilter).filter(Boolean));
+}
+
+function resolveKeyedBuckets(
+  byKey: Record<string, VarietyBreakdownData>,
+  tab: StockFilterTab | GenerationTab,
+): VarietyBreakdownData | null {
+  if (tab === 'all') {
+    return mergeVarietyBreakdownBuckets(Object.values(byKey).filter(Boolean));
+  }
+
+  const bucketKey = mapStockFilterOptionToBucketKey(tab);
+  if (!bucketKey) return null;
+
+  return findNamedBucket(byKey, bucketKey);
+}
+
+function collectNestedBuckets(
+  nested: Record<string, Record<string, VarietyBreakdownData>>,
+  stockFilterTab: StockFilterTab,
+  generationTab: GenerationTab,
+): VarietyBreakdownData[] {
+  const filterEntries =
+    stockFilterTab === 'all'
+      ? Object.values(nested)
+      : (() => {
+          const key = mapStockFilterOptionToBucketKey(stockFilterTab);
+          if (!key) return [];
+          const inner = findNamedBucket(nested, key);
+          return inner ? [inner] : [];
+        })();
+
+  const buckets: VarietyBreakdownData[] = [];
+
+  for (const inner of filterEntries) {
+    if (generationTab === 'all') {
+      buckets.push(...Object.values(inner).filter(Boolean));
+      continue;
+    }
+
+    const generationKey = mapStockFilterOptionToBucketKey(generationTab);
+    if (!generationKey) continue;
+    const bucket = findNamedBucket(inner, generationKey);
+    if (bucket) buckets.push(bucket);
+  }
+
+  return buckets;
+}
+
 export function resolveVarietyBreakdownData(
-  data: VarietyBreakdownData | VarietyBreakdownByFilterData | null | undefined,
+  data: VarietyBreakdownData | VarietyBreakdownGroupedData | null | undefined,
   stockFilterTab: StockFilterTab,
   showStockFilterTabs: boolean,
+  generationTab: GenerationTab = 'all',
+  showGenerationTabs = false,
 ): VarietyBreakdownData | null {
   if (!data) return null;
 
-  if (!showStockFilterTabs) {
-    return isVarietyBreakdownByFilterData(data) ? null : data;
+  if (!showStockFilterTabs && !showGenerationTabs) {
+    return 'sizes' in data ? data : null;
+  }
+
+  if (showStockFilterTabs && showGenerationTabs) {
+    if (!isVarietyBreakdownByFilterAndGenerationData(data)) return null;
+    const buckets = collectNestedBuckets(
+      data.varietyBreakdownByFilterAndGeneration,
+      stockFilterTab,
+      generationTab,
+    );
+    if (buckets.length === 0) return null;
+    if (stockFilterTab !== 'all' && generationTab !== 'all' && buckets.length === 1) {
+      return buckets[0]!;
+    }
+    return mergeVarietyBreakdownBuckets(buckets);
+  }
+
+  if (showGenerationTabs) {
+    if (!isVarietyBreakdownByGenerationData(data)) return null;
+    return resolveKeyedBuckets(data.varietyBreakdownByGeneration, generationTab);
   }
 
   if (!isVarietyBreakdownByFilterData(data)) return null;
-
-  if (stockFilterTab === 'all') {
-    return mergeVarietyBreakdownFilterBuckets(data);
-  }
-
-  const bucketKey = mapStockFilterOptionToBucketKey(stockFilterTab);
-  if (!bucketKey) return null;
-
-  return findStockFilterBucket(data.varietyBreakdownByFilter, bucketKey);
+  return resolveKeyedBuckets(data.varietyBreakdownByFilter, stockFilterTab);
 }

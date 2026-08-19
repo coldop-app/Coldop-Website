@@ -33,7 +33,7 @@ import {
 import type { FarmerReportGroupColumnId } from '@/features/people-report/utils/report-grouping';
 
 function isGroupColumnId(columnId: string | undefined): columnId is FarmerReportGroupColumnId {
-  return columnId === 'variety' || columnId === 'stockFilter';
+  return columnId === 'variety' || columnId === 'stockFilter' || columnId === 'generation';
 }
 
 function getSuppressedGroupColumns(

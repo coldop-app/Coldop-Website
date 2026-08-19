@@ -30,6 +30,7 @@ export type IncomingDaybookEntry = {
   gatePassNo: number;
   manualParchiNumber?: string | number;
   stockFilter?: string;
+  generation?: string;
   customMarka?: string;
   date: string;
   createdAt: string;
@@ -73,6 +74,7 @@ export type OutgoingDaybookEntry = {
   gatePassNo: number;
   manualParchiNumber?: string | number;
   stockFilter?: string;
+  generation?: string;
   truckNumber?: string;
   from?: string;
   to?: string;

@@ -58,6 +58,8 @@ type TransferGatePassesSectionProps = {
    */
   stockFilter?: string;
   onStockFilterChange?: (value: string) => void;
+  generation?: string;
+  onGenerationChange?: (value: string) => void;
   initialVariety?: string;
   toolbarVariant?: 'default' | 'stacked';
 };
@@ -75,6 +77,8 @@ export function TransferGatePassesSection({
   passesError: passesErrorOverride,
   stockFilter,
   onStockFilterChange,
+  generation,
+  onGenerationChange,
   initialVariety,
   toolbarVariant = 'default',
 }: TransferGatePassesSectionProps) {
@@ -94,6 +98,8 @@ export function TransferGatePassesSection({
     varietyFilterMode,
     stockFilter,
     onStockFilterChange,
+    generation,
+    onGenerationChange,
     initialVariety,
   });
 
@@ -224,6 +230,52 @@ export function TransferGatePassesSection({
                     matrix.needsStockFilterSelection
                       ? 'Stock filter — required'
                       : 'Stock filter'
+                  }
+                />
+              </div>
+            ) : null}
+
+            {onGenerationChange && matrix.showGeneration && matrix.generationOptions.length > 0 ? (
+              <div
+                className={cn(
+                  'flex shrink-0 flex-col gap-1.5 rounded-lg transition-[box-shadow,background-color,border-color] sm:gap-2',
+                  toolbarVariant === 'stacked' && 'order-1 col-span-2 sm:col-span-1',
+                  matrix.needsGenerationSelection &&
+                    'border-primary/50 bg-primary/5 ring-primary/25 border-2 p-2.5 shadow-sm ring-2',
+                )}
+              >
+                <div className="flex flex-col gap-0.5">
+                  <Label
+                    className={cn(
+                      'text-xs leading-none font-medium',
+                      matrix.needsGenerationSelection ? 'text-primary' : 'text-muted-foreground',
+                    )}
+                  >
+                    Generation
+                    {matrix.needsGenerationSelection ? (
+                      <span className="text-destructive ml-0.5 font-semibold">*</span>
+                    ) : null}
+                  </Label>
+                  {matrix.needsGenerationSelection ? (
+                    <p className="text-muted-foreground max-w-64 text-xs leading-snug">
+                      Choose a generation to show gate passes below.
+                    </p>
+                  ) : null}
+                </div>
+                <MatrixRadioFilter
+                  value={matrix.generationFilter}
+                  options={matrix.generationOptions}
+                  onChange={matrix.setGenerationFilter}
+                  icon={Filter}
+                  allowAll={!matrix.needsGenerationSelection}
+                  emptyLabel="Select…"
+                  triggerClassName={cn(
+                    'min-w-[140px]',
+                    matrix.needsGenerationSelection &&
+                      'border-primary/60 bg-background text-primary hover:bg-primary/10',
+                  )}
+                  ariaLabel={
+                    matrix.needsGenerationSelection ? 'Generation — required' : 'Generation'
                   }
                 />
               </div>
@@ -483,6 +535,21 @@ export function TransferGatePassesSection({
                 />
               )}
 
+              {!onGenerationChange &&
+                matrix.showGeneration &&
+                matrix.generationOptions.length > 0 && (
+                <MatrixRadioFilter
+                  label="Generation"
+                  value={matrix.generationFilter}
+                  options={matrix.generationOptions}
+                  onChange={matrix.setGenerationFilter}
+                  icon={Filter}
+                  ariaLabel="Generation"
+                  showLabel={toolbarVariant === 'stacked'}
+                  groupClassName={toolbarVariant === 'stacked' ? 'order-3' : undefined}
+                />
+              )}
+
               {matrix.uniqueLocations.chambers.length > 0 && (
                 <MatrixRadioFilter
                   label="Chamber"
@@ -561,6 +628,7 @@ export function TransferGatePassesSection({
         hasActiveFilters={matrix.hasActiveFilters}
         varietyFilterMode={matrix.varietyFilterMode}
         needsStockFilterSelection={matrix.needsStockFilterSelection}
+        needsGenerationSelection={matrix.needsGenerationSelection}
         allocationMode={allocationMode}
         baselineAllocations={baselineAllocations}
       />

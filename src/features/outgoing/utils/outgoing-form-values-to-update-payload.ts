@@ -63,6 +63,10 @@ export function buildUpdateOutgoingGatePassPayload(
     payload.stockFilter = current.stockFilter.trim();
   }
 
+  if (current.generation.trim() !== baseline.generation.trim()) {
+    payload.generation = current.generation.trim();
+  }
+
   if (!allocationsEqual(current.allocations, baseline.allocations)) {
     payload.incomingGatePasses = groupItemsIntoIncomingGatePasses(items, passes);
   }

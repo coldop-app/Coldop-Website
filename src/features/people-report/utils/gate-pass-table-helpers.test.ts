@@ -12,6 +12,7 @@ import {
   getGatePassSizeQuantity,
   getGatePassSizeQuantityLines,
   getGatePassStockFilter,
+  getGatePassGeneration,
   getGatePassTotalBags,
   getGatePassVariety,
   getOutgoingSizeQuantityDetailLines,
@@ -287,6 +288,17 @@ describe('getGatePassStockFilter', () => {
 
   it('returns em dash when stock filter is absent', () => {
     expect(getGatePassStockFilter(createOutgoingPass())).toBe('—');
+  });
+});
+
+describe('getGatePassGeneration', () => {
+  it('returns generation for incoming and outgoing entries', () => {
+    expect(getGatePassGeneration(createIncomingPass({ generation: 'G1' }))).toBe('G1');
+    expect(getGatePassGeneration(createOutgoingPass({ generation: 'G2' }))).toBe('G2');
+  });
+
+  it('returns em dash when generation is absent', () => {
+    expect(getGatePassGeneration(createOutgoingPass())).toBe('—');
   });
 });
 

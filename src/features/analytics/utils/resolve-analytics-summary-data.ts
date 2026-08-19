@@ -1,23 +1,41 @@
 import type {
   AnalyticsChartData,
   AnalyticsFlatSeriesPoint,
+  AnalyticsGroupedSummaryData,
   AnalyticsStockFilterBucket,
   AnalyticsStockSize,
   AnalyticsStockVariety,
+  AnalyticsSummaryByFilterAndGenerationData,
   AnalyticsSummaryByFilterData,
+  AnalyticsSummaryByGenerationData,
   AnalyticsSummaryData,
   AnalyticsTopSize,
   AnalyticsTopVariety,
 } from '@/features/analytics/types';
-import type { StockFilterTab } from '@/features/people/utils/build-farmer-stock-summary';
+import type {
+  GenerationTab,
+  StockFilterTab,
+} from '@/features/people/utils/build-farmer-stock-summary';
 
-/** Normalized stock-filter option key (matches dynamic API `stockSummaryByFilter` keys). */
+/** Normalized preference option key (matches dynamic API map keys). */
 export type AnalyticsStockFilterBucketKey = string;
 
 export function isAnalyticsSummaryByFilterData(
-  data: AnalyticsSummaryData | AnalyticsSummaryByFilterData,
+  data: AnalyticsSummaryData | AnalyticsGroupedSummaryData,
 ): data is AnalyticsSummaryByFilterData {
   return 'stockSummaryByFilter' in data;
+}
+
+export function isAnalyticsSummaryByGenerationData(
+  data: AnalyticsSummaryData | AnalyticsGroupedSummaryData,
+): data is AnalyticsSummaryByGenerationData {
+  return 'stockSummaryByGeneration' in data;
+}
+
+export function isAnalyticsSummaryByFilterAndGenerationData(
+  data: AnalyticsSummaryData | AnalyticsGroupedSummaryData,
+): data is AnalyticsSummaryByFilterAndGenerationData {
+  return 'stockSummaryByFilterAndGeneration' in data;
 }
 
 export function mapStockFilterOptionToBucketKey(option: string): AnalyticsStockFilterBucketKey | null {
@@ -26,19 +44,23 @@ export function mapStockFilterOptionToBucketKey(option: string): AnalyticsStockF
   return trimmed;
 }
 
-function findStockFilterBucket(
-  byFilter: Record<string, AnalyticsStockFilterBucket>,
-  stockFilterTab: string,
-): AnalyticsStockFilterBucket | null {
-  const exact = byFilter[stockFilterTab];
+function findNamedBucket<T>(byKey: Record<string, T>, tab: string): T | null {
+  const exact = byKey[tab];
   if (exact) return exact;
 
-  const normalized = stockFilterTab.trim().toUpperCase();
-  for (const [key, bucket] of Object.entries(byFilter)) {
+  const normalized = tab.trim().toUpperCase();
+  for (const [key, bucket] of Object.entries(byKey)) {
     if (key.trim().toUpperCase() === normalized) return bucket;
   }
 
   return null;
+}
+
+function findStockFilterBucket(
+  byFilter: Record<string, AnalyticsStockFilterBucket>,
+  stockFilterTab: string,
+): AnalyticsStockFilterBucket | null {
+  return findNamedBucket(byFilter, stockFilterTab);
 }
 
 export function bucketToAnalyticsSummaryData(
@@ -164,10 +186,7 @@ function computeTopSize(stockSummary: AnalyticsStockVariety[]): AnalyticsTopSize
   return top;
 }
 
-export function mergeAnalyticsFilterBuckets(
-  data: AnalyticsSummaryByFilterData,
-): AnalyticsSummaryData {
-  const buckets = Object.values(data.stockSummaryByFilter).filter(Boolean);
+export function mergeAnalyticsBuckets(buckets: AnalyticsStockFilterBucket[]): AnalyticsSummaryData {
   const stockSummary = mergeStockSummaries(buckets);
 
   return {
@@ -182,28 +201,93 @@ export function mergeAnalyticsFilterBuckets(
   };
 }
 
-export function resolveAnalyticsSummaryData(
-  data: AnalyticsSummaryData | AnalyticsSummaryByFilterData | null | undefined,
-  stockFilterTab: StockFilterTab,
-  showStockFilterTabs: boolean,
+export function mergeAnalyticsFilterBuckets(
+  data: AnalyticsSummaryByFilterData,
+): AnalyticsSummaryData {
+  return mergeAnalyticsBuckets(Object.values(data.stockSummaryByFilter).filter(Boolean));
+}
+
+function resolveKeyedBuckets(
+  byKey: Record<string, AnalyticsStockFilterBucket>,
+  tab: StockFilterTab | GenerationTab,
 ): AnalyticsSummaryData | null {
-  if (!data) return null;
-
-  if (!showStockFilterTabs) {
-    return isAnalyticsSummaryByFilterData(data) ? null : data;
+  if (tab === 'all') {
+    return mergeAnalyticsBuckets(Object.values(byKey).filter(Boolean));
   }
 
-  if (!isAnalyticsSummaryByFilterData(data)) return null;
-
-  if (stockFilterTab === 'all') {
-    return mergeAnalyticsFilterBuckets(data);
-  }
-
-  const bucketKey = mapStockFilterOptionToBucketKey(stockFilterTab);
+  const bucketKey = mapStockFilterOptionToBucketKey(tab);
   if (!bucketKey) return null;
 
-  const bucket = findStockFilterBucket(data.stockSummaryByFilter, bucketKey);
+  const bucket = findStockFilterBucket(byKey, bucketKey);
   if (!bucket) return null;
 
   return bucketToAnalyticsSummaryData(bucket);
+}
+
+function collectNestedBuckets(
+  nested: Record<string, Record<string, AnalyticsStockFilterBucket>>,
+  stockFilterTab: StockFilterTab,
+  generationTab: GenerationTab,
+): AnalyticsStockFilterBucket[] {
+  const filterEntries =
+    stockFilterTab === 'all'
+      ? Object.values(nested)
+      : (() => {
+          const key = mapStockFilterOptionToBucketKey(stockFilterTab);
+          if (!key) return [];
+          const inner = findNamedBucket(nested, key);
+          return inner ? [inner] : [];
+        })();
+
+  const buckets: AnalyticsStockFilterBucket[] = [];
+
+  for (const inner of filterEntries) {
+    if (generationTab === 'all') {
+      buckets.push(...Object.values(inner).filter(Boolean));
+      continue;
+    }
+
+    const generationKey = mapStockFilterOptionToBucketKey(generationTab);
+    if (!generationKey) continue;
+    const bucket = findNamedBucket(inner, generationKey);
+    if (bucket) buckets.push(bucket);
+  }
+
+  return buckets;
+}
+
+export function resolveAnalyticsSummaryData(
+  data: AnalyticsSummaryData | AnalyticsGroupedSummaryData | null | undefined,
+  stockFilterTab: StockFilterTab,
+  showStockFilterTabs: boolean,
+  generationTab: GenerationTab = 'all',
+  showGenerationTabs = false,
+): AnalyticsSummaryData | null {
+  if (!data) return null;
+
+  if (!showStockFilterTabs && !showGenerationTabs) {
+    return 'stockSummary' in data ? data : null;
+  }
+
+  if (showStockFilterTabs && showGenerationTabs) {
+    if (!isAnalyticsSummaryByFilterAndGenerationData(data)) return null;
+    const buckets = collectNestedBuckets(
+      data.stockSummaryByFilterAndGeneration,
+      stockFilterTab,
+      generationTab,
+    );
+    if (buckets.length === 0) return null;
+    if (stockFilterTab !== 'all' && generationTab !== 'all' && buckets.length === 1) {
+      return bucketToAnalyticsSummaryData(buckets[0]!);
+    }
+    return mergeAnalyticsBuckets(buckets);
+  }
+
+  if (showGenerationTabs) {
+    if (!isAnalyticsSummaryByGenerationData(data)) return null;
+    return resolveKeyedBuckets(data.stockSummaryByGeneration, generationTab);
+  }
+
+  if (!isAnalyticsSummaryByFilterData(data)) return null;
+  return resolveKeyedBuckets(data.stockSummaryByFilter, stockFilterTab);
 }

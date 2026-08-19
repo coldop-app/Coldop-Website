@@ -257,6 +257,15 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
               {entry.stockFilter}
             </Badge>
           )}
+          {entry.generation && (
+            <Badge
+              variant="outline"
+              className="bg-background max-w-36 truncate text-xs"
+              title={entry.generation}
+            >
+              {entry.generation}
+            </Badge>
+          )}
           <Badge variant="outline" className="bg-background text-xs" title={entry.variety}>
             {entry.variety}
           </Badge>

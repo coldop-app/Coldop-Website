@@ -15,6 +15,7 @@ export type CreateIncomingGatePassPayload = {
   remarks?: string;
   manualParchiNumber?: string;
   stockFilter?: string;
+  generation?: string;
   customMarka?: string;
   amount?: number;
   coldStorageId?: string;
@@ -35,6 +36,7 @@ export type IncomingGatePassRecord = {
   remarks?: string;
   manualParchiNumber?: string;
   stockFilter?: string;
+  generation?: string;
   customMarka?: string;
   rentEntryVoucherId?: string;
   createdAt: string;
@@ -55,6 +57,7 @@ export type UpdateIncomingGatePassPayload = {
   remarks?: string;
   manualParchiNumber?: string;
   stockFilter?: string;
+  generation?: string;
   customMarka?: string;
   amount?: number;
   bagSizes?: CreateIncomingGatePassBagSize[];

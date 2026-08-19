@@ -32,6 +32,7 @@ function buildFarmerReportSearchText(entry: DaybookEntry): string {
     entry.manualParchiNumber,
     getGatePassVariety(entry),
     entry.stockFilter,
+    entry.generation,
     ...incomingFields,
     entry.remarks,
     entry.truckNumber,

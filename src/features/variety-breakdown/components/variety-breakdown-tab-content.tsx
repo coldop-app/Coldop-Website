@@ -12,13 +12,17 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
-import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
+import {
+  shouldShowGeneration,
+  shouldShowStockFilter,
+} from '@/features/incoming/utils/incoming-preferences';
 import {
   QuantityModeTabLabel,
   StockSummaryTabBar,
 } from '@/features/people/components/farmer-stock-summary-tabs';
 import { getStockSummaryAccent } from '@/features/people/components/farmer-stock-summary-table-styles';
 import type {
+  GenerationTab,
   StockFilterTab,
   StockQuantityMode,
 } from '@/features/people/utils/build-farmer-stock-summary';
@@ -45,12 +49,14 @@ type VarietyBreakdownTabContentProps = {
   quantityMode: StockQuantityMode;
   enabled: boolean;
   stockFilterTab: StockFilterTab;
+  generationTab: GenerationTab;
 };
 
 export function VarietyBreakdownTabContent({
   quantityMode,
   enabled,
   stockFilterTab,
+  generationTab,
 }: VarietyBreakdownTabContentProps) {
   const {
     variety,
@@ -58,14 +64,17 @@ export function VarietyBreakdownTabContent({
     tab,
     stockFilter: stockFilterParam,
     stockFilterTab: stockFilterTabParam,
+    generation: generationParam,
+    generationTab: generationTabParam,
   } = varietyBreakdownRouteApi.useSearch();
   const navigate = varietyBreakdownRouteApi.useNavigate();
   const preferences = usePreferencesStore((state) => state.preferences);
   const commodities = preferences?.commodities ?? [];
   const showStockFilterTabs = shouldShowStockFilter(preferences?.stockFilter);
+  const showGenerationTabs = shouldShowGeneration(preferences?.generation);
 
   const breakdown = useVarietyBreakdown(
-    { variety, stockFilter: showStockFilterTabs },
+    { variety, stockFilter: showStockFilterTabs, generation: showGenerationTabs },
     { enabled },
   );
 
@@ -75,8 +84,16 @@ export function VarietyBreakdownTabContent({
         breakdown.response?.data,
         stockFilterTab,
         showStockFilterTabs,
+        generationTab,
+        showGenerationTabs,
       ),
-    [breakdown.response?.data, showStockFilterTabs, stockFilterTab],
+    [
+      breakdown.response?.data,
+      showStockFilterTabs,
+      showGenerationTabs,
+      stockFilterTab,
+      generationTab,
+    ],
   );
 
   const apiSizes = resolvedData?.sizes ?? [];
@@ -87,6 +104,7 @@ export function VarietyBreakdownTabContent({
   );
 
   const includeStockFilter = showStockFilterTabs || Boolean(stockFilterParam);
+  const includeGeneration = showGenerationTabs || Boolean(generationParam);
 
   const buildSearch = (nextBagSize: string) => ({
     variety,
@@ -96,6 +114,12 @@ export function VarietyBreakdownTabContent({
       ? {
           stockFilter: true as const,
           stockFilterTab: stockFilterTabParam ?? stockFilterTab,
+        }
+      : {}),
+    ...(includeGeneration
+      ? {
+          generation: true as const,
+          generationTab: generationTabParam ?? generationTab,
         }
       : {}),
   });
@@ -115,9 +139,12 @@ export function VarietyBreakdownTabContent({
     breakdown.isLoading,
     enabled,
     includeStockFilter,
+    includeGeneration,
     navigate,
     stockFilterTab,
     stockFilterTabParam,
+    generationTab,
+    generationTabParam,
     tab,
     variety,
   ]);

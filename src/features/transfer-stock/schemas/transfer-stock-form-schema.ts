@@ -5,6 +5,7 @@ export const objectId = z.string().length(24, 'Select a valid record from the li
 export type TransferStockFormSchemaConfig = {
   requireCustomMarka: boolean;
   requireStockFilter: boolean;
+  requireGeneration: boolean;
   requireAmount: boolean;
 };
 
@@ -14,6 +15,10 @@ function customMarkaSchema(requireCustomMarka: boolean) {
 
 function stockFilterSchema(requireStockFilter: boolean) {
   return requireStockFilter ? z.string().min(1, 'Select a stock filter.') : z.string();
+}
+
+function generationSchema(requireGeneration: boolean) {
+  return requireGeneration ? z.string().min(1, 'Select a generation.') : z.string();
 }
 
 function amountSchema(requireAmount: boolean) {
@@ -58,6 +63,8 @@ export function createTransferStockFormSchema(config: TransferStockFormSchemaCon
       gatePassStockFilter: stockFilterSchema(config.requireStockFilter),
       /** Applied to the new incoming gate pass created for the destination account. */
       stockFilter: stockFilterSchema(config.requireStockFilter),
+      gatePassGeneration: generationSchema(config.requireGeneration),
+      generation: generationSchema(config.requireGeneration),
       customMarka: customMarkaSchema(config.requireCustomMarka),
       amount: amountSchema(config.requireAmount),
       remarks: z.string().max(500),
@@ -76,6 +83,7 @@ export function createTransferStockFormSchema(config: TransferStockFormSchemaCon
 export const transferStockFormSchema = createTransferStockFormSchema({
   requireCustomMarka: false,
   requireStockFilter: false,
+  requireGeneration: false,
   requireAmount: false,
 });
 

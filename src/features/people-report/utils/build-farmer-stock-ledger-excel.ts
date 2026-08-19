@@ -139,6 +139,7 @@ const LEDGER_EXCEL_COLUMN_WIDTHS: Record<string, number> = {
   manualParchiNumber: 14,
   variety: 12,
   stockFilter: 10,
+  generation: 10,
   customMarka: 10,
   rowBags: 11,
   totalBags: 14,
@@ -203,10 +204,12 @@ export function getLedgerColumnLayout(
   sizeColumns: string[],
   showStockFilter: boolean,
   showCustomMarka: boolean,
+  showGeneration = false,
 ): LedgerColumnLayout {
   const headers = ['Date', 'Gate Pass No', 'Manual Parchi No', 'Variety'];
 
   if (showStockFilter) headers.push('Filter');
+  if (showGeneration) headers.push('Generation');
   if (showCustomMarka) headers.push('Marka');
 
   const sizeColumnStartIndex = headers.length;
@@ -237,6 +240,10 @@ export function buildLegacyExportColumns(
 
   if (reportData.showStockFilter) {
     columns.push({ id: 'stockFilter', header: 'Filter' });
+  }
+
+  if (reportData.showGeneration) {
+    columns.push({ id: 'generation', header: 'Generation' });
   }
 
   if (reportData.showCustomMarka) {
@@ -270,6 +277,7 @@ export function getExportLayout(reportData: FarmerStockLedgerPdfData): {
           reportData.sizeColumns,
           reportData.showStockFilter,
           reportData.showCustomMarka,
+          reportData.showGeneration,
         );
 
   return { exportColumns, layout };
@@ -428,6 +436,8 @@ export function getLeafCellValue(
         : formatPdfVarietyValue(leaf.variety);
     case 'stockFilter':
       return leaf.suppressedGroupColumns.includes('stockFilter') ? '' : leaf.stockFilter;
+    case 'generation':
+      return leaf.suppressedGroupColumns.includes('generation') ? '' : leaf.generation;
     case 'customMarka':
       return leaf.customMarka;
     case 'rowBags':

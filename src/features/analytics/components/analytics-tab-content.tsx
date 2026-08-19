@@ -28,9 +28,15 @@ import {
 import { buildAnalyticsStockSummary } from '@/features/analytics/utils/build-analytics-stock-summary';
 import { buildAnalyticsSummaryCards } from '@/features/analytics/utils/build-analytics-summary-cards';
 import { resolveAnalyticsSummaryData } from '@/features/analytics/utils/resolve-analytics-summary-data';
-import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
-import type { StockFilterTab } from '@/features/people/utils/build-farmer-stock-summary';
-import type { StockQuantityMode } from '@/features/people/utils/build-farmer-stock-summary';
+import {
+  shouldShowGeneration,
+  shouldShowStockFilter,
+} from '@/features/incoming/utils/incoming-preferences';
+import type {
+  GenerationTab,
+  StockFilterTab,
+  StockQuantityMode,
+} from '@/features/people/utils/build-farmer-stock-summary';
 import { RefreshCw } from 'lucide-react';
 
 type AnalyticsTabContentProps = {
@@ -41,11 +47,16 @@ type AnalyticsTabContentProps = {
 export function AnalyticsTabContent({ quantityMode, enabled }: AnalyticsTabContentProps) {
   const preferences = usePreferencesStore((state) => state.preferences);
   const showStockFilterTabs = shouldShowStockFilter(preferences?.stockFilter);
+  const showGenerationTabs = shouldShowGeneration(preferences?.generation);
   const [stockFilterTab, setStockFilterTab] = useState<StockFilterTab>('all');
+  const [generationTab, setGenerationTab] = useState<GenerationTab>('all');
 
   const coldStorageCapacity = useColdStorageStore((state) => state.coldStorage?.capacity);
 
-  const summary = useAnalyticsSummary({ stockFilter: showStockFilterTabs }, { enabled });
+  const summary = useAnalyticsSummary(
+    { stockFilter: showStockFilterTabs, generation: showGenerationTabs },
+    { enabled },
+  );
   const topFarmers = useAnalyticsTopFarmers({ enabled });
 
   const isLoading = summary.isLoading || topFarmers.isLoading;
@@ -55,17 +66,41 @@ export function AnalyticsTabContent({ quantityMode, enabled }: AnalyticsTabConte
   const error = summary.error ?? topFarmers.error;
 
   const summaryData = useMemo(
-    () => resolveAnalyticsSummaryData(summary.response?.data, stockFilterTab, showStockFilterTabs),
-    [summary.response, stockFilterTab, showStockFilterTabs],
+    () =>
+      resolveAnalyticsSummaryData(
+        summary.response?.data,
+        stockFilterTab,
+        showStockFilterTabs,
+        generationTab,
+        showGenerationTabs,
+      ),
+    [summary.response, stockFilterTab, showStockFilterTabs, generationTab, showGenerationTabs],
   );
 
   const storeWideSummaryData = useMemo(() => {
-    if (!showStockFilterTabs || stockFilterTab === 'all') {
+    const needsStoreWideMerge =
+      (showStockFilterTabs && stockFilterTab !== 'all') ||
+      (showGenerationTabs && generationTab !== 'all');
+
+    if (!needsStoreWideMerge) {
       return summaryData;
     }
 
-    return resolveAnalyticsSummaryData(summary.response?.data, 'all', true);
-  }, [showStockFilterTabs, stockFilterTab, summary.response, summaryData]);
+    return resolveAnalyticsSummaryData(
+      summary.response?.data,
+      'all',
+      showStockFilterTabs,
+      'all',
+      showGenerationTabs,
+    );
+  }, [
+    showStockFilterTabs,
+    showGenerationTabs,
+    stockFilterTab,
+    generationTab,
+    summary.response,
+    summaryData,
+  ]);
 
   const cards = useMemo(() => {
     if (!summaryData) return null;
@@ -149,7 +184,7 @@ export function AnalyticsTabContent({ quantityMode, enabled }: AnalyticsTabConte
         <EmptyHeader>
           <EmptyTitle>Stock summary unavailable</EmptyTitle>
           <EmptyDescription>
-            Could not resolve analytics data for the selected stock filter.
+            Could not resolve analytics data for the selected filters.
           </EmptyDescription>
         </EmptyHeader>
       </Empty>
@@ -165,6 +200,8 @@ export function AnalyticsTabContent({ quantityMode, enabled }: AnalyticsTabConte
         quantityMode={quantityMode}
         stockFilterTab={stockFilterTab}
         onStockFilterTabChange={setStockFilterTab}
+        generationTab={generationTab}
+        onGenerationTabChange={setGenerationTab}
       />
 
       <AnalyticsCapacityUtilization

@@ -15,6 +15,7 @@ const allocationKeyA = allocationKey(PASS_A, '25-30', 0);
 const baseline: OutgoingEditFormValues = {
   farmerStorageLinkId: FARMER_LINK_ID,
   stockFilter: 'Farmer',
+  generation: '',
   manualGatePassNumber: 56,
   date: '2026-06-21T10:30:00.000Z',
   from: 'Cold Storage A',

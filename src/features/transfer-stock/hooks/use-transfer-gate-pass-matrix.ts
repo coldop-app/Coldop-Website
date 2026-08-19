@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import {
   getPreferredBagSizeOrderForTransfer,
+  shouldShowGeneration,
   shouldShowStockFilter,
 } from '@/features/incoming/utils/incoming-preferences';
 import type {
@@ -75,6 +76,12 @@ type UseTransferGatePassMatrixOptions = {
    */
   stockFilter?: string;
   onStockFilterChange?: (value: string) => void;
+  /**
+   * When set, locks the matrix to this generation.
+   * Pass `onGenerationChange` to keep the filter control visible (e.g. transfer create).
+   */
+  generation?: string;
+  onGenerationChange?: (value: string) => void;
   /** Variety selected when the matrix first opens and when filters are reset. */
   initialVariety?: string;
 };
@@ -86,6 +93,8 @@ export function useTransferGatePassMatrix({
   varietyFilterMode = 'single-required',
   stockFilter: controlledStockFilter,
   onStockFilterChange,
+  generation: controlledGeneration,
+  onGenerationChange,
   initialVariety,
 }: UseTransferGatePassMatrixOptions) {
   const initialVarietyVisibility = useMemo<VarietyVisibility>(
@@ -105,22 +114,36 @@ export function useTransferGatePassMatrix({
   });
   const [gatePassSearch, setGatePassSearch] = useState('');
   const [stockFilterFilter, setStockFilterFilter] = useState('');
+  const [generationFilter, setGenerationFilter] = useState('');
 
   const preferences = usePreferencesStore((state) => state.preferences);
   const commodities = preferences?.commodities ?? [];
   const stockFilterPreferenceEnabled = shouldShowStockFilter(preferences?.stockFilter);
+  const generationPreferenceEnabled = shouldShowGeneration(preferences?.generation);
   const stockFilterOptions = preferences?.stockFilter?.options ?? [];
+  const generationOptions = preferences?.generation?.options ?? [];
   const isStockFilterControlled = controlledStockFilter !== undefined;
+  const isGenerationControlled = controlledGeneration !== undefined;
   const effectiveStockFilter = isStockFilterControlled
     ? controlledStockFilter.trim()
     : stockFilterFilter.trim();
+  const effectiveGeneration = isGenerationControlled
+    ? controlledGeneration.trim()
+    : generationFilter.trim();
   const showStockFilterControl =
     stockFilterPreferenceEnabled && (!isStockFilterControlled || onStockFilterChange != null);
+  const showGenerationControl =
+    generationPreferenceEnabled && (!isGenerationControlled || onGenerationChange != null);
   const needsStockFilterSelection =
     Boolean(onStockFilterChange) &&
     stockFilterPreferenceEnabled &&
     isStockFilterControlled &&
     effectiveStockFilter === '';
+  const needsGenerationSelection =
+    Boolean(onGenerationChange) &&
+    generationPreferenceEnabled &&
+    isGenerationControlled &&
+    effectiveGeneration === '';
 
   const varietyForSizeOrder = useMemo(() => {
     if (varietyFilterMode === 'multi-optional') {
@@ -139,8 +162,13 @@ export function useTransferGatePassMatrix({
   );
 
   const uniqueVarieties = useMemo(
-    () => getUniqueVarietiesForStockFilter(allPasses, effectiveStockFilter || undefined),
-    [allPasses, effectiveStockFilter],
+    () =>
+      getUniqueVarietiesForStockFilter(
+        allPasses,
+        effectiveStockFilter || undefined,
+        effectiveGeneration || undefined,
+      ),
+    [allPasses, effectiveStockFilter, effectiveGeneration],
   );
 
   useEffect(() => {
@@ -175,8 +203,20 @@ export function useTransferGatePassMatrix({
         stockFilter: effectiveStockFilter,
       });
     }
+    if (effectiveGeneration) {
+      passes = filterStorageGatePasses(passes, {
+        generation: effectiveGeneration,
+      });
+    }
     return passes;
-  }, [allPasses, varietyFilterMode, varietyVisibility, varietyFilter, effectiveStockFilter]);
+  }, [
+    allPasses,
+    varietyFilterMode,
+    varietyVisibility,
+    varietyFilter,
+    effectiveStockFilter,
+    effectiveGeneration,
+  ]);
 
   const uniqueLocations = useMemo(
     () => getUniqueLocationValues(varietyScopedPasses),
@@ -205,6 +245,7 @@ export function useTransferGatePassMatrix({
       location: locationFilters,
       preferences,
       ...(effectiveStockFilter ? { stockFilter: effectiveStockFilter } : {}),
+      ...(effectiveGeneration ? { generation: effectiveGeneration } : {}),
     };
 
     if (varietyFilterMode === 'multi-optional') {
@@ -230,6 +271,7 @@ export function useTransferGatePassMatrix({
     locationFilters,
     preferences,
     effectiveStockFilter,
+    effectiveGeneration,
   ]);
 
   const tableSizes = useMemo(
@@ -254,11 +296,13 @@ export function useTransferGatePassMatrix({
 
   const needsVarietySelection =
     !needsStockFilterSelection &&
+    !needsGenerationSelection &&
     varietyFilterMode === 'single-required' &&
     uniqueVarieties.length > 0 &&
     varietyFilter.trim() === '';
 
-  const varietySelected = !needsStockFilterSelection && !needsVarietySelection;
+  const varietySelected =
+    !needsStockFilterSelection && !needsGenerationSelection && !needsVarietySelection;
   const hasFilteredData = varietySelected && filteredPasses.length > 0 && visibleSizes.length > 0;
 
   const hasActiveFilters =
@@ -269,7 +313,8 @@ export function useTransferGatePassMatrix({
     locationFilters.chamber !== '' ||
     locationFilters.floor !== '' ||
     locationFilters.row !== '' ||
-    (!isStockFilterControlled && stockFilterFilter.trim() !== '');
+    (!isStockFilterControlled && stockFilterFilter.trim() !== '') ||
+    (!isGenerationControlled && generationFilter.trim() !== '');
 
   const varietyVisibilityLabel = useMemo(
     () => formatVarietyVisibilityLabel(varietyVisibility),
@@ -340,12 +385,14 @@ export function useTransferGatePassMatrix({
     setVarietyVisibility(initialVarietyVisibility);
     setGatePassSearch('');
     setStockFilterFilter('');
+    setGenerationFilter('');
     setLocationFilters({ chamber: '', floor: '', row: '' });
     setSizeVisibility('all');
     setSelectedPassIds(new Set());
     onAllocationsChange({});
     onStockFilterChange?.('');
-  }, [initialVarietyVisibility, onAllocationsChange, onStockFilterChange]);
+    onGenerationChange?.('');
+  }, [initialVarietyVisibility, onAllocationsChange, onStockFilterChange, onGenerationChange]);
 
   const handleStockFilterChange = useCallback(
     (value: string) => {
@@ -356,6 +403,17 @@ export function useTransferGatePassMatrix({
       setStockFilterFilter(value);
     },
     [onStockFilterChange],
+  );
+
+  const handleGenerationChange = useCallback(
+    (value: string) => {
+      if (onGenerationChange) {
+        onGenerationChange(value);
+        return;
+      }
+      setGenerationFilter(value);
+    },
+    [onGenerationChange],
   );
 
   const handleAllocationChange = useCallback(
@@ -414,6 +472,7 @@ export function useTransferGatePassMatrix({
     hasActiveFilters,
     needsVarietySelection,
     needsStockFilterSelection,
+    needsGenerationSelection,
     varietyFilterMode,
     voucherSort,
     setVoucherSort,
@@ -429,6 +488,11 @@ export function useTransferGatePassMatrix({
     showStockFilter: showStockFilterControl,
     isStockFilterControlled,
     stockFilterOptions,
+    generationFilter: effectiveGeneration,
+    setGenerationFilter: handleGenerationChange,
+    showGeneration: showGenerationControl,
+    isGenerationControlled,
+    generationOptions,
     locationFilters,
     setLocationFilters,
     sizeVisibility,

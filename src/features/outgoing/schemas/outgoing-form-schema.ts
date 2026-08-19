@@ -5,10 +5,15 @@ export const objectId = z.string().length(24, 'Select a valid record from the li
 
 export type OutgoingFormSchemaConfig = {
   requireStockFilter: boolean;
+  requireGeneration: boolean;
 };
 
 function stockFilterSchema(requireStockFilter: boolean) {
   return requireStockFilter ? z.string().min(1, 'Select a stock filter.') : z.string();
+}
+
+function generationSchema(requireGeneration: boolean) {
+  return requireGeneration ? z.string().min(1, 'Select a generation.') : z.string();
 }
 
 export function createOutgoingFormSchema(config: OutgoingFormSchemaConfig) {
@@ -16,6 +21,7 @@ export function createOutgoingFormSchema(config: OutgoingFormSchemaConfig) {
     farmerStorageLinkId: objectId,
     date: z.string().min(1, 'Date is required'),
     stockFilter: stockFilterSchema(config.requireStockFilter),
+    generation: generationSchema(config.requireGeneration),
     manualGatePassNumber: z.union([
       z.undefined(),
       z.number().int().positive('Manual gate pass number must be positive.'),
@@ -39,6 +45,7 @@ export function createOutgoingFormSchema(config: OutgoingFormSchemaConfig) {
 
 export const outgoingFormSchema = createOutgoingFormSchema({
   requireStockFilter: false,
+  requireGeneration: false,
 });
 
 export type OutgoingFormValues = z.infer<typeof outgoingFormSchema>;

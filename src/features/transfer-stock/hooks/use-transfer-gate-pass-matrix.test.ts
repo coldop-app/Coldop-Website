@@ -16,6 +16,10 @@ vi.mock('@/features/auth/store/use-preferences-store', () => ({
           enabled: true,
           options: ['Owned', 'Farmer'],
         },
+        generation: {
+          enabled: true,
+          options: ['G1', 'G2'],
+        },
       },
     }),
 }));
@@ -418,5 +422,42 @@ describe('useTransferGatePassMatrix controlled stockFilter', () => {
     });
 
     expect(onStockFilterChange).toHaveBeenCalledWith('Owned');
+  });
+});
+
+describe('useTransferGatePassMatrix controlled generation', () => {
+  it('shows a required generation control when onGenerationChange is provided', () => {
+    const passes = [
+      {
+        ...makePass('pass-g1', 'Kufri Jyoti', 10),
+        generation: 'G1',
+      },
+      {
+        ...makePass('pass-g2', 'Kufri Jyoti', 11),
+        generation: 'G2',
+      },
+    ];
+    const onGenerationChange = vi.fn();
+
+    const { result } = renderHook(() =>
+      useTransferGatePassMatrix({
+        allPasses: passes,
+        allocations: {},
+        onAllocationsChange: vi.fn(),
+        varietyFilterMode: 'single-required',
+        generation: '',
+        onGenerationChange,
+      }),
+    );
+
+    expect(result.current.showGeneration).toBe(true);
+    expect(result.current.needsGenerationSelection).toBe(true);
+    expect(result.current.hasFilteredData).toBe(false);
+
+    act(() => {
+      result.current.setGenerationFilter('G1');
+    });
+
+    expect(onGenerationChange).toHaveBeenCalledWith('G1');
   });
 });

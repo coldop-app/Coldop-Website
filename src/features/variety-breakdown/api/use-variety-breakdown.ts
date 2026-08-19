@@ -9,6 +9,7 @@ export const VARIETY_BREAKDOWN_QUERY_KEY = ['analytics', 'variety-breakdown'] as
 export type VarietyBreakdownParams = {
   variety: string;
   stockFilter?: boolean;
+  generation?: boolean;
 };
 
 function varietyBreakdownQueryKey(params: VarietyBreakdownParams) {
@@ -22,6 +23,7 @@ export async function fetchVarietyBreakdownApi(
     params: {
       variety: params.variety,
       ...(params.stockFilter === true ? { stockFilter: 'true' } : {}),
+      ...(params.generation === true ? { generation: 'true' } : {}),
     },
   });
 

@@ -342,6 +342,122 @@ export function PreferencesForm({
                 }
               </form.Subscribe>
 
+              <form.Field name="generation.enabled">
+                {(field) => (
+                  <Field orientation="horizontal">
+                    <FieldContent>
+                      <FieldLabel htmlFor={field.name}>Generation</FieldLabel>
+                      <FieldDescription>Enable generation labels on inventory</FieldDescription>
+                    </FieldContent>
+                    <Switch
+                      id={field.name}
+                      checked={field.state.value}
+                      onCheckedChange={field.handleChange}
+                    />
+                  </Field>
+                )}
+              </form.Field>
+
+              <form.Subscribe selector={(state) => state.values.generation.enabled}>
+                {(generationEnabled) =>
+                  generationEnabled ? (
+                    <form.Field name="generation.options" mode="array">
+                      {(listField) => {
+                        const listInvalid =
+                          listField.state.meta.isTouched && !listField.state.meta.isValid;
+
+                        return (
+                          <Field data-invalid={listInvalid}>
+                            <FieldLabel>Generation options</FieldLabel>
+                            <FieldDescription>
+                              Define the generation values available in inventory views.
+                            </FieldDescription>
+
+                            <div className="flex flex-col gap-2">
+                              {listField.state.value.length === 0 ? (
+                                <p className="text-muted-foreground text-sm">
+                                  No generation options added yet.
+                                </p>
+                              ) : (
+                                listField.state.value.map((_, itemIndex) => (
+                                  <form.Field
+                                    key={itemIndex}
+                                    name={`generation.options[${itemIndex}]`}
+                                  >
+                                    {(itemField) => {
+                                      const isInvalid =
+                                        itemField.state.meta.isTouched &&
+                                        !itemField.state.meta.isValid;
+
+                                      return (
+                                        <div className="flex items-start gap-2">
+                                          <Field
+                                            data-invalid={isInvalid}
+                                            className="min-w-0 flex-1"
+                                          >
+                                            <FieldLabel
+                                              htmlFor={itemField.name}
+                                              className="sr-only"
+                                            >
+                                              Generation option {itemIndex + 1}
+                                            </FieldLabel>
+                                            <Input
+                                              id={itemField.name}
+                                              name={itemField.name}
+                                              value={itemField.state.value}
+                                              onBlur={itemField.handleBlur}
+                                              onChange={(e) =>
+                                                itemField.handleChange(e.target.value)
+                                              }
+                                              placeholder="e.g. G1, G2, G3"
+                                              aria-invalid={isInvalid}
+                                              aria-label={`Generation option ${itemIndex + 1}`}
+                                              className="w-full text-base"
+                                            />
+                                            {isInvalid && (
+                                              <FieldError errors={itemField.state.meta.errors} />
+                                            )}
+                                          </Field>
+                                          <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="icon"
+                                            className="size-9 shrink-0"
+                                            aria-label={`Remove generation option ${itemIndex + 1}`}
+                                            onClick={() => listField.removeValue(itemIndex)}
+                                          >
+                                            <Trash2 className="size-4" aria-hidden />
+                                          </Button>
+                                        </div>
+                                      );
+                                    }}
+                                  </form.Field>
+                                ))
+                              )}
+
+                              {listInvalid && listField.state.meta.errors.length > 0 && (
+                                <FieldError errors={listField.state.meta.errors} />
+                              )}
+                            </div>
+
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              className="mt-2 w-full sm:w-auto"
+                              onClick={() => listField.pushValue('')}
+                            >
+                              <Plus className="mr-2 size-4" aria-hidden />
+                              Add generation option
+                            </Button>
+                          </Field>
+                        );
+                      }}
+                    </form.Field>
+                  ) : null
+                }
+              </form.Subscribe>
+
               <form.Field name="customMarka">
                 {(field) => (
                   <Field orientation="horizontal">

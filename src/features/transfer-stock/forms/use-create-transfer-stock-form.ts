@@ -41,6 +41,8 @@ export function useCreateTransferStockForm({
       date: todayIso,
       gatePassStockFilter: '',
       stockFilter: '',
+      gatePassGeneration: '',
+      generation: '',
       customMarka: '',
       amount: '',
       remarks: '',

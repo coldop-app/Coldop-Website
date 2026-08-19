@@ -43,6 +43,7 @@ export function incomingGatePassToStorageGatePass(
     bagSizes: record.bagSizes.map(mapBagSize),
     remarks: record.remarks ?? '',
     stockFilter: record.stockFilter,
+    generation: record.generation,
   };
 }
 

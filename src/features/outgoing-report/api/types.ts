@@ -33,6 +33,7 @@ export type OutgoingGatePassReportRecord = {
   to?: string;
   truckNumber?: string;
   stockFilter?: string;
+  generation?: string;
   remarks?: string;
   orderDetails: OutgoingReportOrderDetail[];
   totalBags: number;

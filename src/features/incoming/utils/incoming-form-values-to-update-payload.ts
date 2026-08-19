@@ -161,6 +161,10 @@ export function buildUpdateIncomingGatePassPayload(
     payload.stockFilter = current.stockFilter.trim();
   }
 
+  if (!lockFarmerAndQuantity && current.generation.trim() !== baseline.generation.trim()) {
+    payload.generation = current.generation.trim();
+  }
+
   if (!lockFarmerAndQuantity && current.customMarka.trim() !== baseline.customMarka.trim()) {
     payload.customMarka = current.customMarka.trim();
   }

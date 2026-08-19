@@ -15,6 +15,8 @@ export type StockQuantityMode = 'current' | 'initial' | 'outgoing';
 
 export type StockFilterTab = 'all' | string;
 
+export type GenerationTab = 'all' | string;
+
 export type StockSummaryRow = {
   variety: string;
   bySize: Record<string, number>;
@@ -44,6 +46,7 @@ export type BuildFarmerStockSummaryInput = {
   passes: IncomingDaybookEntry[];
   commodities: CommodityPreference[];
   stockFilterTab: StockFilterTab;
+  generationTab?: GenerationTab;
   quantityMode: StockQuantityMode;
 };
 
@@ -52,6 +55,7 @@ export type BuildStockSummaryCellBreakdownInput = {
   outgoingPasses?: OutgoingDaybookEntry[];
   allEntries?: DaybookEntry[];
   stockFilterTab: StockFilterTab;
+  generationTab?: GenerationTab;
   quantityMode: StockQuantityMode;
   variety: string;
   size: string;
@@ -106,12 +110,14 @@ function resolveOutgoingPasses(input: BuildStockSummaryCellBreakdownInput): Outg
 function buildOutgoingStockSummaryCellBreakdown(
   input: BuildStockSummaryCellBreakdownInput,
 ): StockSummaryBreakdownLine[] {
-  const { passes, stockFilterTab, variety, size } = input;
+  const { passes, stockFilterTab, generationTab = 'all', variety, size } = input;
   const outgoingPasses = resolveOutgoingPasses(input);
   const filteredIncomingIds =
-    stockFilterTab === 'all'
+    stockFilterTab === 'all' && generationTab === 'all'
       ? null
-      : new Set(filterPassesByStockFilter(passes, stockFilterTab).map((pass) => pass._id));
+      : new Set(
+          filterPassesByTabs(passes, stockFilterTab, generationTab).map((pass) => pass._id),
+        );
   const normalizedSize = size.trim();
   const lines: StockSummaryBreakdownLine[] = [];
 
@@ -152,13 +158,13 @@ function buildOutgoingStockSummaryCellBreakdown(
 export function buildStockSummaryCellBreakdown(
   input: BuildStockSummaryCellBreakdownInput,
 ): StockSummaryBreakdownLine[] {
-  const { passes, stockFilterTab, quantityMode, variety, size } = input;
+  const { passes, stockFilterTab, generationTab = 'all', quantityMode, variety, size } = input;
 
   if (quantityMode === 'outgoing') {
     return buildOutgoingStockSummaryCellBreakdown(input);
   }
 
-  const filteredPasses = filterPassesByStockFilter(passes, stockFilterTab);
+  const filteredPasses = filterPassesByTabs(passes, stockFilterTab, generationTab);
   const normalizedSize = size.trim();
   const lines: StockSummaryBreakdownLine[] = [];
 
@@ -199,6 +205,26 @@ export function filterPassesByStockFilter(
   if (stockFilterTab === 'all') return passes;
 
   return passes.filter((pass) => pass.stockFilter === stockFilterTab);
+}
+
+export function filterPassesByGeneration(
+  passes: IncomingDaybookEntry[],
+  generationTab: GenerationTab,
+): IncomingDaybookEntry[] {
+  if (generationTab === 'all') return passes;
+
+  return passes.filter((pass) => pass.generation === generationTab);
+}
+
+export function filterPassesByTabs(
+  passes: IncomingDaybookEntry[],
+  stockFilterTab: StockFilterTab,
+  generationTab: GenerationTab = 'all',
+): IncomingDaybookEntry[] {
+  return filterPassesByGeneration(
+    filterPassesByStockFilter(passes, stockFilterTab),
+    generationTab,
+  );
 }
 
 function collectSizeNamesFromPasses(passes: IncomingDaybookEntry[]): string[] {
@@ -275,9 +301,10 @@ export function buildFarmerStockSummary({
   passes,
   commodities,
   stockFilterTab,
+  generationTab = 'all',
   quantityMode,
 }: BuildFarmerStockSummaryInput): StockSummaryMatrix {
-  const filteredPasses = filterPassesByStockFilter(passes, stockFilterTab);
+  const filteredPasses = filterPassesByTabs(passes, stockFilterTab, generationTab);
   const sizeColumns = resolveSizeColumns(filteredPasses, commodities);
 
   const modeTotals = {

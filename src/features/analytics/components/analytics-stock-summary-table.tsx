@@ -12,7 +12,10 @@ import {
 } from '@/components/ui/table';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import { formatQuantity } from '@/features/daybook/utils/format';
-import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
+import {
+  shouldShowGeneration,
+  shouldShowStockFilter,
+} from '@/features/incoming/utils/incoming-preferences';
 import {
   getCellClassName,
   getFooterClassName,
@@ -23,6 +26,7 @@ import {
   TABLE_GRID_CLASS,
 } from '@/features/people/components/farmer-stock-summary-table-styles';
 import type {
+  GenerationTab,
   StockFilterTab,
   StockQuantityMode,
   StockSummaryMatrix,
@@ -33,16 +37,19 @@ type AnalyticsStockSummaryTableProps = {
   matrix: StockSummaryMatrix;
   quantityMode: StockQuantityMode;
   stockFilterTab: StockFilterTab;
+  generationTab: GenerationTab;
 };
 
 export function AnalyticsStockSummaryTable({
   matrix,
   quantityMode,
   stockFilterTab,
+  generationTab,
 }: AnalyticsStockSummaryTableProps) {
   const navigate = useNavigate();
   const preferences = usePreferencesStore((state) => state.preferences);
   const showStockFilter = shouldShowStockFilter(preferences?.stockFilter);
+  const showGeneration = shouldShowGeneration(preferences?.generation);
   const [isHeaderScrolled, setIsHeaderScrolled] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { sizeColumns, rows, footerBySize, grandTotal } = matrix;
@@ -60,9 +67,8 @@ export function AnalyticsStockSummaryTable({
         variety,
         bagSize,
         tab: quantityMode,
-        ...(showStockFilter
-          ? { stockFilter: true, stockFilterTab }
-          : {}),
+        ...(showStockFilter ? { stockFilter: true, stockFilterTab } : {}),
+        ...(showGeneration ? { generation: true, generationTab } : {}),
       },
     });
   };

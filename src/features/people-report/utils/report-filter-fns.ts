@@ -24,6 +24,7 @@ export type FarmerReportColumnId =
   | 'manualParchiNumber'
   | 'variety'
   | 'stockFilter'
+  | 'generation'
   | 'customMarka'
   | 'rowBags'
   | 'totalBags'

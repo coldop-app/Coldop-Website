@@ -166,6 +166,9 @@ function OutgoingReviewSummary({
           {values.stockFilter?.trim() ? (
             <DetailRow label="Stock filter" value={values.stockFilter.trim()} />
           ) : null}
+          {values.generation?.trim() ? (
+            <DetailRow label="Generation" value={values.generation.trim()} />
+          ) : null}
           {values.manualGatePassNumber != null ? (
             <DetailRow
               label="Manual GP no."

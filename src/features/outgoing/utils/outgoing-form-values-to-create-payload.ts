@@ -63,6 +63,10 @@ export function buildCreateOutgoingGatePassPayload(
     payload.stockFilter = values.stockFilter.trim();
   }
 
+  if (values.generation.trim()) {
+    payload.generation = values.generation.trim();
+  }
+
   if (from) {
     payload.from = from;
   }

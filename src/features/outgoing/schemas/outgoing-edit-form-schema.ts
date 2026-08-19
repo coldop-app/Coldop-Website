@@ -5,10 +5,15 @@ import { TRUCK_NUMBER_MAX_LENGTH } from '@/lib/form-utils';
 
 export type OutgoingEditFormSchemaConfig = {
   requireStockFilter: boolean;
+  requireGeneration: boolean;
 };
 
 function stockFilterSchema(requireStockFilter: boolean) {
   return requireStockFilter ? z.string().min(1, 'Select a stock filter.') : z.string();
+}
+
+function generationSchema(requireGeneration: boolean) {
+  return requireGeneration ? z.string().min(1, 'Select a generation.') : z.string();
 }
 
 export function createOutgoingEditFormSchema(config: OutgoingEditFormSchemaConfig) {
@@ -16,6 +21,7 @@ export function createOutgoingEditFormSchema(config: OutgoingEditFormSchemaConfi
     farmerStorageLinkId: objectId,
     date: z.string().min(1, 'Date is required'),
     stockFilter: stockFilterSchema(config.requireStockFilter),
+    generation: generationSchema(config.requireGeneration),
     manualGatePassNumber: z.union([
       z.undefined(),
       z.number().int().positive('Manual gate pass number must be positive.'),
@@ -39,6 +45,7 @@ export function createOutgoingEditFormSchema(config: OutgoingEditFormSchemaConfi
 
 export const outgoingEditFormSchema = createOutgoingEditFormSchema({
   requireStockFilter: false,
+  requireGeneration: false,
 });
 
 export type OutgoingEditFormValues = z.infer<typeof outgoingEditFormSchema>;

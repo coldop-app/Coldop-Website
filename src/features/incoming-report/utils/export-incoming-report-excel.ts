@@ -97,6 +97,7 @@ const COLUMN_WIDTHS: Record<string, number> = {
   date: 14,
   variety: 12,
   stockFilter: 10,
+  generation: 10,
   customMarka: 10,
   totalBags: 11,
   createdBy: 14,

@@ -16,6 +16,8 @@ export interface StockFilterPreference {
   options: string[];
 }
 
+export type GenerationPreference = StockFilterPreference;
+
 export interface Preferences {
   _id: string;
   commodities: CommodityPreference[];
@@ -24,6 +26,7 @@ export interface Preferences {
   showViewFilters?: boolean;
   labourCost: number;
   stockFilter?: StockFilterPreference;
+  generation?: GenerationPreference;
   customMarka?: boolean;
   markaType?: string;
   customFields: Record<string, unknown>;

@@ -10,6 +10,7 @@ export type UpdatePreferencesPayload = {
   showFinances?: boolean;
   labourCost?: number;
   stockFilter?: StockFilterPreference;
+  generation?: StockFilterPreference;
   customMarka?: boolean;
   markaType?: string;
   customFields?: Record<string, unknown>;

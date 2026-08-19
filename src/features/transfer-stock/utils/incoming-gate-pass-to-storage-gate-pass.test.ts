@@ -92,6 +92,15 @@ describe('incomingGatePassToStorageGatePass', () => {
 
     expect(mapped.stockFilter).toBe('Owned');
   });
+
+  it('preserves generation when present on the record', () => {
+    const mapped = incomingGatePassToStorageGatePass(
+      makeRecord({ generation: 'G1' }),
+      FARMER_LINK_ID,
+    );
+
+    expect(mapped.generation).toBe('G1');
+  });
 });
 
 describe('incomingGatePassesToStorageGatePasses', () => {

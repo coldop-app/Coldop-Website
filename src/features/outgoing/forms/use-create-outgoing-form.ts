@@ -55,6 +55,7 @@ export function useCreateOutgoingForm(options: UseCreateOutgoingFormOptions) {
       farmerStorageLinkId: '',
       date: todayIso,
       stockFilter: '',
+      generation: '',
       manualGatePassNumber: undefined as number | undefined,
       from: '',
       to: '',

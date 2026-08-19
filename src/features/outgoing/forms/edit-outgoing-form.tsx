@@ -21,6 +21,7 @@ import type { OutgoingDaybookEntry } from '@/features/daybook/types';
 import { DEFAULT_DAYBOOK_SEARCH } from '@/features/daybook/search';
 import { resolveFarmerStorageLinkId } from '@/features/daybook/utils/resolve-farmer-storage-link-id';
 import {
+  shouldShowGeneration,
   shouldShowStockFilter,
   toComboboxOptions,
 } from '@/features/incoming/utils/incoming-preferences';
@@ -63,15 +64,18 @@ function isFieldInvalid(meta: { isTouched: boolean; isValid: boolean }) {
   return meta.isTouched && !meta.isValid;
 }
 
-function OutgoingGatePassesStockFilterPrompt() {
+function OutgoingGatePassesFilterPrompt({ missing }: { missing: 'stockFilter' | 'generation' }) {
+  const isGeneration = missing === 'generation';
   return (
     <Card size="sm" className="ring-border/60 py-0">
       <CardContent className="px-0 py-0">
         <Empty className="border-0 py-10">
           <EmptyHeader>
-            <EmptyTitle>Select a stock filter</EmptyTitle>
+            <EmptyTitle>{isGeneration ? 'Select a generation' : 'Select a stock filter'}</EmptyTitle>
             <EmptyDescription>
-              Choose a stock filter above to view incoming gate passes for this outgoing pass.
+              {isGeneration
+                ? 'Choose a generation above to view incoming gate passes for this outgoing pass.'
+                : 'Choose a stock filter above to view incoming gate passes for this outgoing pass.'}
             </EmptyDescription>
           </EmptyHeader>
         </Empty>
@@ -112,20 +116,34 @@ function EditOutgoingFormLoaded({
   const [reviewOpen, setReviewOpen] = useState(false);
   const preferences = usePreferencesStore((state) => state.preferences);
   const showStockFilter = shouldShowStockFilter(preferences?.stockFilter);
+  const showGeneration = shouldShowGeneration(preferences?.generation);
 
-  const schemaConfig = useMemo(() => ({ requireStockFilter: showStockFilter }), [showStockFilter]);
+  const schemaConfig = useMemo(
+    () => ({ requireStockFilter: showStockFilter, requireGeneration: showGeneration }),
+    [showStockFilter, showGeneration],
+  );
 
   const stockFilterOptions = useMemo(
     () => toComboboxOptions(preferences?.stockFilter?.options ?? []),
     [preferences?.stockFilter?.options],
   );
+  const generationOptions = useMemo(
+    () => toComboboxOptions(preferences?.generation?.options ?? []),
+    [preferences?.generation?.options],
+  );
 
   const [stockFilterSearch, setStockFilterSearch] = useState('');
   const [stockFilterComboboxOpen, setStockFilterComboboxOpen] = useState(false);
+  const [generationSearch, setGenerationSearch] = useState('');
+  const [generationComboboxOpen, setGenerationComboboxOpen] = useState(false);
 
   const sortedStockFilters = useMemo(
     () => filterAndSortOptions(stockFilterSearch, stockFilterOptions),
     [stockFilterSearch, stockFilterOptions],
+  );
+  const sortedGenerations = useMemo(
+    () => filterAndSortOptions(generationSearch, generationOptions),
+    [generationSearch, generationOptions],
   );
 
   const { mutateAsync: updateOutgoingGatePass, isPending: isSaving } = useUpdateOutgoingGatePass();
@@ -265,6 +283,45 @@ function EditOutgoingFormLoaded({
                   </form.Field>
                 ) : null}
 
+                {showGeneration ? (
+                  <form.Field
+                    name="generation"
+                    validators={{ onChange: formSchema.shape.generation }}
+                  >
+                    {(field) => {
+                      const isInvalid = isFieldInvalid(field.state.meta);
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor="edit-outgoing-generation">Generation</FieldLabel>
+                          <SearchableOptionCombobox
+                            id="edit-outgoing-generation"
+                            name={field.name}
+                            value={field.state.value}
+                            onValueChange={(value) => {
+                              field.handleChange(value);
+                              form.setFieldValue('allocations', {});
+                            }}
+                            onBlur={field.handleBlur}
+                            isInvalid={isInvalid}
+                            placeholder="Search generations..."
+                            emptyMessage="No generations found."
+                            options={generationOptions}
+                            sortedOptions={sortedGenerations}
+                            search={generationSearch}
+                            setSearch={setGenerationSearch}
+                            open={generationComboboxOpen}
+                            setOpen={setGenerationComboboxOpen}
+                          />
+                          <FieldDescription>
+                            Required before selecting incoming gate passes.
+                          </FieldDescription>
+                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        </Field>
+                      );
+                    }}
+                  </form.Field>
+                ) : null}
+
                 <form.Field name="manualGatePassNumber">
                   {(field) => {
                     const isInvalid = isFieldInvalid(field.state.meta);
@@ -361,9 +418,14 @@ function EditOutgoingFormLoaded({
             </FieldSet>
 
             <form.Subscribe
-              selector={(state) => state.values.stockFilter}
-              children={(stockFilter) => {
-                const canShowGatePasses = !showStockFilter || stockFilter.trim().length > 0;
+              selector={(state) => ({
+                stockFilter: state.values.stockFilter,
+                generation: state.values.generation,
+              })}
+              children={({ stockFilter, generation }) => {
+                const needsStockFilter = showStockFilter && stockFilter.trim().length === 0;
+                const needsGeneration = showGeneration && generation.trim().length === 0;
+                const canShowGatePasses = !needsStockFilter && !needsGeneration;
 
                 return (
                   <FieldSet className="min-w-0">
@@ -375,12 +437,14 @@ function EditOutgoingFormLoaded({
                     </FieldDescription>
                     <div className="mt-5 min-w-0">
                       {!canShowGatePasses ? (
-                        <OutgoingGatePassesStockFilterPrompt />
+                        <OutgoingGatePassesFilterPrompt
+                          missing={needsStockFilter ? 'stockFilter' : 'generation'}
+                        />
                       ) : (
                         <form.Field name="allocations">
                           {(allocField) => (
                             <TransferGatePassesSection
-                              key={`${farmerStorageLinkId}-${stockFilter}`}
+                              key={`${farmerStorageLinkId}-${stockFilter}-${generation}`}
                               varietyFilterMode="multi-optional"
                               toolbarVariant="stacked"
                               initialVariety={
@@ -395,6 +459,7 @@ function EditOutgoingFormLoaded({
                               passesOverride={storagePasses}
                               passesLoading={false}
                               stockFilter={showStockFilter ? stockFilter : undefined}
+                              generation={showGeneration ? generation : undefined}
                             />
                           )}
                         </form.Field>

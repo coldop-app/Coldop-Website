@@ -20,6 +20,7 @@ export type IncomingGatePassReportRecord = {
   truckNumber?: string;
   remarks?: string;
   stockFilter?: string;
+  generation?: string;
   customMarka?: string;
   bagSizes: IncomingBagSize[];
   initialTotal: number;

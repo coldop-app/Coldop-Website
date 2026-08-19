@@ -58,9 +58,25 @@ export type AnalyticsSummaryByFilterData = {
   stockSummaryByFilter: Record<string, AnalyticsStockFilterBucket>;
 };
 
+export type AnalyticsSummaryByGenerationData = {
+  stockSummaryByGeneration: Record<string, AnalyticsStockFilterBucket>;
+};
+
+export type AnalyticsSummaryByFilterAndGenerationData = {
+  stockSummaryByFilterAndGeneration: Record<
+    string,
+    Record<string, AnalyticsStockFilterBucket>
+  >;
+};
+
+export type AnalyticsGroupedSummaryData =
+  | AnalyticsSummaryByFilterData
+  | AnalyticsSummaryByGenerationData
+  | AnalyticsSummaryByFilterAndGenerationData;
+
 export type AnalyticsSummaryResponse = {
   success: boolean;
-  data: AnalyticsSummaryData | AnalyticsSummaryByFilterData | null;
+  data: AnalyticsSummaryData | AnalyticsGroupedSummaryData | null;
   message?: string;
 };
 

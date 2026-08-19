@@ -228,6 +228,10 @@ export function getGatePassStockFilter(entry: DaybookEntry): string {
   return entry.stockFilter?.trim() || '—';
 }
 
+export function getGatePassGeneration(entry: DaybookEntry): string {
+  return entry.generation?.trim() || '—';
+}
+
 export function getGatePassSizeQuantity(entry: DaybookEntry, size: string): number | null {
   const normalizedSize = size.trim();
   if (!normalizedSize) return null;

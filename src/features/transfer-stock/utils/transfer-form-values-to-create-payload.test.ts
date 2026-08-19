@@ -14,6 +14,8 @@ const values: TransferStockFormValues = {
   date: '2025-06-21T00:00:00.000Z',
   gatePassStockFilter: '',
   stockFilter: '',
+  gatePassGeneration: '',
+  generation: '',
   customMarka: '',
   amount: '',
   remarks: '',
@@ -104,6 +106,39 @@ describe('buildCreateTransferStockPayload', () => {
       items,
     );
     expect(whenPreferenceInactive.stockFilter).toBeUndefined();
+  });
+
+  it('includes generation only when preference is active and value is non-empty', () => {
+    const withGeneration = buildCreateTransferStockPayload(
+      { ...values, generation: '  G1  ' },
+      items,
+      { includeGeneration: true },
+    );
+    expect(withGeneration.generation).toBe('G1');
+
+    const withoutGeneration = buildCreateTransferStockPayload(
+      { ...values, generation: '   ' },
+      items,
+      { includeGeneration: true },
+    );
+    expect(withoutGeneration.generation).toBeUndefined();
+
+    const whenPreferenceInactive = buildCreateTransferStockPayload(
+      { ...values, generation: 'G1' },
+      items,
+    );
+    expect(whenPreferenceInactive.generation).toBeUndefined();
+  });
+
+  it('does not include gatePassGeneration in the create payload', () => {
+    const payload = buildCreateTransferStockPayload(
+      { ...values, gatePassGeneration: 'G1', generation: 'G2' },
+      items,
+      { includeGeneration: true },
+    );
+
+    expect(payload.generation).toBe('G2');
+    expect(payload).not.toHaveProperty('gatePassGeneration');
   });
 
   it('does not include gatePassStockFilter in the create payload', () => {

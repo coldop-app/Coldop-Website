@@ -301,6 +301,15 @@ const stockFilterColumn: ColumnDef<OutgoingGatePassReportRecord> = {
   cell: ({ getValue }) => getValue<string | undefined>() || '-',
 };
 
+const generationColumn: ColumnDef<OutgoingGatePassReportRecord> = {
+  accessorKey: 'generation',
+  header: 'Generation',
+  meta: { filterLabel: 'Generation' },
+  ...sortText,
+  ...aggregateNone,
+  cell: ({ getValue }) => getValue<string | undefined>() || '-',
+};
+
 const totalBagsColumn: ColumnDef<OutgoingGatePassReportRecord> = {
   accessorKey: 'totalBags',
   header: () => (
@@ -367,15 +376,17 @@ function getOutgoingReportColumnCacheKey(
   sizes: string[],
   quantityMode: OutgoingQuantityMode,
   showStockFilter: boolean,
+  showGeneration: boolean,
   showLocation: boolean,
 ) {
-  return `${sizes.join('\0')}|${quantityMode}|sf:${showStockFilter}|sl:${showLocation}`;
+  return `${sizes.join('\0')}|${quantityMode}|sf:${showStockFilter}|gn:${showGeneration}|sl:${showLocation}`;
 }
 
 function buildOutgoingReportColumns(
   sizes: string[],
   quantityMode: OutgoingQuantityMode,
   showStockFilter: boolean,
+  showGeneration: boolean,
   showLocation: boolean,
 ): ColumnDef<OutgoingGatePassReportRecord>[] {
   const sizeColumns: ColumnDef<OutgoingGatePassReportRecord>[] = sizes.map((sizeName) => ({
@@ -439,6 +450,7 @@ function buildOutgoingReportColumns(
   return [
     ...buildBaseColumns(quantityMode),
     ...(showStockFilter ? [stockFilterColumn] : []),
+    ...(showGeneration ? [generationColumn] : []),
     ...routeColumns,
     totalBagsColumn,
     ...sizeColumns,
@@ -450,6 +462,7 @@ export function getOutgoingReportColumns(
   rows: OutgoingGatePassReportRecord[],
   quantityMode: OutgoingQuantityMode = 'issued',
   showStockFilter = false,
+  showGeneration = false,
   showLocation = true,
 ): ColumnDef<OutgoingGatePassReportRecord>[] {
   const sizes = collectOutgoingReportOrderSizeNames(rows);
@@ -457,13 +470,20 @@ export function getOutgoingReportColumns(
     sizes,
     quantityMode,
     showStockFilter,
+    showGeneration,
     showLocation,
   );
   const cached = columnCache.get(cacheKey);
 
   if (cached) return cached;
 
-  const columns = buildOutgoingReportColumns(sizes, quantityMode, showStockFilter, showLocation);
+  const columns = buildOutgoingReportColumns(
+    sizes,
+    quantityMode,
+    showStockFilter,
+    showGeneration,
+    showLocation,
+  );
   columnCache.set(cacheKey, columns);
 
   return columns;

@@ -218,6 +218,7 @@ describe('buildUpdateIncomingGatePassPayload previousLocation', () => {
     expect(payload?.date).toBeUndefined();
     expect(payload?.variety).toBeUndefined();
     expect(payload?.stockFilter).toBeUndefined();
+    expect(payload?.generation).toBeUndefined();
     expect(payload?.customMarka).toBeUndefined();
     expect(payload?.amount).toBeUndefined();
     expect(payload?.bagSizes).toEqual([

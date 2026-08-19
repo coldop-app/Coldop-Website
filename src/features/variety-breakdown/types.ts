@@ -22,8 +22,21 @@ export type VarietyBreakdownByFilterData = {
   varietyBreakdownByFilter: Record<string, VarietyBreakdownData>;
 };
 
+export type VarietyBreakdownByGenerationData = {
+  varietyBreakdownByGeneration: Record<string, VarietyBreakdownData>;
+};
+
+export type VarietyBreakdownByFilterAndGenerationData = {
+  varietyBreakdownByFilterAndGeneration: Record<string, Record<string, VarietyBreakdownData>>;
+};
+
+export type VarietyBreakdownGroupedData =
+  | VarietyBreakdownByFilterData
+  | VarietyBreakdownByGenerationData
+  | VarietyBreakdownByFilterAndGenerationData;
+
 export type VarietyBreakdownResponse = {
   success: boolean;
-  data: VarietyBreakdownData | VarietyBreakdownByFilterData | null;
+  data: VarietyBreakdownData | VarietyBreakdownGroupedData | null;
   message?: string;
 };

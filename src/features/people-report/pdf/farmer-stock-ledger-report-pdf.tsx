@@ -554,6 +554,7 @@ const LEDGER_COLUMN_WIDTH_WEIGHTS: Record<string, number> = {
   manualParchiNumber: 6,
   variety: 10,
   stockFilter: 8,
+  generation: 8,
   customMarka: 8,
   rowBags: 7,
   totalBags: 8,
@@ -723,6 +724,7 @@ function renderLedgerHeaderCell(column: LedgerExportColumn, columnWidths: Record
   const isGatePass = column.id === 'gatePassNo';
   const isManualParchi = column.id === 'manualParchiNumber';
   const isStockFilter = column.id === 'stockFilter';
+  const isGeneration = column.id === 'generation';
   const isCustomMarka = column.id === 'customMarka';
   const isRowBags = column.id === 'rowBags';
   const isCumulativeTotal = column.id === 'totalBags';
@@ -749,6 +751,8 @@ function renderLedgerHeaderCell(column: LedgerExportColumn, columnWidths: Record
           <Text style={styles.tableCellHeader}>Stock</Text>
           <Text style={styles.tableCellHeader}>Filter</Text>
         </>
+      ) : isGeneration ? (
+        <Text style={styles.tableCellHeader}>Generation</Text>
       ) : isCustomMarka ? (
         <>
           <Text style={styles.tableCellHeader}>Custom</Text>
@@ -904,7 +908,7 @@ function SummaryTable({
 
 type LedgerExportContext = Pick<
   FarmerStockLedgerPdfData,
-  'exportColumns' | 'sizeColumns' | 'showStockFilter' | 'showCustomMarka'
+  'exportColumns' | 'sizeColumns' | 'showStockFilter' | 'showGeneration' | 'showCustomMarka'
 >;
 
 function LedgerTable({
@@ -1251,6 +1255,7 @@ function FarmerStockLedgerPages(props: FarmerStockLedgerReportProps) {
     exportColumns: props.exportColumns,
     sizeColumns: props.sizeColumns,
     showStockFilter: props.showStockFilter,
+    showGeneration: props.showGeneration,
     showCustomMarka: props.showCustomMarka,
   };
 

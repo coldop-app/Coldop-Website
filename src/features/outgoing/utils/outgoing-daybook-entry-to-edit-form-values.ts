@@ -24,6 +24,7 @@ export function outgoingDaybookEntryToEditFormValues(
     farmerStorageLinkId: resolveFarmerStorageLinkId(entry.farmerStorageLinkId, farmerStorageLinks),
     manualGatePassNumber: parseManualGatePassNumber(entry.manualParchiNumber),
     stockFilter: entry.stockFilter?.trim() ?? '',
+    generation: entry.generation?.trim() ?? '',
     date: normalizeToIsoDateTime(entry.date),
     from: entry.from?.trim() ?? '',
     to: entry.to?.trim() ?? '',

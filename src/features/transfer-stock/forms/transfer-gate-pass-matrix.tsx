@@ -340,6 +340,7 @@ type TransferGatePassMatrixProps = {
   hasActiveFilters?: boolean;
   varietyFilterMode?: VarietyFilterMode;
   needsStockFilterSelection?: boolean;
+  needsGenerationSelection?: boolean;
   allocationMode?: 'create' | 'edit';
   baselineAllocations?: Record<string, number>;
 };
@@ -356,6 +357,7 @@ export function TransferGatePassMatrix({
   hasActiveFilters = false,
   varietyFilterMode = 'single-required',
   needsStockFilterSelection = false,
+  needsGenerationSelection = false,
   allocationMode = 'create',
   baselineAllocations = {},
 }: TransferGatePassMatrixProps) {
@@ -404,18 +406,22 @@ export function TransferGatePassMatrix({
               <EmptyTitle>
                 {needsStockFilterSelection
                   ? 'Select a stock filter'
-                  : hasActiveFilters
-                    ? 'No matching gate passes'
-                    : 'No gate passes to show'}
+                  : needsGenerationSelection
+                    ? 'Select a generation'
+                    : hasActiveFilters
+                      ? 'No matching gate passes'
+                      : 'No gate passes to show'}
               </EmptyTitle>
               <EmptyDescription>
                 {needsStockFilterSelection
                   ? 'Choose a stock filter above to view incoming gate passes for this transfer.'
-                  : hasActiveFilters
-                    ? 'Try different filters or clear the search.'
-                    : varietyFilterMode === 'multi-optional'
-                      ? 'No gate passes match the current filters, or check back when stock is available.'
-                      : 'Choose a variety to display gate passes, or check back when stock is available.'}
+                  : needsGenerationSelection
+                    ? 'Choose a generation above to view incoming gate passes for this transfer.'
+                    : hasActiveFilters
+                      ? 'Try different filters or clear the search.'
+                      : varietyFilterMode === 'multi-optional'
+                        ? 'No gate passes match the current filters, or check back when stock is available.'
+                        : 'Choose a variety to display gate passes, or check back when stock is available.'}
               </EmptyDescription>
             </EmptyHeader>
           </Empty>

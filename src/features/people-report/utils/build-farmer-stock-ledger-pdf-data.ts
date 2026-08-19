@@ -33,6 +33,7 @@ import {
   getGatePassTotalBags,
   getGatePassSizeQuantityLines,
   getGatePassStockFilter,
+  getGatePassGeneration,
   getGatePassVariety,
   getOutgoingSizeQuantityDetailLines,
   getOutgoingSizeQuantityLinesForVariety,
@@ -63,6 +64,7 @@ export type PdfLedgerRow = {
   manualParchi: string;
   variety: PdfLedgerVarietyValue;
   stockFilter: string;
+  generation: string;
   customMarka: string;
   sizes: Record<string, PdfLedgerSizeValue | null>;
   rowBags: string;
@@ -73,7 +75,7 @@ export type PdfLedgerRow = {
 
 export type PdfLedgerGroupRow = {
   kind: 'group';
-  columnId: 'variety' | 'stockFilter';
+  columnId: 'variety' | 'stockFilter' | 'generation';
   label: string;
   depth: number;
   childCount: number;
@@ -84,7 +86,7 @@ export type PdfLedgerGroupRow = {
 export type PdfLedgerLeafRow = PdfLedgerRow & {
   kind: 'leaf';
   depth: number;
-  suppressedGroupColumns: ('variety' | 'stockFilter')[];
+  suppressedGroupColumns: ('variety' | 'stockFilter' | 'generation')[];
 };
 
 export type PdfLedgerItem = PdfLedgerGroupRow | PdfLedgerLeafRow;
@@ -105,6 +107,7 @@ export type FarmerStockLedgerPdfData = {
     outgoingInternalBags: number;
   };
   showStockFilter: boolean;
+  showGeneration: boolean;
   showCustomMarka: boolean;
   stockSummary: StockSummaryMatrix;
   sizeColumns: string[];
@@ -153,6 +156,7 @@ export type BuildFarmerStockLedgerPdfDataInput = {
   commodities: CommodityPreference[];
   search: PersonDetailSearch;
   showStockFilter?: boolean;
+  showGeneration?: boolean;
   showCustomMarka?: boolean;
   grouping?: GroupingState;
   sorting?: SortingState;
@@ -305,6 +309,11 @@ function getRowStockFilter(row: FarmerReportTableRow): string {
   return getGatePassStockFilter(row.entry);
 }
 
+function getRowGeneration(row: FarmerReportTableRow): string {
+  if (row.kind === 'opening-balance' || !row.entry) return '—';
+  return getGatePassGeneration(row.entry);
+}
+
 function getRowCustomMarka(row: FarmerReportTableRow): string {
   if (row.kind === 'opening-balance' || !row.entry) return '—';
   if (!isIncomingDaybookEntry(row.entry)) return '—';
@@ -347,6 +356,7 @@ export function mapFarmerReportRowToPdfLedger(
       manualParchi: '—',
       variety: { type: 'plain', value: '—' },
       stockFilter: '—',
+      generation: '—',
       customMarka: '—',
       sizes,
       rowBags: formatQuantity(getFarmerReportRowBagTotal(row)),
@@ -363,6 +373,7 @@ export function mapFarmerReportRowToPdfLedger(
     manualParchi: formatManualParchi(entry.manualParchiNumber),
     variety: mapVarietyForEntry(row),
     stockFilter: getRowStockFilter(row),
+    generation: getRowGeneration(row),
     customMarka: getRowCustomMarka(row),
     sizes,
     rowBags: formatQuantity(getFarmerReportRowBagTotal(row)),
@@ -378,6 +389,7 @@ export function buildFarmerStockLedgerPdfData({
   commodities,
   search,
   showStockFilter = false,
+  showGeneration = false,
   showCustomMarka = false,
   grouping = [],
   sorting = FARMER_REPORT_DEFAULT_SORTING,
@@ -401,6 +413,8 @@ export function buildFarmerStockLedgerPdfData({
 
   const exportShowStockFilter =
     showStockFilter && (!visibleColumnIds || visibleColumnIds.includes('stockFilter'));
+  const exportShowGeneration =
+    showGeneration && (!visibleColumnIds || visibleColumnIds.includes('generation'));
   const exportShowCustomMarka =
     showCustomMarka && (!visibleColumnIds || visibleColumnIds.includes('customMarka'));
   const sizeColumns = visibleColumnIds
@@ -411,6 +425,7 @@ export function buildFarmerStockLedgerPdfData({
     sizeColumns,
     exportShowCustomMarka,
     exportShowStockFilter,
+    exportShowGeneration,
   );
 
   const resolvedIncomingSorting = incomingSorting ?? sorting;
@@ -456,6 +471,7 @@ export function buildFarmerStockLedgerPdfData({
     farmer: personDetailSearchToFarmerDisplay(search),
     stats,
     showStockFilter: exportShowStockFilter,
+    showGeneration: exportShowGeneration,
     showCustomMarka: exportShowCustomMarka,
     stockSummary,
     sizeColumns,

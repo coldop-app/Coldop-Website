@@ -17,6 +17,7 @@ export type CreateTransferStockPayload = {
   date: string;
   items: CreateTransferStockItemPayload[];
   stockFilter?: string;
+  generation?: string;
   customMarka?: string;
   remarks?: string;
   narration?: string;
@@ -40,6 +41,7 @@ export type TransferStockRecord = {
   truckNumber?: string;
   items: TransferStockRecordItem[];
   stockFilter?: string;
+  generation?: string;
   customMarka?: string;
   remarks?: string;
   createdAt?: string;

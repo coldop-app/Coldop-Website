@@ -262,6 +262,29 @@ describe('buildFarmerStockLedgerPdfData', () => {
     expect(incomingRow.customMarka).toBe('TS-42');
   });
 
+  it('maps generation when enabled', () => {
+    const entries: DaybookEntry[] = [
+      createIncomingPass({
+        generation: 'G1',
+      }),
+    ];
+    const sections = buildFarmerReportSections(entries);
+
+    const result = buildFarmerStockLedgerPdfData({
+      entries,
+      sections,
+      summaries: { ...EMPTY_SUMMARIES, totalIncomingBags: 150 },
+      commodities,
+      search,
+      showGeneration: true,
+    });
+
+    expect(result.showGeneration).toBe(true);
+    const incomingRow = result.incomingLedger[0];
+    expectLeafRow(incomingRow);
+    expect(incomingRow.generation).toBe('G1');
+  });
+
   it('maps outgoing stock filter when enabled', () => {
     const entries: DaybookEntry[] = [
       createOutgoingPass({

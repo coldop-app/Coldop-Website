@@ -24,6 +24,7 @@ export type CreateOutgoingGatePassPayload = {
   date: string;
   incomingGatePasses: CreateOutgoingGatePassIncomingPayload[];
   stockFilter?: string;
+  generation?: string;
   manualParchiNumber?: number;
   from?: string;
   to?: string;
@@ -39,6 +40,7 @@ export type OutgoingGatePassRecord = {
   incomingGatePassSnapshots?: IncomingGatePassSnapshot[];
   gatePassNo: number;
   stockFilter?: string;
+  generation?: string;
   manualParchiNumber?: number;
   date: string;
   from?: string;
@@ -63,6 +65,7 @@ export type CreateOutgoingGatePassResponse = {
 export type UpdateOutgoingGatePassPayload = {
   date?: string;
   stockFilter?: string;
+  generation?: string;
   manualParchiNumber?: number;
   from?: string;
   to?: string;

@@ -36,6 +36,10 @@ export function shouldShowStockFilter(stockFilter: StockFilterPreference | undef
   return Boolean(stockFilter?.enabled && stockFilter.options.length > 0);
 }
 
+export function shouldShowGeneration(generation: StockFilterPreference | undefined): boolean {
+  return Boolean(generation?.enabled && generation.options.length > 0);
+}
+
 export function shouldShowCustomMarka(customMarka: boolean | undefined): boolean {
   return customMarka === true;
 }
@@ -130,6 +134,7 @@ export function buildIncomingFormSchemaConfig(
   return {
     requireCommodity: commodities.length > 0,
     requireStockFilter: shouldShowStockFilter(preferences?.stockFilter),
+    requireGeneration: shouldShowGeneration(preferences?.generation),
     requireCustomMarka: shouldShowCustomMarka(preferences?.customMarka),
     bagSizes,
   };

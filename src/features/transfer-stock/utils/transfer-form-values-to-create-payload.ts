@@ -7,6 +7,7 @@ import type { TransferStockItem } from '@/features/transfer-stock/types/storage-
 export type BuildTransferStockPayloadOptions = {
   potatoAction?: PotatoAction;
   includeStockFilter?: boolean;
+  includeGeneration?: boolean;
   includeCustomMarka?: boolean;
 };
 
@@ -17,6 +18,7 @@ export function buildCreateTransferStockPayload(
 ): CreateTransferStockPayload {
   const remarks = values.remarks.trim();
   const stockFilter = values.stockFilter.trim();
+  const generation = values.generation.trim();
   const customMarka = values.customMarka.trim();
 
   const payload: CreateTransferStockPayload = {
@@ -30,6 +32,7 @@ export function buildCreateTransferStockPayload(
       location: item.location,
     })),
     ...(options?.includeStockFilter && stockFilter ? { stockFilter } : {}),
+    ...(options?.includeGeneration && generation ? { generation } : {}),
     ...(options?.includeCustomMarka && customMarka ? { customMarka } : {}),
     ...(remarks ? { remarks } : {}),
   };

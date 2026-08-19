@@ -11,6 +11,7 @@ import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-stor
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import {
   shouldShowCustomMarka,
+  shouldShowGeneration,
   shouldShowStockFilter,
 } from '@/features/incoming/utils/incoming-preferences';
 import type { IncomingGatePassReportRecord } from '@/features/incoming-report/api/types';
@@ -51,11 +52,13 @@ const IncomingReportPage = () => {
 
   const coldStorageName = useColdStorageStore((s) => s.coldStorage?.name);
   const stockFilterPreference = usePreferencesStore((state) => state.preferences?.stockFilter);
+  const generationPreference = usePreferencesStore((state) => state.preferences?.generation);
   const customMarkaPreference = usePreferencesStore((state) => state.preferences?.customMarka);
   const showViewFilters = usePreferencesStore(
     (state) => state.preferences?.showViewFilters ?? false,
   );
   const showStockFilter = shouldShowStockFilter(stockFilterPreference);
+  const showGeneration = shouldShowGeneration(generationPreference);
   const showCustomMarka = shouldShowCustomMarka(customMarkaPreference);
   const { data, error, isFetching, isLoading, refetch } = useIncomingGatePassReport(appliedParams);
 
@@ -75,9 +78,10 @@ const IncomingReportPage = () => {
         quantityMode,
         showCustomMarka,
         showStockFilter,
+        showGeneration,
         showLocation,
       ),
-    [quantityMode, reportRows, showCustomMarka, showStockFilter, showLocation],
+    [quantityMode, reportRows, showCustomMarka, showStockFilter, showGeneration, showLocation],
   );
 
   const handleTableReady = useCallback((table: TanStackTable<IncomingGatePassReportRecord>) => {

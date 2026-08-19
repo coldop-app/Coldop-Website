@@ -13,6 +13,7 @@ export type IncomingGatePassAuditState = {
   remarks?: string;
   manualParchiNumber?: string;
   stockFilter?: string;
+  generation?: string;
   customMarka?: string;
   amount?: number;
   bagSizes?: IncomingBagSize[];

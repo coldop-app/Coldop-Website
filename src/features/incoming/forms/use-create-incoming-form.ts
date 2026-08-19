@@ -35,6 +35,7 @@ export function useCreateIncomingForm({
       commodity: initialCommodity,
       variety: '',
       stockFilter: '',
+      generation: '',
       customMarka: '',
       date: todayIso,
       truckNumber: '',

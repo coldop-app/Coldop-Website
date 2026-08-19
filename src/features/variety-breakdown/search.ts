@@ -8,6 +8,8 @@ export const varietyBreakdownSearchSchema = z.object({
   tab: analyticsTabSchema.catch('current'),
   stockFilter: z.boolean().optional(),
   stockFilterTab: z.string().optional(),
+  generation: z.boolean().optional(),
+  generationTab: z.string().optional(),
 });
 
 export type VarietyBreakdownSearch = z.infer<typeof varietyBreakdownSearchSchema>;

@@ -51,6 +51,7 @@ import {
   getDefaultCommodityName,
   shouldShowCommoditySelect,
   shouldShowCustomMarka,
+  shouldShowGeneration,
   shouldShowStockFilter,
   toComboboxOptions,
 } from '@/features/incoming/utils/incoming-preferences';
@@ -150,6 +151,7 @@ export function IncomingForm({
       commodity: initialCommodity,
       variety: '',
       stockFilter: '',
+      generation: '',
       customMarka: '',
       date: todayIso,
       truckNumber: '',
@@ -261,6 +263,7 @@ export function IncomingForm({
 
   const showCommoditySelect = shouldShowCommoditySelect(commodities);
   const showStockFilter = shouldShowStockFilter(preferences?.stockFilter);
+  const showGeneration = shouldShowGeneration(preferences?.generation);
   const showCustomMarka = shouldShowCustomMarka(preferences?.customMarka);
 
   const selectedCommodity = useMemo(
@@ -275,6 +278,10 @@ export function IncomingForm({
   const stockFilterOptions = useMemo(
     () => toComboboxOptions(preferences?.stockFilter?.options ?? []),
     [preferences?.stockFilter?.options],
+  );
+  const generationOptions = useMemo(
+    () => toComboboxOptions(preferences?.generation?.options ?? []),
+    [preferences?.generation?.options],
   );
   const commodityOptions = useMemo(
     () => toComboboxOptions(commodities.map((commodity) => commodity.name)),
@@ -300,6 +307,8 @@ export function IncomingForm({
   const [varietyComboboxOpen, setVarietyComboboxOpen] = useState(false);
   const [stockFilterSearch, setStockFilterSearch] = useState('');
   const [stockFilterComboboxOpen, setStockFilterComboboxOpen] = useState(false);
+  const [generationSearch, setGenerationSearch] = useState('');
+  const [generationComboboxOpen, setGenerationComboboxOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const sortedFarmers = useMemo(
@@ -318,6 +327,10 @@ export function IncomingForm({
     () => filterAndSortOptions(stockFilterSearch, stockFilterOptions),
     [stockFilterSearch, stockFilterOptions],
   );
+  const sortedGenerations = useMemo(
+    () => filterAndSortOptions(generationSearch, generationOptions),
+    [generationSearch, generationOptions],
+  );
 
   const formId = mode === 'edit' ? 'edit-incoming-form' : 'create-incoming-form';
   const fieldIdPrefix = mode === 'edit' ? 'edit-incoming' : 'create-incoming';
@@ -329,6 +342,8 @@ export function IncomingForm({
     setVarietyComboboxOpen(false);
     setStockFilterSearch('');
     setStockFilterComboboxOpen(false);
+    setGenerationSearch('');
+    setGenerationComboboxOpen(false);
   }, []);
 
   const handleCommodityChange = useCallback(
@@ -339,6 +354,7 @@ export function IncomingForm({
       setSelectedCommodityName(commodityName);
       form.setFieldValue('variety', '');
       form.setFieldValue('stockFilter', '');
+      form.setFieldValue('generation', '');
       form.setFieldValue('customMarka', '');
       form.setFieldValue('quantities', createQuantitiesForSizes(commodity?.sizes ?? []));
       resetCropComboboxState();
@@ -723,6 +739,40 @@ export function IncomingForm({
                             setSearch={setStockFilterSearch}
                             open={stockFilterComboboxOpen}
                             setOpen={setStockFilterComboboxOpen}
+                          />
+                          {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                        </Field>
+                      );
+                    }}
+                  </form.Field>
+                ) : null}
+
+                {showGeneration ? (
+                  <form.Field
+                    name="generation"
+                    validators={{ onChange: formSchema.shape.generation }}
+                  >
+                    {(field) => {
+                      const isInvalid = isFieldInvalid(field.state.meta);
+                      return (
+                        <Field data-invalid={isInvalid}>
+                          <FieldLabel htmlFor={`${fieldIdPrefix}-generation`}>Generation</FieldLabel>
+                          <SearchableOptionCombobox
+                            id={`${fieldIdPrefix}-generation`}
+                            name={field.name}
+                            value={field.state.value}
+                            onValueChange={field.handleChange}
+                            onBlur={field.handleBlur}
+                            isInvalid={isInvalid}
+                            disabled={cropFieldsDisabled}
+                            placeholder="Search generations..."
+                            emptyMessage="No generations found."
+                            options={generationOptions}
+                            sortedOptions={sortedGenerations}
+                            search={generationSearch}
+                            setSearch={setGenerationSearch}
+                            open={generationComboboxOpen}
+                            setOpen={setGenerationComboboxOpen}
                           />
                           {isInvalid && <FieldError errors={field.state.meta.errors} />}
                         </Field>

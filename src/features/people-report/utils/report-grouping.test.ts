@@ -13,6 +13,9 @@ describe('toggleFarmerReportGrouping', () => {
 
     const second = toggleFarmerReportGrouping(first, FARMER_REPORT_GROUP_COLUMN_IDS.stockFilter);
     expect(second).toEqual(['variety', 'stockFilter']);
+
+    const third = toggleFarmerReportGrouping(second, FARMER_REPORT_GROUP_COLUMN_IDS.generation);
+    expect(third).toEqual(['variety', 'stockFilter', 'generation']);
   });
 
   it('removes an active grouping column without changing the order of others', () => {

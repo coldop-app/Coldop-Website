@@ -32,4 +32,14 @@ describe('getOutgoingReportColumns', () => {
     const columns = getOutgoingReportColumns([sampleRow], 'issued', false);
     expect(columns.some((column) => columnKey(column) === 'stockFilter')).toBe(false);
   });
+
+  it('includes generation column when preference is enabled', () => {
+    const columns = getOutgoingReportColumns([sampleRow], 'issued', false, true);
+    expect(columns.some((column) => columnKey(column) === 'generation')).toBe(true);
+  });
+
+  it('omits generation column when preference is disabled', () => {
+    const columns = getOutgoingReportColumns([sampleRow], 'issued', false, false);
+    expect(columns.some((column) => columnKey(column) === 'generation')).toBe(false);
+  });
 });

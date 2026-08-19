@@ -7,6 +7,7 @@ export const objectId = z.string().length(24, 'Select a valid record from the li
 export type IncomingFormSchemaConfig = {
   requireCommodity: boolean;
   requireStockFilter: boolean;
+  requireGeneration: boolean;
   requireCustomMarka: boolean;
   bagSizes: string[];
 };
@@ -17,6 +18,10 @@ function commoditySchema(requireCommodity: boolean) {
 
 function stockFilterSchema(requireStockFilter: boolean) {
   return requireStockFilter ? z.string().min(1, 'Select a stock filter.') : z.string();
+}
+
+function generationSchema(requireGeneration: boolean) {
+  return requireGeneration ? z.string().min(1, 'Select a generation.') : z.string();
 }
 
 function customMarkaSchema(requireCustomMarka: boolean) {
@@ -35,6 +40,7 @@ export function createIncomingFormSchema(config: IncomingFormSchemaConfig) {
     commodity: commoditySchema(config.requireCommodity),
     variety: z.string().min(1, 'Select a variety.'),
     stockFilter: stockFilterSchema(config.requireStockFilter),
+    generation: generationSchema(config.requireGeneration),
     customMarka: customMarkaSchema(config.requireCustomMarka),
     date: z.string().datetime('Select a valid date.'),
     truckNumber: z
@@ -52,6 +58,7 @@ export function createIncomingFormSchema(config: IncomingFormSchemaConfig) {
 export const incomingFormSchema = createIncomingFormSchema({
   requireCommodity: false,
   requireStockFilter: false,
+  requireGeneration: false,
   requireCustomMarka: false,
   bagSizes: [],
 });

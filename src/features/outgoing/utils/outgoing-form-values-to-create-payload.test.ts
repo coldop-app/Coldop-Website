@@ -15,6 +15,7 @@ const baseValues: OutgoingFormValues = {
   farmerStorageLinkId: FARMER_ID,
   date: '2026-06-21T10:30:00.000Z',
   stockFilter: '',
+  generation: '',
   manualGatePassNumber: 55,
   from: 'Cold Storage A',
   to: 'Mandi Delhi',
@@ -272,5 +273,25 @@ describe('buildCreateOutgoingGatePassPayload', () => {
     );
 
     expect(payload.stockFilter).toBe('Owned');
+  });
+
+  it('includes generation when set on form values', () => {
+    const payload = buildCreateOutgoingGatePassPayload(
+      { ...baseValues, generation: 'G1' },
+      [
+        {
+          storageGatePassId: PASS_A,
+          gatePassNo: 12,
+          bagSize: '25-30',
+          bagIndex: 0,
+          quantity: 10,
+          location: { chamber: 'C1', floor: 'F1', row: 'R1' },
+        },
+      ],
+      passes,
+      101,
+    );
+
+    expect(payload.generation).toBe('G1');
   });
 });

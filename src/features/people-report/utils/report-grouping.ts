@@ -3,6 +3,7 @@ import type { GroupingState } from '@tanstack/react-table';
 export const FARMER_REPORT_GROUP_COLUMN_IDS = {
   variety: 'variety',
   stockFilter: 'stockFilter',
+  generation: 'generation',
 } as const;
 
 export type FarmerReportGroupColumnId =

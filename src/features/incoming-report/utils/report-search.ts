@@ -17,6 +17,7 @@ function buildIncomingReportSearchText(row: IncomingGatePassReportRecord): strin
     row.date,
     row.variety,
     row.stockFilter,
+    row.generation,
     row.customMarka,
     row.remarks,
     row.truckNumber,

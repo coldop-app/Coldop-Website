@@ -22,6 +22,7 @@ export type StorageGatePassFilterParams = {
   search?: string;
   location?: LocationFilters;
   stockFilter?: string;
+  generation?: string;
   preferences?: LotNoPreferences;
 };
 
@@ -65,7 +66,7 @@ function getLotNoSearchTerms(pass: StorageGatePass, preferences: LotNoPreference
 
 export function filterStorageGatePasses(
   passes: StorageGatePass[],
-  { variety, varieties, search, location, stockFilter, preferences }: StorageGatePassFilterParams,
+  { variety, varieties, search, location, stockFilter, generation, preferences }: StorageGatePassFilterParams,
 ): StorageGatePass[] {
   let list = passes;
   const varietySet =
@@ -84,6 +85,10 @@ export function filterStorageGatePasses(
   if (stockFilter?.trim()) {
     const filterValue = stockFilter.trim();
     list = list.filter((p) => p.stockFilter?.trim() === filterValue);
+  }
+  if (generation?.trim()) {
+    const generationValue = generation.trim();
+    list = list.filter((p) => p.generation?.trim() === generationValue);
   }
   if (search?.trim()) {
     list = list.filter((p) => passMatchesGatePassSearch(p, search, preferences));
@@ -160,10 +165,11 @@ export function passHasCurrentQuantity(pass: StorageGatePass): boolean {
 export function getUniqueVarietiesForStockFilter(
   passes: StorageGatePass[],
   stockFilter?: string,
+  generation?: string,
 ): string[] {
   let list = passes;
-  if (stockFilter?.trim()) {
-    list = filterStorageGatePasses(list, { stockFilter });
+  if (stockFilter?.trim() || generation?.trim()) {
+    list = filterStorageGatePasses(list, { stockFilter, generation });
     list = list.filter(passHasCurrentQuantity);
   }
   return getUniqueVarieties(list);

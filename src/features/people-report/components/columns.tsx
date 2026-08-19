@@ -21,6 +21,7 @@ import {
   getGatePassSizeQuantity,
   getGatePassSizeQuantityLines,
   getGatePassStockFilter,
+  getGatePassGeneration,
   getGatePassVariety,
   getOutgoingSizeQuantityDetailLines,
   getOutgoingSizeQuantityForVariety,
@@ -229,6 +230,12 @@ function getRowStockFilterGroupingValue(row: FarmerReportTableRow): string {
   return getGatePassStockFilter(row.entry);
 }
 
+function getRowGenerationGroupingValue(row: FarmerReportTableRow): string {
+  if (row.kind === 'opening-balance') return 'Opening Balance';
+  if (!row.entry) return '—';
+  return getGatePassGeneration(row.entry);
+}
+
 function emptyGroupedAggregatedCell() {
   return <span className="text-muted-foreground">—</span>;
 }
@@ -248,6 +255,7 @@ function buildFarmerReportColumnsForSizes(
   orderedSizes: string[],
   showCustomMarka: boolean,
   showStockFilter: boolean,
+  showGeneration: boolean,
 ): ColumnDef<FarmerReportTableRow>[] {
   const staticColumns: ColumnDef<FarmerReportTableRow>[] = [
     {
@@ -357,6 +365,33 @@ function buildFarmerReportColumnsForSizes(
         return (
           <span className="block min-w-0" title={stockFilter}>
             {stockFilter}
+          </span>
+        );
+      },
+    });
+  }
+
+  if (showGeneration) {
+    staticColumns.push({
+      id: 'generation',
+      accessorFn: (row) => (row.entry ? getGatePassGeneration(row.entry) : '—'),
+      header: 'Generation',
+      meta: { groupable: true, filterLabel: 'Generation' },
+      enableGrouping: true,
+      getGroupingValue: getRowGenerationGroupingValue,
+      sortingFn: 'text',
+      aggregationFn: noGroupAggregation,
+      aggregatedCell: emptyGroupedAggregatedCell,
+      cell: ({ row }) => {
+        if (isOpeningBalanceRow(row.original) || !row.original.entry) {
+          return <span className="text-muted-foreground">—</span>;
+        }
+
+        const generation = getGatePassGeneration(row.original.entry);
+
+        return (
+          <span className="block min-w-0" title={generation}>
+            {generation}
           </span>
         );
       },
@@ -477,12 +512,18 @@ export function getFarmerReportColumnsForSizes(
   orderedSizes: string[],
   showCustomMarka = false,
   showStockFilter = false,
+  showGeneration = false,
 ): ColumnDef<FarmerReportTableRow>[] {
-  const cacheKey = `${orderedSizes.join('\0')}|cm:${showCustomMarka}|sf:${showStockFilter}|rb:1`;
+  const cacheKey = `${orderedSizes.join('\0')}|cm:${showCustomMarka}|sf:${showStockFilter}|gn:${showGeneration}|rb:1`;
   const cached = columnCache.get(cacheKey);
   if (cached) return cached;
 
-  const columns = buildFarmerReportColumnsForSizes(orderedSizes, showCustomMarka, showStockFilter);
+  const columns = buildFarmerReportColumnsForSizes(
+    orderedSizes,
+    showCustomMarka,
+    showStockFilter,
+    showGeneration,
+  );
   columnCache.set(cacheKey, columns);
   return columns;
 }
@@ -492,7 +533,13 @@ export function getFarmerReportColumns(
   commodities: CommodityPreference[] = [],
   showCustomMarka = false,
   showStockFilter = false,
+  showGeneration = false,
 ): ColumnDef<FarmerReportTableRow>[] {
   const orderedSizes = orderBagSizes(collectUniqueBagSizes(rows), commodities);
-  return getFarmerReportColumnsForSizes(orderedSizes, showCustomMarka, showStockFilter);
+  return getFarmerReportColumnsForSizes(
+    orderedSizes,
+    showCustomMarka,
+    showStockFilter,
+    showGeneration,
+  );
 }

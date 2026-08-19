@@ -31,6 +31,7 @@ export interface ReportToolbarProps {
   onSearchChange: (value: string) => void;
   grouping: GroupingState;
   showStockFilterGrouping: boolean;
+  showGenerationGrouping: boolean;
   onToggleGrouping: (columnId: FarmerReportGroupColumnId) => void;
   isLoading?: boolean;
   isRefreshing?: boolean;
@@ -58,6 +59,7 @@ export function ReportToolbar({
   onSearchChange,
   grouping,
   showStockFilterGrouping,
+  showGenerationGrouping,
   onToggleGrouping,
   isLoading = false,
   isRefreshing = false,
@@ -75,6 +77,10 @@ export function ReportToolbar({
   const isStockFilterGrouped = isFarmerReportGrouped(
     grouping,
     FARMER_REPORT_GROUP_COLUMN_IDS.stockFilter,
+  );
+  const isGenerationGrouped = isFarmerReportGrouped(
+    grouping,
+    FARMER_REPORT_GROUP_COLUMN_IDS.generation,
   );
 
   return (
@@ -213,6 +219,19 @@ export function ReportToolbar({
                 aria-pressed={isStockFilterGrouped}
               >
                 {isStockFilterGrouped ? 'Ungroup Stock Filter' : 'Group by Stock Filter'}
+              </Button>
+            ) : null}
+            {showGenerationGrouping ? (
+              <Button
+                type="button"
+                size="sm"
+                variant={isGenerationGrouped ? 'secondary' : 'outline'}
+                className={cn('min-w-0', isGenerationGrouped && 'ring-border ring-1')}
+                disabled={isLoading}
+                onClick={() => onToggleGrouping(FARMER_REPORT_GROUP_COLUMN_IDS.generation)}
+                aria-pressed={isGenerationGrouped}
+              >
+                {isGenerationGrouped ? 'Ungroup Generation' : 'Group by Generation'}
               </Button>
             ) : null}
           </div>

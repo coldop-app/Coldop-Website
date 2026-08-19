@@ -148,6 +148,12 @@ function TransferReviewSummary({
           {values.stockFilter ? (
             <DetailRow label="Destination stock filter" value={values.stockFilter} />
           ) : null}
+          {values.gatePassGeneration ? (
+            <DetailRow label="Gate pass generation" value={values.gatePassGeneration} />
+          ) : null}
+          {values.generation ? (
+            <DetailRow label="Destination generation" value={values.generation} />
+          ) : null}
           {values.customMarka ? (
             <DetailRow label="Custom marka" value={values.customMarka} />
           ) : null}

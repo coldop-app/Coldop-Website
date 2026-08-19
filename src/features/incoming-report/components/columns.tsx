@@ -204,6 +204,15 @@ const stockFilterColumn: ColumnDef<IncomingGatePassReportRecord> = {
   cell: ({ getValue }) => getValue<string | undefined>() || '-',
 };
 
+const generationColumn: ColumnDef<IncomingGatePassReportRecord> = {
+  accessorKey: 'generation',
+  header: 'Generation',
+  meta: { filterLabel: 'Generation' },
+  ...sortText,
+  ...aggregateNone,
+  cell: ({ getValue }) => getValue<string | undefined>() || '-',
+};
+
 const customMarkaColumn: ColumnDef<IncomingGatePassReportRecord> = {
   accessorKey: 'customMarka',
   header: 'Custom marka',
@@ -283,9 +292,10 @@ function getIncomingReportColumnCacheKey(
   quantityMode: IncomingQuantityMode,
   showCustomMarka: boolean,
   showStockFilter: boolean,
+  showGeneration: boolean,
   showLocation: boolean,
 ) {
-  return `${sizes.join('\0')}|${quantityMode}|cm:${showCustomMarka}|sf:${showStockFilter}|sl:${showLocation}`;
+  return `${sizes.join('\0')}|${quantityMode}|cm:${showCustomMarka}|sf:${showStockFilter}|gn:${showGeneration}|sl:${showLocation}`;
 }
 
 function buildIncomingReportColumns(
@@ -293,6 +303,7 @@ function buildIncomingReportColumns(
   quantityMode: IncomingQuantityMode,
   showCustomMarka: boolean,
   showStockFilter: boolean,
+  showGeneration: boolean,
   showLocation: boolean,
 ): ColumnDef<IncomingGatePassReportRecord>[] {
   const sizeColumns: ColumnDef<IncomingGatePassReportRecord>[] = sizes.map((sizeName) => ({
@@ -336,6 +347,10 @@ function buildIncomingReportColumns(
     preferenceColumns.push(stockFilterColumn);
   }
 
+  if (showGeneration) {
+    preferenceColumns.push(generationColumn);
+  }
+
   if (showCustomMarka) {
     preferenceColumns.push(customMarkaColumn);
   }
@@ -354,6 +369,7 @@ export function getIncomingReportColumns(
   quantityMode: IncomingQuantityMode = 'current',
   showCustomMarka = false,
   showStockFilter = false,
+  showGeneration = false,
   showLocation = true,
 ): ColumnDef<IncomingGatePassReportRecord>[] {
   const sizes = collectIncomingReportBagSizeNames(rows);
@@ -362,6 +378,7 @@ export function getIncomingReportColumns(
     quantityMode,
     showCustomMarka,
     showStockFilter,
+    showGeneration,
     showLocation,
   );
   const cached = columnCache.get(cacheKey);
@@ -373,6 +390,7 @@ export function getIncomingReportColumns(
     quantityMode,
     showCustomMarka,
     showStockFilter,
+    showGeneration,
     showLocation,
   );
   columnCache.set(cacheKey, columns);

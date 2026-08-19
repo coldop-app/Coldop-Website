@@ -22,6 +22,7 @@ export type StorageGatePass = {
   bagSizes: StorageGatePassBagSlot[];
   remarks: string;
   stockFilter?: string;
+  generation?: string;
 };
 
 /** `${passId}\u001f${size}\u001f${bagIndex}` — unit separator avoids `|` in size names */

@@ -35,6 +35,9 @@ describe('buildFarmerReportGroupingSummary', () => {
     expect(buildFarmerReportGroupingSummary(['variety', 'stockFilter'])).toBe(
       'Grouped by: Variety, Stock Filter',
     );
+    expect(buildFarmerReportGroupingSummary(['variety', 'stockFilter', 'generation'])).toBe(
+      'Grouped by: Variety, Stock Filter, Generation',
+    );
   });
 });
 

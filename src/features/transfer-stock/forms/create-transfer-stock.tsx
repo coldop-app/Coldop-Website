@@ -43,6 +43,7 @@ import { DEFAULT_DAYBOOK_SEARCH } from '@/features/daybook/search';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import {
   shouldShowCustomMarka,
+  shouldShowGeneration,
   shouldShowStockFilter,
   toComboboxOptions,
 } from '@/features/incoming/utils/incoming-preferences';
@@ -106,6 +107,7 @@ const CreateTransferStock = () => {
 
   const showCustomMarka = shouldShowCustomMarka(preferences?.customMarka);
   const showStockFilter = shouldShowStockFilter(preferences?.stockFilter);
+  const showGeneration = shouldShowGeneration(preferences?.generation);
 
   const requireAmount = Boolean(potatoAction);
 
@@ -113,9 +115,10 @@ const CreateTransferStock = () => {
     () => ({
       requireCustomMarka: showCustomMarka,
       requireStockFilter: showStockFilter,
+      requireGeneration: showGeneration,
       requireAmount,
     }),
-    [showCustomMarka, showStockFilter, requireAmount],
+    [showCustomMarka, showStockFilter, showGeneration, requireAmount],
   );
 
   const formSchema = useMemo(() => createTransferStockFormSchema(schemaConfig), [schemaConfig]);
@@ -123,6 +126,10 @@ const CreateTransferStock = () => {
   const stockFilterOptions = useMemo(
     () => toComboboxOptions(preferences?.stockFilter?.options ?? []),
     [preferences?.stockFilter?.options],
+  );
+  const generationOptions = useMemo(
+    () => toComboboxOptions(preferences?.generation?.options ?? []),
+    [preferences?.generation?.options],
   );
 
   const {
@@ -147,6 +154,8 @@ const CreateTransferStock = () => {
   const [toFarmerComboboxOpen, setToFarmerComboboxOpen] = useState(false);
   const [stockFilterSearch, setStockFilterSearch] = useState('');
   const [stockFilterComboboxOpen, setStockFilterComboboxOpen] = useState(false);
+  const [generationSearch, setGenerationSearch] = useState('');
+  const [generationComboboxOpen, setGenerationComboboxOpen] = useState(false);
   const [reviewOpen, setReviewOpen] = useState(false);
 
   const sortedFromFarmers = useMemo(
@@ -161,6 +170,10 @@ const CreateTransferStock = () => {
     () => filterAndSortOptions(stockFilterSearch, stockFilterOptions),
     [stockFilterSearch, stockFilterOptions],
   );
+  const sortedGenerations = useMemo(
+    () => filterAndSortOptions(generationSearch, generationOptions),
+    [generationSearch, generationOptions],
+  );
 
   const resetComboboxState = () => {
     setFromFarmerSearch('');
@@ -169,6 +182,8 @@ const CreateTransferStock = () => {
     setToFarmerComboboxOpen(false);
     setStockFilterSearch('');
     setStockFilterComboboxOpen(false);
+    setGenerationSearch('');
+    setGenerationComboboxOpen(false);
   };
 
   const form = useCreateTransferStockForm({
@@ -179,6 +194,7 @@ const CreateTransferStock = () => {
         const payload = buildCreateTransferStockPayload(values, items, {
           ...(potatoAction ? { potatoAction } : {}),
           includeStockFilter: showStockFilter,
+          includeGeneration: showGeneration,
           includeCustomMarka: showCustomMarka,
         });
         const created = await createTransferStock(payload);
@@ -276,6 +292,7 @@ const CreateTransferStock = () => {
                               field.handleChange(value);
                               form.setFieldValue('allocations', {});
                               form.setFieldValue('gatePassStockFilter', '');
+                              form.setFieldValue('gatePassGeneration', '');
                             }}
                             onBlur={field.handleBlur}
                             isInvalid={isInvalid}
@@ -382,6 +399,44 @@ const CreateTransferStock = () => {
                     </form.Field>
                   ) : null}
 
+                  {showGeneration ? (
+                    <form.Field
+                      name="generation"
+                      validators={{ onChange: formSchema.shape.generation }}
+                    >
+                      {(field) => {
+                        const isInvalid = isFieldInvalid(field.state.meta);
+                        return (
+                          <Field data-invalid={isInvalid}>
+                            <FieldLabel htmlFor="transfer-stock-generation">
+                              Destination generation
+                            </FieldLabel>
+                            <SearchableOptionCombobox
+                              id="transfer-stock-generation"
+                              name={field.name}
+                              value={field.state.value}
+                              onValueChange={field.handleChange}
+                              onBlur={field.handleBlur}
+                              isInvalid={isInvalid}
+                              placeholder="Search generations..."
+                              emptyMessage="No generations found."
+                              options={generationOptions}
+                              sortedOptions={sortedGenerations}
+                              search={generationSearch}
+                              setSearch={setGenerationSearch}
+                              open={generationComboboxOpen}
+                              setOpen={setGenerationComboboxOpen}
+                            />
+                            <FieldDescription>
+                              Applied to the new incoming gate pass for the destination account.
+                            </FieldDescription>
+                            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+                          </Field>
+                        );
+                      }}
+                    </form.Field>
+                  ) : null}
+
                   <form.Field name="date">
                     {(field) => {
                       const isInvalid = isFieldInvalid(field.state.meta);
@@ -468,8 +523,9 @@ const CreateTransferStock = () => {
                 selector={(state) => ({
                   fromFarmerStorageLinkId: state.values.fromFarmerStorageLinkId,
                   gatePassStockFilter: state.values.gatePassStockFilter,
+                  gatePassGeneration: state.values.gatePassGeneration,
                 })}
-                children={({ fromFarmerStorageLinkId, gatePassStockFilter }) => (
+                children={({ fromFarmerStorageLinkId, gatePassStockFilter, gatePassGeneration }) => (
                   <FieldSet className="min-w-0">
                     <FieldLegend className="font-heading text-base font-semibold">
                       Incoming gate pass
@@ -491,6 +547,15 @@ const CreateTransferStock = () => {
                               showStockFilter
                                 ? (value) => {
                                     form.setFieldValue('gatePassStockFilter', value);
+                                    form.setFieldValue('allocations', {});
+                                  }
+                                : undefined
+                            }
+                            generation={showGeneration ? gatePassGeneration : undefined}
+                            onGenerationChange={
+                              showGeneration
+                                ? (value) => {
+                                    form.setFieldValue('gatePassGeneration', value);
                                     form.setFieldValue('allocations', {});
                                   }
                                 : undefined

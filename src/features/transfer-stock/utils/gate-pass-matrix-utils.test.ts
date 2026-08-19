@@ -201,6 +201,59 @@ describe('filterStorageGatePasses', () => {
     expect(filterStorageGatePasses(passes, { stockFilter: '' })).toHaveLength(3);
     expect(filterStorageGatePasses(passes, {})).toHaveLength(3);
   });
+
+  it('filters by generation when set', () => {
+    const g1Pass: StorageGatePass = {
+      ...samplePass,
+      _id: 'pass-g1',
+      generation: 'G1',
+    };
+    const g2Pass: StorageGatePass = {
+      ...samplePass,
+      _id: 'pass-g2',
+      generation: 'G2',
+    };
+    const noGenerationPass: StorageGatePass = {
+      ...samplePass,
+      _id: 'pass-none-generation',
+    };
+
+    const passes = [g1Pass, g2Pass, noGenerationPass];
+
+    expect(filterStorageGatePasses(passes, { generation: 'G1' })).toHaveLength(1);
+    expect(filterStorageGatePasses(passes, { generation: 'G1' })[0]?._id).toBe('pass-g1');
+    expect(filterStorageGatePasses(passes, { generation: 'G2' })).toHaveLength(1);
+    expect(filterStorageGatePasses(passes, { generation: '' })).toHaveLength(3);
+  });
+
+  it('ANDs stock filter and generation when both are set', () => {
+    const matching: StorageGatePass = {
+      ...samplePass,
+      _id: 'match',
+      stockFilter: 'Owned',
+      generation: 'G1',
+    };
+    const wrongGeneration: StorageGatePass = {
+      ...samplePass,
+      _id: 'wrong-gen',
+      stockFilter: 'Owned',
+      generation: 'G2',
+    };
+    const wrongFilter: StorageGatePass = {
+      ...samplePass,
+      _id: 'wrong-filter',
+      stockFilter: 'Farmer',
+      generation: 'G1',
+    };
+
+    const result = filterStorageGatePasses([matching, wrongGeneration, wrongFilter], {
+      stockFilter: 'Owned',
+      generation: 'G1',
+    });
+
+    expect(result).toHaveLength(1);
+    expect(result[0]?._id).toBe('match');
+  });
 });
 
 describe('getUniqueVarietiesForStockFilter', () => {

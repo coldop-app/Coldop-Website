@@ -16,7 +16,10 @@ import type {
   IncomingDaybookEntry,
   OutgoingDaybookEntry,
 } from '@/features/daybook/types';
-import { shouldShowStockFilter } from '@/features/incoming/utils/incoming-preferences';
+import {
+  shouldShowGeneration,
+  shouldShowStockFilter,
+} from '@/features/incoming/utils/incoming-preferences';
 import { FarmerStockSummaryTable } from '@/features/people/components/farmer-stock-summary-table';
 import {
   QuantityModeTabLabel,
@@ -25,6 +28,7 @@ import {
 import { getStockSummaryAccent } from '@/features/people/components/farmer-stock-summary-table-styles';
 import {
   buildFarmerStockSummary,
+  type GenerationTab,
   type StockFilterTab,
   type StockQuantityMode,
 } from '@/features/people/utils/build-farmer-stock-summary';
@@ -61,9 +65,12 @@ export function FarmerStockSummarySection({
   const preferences = usePreferencesStore((state) => state.preferences);
   const commodities = preferences?.commodities ?? [];
   const stockFilterOptions = preferences?.stockFilter?.options ?? [];
+  const generationOptions = preferences?.generation?.options ?? [];
   const showStockFilterTabs = shouldShowStockFilter(preferences?.stockFilter);
+  const showGenerationTabs = shouldShowGeneration(preferences?.generation);
 
   const [stockFilterTab, setStockFilterTab] = useState<StockFilterTab>('all');
+  const [generationTab, setGenerationTab] = useState<GenerationTab>('all');
   const [quantityMode, setQuantityMode] = useState<StockQuantityMode>('current');
 
   const summary = useMemo(
@@ -72,9 +79,10 @@ export function FarmerStockSummarySection({
         passes,
         commodities,
         stockFilterTab,
+        generationTab,
         quantityMode,
       }),
-    [passes, commodities, stockFilterTab, quantityMode],
+    [passes, commodities, stockFilterTab, generationTab, quantityMode],
   );
 
   const stockFilterTabs = useMemo<StockFilterTab[]>(() => {
@@ -89,6 +97,20 @@ export function FarmerStockSummarySection({
         label: tab === 'all' ? 'All' : tab,
       })),
     [stockFilterTabs],
+  );
+
+  const generationTabs = useMemo<GenerationTab[]>(() => {
+    if (!showGenerationTabs) return [];
+    return ['all', ...generationOptions];
+  }, [showGenerationTabs, generationOptions]);
+
+  const generationTabItems = useMemo(
+    () =>
+      generationTabs.map((tab) => ({
+        value: tab,
+        label: tab === 'all' ? 'All' : tab,
+      })),
+    [generationTabs],
   );
 
   const quantityModeTabItems = useMemo(
@@ -128,6 +150,20 @@ export function FarmerStockSummarySection({
                   onValueChange={(value) => setStockFilterTab(value as StockFilterTab)}
                   items={stockFilterTabItems}
                   ariaLabel="Stock ownership filter"
+                />
+              </div>
+              <Separator />
+            </>
+          ) : null}
+
+          {showGenerationTabs ? (
+            <>
+              <div className="px-3 pt-3 sm:px-4 sm:pt-4">
+                <StockSummaryTabBar
+                  value={generationTab}
+                  onValueChange={(value) => setGenerationTab(value as GenerationTab)}
+                  items={generationTabItems}
+                  ariaLabel="Generation filter"
                 />
               </div>
               <Separator />
@@ -178,6 +214,7 @@ export function FarmerStockSummarySection({
               outgoingPasses={outgoingPasses}
               allEntries={allEntries}
               stockFilterTab={stockFilterTab}
+              generationTab={generationTab}
               quantityMode={quantityMode}
             />
           )}

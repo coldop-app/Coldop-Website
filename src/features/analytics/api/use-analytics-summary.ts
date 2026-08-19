@@ -8,6 +8,7 @@ export const ANALYTICS_SUMMARY_QUERY_KEY = ['analytics', 'summary'] as const;
 
 export type AnalyticsSummaryParams = {
   stockFilter?: boolean;
+  generation?: boolean;
 };
 
 function analyticsSummaryQueryKey(params: AnalyticsSummaryParams = {}) {
@@ -18,7 +19,10 @@ export async function fetchAnalyticsSummaryApi(
   params: AnalyticsSummaryParams = {},
 ): Promise<AnalyticsSummaryResponse> {
   const { data } = await apiClient.get<AnalyticsSummaryResponse>('/analytics/summary', {
-    params: params.stockFilter === true ? { stockFilter: 'true' } : undefined,
+    params: {
+      ...(params.stockFilter === true ? { stockFilter: 'true' } : {}),
+      ...(params.generation === true ? { generation: 'true' } : {}),
+    },
   });
 
   if (!data.success || !data.data) {

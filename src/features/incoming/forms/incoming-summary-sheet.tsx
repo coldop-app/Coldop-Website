@@ -129,7 +129,10 @@ function IncomingReviewSummary({
   const totalRent = showTotalRent ? totalBags * costPerBag : 0;
 
   const hasPassMeta =
-    values.gatePassNo > 0 || values.manualGatePassNumber != null || Boolean(values.stockFilter);
+    values.gatePassNo > 0 ||
+    values.manualGatePassNumber != null ||
+    Boolean(values.stockFilter) ||
+    Boolean(values.generation);
 
   return (
     <div className="space-y-7">
@@ -184,6 +187,15 @@ function IncomingReviewSummary({
                   {values.stockFilter}
                 </Badge>
               ) : null}
+              {values.generation ? (
+                <Badge
+                  variant="secondary"
+                  className="bg-background/60 max-w-full truncate px-2.5 font-normal"
+                  title={values.generation}
+                >
+                  {values.generation}
+                </Badge>
+              ) : null}
             </div>
           ) : null}
         </div>
@@ -206,6 +218,7 @@ function IncomingReviewSummary({
           {values.stockFilter ? (
             <DetailRow label="Stock filter" value={values.stockFilter} />
           ) : null}
+          {values.generation ? <DetailRow label="Generation" value={values.generation} /> : null}
           {values.customMarka ? (
             <DetailRow label="Custom marka" value={values.customMarka} />
           ) : null}

@@ -7,6 +7,7 @@ const INCOMING_REPORT_COLUMN_WIDTHS = {
   date: '7.5rem',
   variety: '8rem',
   stockFilter: '7.5rem',
+  generation: '7.5rem',
   customMarka: '7.5rem',
   totalBags: '5.5rem',
   createdBy: '8rem',

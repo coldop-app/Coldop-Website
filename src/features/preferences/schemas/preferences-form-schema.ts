@@ -25,6 +25,11 @@ const stockFilterFormSchema = z.object({
   options: z.array(z.string().trim().min(1, 'Filter option is required')),
 });
 
+const generationFormSchema = z.object({
+  enabled: z.boolean(),
+  options: z.array(z.string().trim().min(1, 'Generation option is required')),
+});
+
 export const preferencesFormSchema = z.object({
   reportFormat: z.enum(REPORT_FORMAT_OPTIONS, {
     message: 'Select a report format',
@@ -34,6 +39,7 @@ export const preferencesFormSchema = z.object({
     .number({ message: 'Labour cost is required' })
     .min(0, 'Labour cost must be 0 or greater'),
   stockFilter: stockFilterFormSchema,
+  generation: generationFormSchema,
   customMarka: z.boolean(),
   markaType: z.enum(MARKA_TYPE_OPTIONS, {
     message: 'Select a marka type',
@@ -61,12 +67,12 @@ function normalizeStringList(values: string[]) {
   return values.map((value) => value.trim()).filter(Boolean);
 }
 
-function normalizeStockFilter(
-  stockFilter?: Preferences['stockFilter'],
-): PreferencesFormValues['stockFilter'] {
+function normalizeEnabledOptions(
+  preference?: { enabled?: boolean; options?: string[] },
+): { enabled: boolean; options: string[] } {
   return {
-    enabled: stockFilter?.enabled ?? false,
-    options: stockFilter?.options && stockFilter.options.length > 0 ? [...stockFilter.options] : [],
+    enabled: preference?.enabled ?? false,
+    options: preference?.options && preference.options.length > 0 ? [...preference.options] : [],
   };
 }
 
@@ -79,7 +85,8 @@ export function preferencesToFormValues(preferences: Preferences): PreferencesFo
       : 'default',
     showFinances: preferences.showFinances,
     labourCost: preferences.labourCost ?? 0,
-    stockFilter: normalizeStockFilter(preferences.stockFilter),
+    stockFilter: normalizeEnabledOptions(preferences.stockFilter),
+    generation: normalizeEnabledOptions(preferences.generation),
     customMarka: preferences.customMarka ?? false,
     markaType: MARKA_TYPE_OPTIONS.includes(
       preferences.markaType as (typeof MARKA_TYPE_OPTIONS)[number],
@@ -106,6 +113,10 @@ export function formValuesToUpdatePayload(values: PreferencesFormValues): Update
     stockFilter: {
       enabled: values.stockFilter.enabled,
       options: normalizeStringList(values.stockFilter.options),
+    },
+    generation: {
+      enabled: values.generation.enabled,
+      options: normalizeStringList(values.generation.options),
     },
     customMarka: values.customMarka,
     markaType: values.customMarka ? undefined : values.markaType,

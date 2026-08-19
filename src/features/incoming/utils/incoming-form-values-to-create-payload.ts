@@ -90,6 +90,10 @@ export function buildCreateIncomingGatePassPayload(
     payload.stockFilter = values.stockFilter.trim();
   }
 
+  if (values.generation.trim()) {
+    payload.generation = values.generation.trim();
+  }
+
   if (values.customMarka.trim()) {
     payload.customMarka = values.customMarka.trim();
   }

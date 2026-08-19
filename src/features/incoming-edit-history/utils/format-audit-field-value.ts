@@ -11,6 +11,7 @@ export const INCOMING_GATE_PASS_AUDIT_FIELD_LABELS: Record<
   remarks: 'Remarks',
   manualParchiNumber: 'Manual parchi',
   stockFilter: 'Stock filter',
+  generation: 'Generation',
   customMarka: 'Marka',
   amount: 'Amount',
   bagSizes: 'Bag quantities',

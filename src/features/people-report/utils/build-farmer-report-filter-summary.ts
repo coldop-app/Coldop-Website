@@ -11,6 +11,7 @@ import {
 const GROUP_COLUMN_LABELS: Record<FarmerReportGroupColumnId, string> = {
   [FARMER_REPORT_GROUP_COLUMN_IDS.variety]: 'Variety',
   [FARMER_REPORT_GROUP_COLUMN_IDS.stockFilter]: 'Stock Filter',
+  [FARMER_REPORT_GROUP_COLUMN_IDS.generation]: 'Generation',
 };
 
 function formatDisplayDate(value?: string): string | undefined {
@@ -51,7 +52,8 @@ export function buildFarmerReportGroupingSummary(grouping: GroupingState): strin
     .filter(
       (columnId): columnId is FarmerReportGroupColumnId =>
         columnId === FARMER_REPORT_GROUP_COLUMN_IDS.variety ||
-        columnId === FARMER_REPORT_GROUP_COLUMN_IDS.stockFilter,
+        columnId === FARMER_REPORT_GROUP_COLUMN_IDS.stockFilter ||
+        columnId === FARMER_REPORT_GROUP_COLUMN_IDS.generation,
     )
     .map((columnId) => GROUP_COLUMN_LABELS[columnId]);
 

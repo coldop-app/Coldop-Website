@@ -5,7 +5,9 @@ import type { IncomingDaybookEntry, OutgoingDaybookEntry } from '@/features/dayb
 import {
   buildFarmerStockSummary,
   buildStockSummaryCellBreakdown,
+  filterPassesByGeneration,
   filterPassesByStockFilter,
+  filterPassesByTabs,
   resolveSizeColumns,
 } from './build-farmer-stock-summary';
 
@@ -78,6 +80,83 @@ describe('filterPassesByStockFilter', () => {
   it('filters by stock filter option', () => {
     expect(filterPassesByStockFilter(passes, 'Owned')).toHaveLength(1);
     expect(filterPassesByStockFilter(passes, 'Owned')[0]?.variety).toBe('Atlantic');
+  });
+});
+
+describe('filterPassesByGeneration', () => {
+  const passes = [
+    createPass({
+      variety: 'Atlantic',
+      generation: 'G1',
+      bagSizes: [
+        {
+          name: 'Ration',
+          initialQuantity: 10,
+          currentQuantity: 5,
+          location: { chamber: '1', floor: '1', row: 'A' },
+        },
+      ],
+    }),
+    createPass({
+      _id: 'pass-2',
+      variety: 'Cardinal',
+      generation: 'G2',
+      bagSizes: [
+        {
+          name: 'Ration',
+          initialQuantity: 3,
+          currentQuantity: 3,
+          location: { chamber: '1', floor: '1', row: 'B' },
+        },
+      ],
+    }),
+  ];
+
+  it('returns all passes for the all tab', () => {
+    expect(filterPassesByGeneration(passes, 'all')).toHaveLength(2);
+  });
+
+  it('filters by generation option', () => {
+    expect(filterPassesByGeneration(passes, 'G1')).toHaveLength(1);
+    expect(filterPassesByGeneration(passes, 'G1')[0]?.variety).toBe('Atlantic');
+  });
+});
+
+describe('filterPassesByTabs', () => {
+  const passes = [
+    createPass({
+      variety: 'Atlantic',
+      stockFilter: 'Owned',
+      generation: 'G1',
+      bagSizes: [
+        {
+          name: 'Ration',
+          initialQuantity: 10,
+          currentQuantity: 5,
+          location: { chamber: '1', floor: '1', row: 'A' },
+        },
+      ],
+    }),
+    createPass({
+      _id: 'pass-2',
+      variety: 'Cardinal',
+      stockFilter: 'Owned',
+      generation: 'G2',
+      bagSizes: [
+        {
+          name: 'Ration',
+          initialQuantity: 3,
+          currentQuantity: 3,
+          location: { chamber: '1', floor: '1', row: 'B' },
+        },
+      ],
+    }),
+  ];
+
+  it('ANDs stock filter and generation tabs', () => {
+    expect(filterPassesByTabs(passes, 'Owned', 'G1')).toHaveLength(1);
+    expect(filterPassesByTabs(passes, 'Owned', 'G1')[0]?.variety).toBe('Atlantic');
+    expect(filterPassesByTabs(passes, 'Owned', 'all')).toHaveLength(2);
   });
 });
 
@@ -194,6 +273,92 @@ describe('buildFarmerStockSummary', () => {
     expect(summary.rows).toHaveLength(1);
     expect(summary.rows[0]?.variety).toBe('Atlantic');
     expect(summary.grandTotal).toBe(100);
+  });
+
+  it('respects generation tab when building matrix', () => {
+    const generationPasses = [
+      createPass({
+        variety: 'Atlantic',
+        generation: 'G1',
+        bagSizes: [
+          {
+            name: 'Ration',
+            initialQuantity: 100,
+            currentQuantity: 80,
+            location: { chamber: '1', floor: '1', row: 'A' },
+          },
+        ],
+      }),
+      createPass({
+        _id: 'pass-2',
+        variety: 'Cardinal',
+        generation: 'G2',
+        bagSizes: [
+          {
+            name: 'Ration',
+            initialQuantity: 10,
+            currentQuantity: 3,
+            location: { chamber: '1', floor: '1', row: 'B' },
+          },
+        ],
+      }),
+    ];
+
+    const summary = buildFarmerStockSummary({
+      passes: generationPasses,
+      commodities,
+      stockFilterTab: 'all',
+      generationTab: 'G1',
+      quantityMode: 'current',
+    });
+
+    expect(summary.rows).toHaveLength(1);
+    expect(summary.rows[0]?.variety).toBe('Atlantic');
+    expect(summary.grandTotal).toBe(80);
+  });
+
+  it('ANDs stock filter and generation tabs when both are set', () => {
+    const mixedPasses = [
+      createPass({
+        variety: 'Atlantic',
+        stockFilter: 'Owned',
+        generation: 'G1',
+        bagSizes: [
+          {
+            name: 'Ration',
+            initialQuantity: 100,
+            currentQuantity: 80,
+            location: { chamber: '1', floor: '1', row: 'A' },
+          },
+        ],
+      }),
+      createPass({
+        _id: 'pass-2',
+        variety: 'Cardinal',
+        stockFilter: 'Owned',
+        generation: 'G2',
+        bagSizes: [
+          {
+            name: 'Ration',
+            initialQuantity: 10,
+            currentQuantity: 3,
+            location: { chamber: '1', floor: '1', row: 'B' },
+          },
+        ],
+      }),
+    ];
+
+    const summary = buildFarmerStockSummary({
+      passes: mixedPasses,
+      commodities,
+      stockFilterTab: 'Owned',
+      generationTab: 'G1',
+      quantityMode: 'current',
+    });
+
+    expect(summary.rows).toHaveLength(1);
+    expect(summary.rows[0]?.variety).toBe('Atlantic');
+    expect(summary.grandTotal).toBe(80);
   });
 });
 
