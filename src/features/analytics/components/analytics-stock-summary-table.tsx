@@ -81,7 +81,7 @@ export function AnalyticsStockSummaryTable({
   if (!hasRows) {
     return (
       <div className="border-border text-muted-foreground flex min-h-32 items-center justify-center rounded-lg border px-4 text-sm">
-        No stock found.
+        {stockFilterTab === 'all' ? 'No stock found.' : `No bags for "${stockFilterTab}"`}
       </div>
     );
   }

@@ -164,6 +164,14 @@ function computeTopSize(stockSummary: AnalyticsStockVariety[]): AnalyticsTopSize
   return top;
 }
 
+const EMPTY_ANALYTICS_SUMMARY: AnalyticsSummaryData = {
+  stockSummary: [],
+  chartData: { flatSeries: [], varieties: [], sizes: [] },
+  totalInventory: { initial: 0, current: 0 },
+  topVariety: null,
+  topSize: null,
+};
+
 export function mergeAnalyticsFilterBuckets(
   data: AnalyticsSummaryByFilterData,
 ): AnalyticsSummaryData {
@@ -200,10 +208,10 @@ export function resolveAnalyticsSummaryData(
   }
 
   const bucketKey = mapStockFilterOptionToBucketKey(stockFilterTab);
-  if (!bucketKey) return null;
+  if (!bucketKey) return EMPTY_ANALYTICS_SUMMARY;
 
   const bucket = findStockFilterBucket(data.stockSummaryByFilter, bucketKey);
-  if (!bucket) return null;
+  if (!bucket) return EMPTY_ANALYTICS_SUMMARY;
 
   return bucketToAnalyticsSummaryData(bucket);
 }
