@@ -6,6 +6,10 @@ import {
   type DaybookSearchResult,
 } from '@/features/daybook/api/use-daybook-search';
 import { isIncomingDaybookEntry, type IncomingDaybookEntry } from '@/features/daybook/types';
+import {
+  FARMER_GATE_PASSES_QUERY_KEY,
+  type FarmerGatePassResult,
+} from '@/features/people/api/use-farmer-gate-passes';
 
 export function findIncomingEntryInDaybookCache(
   queryClient: QueryClient,
@@ -30,6 +34,18 @@ export function findIncomingEntryInDaybookCache(
   for (const [, data] of searchQueries) {
     const found = data?.incoming.find((entry) => entry._id === id);
     if (found) return found;
+  }
+
+  const farmerQueries = queryClient.getQueriesData<FarmerGatePassResult>({
+    queryKey: FARMER_GATE_PASSES_QUERY_KEY,
+  });
+
+  for (const [, data] of farmerQueries) {
+    for (const entry of data?.entries ?? []) {
+      if (isIncomingDaybookEntry(entry) && entry._id === id) {
+        return entry;
+      }
+    }
   }
 
   return undefined;

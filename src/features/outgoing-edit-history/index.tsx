@@ -289,7 +289,7 @@ function OutgoingEditAuditCard({ audit }: { audit: OutgoingGatePassAudit }) {
         <CardDescription>{formatAuditTimestamp(audit.createdAt)}</CardDescription>
         <CardAction>
           <Button asChild variant="outline" size="sm" className="h-9 shrink-0">
-            <Link to="/outgoing/$id" params={{ id: audit.outgoingGatePassId }}>
+            <Link to="/outgoing/$id" params={{ id: audit.outgoingGatePassId }} search={{}}>
               View gate pass
             </Link>
           </Button>

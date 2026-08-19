@@ -72,8 +72,8 @@ vi.mock('@/features/transfer-stock/forms/transfer-gate-passes-section', () => ({
   },
 }));
 
-vi.mock('@/features/daybook/components/daybook-back-button', () => ({
-  DaybookBackButton: () => <div data-testid="daybook-back-button" />,
+vi.mock('@/features/daybook/components/gate-pass-edit-back-button', () => ({
+  GatePassEditBackButton: () => <div data-testid="gate-pass-edit-back-button" />,
 }));
 
 vi.mock('@/features/auth/store/use-preferences-store', () => ({
@@ -287,6 +287,40 @@ describe('EditOutgoingForm', () => {
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/daybook',
       search: DEFAULT_DAYBOOK_SEARCH,
+    });
+  });
+
+  it('navigates back to the farmer profile after save when opened from people', async () => {
+    setupLoadedEntry();
+    renderWithProviders(
+      <EditOutgoingForm
+        gatePassId={OUTGOING_GATE_PASS_ID}
+        search={{ from: 'people', farmerId: FARMER_LINK_ID, name: 'Rajesh Kumar' }}
+      />,
+    );
+
+    const truckField = screen.getByLabelText(/truck number/i);
+    await user.clear(truckField);
+    await user.type(truckField, 'HR-26-XY-9999');
+
+    await user.click(screen.getByRole('button', { name: /review changes/i }));
+    expect(await screen.findByTestId('outgoing-summary')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: /confirm/i }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith({
+        to: '/people/$id',
+        params: { id: FARMER_LINK_ID },
+        search: {
+          name: 'Rajesh Kumar',
+          mobileNumber: undefined,
+          accountNumber: undefined,
+          address: undefined,
+          costPerBag: undefined,
+          tab: 'incoming',
+        },
+      });
     });
   });
 

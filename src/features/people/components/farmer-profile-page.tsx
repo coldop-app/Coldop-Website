@@ -147,7 +147,11 @@ export function FarmerProfilePage({ linkId, search }: FarmerProfilePageProps) {
         />
       ) : null}
 
-      <FarmerGatePassesSection linkId={linkId} onSummariesChange={handleSummariesChange} />
+      <FarmerGatePassesSection
+        linkId={linkId}
+        personSearch={search}
+        onSummariesChange={handleSummariesChange}
+      />
     </div>
   );
 }

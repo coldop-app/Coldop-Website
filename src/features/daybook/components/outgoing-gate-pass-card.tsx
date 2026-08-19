@@ -39,6 +39,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { FieldLabel } from '@/components/ui/field';
 import { cn } from '@/lib/utils';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
+import type { GatePassEditSearch } from '@/features/daybook/gate-pass-edit-search';
 import type {
   IncomingGatePassSnapshot,
   OutgoingDaybookEntry,
@@ -194,9 +195,10 @@ function OutgoingDetailedBreakdown({ rows }: OutgoingDetailedBreakdownProps) {
 
 interface OutgoingGatePassCardProps {
   entry: OutgoingDaybookEntry;
+  editSearch?: GatePassEditSearch;
 }
 
-export function OutgoingGatePassCard({ entry }: OutgoingGatePassCardProps) {
+export function OutgoingGatePassCard({ entry, editSearch }: OutgoingGatePassCardProps) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -536,6 +538,7 @@ export function OutgoingGatePassCard({ entry }: OutgoingGatePassCardProps) {
                   navigate({
                     to: '/outgoing/$id',
                     params: { id: entry._id },
+                    search: editSearch ?? {},
                   })
                 }
               >

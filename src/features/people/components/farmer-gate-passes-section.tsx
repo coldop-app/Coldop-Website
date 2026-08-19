@@ -20,6 +20,7 @@ import {
 import { IncomingGatePassCard } from '@/features/daybook/components/incoming-gate-pass-card';
 import { OutgoingGatePassCard } from '@/features/daybook/components/outgoing-gate-pass-card';
 import { isIncomingDaybookEntry, isOutgoingDaybookEntry } from '@/features/daybook/types';
+import { buildPeopleGatePassEditSearch } from '@/features/daybook/gate-pass-edit-search';
 import {
   paginateFarmerGatePassEntries,
   useFarmerGatePasses,
@@ -28,6 +29,7 @@ import { FarmerGatePassesSectionSkeleton } from '@/features/people/components/fa
 import { FarmerGatePassesToolbar } from '@/features/people/components/farmer-gate-passes-toolbar';
 import type { FarmerBagTotals } from '@/features/people/components/farmer-profile-card';
 import { FarmerStockSummarySection } from '@/features/people/components/farmer-stock-summary-section';
+import type { PersonDetailSearch } from '@/features/people/search';
 import {
   filterFarmerGatePassEntries,
   filterFarmerGatePassEntriesByType,
@@ -43,11 +45,13 @@ const DEFAULT_LIMIT = DAYBOOK_PAGE_SIZE_OPTIONS[0];
 
 type FarmerGatePassesSectionProps = {
   linkId: string;
+  personSearch: PersonDetailSearch;
   onSummariesChange?: (totals: FarmerBagTotals, isLoading: boolean) => void;
 };
 
 export function FarmerGatePassesSection({
   linkId,
+  personSearch,
   onSummariesChange,
 }: FarmerGatePassesSectionProps) {
   const [type, setType] = useState<DaybookType>(DEFAULT_TYPE);
@@ -60,6 +64,11 @@ export function FarmerGatePassesSection({
   const [searchBy, setSearchBy] = useState<DaybookSearchBy>('gatePassNumber');
 
   const debouncedSearchQuery = useDebouncedValue(searchQuery, SEARCH_DEBOUNCE_MS);
+
+  const editSearch = useMemo(
+    () => buildPeopleGatePassEditSearch(linkId, personSearch),
+    [linkId, personSearch],
+  );
 
   const apiFilters = useMemo(
     () => ({
@@ -294,9 +303,9 @@ export function FarmerGatePassesSection({
       ) : (
         visibleEntries.map((entry) =>
           isIncomingDaybookEntry(entry) ? (
-            <IncomingGatePassCard key={entry._id} entry={entry} />
+            <IncomingGatePassCard key={entry._id} entry={entry} editSearch={editSearch} />
           ) : isOutgoingDaybookEntry(entry) ? (
-            <OutgoingGatePassCard key={entry._id} entry={entry} />
+            <OutgoingGatePassCard key={entry._id} entry={entry} editSearch={editSearch} />
           ) : null,
         )
       )}

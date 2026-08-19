@@ -16,9 +16,12 @@ import { Empty, EmptyDescription, EmptyHeader, EmptyTitle } from '@/components/u
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
-import { DaybookBackButton } from '@/features/daybook/components/daybook-back-button';
+import { GatePassEditBackButton } from '@/features/daybook/components/gate-pass-edit-back-button';
 import type { OutgoingDaybookEntry } from '@/features/daybook/types';
-import { DEFAULT_DAYBOOK_SEARCH } from '@/features/daybook/search';
+import {
+  navigateToGatePassEditBackTarget,
+  type GatePassEditSearch,
+} from '@/features/daybook/gate-pass-edit-search';
 import { resolveFarmerStorageLinkId } from '@/features/daybook/utils/resolve-farmer-storage-link-id';
 import {
   shouldShowStockFilter,
@@ -80,10 +83,16 @@ function OutgoingGatePassesStockFilterPrompt() {
   );
 }
 
-function EditOutgoingFormLayout({ children }: { children: ReactNode }) {
+function EditOutgoingFormLayout({
+  children,
+  search,
+}: {
+  children: ReactNode;
+  search: GatePassEditSearch;
+}) {
   return (
     <div className="mx-auto flex w-full max-w-7xl min-w-0 flex-col gap-4">
-      <DaybookBackButton />
+      <GatePassEditBackButton search={search} />
       {children}
     </div>
   );
@@ -97,6 +106,7 @@ type EditOutgoingFormLoadedProps = {
   baselineAllocations: Record<string, number>;
   farmerLabel: string;
   storagePasses: StorageGatePass[];
+  search: GatePassEditSearch;
 };
 
 function EditOutgoingFormLoaded({
@@ -107,6 +117,7 @@ function EditOutgoingFormLoaded({
   baselineAllocations,
   farmerLabel,
   storagePasses,
+  search,
 }: EditOutgoingFormLoadedProps) {
   const navigate = useNavigate();
   const [reviewOpen, setReviewOpen] = useState(false);
@@ -150,7 +161,7 @@ function EditOutgoingFormLoaded({
           position: 'bottom-right',
         });
         setReviewOpen(false);
-        navigate({ to: '/daybook', search: DEFAULT_DAYBOOK_SEARCH });
+        navigateToGatePassEditBackTarget(navigate, search);
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : 'Failed to update outgoing gate pass',
@@ -526,9 +537,10 @@ function EditOutgoingReviewSheet({
 
 type EditOutgoingFormProps = {
   gatePassId: string;
+  search?: GatePassEditSearch;
 };
 
-const EditOutgoingForm = ({ gatePassId }: EditOutgoingFormProps) => {
+const EditOutgoingForm = ({ gatePassId, search = {} }: EditOutgoingFormProps) => {
   const entry = useOutgoingDaybookEntry(gatePassId);
   const { data: farmerStorageLinks = [], isLoading: isFarmersLoading } = useFarmerStorageLinks();
 
@@ -596,7 +608,7 @@ const EditOutgoingForm = ({ gatePassId }: EditOutgoingFormProps) => {
 
   if (!entry) {
     return (
-      <EditOutgoingFormLayout>
+      <EditOutgoingFormLayout search={search}>
         <Card className="w-full shadow-sm">
           <CardHeader className="bg-muted/30 border-b pb-6">
             <CardTitle className="font-heading text-xl font-semibold tracking-tight">
@@ -614,7 +626,7 @@ const EditOutgoingForm = ({ gatePassId }: EditOutgoingFormProps) => {
 
   if (entry.isNull) {
     return (
-      <EditOutgoingFormLayout>
+      <EditOutgoingFormLayout search={search}>
         <Card className="w-full shadow-sm">
           <CardHeader className="bg-muted/30 border-b pb-6">
             <CardTitle className="font-heading text-xl font-semibold tracking-tight">
@@ -632,7 +644,7 @@ const EditOutgoingForm = ({ gatePassId }: EditOutgoingFormProps) => {
 
   if (!farmerStorageLinkId && !isFarmersLoading) {
     return (
-      <EditOutgoingFormLayout>
+      <EditOutgoingFormLayout search={search}>
         <Card className="w-full shadow-sm">
           <CardHeader className="bg-muted/30 border-b pb-6">
             <CardTitle className="font-heading text-xl font-semibold tracking-tight">
@@ -649,7 +661,7 @@ const EditOutgoingForm = ({ gatePassId }: EditOutgoingFormProps) => {
 
   if (!mapped) {
     return (
-      <EditOutgoingFormLayout>
+      <EditOutgoingFormLayout search={search}>
         <Card className="w-full shadow-sm">
           <CardHeader className="bg-muted/30 border-b pb-6">
             <Skeleton className="h-8 w-64" />
@@ -666,7 +678,7 @@ const EditOutgoingForm = ({ gatePassId }: EditOutgoingFormProps) => {
   }
 
   return (
-    <EditOutgoingFormLayout>
+    <EditOutgoingFormLayout search={search}>
       <EditOutgoingFormLoaded
         key={gatePassId}
         entry={entry}
@@ -676,6 +688,7 @@ const EditOutgoingForm = ({ gatePassId }: EditOutgoingFormProps) => {
         baselineAllocations={mapped.baselineAllocations}
         farmerLabel={mapped.farmerLabel}
         storagePasses={mapped.storagePasses}
+        search={search}
       />
     </EditOutgoingFormLayout>
   );

@@ -16,7 +16,12 @@ vi.mock('@/lib/api-client', () => ({
 
 import { findOutgoingEntryInDaybookCache } from '@/features/daybook/api/find-outgoing-daybook-entry';
 import type { IncomingDaybookEntry, OutgoingDaybookEntry } from '@/features/daybook/types';
-import { makeIncomingDaybookEntry, makeOutgoingDaybookEntry } from '@/test/fixtures';
+import { FARMER_GATE_PASSES_QUERY_KEY } from '@/features/people/api/use-farmer-gate-passes';
+import {
+  FARMER_LINK_ID,
+  makeIncomingDaybookEntry,
+  makeOutgoingDaybookEntry,
+} from '@/test/fixtures';
 
 const DAYBOOK_QUERY_KEY = ['daybook'] as const;
 const DAYBOOK_SEARCH_QUERY_KEY = ['daybook', 'search'] as const;
@@ -64,6 +69,23 @@ describe('findOutgoingEntryInDaybookCache', () => {
         outgoing: [outgoing],
       },
     );
+
+    expect(findOutgoingEntryInDaybookCache(queryClient, OUTGOING_ID)?._id).toBe(OUTGOING_ID);
+  });
+
+  it('finds an outgoing entry in the farmer gate-passes cache', () => {
+    const queryClient = new QueryClient();
+    const outgoing = makeOutgoingDaybookEntry({ _id: OUTGOING_ID });
+
+    queryClient.setQueryData([...FARMER_GATE_PASSES_QUERY_KEY, FARMER_LINK_ID, {}], {
+      entries: [makeIncomingDaybookEntry(), outgoing],
+      summaries: {
+        totalIncomingBags: 0,
+        totalOutgoingBags: 0,
+        totalInternallyTransferredIncomingBags: 0,
+        totalInternallyTransferredOutgoingBags: 0,
+      },
+    });
 
     expect(findOutgoingEntryInDaybookCache(queryClient, OUTGOING_ID)?._id).toBe(OUTGOING_ID);
   });

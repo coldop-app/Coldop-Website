@@ -2,7 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { toast } from 'sonner';
 
 import { OutgoingGatePassCard } from '@/features/daybook/components/outgoing-gate-pass-card';
-import { makeOutgoingDaybookEntry, OUTGOING_GATE_PASS_ID, USER_ID } from '@/test/fixtures';
+import {
+  FARMER_LINK_ID,
+  makeOutgoingDaybookEntry,
+  OUTGOING_GATE_PASS_ID,
+  USER_ID,
+} from '@/test/fixtures';
 import { renderWithProviders, screen, user, waitFor } from '@/test/test-utils';
 
 const mockNullOutgoingGatePass = vi.fn();
@@ -30,9 +35,12 @@ vi.mock('@/features/outgoing/api/use-null-outgoing-gate-pass', () => ({
   }),
 }));
 
-function renderCard(overrides: Parameters<typeof makeOutgoingDaybookEntry>[0] = {}) {
+function renderCard(
+  overrides: Parameters<typeof makeOutgoingDaybookEntry>[0] = {},
+  editSearch?: Parameters<typeof OutgoingGatePassCard>[0]['editSearch'],
+) {
   const entry = makeOutgoingDaybookEntry(overrides);
-  renderWithProviders(<OutgoingGatePassCard entry={entry} />);
+  renderWithProviders(<OutgoingGatePassCard entry={entry} editSearch={editSearch} />);
   return entry;
 }
 
@@ -59,6 +67,22 @@ describe('OutgoingGatePassCard mark as null', () => {
     expect(mockNavigate).toHaveBeenCalledWith({
       to: '/outgoing/$id',
       params: { id: entry._id },
+      search: {},
+    });
+  });
+
+  it('forwards farmer-profile origin search to the edit route', async () => {
+    const entry = renderCard(
+      {},
+      { from: 'people', farmerId: FARMER_LINK_ID, name: 'Rajesh Kumar' },
+    );
+
+    await user.click(screen.getByRole('button', { name: /edit outgoing gate pass 24/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/outgoing/$id',
+      params: { id: entry._id },
+      search: { from: 'people', farmerId: FARMER_LINK_ID, name: 'Rajesh Kumar' },
     });
   });
 

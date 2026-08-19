@@ -31,6 +31,7 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
+import type { GatePassEditSearch } from '@/features/daybook/gate-pass-edit-search';
 import type {
   DaybookLocation,
   IncomingBagSize,
@@ -126,7 +127,7 @@ function BagLocationTrail({ bag }: { bag: IncomingBagSize }) {
                 )}
               />
               {hasHistory && !isLast ? (
-                <span className="bg-border/80 mt-1 mb-0.5 w-px min-h-3 flex-1" />
+                <span className="bg-border/80 mt-1 mb-0.5 min-h-3 w-px flex-1" />
               ) : null}
             </div>
             <div
@@ -159,9 +160,10 @@ function BagLocationTrail({ bag }: { bag: IncomingBagSize }) {
 
 interface IncomingGatePassCardProps {
   entry: IncomingDaybookEntry;
+  editSearch?: GatePassEditSearch;
 }
 
-export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
+export function IncomingGatePassCard({ entry, editSearch }: IncomingGatePassCardProps) {
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -242,9 +244,7 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
               </Badge>
             )}
           </div>
-          <CardDescription className="text-xs">
-            {formatDaybookDateTime(entry.date)}
-          </CardDescription>
+          <CardDescription className="text-xs">{formatDaybookDateTime(entry.date)}</CardDescription>
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
@@ -420,6 +420,7 @@ export function IncomingGatePassCard({ entry }: IncomingGatePassCardProps) {
               navigate({
                 to: '/incoming/$id',
                 params: { id: entry._id },
+                search: editSearch ?? {},
               })
             }
           >

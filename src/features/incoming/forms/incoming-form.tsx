@@ -98,6 +98,7 @@ export type IncomingFormProps = {
    * and date. Truck, remarks, manual parchi, and location/paltai stay editable.
    */
   lockFarmerAndQuantity?: boolean;
+  onEditSuccess?: () => void;
 };
 
 export function IncomingForm({
@@ -123,6 +124,7 @@ export function IncomingForm({
   originalBagSizes = [],
   rentEntryVoucherId,
   lockFarmerAndQuantity = false,
+  onEditSuccess,
 }: IncomingFormProps) {
   const [todayIso] = useState(() => new Date().toISOString());
   const preferences = usePreferencesStore((s) => s.preferences);
@@ -228,7 +230,11 @@ export function IncomingForm({
         toast.success(`Incoming gate pass #${updated.gatePassNo.toLocaleString('en-IN')} updated`, {
           position: 'bottom-right',
         });
-        navigate({ to: '/daybook', search: DEFAULT_DAYBOOK_SEARCH });
+        if (onEditSuccess) {
+          onEditSuccess();
+        } else {
+          navigate({ to: '/daybook', search: DEFAULT_DAYBOOK_SEARCH });
+        }
       } catch (error) {
         toast.error(
           error instanceof Error ? error.message : 'Failed to update incoming gate pass',
@@ -247,6 +253,7 @@ export function IncomingForm({
       lockFarmerAndQuantity,
       updateIncomingGatePass,
       navigate,
+      onEditSuccess,
     ],
   );
 
@@ -561,9 +568,7 @@ export function IncomingForm({
                               onValueChange={field.handleChange}
                               onBlur={field.handleBlur}
                               isInvalid={isInvalid}
-                              disabled={
-                                lockFarmerAndQuantity || isFarmersLoading || isFarmersError
-                              }
+                              disabled={lockFarmerAndQuantity || isFarmersLoading || isFarmersError}
                               placeholder={
                                 isFarmersLoading ? 'Loading farmers...' : 'Search farmers...'
                               }

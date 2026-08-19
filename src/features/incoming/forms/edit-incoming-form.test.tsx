@@ -25,17 +25,19 @@ vi.mock('@tanstack/react-router', () => ({
     children,
     to,
     search,
+    params,
     ...props
   }: {
     children: React.ReactNode;
     to: string;
     search?: unknown;
+    params?: unknown;
   }) => (
     <a
       href={to}
       onClick={(event) => {
         event.preventDefault();
-        mockNavigate({ to, search });
+        mockNavigate({ to, search, ...(params ? { params } : {}) });
       }}
       {...props}
     >
@@ -230,5 +232,63 @@ describe('EditIncomingForm', () => {
         farmerLinkWarning: undefined,
       }),
     );
+  });
+
+  it('links back to the farmer profile when opened from people', async () => {
+    mockUseIncomingDaybookEntry.mockReturnValue(undefined);
+
+    renderWithProviders(
+      <EditIncomingForm
+        gatePassId={GATE_PASS_ID}
+        search={{
+          from: 'people',
+          farmerId: FARMER_LINK_ID,
+          name: 'Rajesh Kumar',
+          accountNumber: 101,
+        }}
+      />,
+    );
+
+    await user.click(screen.getByRole('link', { name: /back to farmer/i }));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/people/$id',
+      params: { id: FARMER_LINK_ID },
+      search: {
+        name: 'Rajesh Kumar',
+        mobileNumber: undefined,
+        accountNumber: 101,
+        address: undefined,
+        costPerBag: undefined,
+        tab: 'incoming',
+      },
+    });
+  });
+
+  it('passes onEditSuccess that returns to the farmer profile', () => {
+    mockUseIncomingDaybookEntry.mockReturnValue(makeIncomingDaybookEntry());
+
+    renderWithProviders(
+      <EditIncomingForm
+        gatePassId={GATE_PASS_ID}
+        search={{ from: 'people', farmerId: FARMER_LINK_ID, name: 'Rajesh Kumar' }}
+      />,
+    );
+
+    const props = mockIncomingForm.mock.calls[0]?.[0] as { onEditSuccess?: () => void };
+    props.onEditSuccess?.();
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: '/people/$id',
+      params: { id: FARMER_LINK_ID },
+      search: {
+        name: 'Rajesh Kumar',
+        mobileNumber: undefined,
+        accountNumber: undefined,
+        address: undefined,
+        costPerBag: undefined,
+        tab: 'incoming',
+      },
+    });
   });
 });
