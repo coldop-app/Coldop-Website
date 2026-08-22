@@ -8,6 +8,7 @@ import type {
 } from '@/features/outgoing-report/api/types';
 import {
   getOrderLineQuantity,
+  getOutgoingReportCustomMarka,
   getOutgoingReportSizeQuantityDetailLines,
   getOutgoingReportType,
   getOutgoingReportVariety,
@@ -302,7 +303,8 @@ const stockFilterColumn: ColumnDef<OutgoingGatePassReportRecord> = {
 };
 
 const customMarkaColumn: ColumnDef<OutgoingGatePassReportRecord> = {
-  accessorKey: 'customMarka',
+  id: 'customMarka',
+  accessorFn: (row) => getOutgoingReportCustomMarka(row),
   header: 'Custom marka',
   meta: { filterLabel: 'Custom marka' },
   ...sortText,

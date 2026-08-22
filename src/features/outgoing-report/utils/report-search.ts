@@ -1,5 +1,6 @@
 import type { OutgoingGatePassReportRecord } from '@/features/outgoing-report/api/types';
 import {
+  getOutgoingReportCustomMarka,
   getOutgoingReportType,
   getOutgoingReportVariety,
 } from '@/features/outgoing-report/utils/report-row-values';
@@ -22,7 +23,7 @@ function buildOutgoingReportSearchText(row: OutgoingGatePassReportRecord): strin
     getOutgoingReportType(row),
     getOutgoingReportVariety(row),
     row.stockFilter,
-    row.customMarka,
+    getOutgoingReportCustomMarka(row),
     row.from,
     row.to,
     row.remarks,
@@ -40,6 +41,7 @@ function buildOutgoingReportSearchText(row: OutgoingGatePassReportRecord): strin
     ...(row.incomingGatePassSnapshots ?? []).flatMap((snapshot) => [
       String(snapshot.gatePassNo),
       snapshot.variety,
+      snapshot.customMarka,
     ]),
   ]
     .filter((value) => value != null && value !== '')

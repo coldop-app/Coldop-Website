@@ -87,6 +87,40 @@ export function getOutgoingReportVariety(row: OutgoingGatePassReportRecord): str
   return '';
 }
 
+function collectSnapshotCustomMarkas(snapshots: IncomingGatePassSnapshot[]): string[] {
+  return [
+    ...new Set(
+      snapshots
+        .map((snapshot) => snapshot.customMarka?.trim())
+        .filter((value): value is string => Boolean(value)),
+    ),
+  ];
+}
+
+function formatCustomMarkas(markas: string[]): string {
+  if (markas.length === 1) return markas[0]!;
+  if (markas.length > 1) return markas.join(', ');
+  return '';
+}
+
+export function getOutgoingReportCustomMarka(row: OutgoingGatePassReportRecord): string {
+  const snapshots = row.incomingGatePassSnapshots ?? [];
+  const matchedById = new Map<string, IncomingGatePassSnapshot>();
+
+  for (const orderLine of row.orderDetails) {
+    const snapshot = findSnapshotForOrderLine(snapshots, orderLine);
+    if (snapshot) matchedById.set(snapshot._id, snapshot);
+  }
+
+  const fromMatched = formatCustomMarkas(collectSnapshotCustomMarkas([...matchedById.values()]));
+  if (fromMatched) return fromMatched;
+
+  const fromAll = formatCustomMarkas(collectSnapshotCustomMarkas(snapshots));
+  if (fromAll) return fromAll;
+
+  return row.customMarka?.trim() ?? '';
+}
+
 export function getOutgoingReportRowId(row: OutgoingGatePassReportRecord): string {
   if (row.varietySlice) return `${row._id}\u001f${row.varietySlice}`;
   return row._id;

@@ -5,6 +5,7 @@ import type { OutgoingGatePassReportRecord } from '@/features/outgoing-report/ap
 import {
   expandOutgoingReportRowsByVariety,
   formatOutgoingReportVarietyBreakdownForExport,
+  getOutgoingReportCustomMarka,
   getOutgoingReportRowId,
   getOutgoingReportSizeQuantityDetailLines,
   getOutgoingReportVarietyBreakdown,
@@ -52,6 +53,7 @@ function createMultiVarietyPass(): OutgoingGatePassReportRecord {
         _id: 'incoming-1',
         gatePassNo: 101,
         variety: 'Atlantic',
+        customMarka: 'MK-A',
         bagSizes: [
           {
             name: 'Ration',
@@ -67,6 +69,7 @@ function createMultiVarietyPass(): OutgoingGatePassReportRecord {
         _id: 'incoming-2',
         gatePassNo: 102,
         variety: 'Chipsona',
+        customMarka: 'MK-C',
         bagSizes: [
           {
             name: 'Ration',
@@ -150,5 +153,89 @@ describe('expandOutgoingReportRowsByVariety', () => {
     ]);
     expect(rows[0]?.orderDetails.map((detail) => detail.size)).toEqual(['Ration']);
     expect(rows[1]?.orderDetails.map((detail) => detail.size)).toEqual(['Ration', 'Goli']);
+  });
+});
+
+describe('getOutgoingReportCustomMarka', () => {
+  const multiVarietyPass = createMultiVarietyPass();
+
+  function createPass(
+    overrides: Partial<OutgoingGatePassReportRecord> = {},
+  ): OutgoingGatePassReportRecord {
+    return {
+      _id: 'outgoing-single',
+      gatePassNo: 1,
+      date: '2026-01-02',
+      farmerStorageLinkId: farmerLink,
+      totalBags: 5,
+      orderDetails: [
+        {
+          size: 'Ration',
+          quantityAvailable: 10,
+          quantityIssued: 5,
+          location: { chamber: '1', floor: '1', row: 'A' },
+        },
+      ],
+      incomingGatePassSnapshots: [
+        {
+          _id: 'incoming-1',
+          gatePassNo: 101,
+          variety: 'Atlantic',
+          customMarka: 'LOT-42',
+          bagSizes: [
+            {
+              name: 'Ration',
+              initialQuantity: 10,
+              currentQuantity: 5,
+              type: 'RECEIPT',
+              quantityIssued: 5,
+              location: { chamber: '1', floor: '1', row: 'A' },
+            },
+          ],
+        },
+      ],
+      ...overrides,
+    };
+  }
+
+  it('returns the custom marka from a linked incoming snapshot', () => {
+    expect(getOutgoingReportCustomMarka(createPass())).toBe('LOT-42');
+  });
+
+  it('joins distinct custom markas from linked snapshots', () => {
+    expect(getOutgoingReportCustomMarka(multiVarietyPass)).toBe('MK-A, MK-C');
+  });
+
+  it('limits custom marka to the variety slice when rows are split', () => {
+    const rows = expandOutgoingReportRowsByVariety([multiVarietyPass], 'issued', true);
+
+    expect(rows.map((row) => getOutgoingReportCustomMarka(row))).toEqual(['MK-A', 'MK-C']);
+  });
+
+  it('returns empty when snapshots have no custom marka', () => {
+    expect(
+      getOutgoingReportCustomMarka(
+        createPass({
+          customMarka: undefined,
+          incomingGatePassSnapshots: [
+            {
+              _id: 'incoming-1',
+              gatePassNo: 101,
+              variety: 'Atlantic',
+              bagSizes: [
+                {
+                  name: 'Ration',
+                  initialQuantity: 10,
+                  currentQuantity: 5,
+                  type: 'RECEIPT',
+                  quantityIssued: 5,
+                  location: { chamber: '1', floor: '1', row: 'A' },
+                },
+              ],
+            },
+          ],
+        }),
+      ),
+    ).toBe('');
   });
 });

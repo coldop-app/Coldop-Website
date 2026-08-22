@@ -58,6 +58,7 @@ export type IncomingGatePassSnapshot = {
   _id: string;
   gatePassNo: number;
   variety: string;
+  customMarka?: string;
   bagSizes: OutgoingSnapshotBagSize[];
 };
 
