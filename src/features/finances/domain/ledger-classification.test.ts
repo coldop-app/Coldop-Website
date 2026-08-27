@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
+import { getCategoriesForTypeSubType } from '@/features/finances/shared/chart-of-accounts';
+
 import {
   isDebitNatureType,
+  isIndirectExpense,
+  isLabourExpenseLedger,
   isSalesIncome,
   isStockLedger,
   isTradingPurchase,
@@ -51,5 +55,25 @@ describe('ledger-classification', () => {
   it('identifies stock ledger', () => {
     expect(isStockLedger({ category: 'Stock in Hand' })).toBe(true);
     expect(isStockLedger(assetLedger)).toBe(false);
+  });
+
+  it('identifies labour expense ledgers as indirect', () => {
+    const labourExpense = {
+      type: 'Expense' as const,
+      subType: 'Indirect Expenses',
+      category: 'Labour expense',
+    };
+
+    expect(isLabourExpenseLedger(labourExpense)).toBe(true);
+    expect(isIndirectExpense(labourExpense)).toBe(true);
+    expect(isTradingPurchase(labourExpense)).toBe(false);
+    expect(
+      isLabourExpenseLedger({
+        type: 'Expense',
+        subType: 'Direct Expenses',
+        category: 'Purchases',
+      }),
+    ).toBe(false);
+    expect(getCategoriesForTypeSubType('Expense', 'Indirect Expenses')).toContain('Labour expense');
   });
 });

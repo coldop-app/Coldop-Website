@@ -44,6 +44,16 @@ const salary: ReportLedger = {
   farmerStorageLinkId: null,
 };
 
+const labourExpense: ReportLedger = {
+  id: 'labour',
+  name: 'Labour expense',
+  type: 'Expense',
+  subType: 'Indirect Expenses',
+  category: 'Labour expense',
+  openingBalance: 0,
+  farmerStorageLinkId: null,
+};
+
 describe('computeNetProfitLoss', () => {
   it('computes profit with stock, sales, and purchases', () => {
     const cash: ReportLedger = {
@@ -141,5 +151,48 @@ describe('computeNetProfitLoss', () => {
     expect(result.grossProfit).toBe(1000);
     expect(result.indirectExpensesTotal).toBe(200);
     expect(result.netProfitLoss).toBe(800);
+  });
+
+  it('subtracts labour expense as an indirect expense from gross profit', () => {
+    const cash: ReportLedger = {
+      id: 'cash',
+      name: 'Cash',
+      type: 'Asset',
+      subType: 'Current Assets',
+      category: 'Cash',
+      openingBalance: 0,
+      farmerStorageLinkId: null,
+    };
+
+    const vouchers: ReportVoucher[] = [
+      {
+        id: 'v1',
+        date: '2026-01-10',
+        amount: 1000,
+        narration: '',
+        debitLedgerId: 'cash',
+        creditLedgerId: 'sales',
+        debitLedgerName: 'Cash',
+        creditLedgerName: 'Sales',
+      },
+      {
+        id: 'v2',
+        date: '2026-01-11',
+        amount: 150,
+        narration: '',
+        debitLedgerId: 'labour',
+        creditLedgerId: 'cash',
+        debitLedgerName: 'Labour expense',
+        creditLedgerName: 'Cash',
+      },
+    ];
+
+    const ledgers = [cash, sales, labourExpense];
+    const balanceMap = computeLedgerBalances(ledgers, vouchers);
+    const result = computeNetProfitLoss(ledgers, balanceMap);
+
+    expect(result.grossProfit).toBe(1000);
+    expect(result.indirectExpensesTotal).toBe(150);
+    expect(result.netProfitLoss).toBe(850);
   });
 });

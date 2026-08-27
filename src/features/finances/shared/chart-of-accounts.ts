@@ -38,7 +38,7 @@ export const LEDGER_OPTIONS = {
   },
   Expense: {
     'Direct Expenses': ['Purchases', 'Freight', 'Packaging'],
-    'Indirect Expenses': ['Utilities', 'Salary', 'Supplies', 'Other Indirect'],
+    'Indirect Expenses': ['Utilities', 'Salary', 'Supplies', 'Other Indirect', 'Labour expense'],
     'Financial Expenses': ['Bank Charges', 'Loan Interest'],
   },
   Equity: {

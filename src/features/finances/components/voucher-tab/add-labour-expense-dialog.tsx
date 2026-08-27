@@ -20,7 +20,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { cn } from '@/lib/utils';
 
 const bagCountInputProps = {
   type: 'number' as const,
@@ -30,23 +29,29 @@ const bagCountInputProps = {
   onWheel: (e: React.WheelEvent<HTMLInputElement>) => e.currentTarget.blur(),
 };
 
+const rateInputProps = {
+  type: 'number' as const,
+  min: 0,
+  step: 0.01,
+  inputMode: 'decimal' as const,
+  onWheel: (e: React.WheelEvent<HTMLInputElement>) => e.currentTarget.blur(),
+};
+
 type BagCounts = {
   leno: string;
   jute: string;
+  rate: string;
 };
 
 type LabourExpenseLine = {
   id: string;
   number: string;
   label: string;
-  indent?: boolean;
 };
 
 const LABOUR_EXPENSE_LINES: LabourExpenseLine[] = [
-  { id: 'bagsStoredBySelfA', number: '1.', label: 'Bags Stored (A) By Self' },
-  { id: 'bagsStoredBySelfB', number: '', label: '(B) By Self', indent: true },
-  { id: 'bagsNikasBySelfA', number: '2.', label: 'Bags Nikas (A) By Self' },
-  { id: 'bagsNikasBySelfB', number: '', label: '(B) By Self', indent: true },
+  { id: 'bagsStored', number: '1.', label: 'Bags Stored' },
+  { id: 'bagsNikas', number: '2.', label: 'Bags Nikas' },
   { id: 'bagsRestore', number: '3.', label: 'Bags Restore' },
   { id: 'bagsCatching', number: '4.', label: 'Bags Catching' },
   { id: 'stackingDhank', number: '5.', label: 'Stacking/Dhank' },
@@ -56,22 +61,48 @@ const LABOUR_EXPENSE_LINES: LabourExpenseLine[] = [
   { id: 'bagsPaltaiAiration', number: '9.', label: 'Bags Paltai/Airation' },
   { id: 'shiftingChToCh', number: '10.', label: 'Shifting Ch. to Ch.' },
   { id: 'shiftingFloorToFloor', number: '11.', label: 'Shifting Floor to Floor' },
-  { id: 'truckTrollyLoaded', number: '12.', label: 'Truck/Trolly Loaded' },
-  { id: 'trolliesTruckLoadUnload', number: '13.', label: 'No. of Trollies/Truck Load/Unload' },
-  { id: 'outsideArrivalLoadUnload', number: '14.', label: 'Outside Arrival Load/Unload' },
-  { id: 'dala', number: '15.', label: 'Dala' },
+  { id: 'truckLoad', number: '12.', label: 'Truck Load' },
+  { id: 'truckUnload', number: '13.', label: 'Truck Unload' },
+  { id: 'trolleyLoad', number: '14.', label: 'Trolley Load' },
+  { id: 'trolleyUnload', number: '15.', label: 'Trolley Unload' },
+  { id: 'outsideArrivalLoadUnload', number: '16.', label: 'Outside Arrival Load/Unload' },
+  { id: 'dala', number: '17.', label: 'Dala' },
+  { id: 'otherExpenses', number: '18.', label: 'Other Expenses' },
 ];
 
-const emptyBagCounts = (): BagCounts => ({ leno: '', jute: '' });
+const emptyBagCounts = (): BagCounts => ({ leno: '', jute: '', rate: '' });
 
 const emptyBags = (): Record<string, BagCounts> =>
   Object.fromEntries(LABOUR_EXPENSE_LINES.map((line) => [line.id, emptyBagCounts()]));
 
 const emptyForm = () => ({
-  reportNo: '',
   date: new Date().toISOString(),
   bags: emptyBags(),
 });
+
+const parseAmount = (value: string): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const lineTotal = (counts: BagCounts | undefined): number => {
+  if (!counts) {
+    return 0;
+  }
+
+  return (parseAmount(counts.leno) + parseAmount(counts.jute)) * parseAmount(counts.rate);
+};
+
+const formatTotal = (value: number): string => {
+  if (!value) {
+    return '';
+  }
+
+  return value.toLocaleString(undefined, {
+    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+  });
+};
 
 type AddLabourExpenseDialogProps = {
   open: boolean;
@@ -105,7 +136,6 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     console.log('Labour expense', {
-      reportNo: form.reportNo.trim(),
       date: form.date,
       bags: form.bags,
     });
@@ -114,70 +144,39 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-2xl">
+      <DialogContent className="max-h-[calc(100dvh-2rem)] overflow-y-auto sm:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold tracking-tight">
             Add Labour expense
           </DialogTitle>
           <DialogDescription>
-            Daily paledar work report — bag counts by Leno and Jute.
+            Daily paledar work report — bag counts by Leno and Jute, with rate and total.
           </DialogDescription>
         </DialogHeader>
 
         <form id="add-labour-expense-form" noValidate onSubmit={handleSubmit}>
           <FieldGroup className="gap-4">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <Field>
-                <FieldLabel htmlFor="add-labour-expense-report-no">No.</FieldLabel>
-                <Input
-                  id="add-labour-expense-report-no"
-                  name="reportNo"
-                  value={form.reportNo}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, reportNo: event.target.value }))
-                  }
-                  placeholder="Report number"
-                />
-              </Field>
-
-              <Field>
-                <DatePickerInput
-                  id="add-labour-expense-date"
-                  label="Date"
-                  value={form.date ? new Date(form.date) : undefined}
-                  onChange={(date) =>
-                    setForm((current) => ({
-                      ...current,
-                      date: date ? date.toISOString() : '',
-                    }))
-                  }
-                  placeholder="Pick a date"
-                />
-              </Field>
+            <div className="max-w-sm">
+              <DatePickerInput
+                id="add-labour-expense-date"
+                label="Date"
+                value={form.date ? new Date(form.date) : undefined}
+                onChange={(date) =>
+                  setForm((current) => ({
+                    ...current,
+                    date: date ? date.toISOString() : '',
+                  }))
+                }
+                placeholder="Pick a date"
+              />
             </div>
 
             <div className="flex flex-col gap-3">
-              <div className="flex items-baseline justify-between gap-3">
-                <p className="text-sm font-medium">No. of Bags</p>
-                <p className="text-muted-foreground hidden text-xs lg:block">Leno and Jute</p>
-              </div>
-
               <div className="flex flex-col gap-2 lg:hidden">
                 {LABOUR_EXPENSE_LINES.map((line) => (
-                  <div
-                    key={line.id}
-                    className={cn(
-                      'bg-muted/40 rounded-xl border p-3',
-                      line.indent && 'border-transparent bg-muted/20',
-                    )}
-                  >
-                    <p
-                      className={cn(
-                        'mb-2 text-sm font-medium',
-                        line.indent && 'text-muted-foreground pl-3 font-normal',
-                      )}
-                    >
-                      {line.number ? `${line.number} ${line.label}` : line.label}
+                  <div key={line.id} className="bg-muted/40 rounded-xl border p-3">
+                    <p className="mb-2 text-sm font-medium">
+                      {line.number} {line.label}
                     </p>
                     <div className="grid grid-cols-2 gap-2">
                       <Field>
@@ -206,6 +205,32 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                           {...bagCountInputProps}
                         />
                       </Field>
+                      <Field>
+                        <FieldLabel htmlFor={`add-labour-expense-${line.id}-rate`}>Rate</FieldLabel>
+                        <Input
+                          id={`add-labour-expense-${line.id}-rate`}
+                          value={form.bags[line.id]?.rate ?? ''}
+                          onChange={(event) =>
+                            handleBagChange(line.id, 'rate', event.target.value)
+                          }
+                          placeholder="0"
+                          className="tabular-nums"
+                          {...rateInputProps}
+                        />
+                      </Field>
+                      <Field>
+                        <FieldLabel htmlFor={`add-labour-expense-${line.id}-total`}>
+                          Total
+                        </FieldLabel>
+                        <Input
+                          id={`add-labour-expense-${line.id}-total`}
+                          value={formatTotal(lineTotal(form.bags[line.id]))}
+                          readOnly
+                          tabIndex={-1}
+                          placeholder="0"
+                          className="bg-muted/50 tabular-nums"
+                        />
+                      </Field>
                     </div>
                   </div>
                 ))}
@@ -217,11 +242,17 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="text-muted-foreground w-12 px-3">#</TableHead>
                       <TableHead className="text-muted-foreground px-3">Description</TableHead>
-                      <TableHead className="text-muted-foreground w-28 px-3 text-right">
+                      <TableHead className="text-muted-foreground w-24 px-3 text-right">
                         Leno
                       </TableHead>
-                      <TableHead className="text-muted-foreground w-28 px-3 text-right">
+                      <TableHead className="text-muted-foreground w-24 px-3 text-right">
                         Jute
+                      </TableHead>
+                      <TableHead className="text-muted-foreground w-24 px-3 text-right">
+                        Rate
+                      </TableHead>
+                      <TableHead className="text-muted-foreground w-28 px-3 text-right">
+                        Total
                       </TableHead>
                     </TableRow>
                   </TableHeader>
@@ -231,15 +262,8 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                         <TableCell className="text-muted-foreground w-12 px-3 py-2 text-right tabular-nums">
                           {line.number}
                         </TableCell>
-                        <TableCell
-                          className={cn(
-                            'whitespace-normal px-3 py-2',
-                            line.indent && 'text-muted-foreground pl-8',
-                          )}
-                        >
-                          {line.label}
-                        </TableCell>
-                        <TableCell className="w-28 px-3 py-2">
+                        <TableCell className="whitespace-normal px-3 py-2">{line.label}</TableCell>
+                        <TableCell className="w-24 px-3 py-2">
                           <Input
                             id={`add-labour-expense-${line.id}-leno-desktop`}
                             aria-label={`${line.label} Leno`}
@@ -252,7 +276,7 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                             {...bagCountInputProps}
                           />
                         </TableCell>
-                        <TableCell className="w-28 px-3 py-2">
+                        <TableCell className="w-24 px-3 py-2">
                           <Input
                             id={`add-labour-expense-${line.id}-jute-desktop`}
                             aria-label={`${line.label} Jute`}
@@ -263,6 +287,30 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                             placeholder="0"
                             className="h-8 tabular-nums"
                             {...bagCountInputProps}
+                          />
+                        </TableCell>
+                        <TableCell className="w-24 px-3 py-2">
+                          <Input
+                            id={`add-labour-expense-${line.id}-rate-desktop`}
+                            aria-label={`${line.label} Rate`}
+                            value={form.bags[line.id]?.rate ?? ''}
+                            onChange={(event) =>
+                              handleBagChange(line.id, 'rate', event.target.value)
+                            }
+                            placeholder="0"
+                            className="h-8 tabular-nums"
+                            {...rateInputProps}
+                          />
+                        </TableCell>
+                        <TableCell className="w-28 px-3 py-2">
+                          <Input
+                            id={`add-labour-expense-${line.id}-total-desktop`}
+                            aria-label={`${line.label} Total`}
+                            value={formatTotal(lineTotal(form.bags[line.id]))}
+                            readOnly
+                            tabIndex={-1}
+                            placeholder="0"
+                            className="bg-muted/50 h-8 tabular-nums"
                           />
                         </TableCell>
                       </TableRow>

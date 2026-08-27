@@ -12,6 +12,7 @@ import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from '@/componen
 import { useLedgers } from '@/features/finances/api/use-ledgers';
 import { useVouchers } from '@/features/finances/api/use-vouchers';
 import type { VoucherFilters } from '@/features/finances/types';
+import { isLabourExpenseLedger } from '@/features/finances/domain/ledger-classification';
 import { buildDateRangeFilters } from '@/features/finances/utils/date-filters';
 import { isCashOrBankLedger, mapLedgersToComboboxOptions } from '@/features/finances/utils/ledger-options';
 import { cn } from '@/lib/utils';
@@ -58,7 +59,10 @@ const VoucherTab = () => {
   const ledgerFilterOptions = useMemo(() => mapLedgersToComboboxOptions(ledgers), [ledgers]);
 
   const generalExpenseDebitOptions = useMemo(
-    () => mapLedgersToComboboxOptions(ledgers.filter((ledger) => ledger.type === 'Expense')),
+    () =>
+      mapLedgersToComboboxOptions(
+        ledgers.filter((ledger) => ledger.type === 'Expense' && !isLabourExpenseLedger(ledger)),
+      ),
     [ledgers],
   );
 

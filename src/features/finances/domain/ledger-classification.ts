@@ -30,6 +30,18 @@ export function isIndirectExpense(
   return ledger.type === 'Expense' && !isTradingPurchase(ledger);
 }
 
+export function isLabourExpenseLedger(ledger: {
+  type: string;
+  subType: string;
+  category: string;
+}): boolean {
+  return (
+    ledger.type === 'Expense' &&
+    ledger.subType === 'Indirect Expenses' &&
+    ledger.category === 'Labour expense'
+  );
+}
+
 export function isOtherIncome(ledger: Pick<ReportLedger, 'type' | 'category'>): boolean {
   return ledger.type === 'Income' && !isSalesIncome(ledger);
 }
