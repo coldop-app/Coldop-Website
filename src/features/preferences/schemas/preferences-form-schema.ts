@@ -1,5 +1,10 @@
 import * as z from 'zod';
 import type { Preferences } from '@/features/auth/types';
+import {
+  getLabourExpensesCustomField,
+  isOtherLabourExpenseKey,
+  LABOUR_EXPENSES_CUSTOM_FIELD_KEY,
+} from '@/features/auth/utils/labour-expenses';
 import type { UpdatePreferencesPayload } from '../types';
 
 export const REPORT_FORMAT_OPTIONS = ['default', 'pdf', 'excel'] as const;
@@ -25,6 +30,48 @@ const stockFilterFormSchema = z.object({
   options: z.array(z.string().trim().min(1, 'Filter option is required')),
 });
 
+const labourExpenseRateFormSchema = z.object({
+  key: z.string().trim().min(1, 'Activity name is required'),
+  leno: z.number({ message: 'Leno rate is required' }).min(0, 'Leno rate must be 0 or greater'),
+  jute: z.number({ message: 'Jute rate is required' }).min(0, 'Jute rate must be 0 or greater'),
+  debitLedgerId: z.string().optional(),
+});
+
+const labourExpensesFormSchema = z
+  .object({
+    enabled: z.boolean(),
+    rates: z.array(labourExpenseRateFormSchema).superRefine((rates, ctx) => {
+      const seen = new Map<string, number>();
+
+      rates.forEach((rate, index) => {
+        const key = rate.key.trim();
+        if (!key) {
+          return;
+        }
+
+        const firstIndex = seen.get(key);
+        if (firstIndex !== undefined) {
+          ctx.addIssue({
+            code: 'custom',
+            message: 'Activity names must be unique',
+            path: [index, 'key'],
+          });
+          return;
+        }
+
+        seen.set(key, index);
+      });
+    }),
+    otherLabourExpense: z
+      .object({
+        id: z.string().trim().min(1),
+        label: z.string().trim().min(1),
+        debitLedgerId: z.string().optional(),
+      })
+      .optional(),
+  })
+  .nullable();
+
 export const preferencesFormSchema = z.object({
   reportFormat: z.enum(REPORT_FORMAT_OPTIONS, {
     message: 'Select a report format',
@@ -40,6 +87,7 @@ export const preferencesFormSchema = z.object({
   }),
   commodities: z.array(commodityFormSchema),
   customFields: z.array(customFieldFormSchema),
+  labourExpenses: labourExpensesFormSchema,
 });
 
 export type PreferencesFormValues = z.infer<typeof preferencesFormSchema>;
@@ -57,6 +105,14 @@ export const emptyCustomField = () => ({
   value: '',
 });
 
+export const emptyLabourExpenseRate = () => ({
+  key: '',
+  leno: 0,
+  jute: 0,
+});
+
+export type LabourExpenseRateFormValues = z.infer<typeof labourExpenseRateFormSchema>;
+
 function normalizeStringList(values: string[]) {
   return values.map((value) => value.trim()).filter(Boolean);
 }
@@ -70,7 +126,33 @@ function normalizeStockFilter(
   };
 }
 
+function customFieldValueToFormString(value: unknown): string {
+  return typeof value === 'string' ? value : JSON.stringify(value ?? '');
+}
+
+function labourExpensesToFormValues(
+  preferences: Preferences,
+): PreferencesFormValues['labourExpenses'] {
+  const parsed = getLabourExpensesCustomField(preferences);
+  if (!parsed) {
+    return null;
+  }
+
+  return {
+    enabled: parsed.enabled,
+    rates: Object.entries(parsed.rates).map(([key, rates]) => ({
+      key,
+      leno: rates.leno,
+      jute: rates.jute,
+      ...(rates.debitLedgerId ? { debitLedgerId: rates.debitLedgerId } : {}),
+    })),
+    ...(parsed.otherLabourExpense ? { otherLabourExpense: parsed.otherLabourExpense } : {}),
+  };
+}
+
 export function preferencesToFormValues(preferences: Preferences): PreferencesFormValues {
+  const labourExpenses = labourExpensesToFormValues(preferences);
+
   return {
     reportFormat: REPORT_FORMAT_OPTIONS.includes(
       preferences.reportFormat as (typeof REPORT_FORMAT_OPTIONS)[number],
@@ -91,10 +173,13 @@ export function preferencesToFormValues(preferences: Preferences): PreferencesFo
       varieties: commodity.varieties.length > 0 ? [...commodity.varieties] : [''],
       sizes: commodity.sizes.length > 0 ? [...commodity.sizes] : [''],
     })),
-    customFields: Object.entries(preferences.customFields ?? {}).map(([key, value]) => ({
-      key,
-      value: typeof value === 'string' ? value : JSON.stringify(value ?? ''),
-    })),
+    labourExpenses,
+    customFields: Object.entries(preferences.customFields ?? {})
+      .filter(([key]) => !(key === LABOUR_EXPENSES_CUSTOM_FIELD_KEY && labourExpenses !== null))
+      .map(([key, value]) => ({
+        key,
+        value: customFieldValueToFormString(value),
+      })),
   };
 }
 
@@ -114,10 +199,50 @@ export function formValuesToUpdatePayload(values: PreferencesFormValues): Update
       varieties: normalizeStringList(commodity.varieties),
       sizes: normalizeStringList(commodity.sizes),
     })),
-    customFields: Object.fromEntries(
-      values.customFields
-        .filter((field) => field.key.trim())
-        .map((field) => [field.key.trim(), field.value]),
-    ),
+    customFields: {
+      ...Object.fromEntries(
+        values.customFields
+          .filter((field) => field.key.trim())
+          .map((field) => [field.key.trim(), field.value]),
+      ),
+      ...(values.labourExpenses
+        ? {
+            [LABOUR_EXPENSES_CUSTOM_FIELD_KEY]: {
+              enabled: values.labourExpenses.enabled,
+              rates: {
+                ...Object.fromEntries(
+                  values.labourExpenses.rates
+                    .filter((row) => !isOtherLabourExpenseKey(row.key.trim()))
+                    .map((row) => {
+                      const debitLedgerId = row.debitLedgerId?.trim();
+
+                      return [
+                        row.key.trim(),
+                        {
+                          leno: row.leno,
+                          jute: row.jute,
+                          ...(debitLedgerId ? { debitLedgerId } : {}),
+                        },
+                      ];
+                    }),
+                ),
+                ...(values.labourExpenses.otherLabourExpense
+                  ? {
+                      [values.labourExpenses.otherLabourExpense.id]: {
+                        name: values.labourExpenses.otherLabourExpense.label,
+                        ...(values.labourExpenses.otherLabourExpense.debitLedgerId
+                          ? {
+                              debitLedgerId:
+                                values.labourExpenses.otherLabourExpense.debitLedgerId,
+                            }
+                          : {}),
+                      },
+                    }
+                  : {}),
+              },
+            },
+          }
+        : {}),
+    },
   };
 }

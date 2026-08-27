@@ -9,6 +9,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Item, ItemActions, ItemContent, ItemMedia, ItemTitle } from '@/components/ui/item';
+import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
+import { isLabourExpensesEnabled } from '@/features/auth/utils/labour-expenses';
 import { useLedgers } from '@/features/finances/api/use-ledgers';
 import { useVouchers } from '@/features/finances/api/use-vouchers';
 import type { VoucherFilters } from '@/features/finances/types';
@@ -53,6 +55,9 @@ const VoucherTab = () => {
   const [ledgerCombobox, setLedgerCombobox] = useState(emptyComboboxState);
   const [appliedFilters, setAppliedFilters] = useState<VoucherFilters>({});
 
+  const labourExpensesEnabled = usePreferencesStore((state) =>
+    isLabourExpensesEnabled(state.preferences),
+  );
   const { ledgers } = useLedgers();
   const { vouchers, isLoading, isFetching, isError, error, refetch } = useVouchers(appliedFilters);
 
@@ -251,27 +256,37 @@ const VoucherTab = () => {
               <span className="truncate">Add New</span>
             </Button>
 
-            <div className="grid grid-cols-2 gap-2 lg:contents">
+            <div
+              className={cn(
+                'gap-2 lg:contents',
+                labourExpensesEnabled ? 'grid grid-cols-2' : 'flex w-full lg:w-auto',
+              )}
+            >
               <Button
                 type="button"
                 variant="secondary"
-                className="min-w-0 px-2.5 sm:px-3"
+                className={cn(
+                  'min-w-0 px-2.5 sm:px-3',
+                  !labourExpensesEnabled && 'w-full lg:w-auto',
+                )}
                 onClick={() => setVoucherDialogMode('general-expense')}
               >
                 <Wallet className="h-4 w-4 shrink-0 sm:mr-2" />
                 <span className="truncate">General Expense</span>
               </Button>
 
-              <Button
-                type="button"
-                variant="secondary"
-                className="min-w-0 px-2.5 sm:px-3"
-                onClick={() => setLabourExpenseOpen(true)}
-              >
-                <HardHat className="h-4 w-4 shrink-0 sm:mr-2" />
-                <span className="truncate lg:hidden">Labour Expense</span>
-                <span className="hidden truncate lg:inline">Add Labour expense</span>
-              </Button>
+              {labourExpensesEnabled ? (
+                <Button
+                  type="button"
+                  variant="secondary"
+                  className="min-w-0 px-2.5 sm:px-3"
+                  onClick={() => setLabourExpenseOpen(true)}
+                >
+                  <HardHat className="h-4 w-4 shrink-0 sm:mr-2" />
+                  <span className="truncate lg:hidden">Labour Expense</span>
+                  <span className="hidden truncate lg:inline">Add Labour expense</span>
+                </Button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -285,7 +300,9 @@ const VoucherTab = () => {
         <DataTable columns={voucherColumns} data={vouchers} search={search} />
       )}
 
-      <AddLabourExpenseDialog open={labourExpenseOpen} onOpenChange={setLabourExpenseOpen} />
+      {labourExpensesEnabled ? (
+        <AddLabourExpenseDialog open={labourExpenseOpen} onOpenChange={setLabourExpenseOpen} />
+      ) : null}
 
       <AddVoucherDialog
         open={voucherDialogMode !== null}

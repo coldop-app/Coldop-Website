@@ -16,6 +16,24 @@ export interface StockFilterPreference {
   options: string[];
 }
 
+export type LabourExpenseBagRates = {
+  leno: number;
+  jute: number;
+  debitLedgerId?: string;
+};
+
+export type OtherLabourExpensePreference = {
+  id: string;
+  label: string;
+  debitLedgerId?: string;
+};
+
+export interface LabourExpensesCustomField {
+  enabled: boolean;
+  rates: Record<string, LabourExpenseBagRates>;
+  otherLabourExpense?: OtherLabourExpensePreference;
+}
+
 export interface Preferences {
   _id: string;
   commodities: CommodityPreference[];
