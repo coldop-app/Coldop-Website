@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import {
   getLabourExpenseDialogLines,
@@ -50,9 +51,16 @@ type BagCounts = {
   jute: string;
   lenoRate: string;
   juteRate: string;
+  narration: string;
 };
 
-const emptyBagCounts = (): BagCounts => ({ leno: '', jute: '', lenoRate: '', juteRate: '' });
+const emptyBagCounts = (): BagCounts => ({
+  leno: '',
+  jute: '',
+  lenoRate: '',
+  juteRate: '',
+  narration: '',
+});
 
 const emptyBags = (lineIds: string[]): Record<string, BagCounts> =>
   Object.fromEntries(lineIds.map((id) => [id, emptyBagCounts()]));
@@ -183,6 +191,7 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
         label: line.label,
         debitLedgerId: line.debitLedgerId,
         total: lineTotal(line, form.bags[line.id]),
+        ...(line.manualRate ? { narration: form.bags[line.id]?.narration } : {}),
       })),
     [form.bags, lines],
   );
@@ -334,6 +343,22 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                           />
                         </Field>
                       </div>
+                      {line.manualRate ? (
+                        <Field className="mt-2">
+                          <FieldLabel htmlFor={`add-labour-expense-${line.id}-narration`}>
+                            Narration
+                          </FieldLabel>
+                          <Textarea
+                            id={`add-labour-expense-${line.id}-narration`}
+                            value={form.bags[line.id]?.narration ?? ''}
+                            onChange={(event) =>
+                              handleBagChange(line.id, 'narration', event.target.value)
+                            }
+                            placeholder="Describe the transaction"
+                            className="min-h-[96px] resize-y"
+                          />
+                        </Field>
+                      ) : null}
                     </div>
                   ))}
                 </div>
@@ -352,50 +377,68 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
 
                   <div className="divide-border divide-y">
                     {lines.map((line) => (
-                      <div key={line.id} className={`${labourExpenseRowGridClass} py-2`}>
-                        <p className="text-muted-foreground text-right text-sm tabular-nums">
-                          {line.number}
-                        </p>
-                        <p className="text-sm">{line.label}</p>
-                        <Input
-                          id={`add-labour-expense-${line.id}-leno-desktop`}
-                          aria-label={`${line.label} Leno`}
-                          value={form.bags[line.id]?.leno ?? ''}
-                          onChange={(event) =>
-                            handleBagChange(line.id, 'leno', event.target.value)
-                          }
-                          placeholder="0"
-                          className="h-8 min-w-0 tabular-nums"
-                          {...bagCountInputProps}
-                        />
-                        <Input
-                          id={`add-labour-expense-${line.id}-jute-desktop`}
-                          aria-label={`${line.label} Jute`}
-                          value={form.bags[line.id]?.jute ?? ''}
-                          onChange={(event) =>
-                            handleBagChange(line.id, 'jute', event.target.value)
-                          }
-                          placeholder="0"
-                          className="h-8 min-w-0 tabular-nums"
-                          {...bagCountInputProps}
-                        />
-                        <LabourExpenseRateFields
-                          line={line}
-                          counts={form.bags[line.id]}
-                          onRateChange={(field, value) =>
-                            handleBagChange(line.id, field, value)
-                          }
-                          desktop
-                        />
-                        <Input
-                          id={`add-labour-expense-${line.id}-total-desktop`}
-                          aria-label={`${line.label} Total`}
-                          value={formatTotal(lineTotal(line, form.bags[line.id]))}
-                          readOnly
-                          tabIndex={-1}
-                          placeholder="0"
-                          className="bg-muted/50 h-8 min-w-0 tabular-nums"
-                        />
+                      <div key={line.id}>
+                        <div className={`${labourExpenseRowGridClass} py-2`}>
+                          <p className="text-muted-foreground text-right text-sm tabular-nums">
+                            {line.number}
+                          </p>
+                          <p className="text-sm">{line.label}</p>
+                          <Input
+                            id={`add-labour-expense-${line.id}-leno-desktop`}
+                            aria-label={`${line.label} Leno`}
+                            value={form.bags[line.id]?.leno ?? ''}
+                            onChange={(event) =>
+                              handleBagChange(line.id, 'leno', event.target.value)
+                            }
+                            placeholder="0"
+                            className="h-8 min-w-0 tabular-nums"
+                            {...bagCountInputProps}
+                          />
+                          <Input
+                            id={`add-labour-expense-${line.id}-jute-desktop`}
+                            aria-label={`${line.label} Jute`}
+                            value={form.bags[line.id]?.jute ?? ''}
+                            onChange={(event) =>
+                              handleBagChange(line.id, 'jute', event.target.value)
+                            }
+                            placeholder="0"
+                            className="h-8 min-w-0 tabular-nums"
+                            {...bagCountInputProps}
+                          />
+                          <LabourExpenseRateFields
+                            line={line}
+                            counts={form.bags[line.id]}
+                            onRateChange={(field, value) =>
+                              handleBagChange(line.id, field, value)
+                            }
+                            desktop
+                          />
+                          <Input
+                            id={`add-labour-expense-${line.id}-total-desktop`}
+                            aria-label={`${line.label} Total`}
+                            value={formatTotal(lineTotal(line, form.bags[line.id]))}
+                            readOnly
+                            tabIndex={-1}
+                            placeholder="0"
+                            className="bg-muted/50 h-8 min-w-0 tabular-nums"
+                          />
+                        </div>
+                        {line.manualRate ? (
+                          <Field className="px-3 pb-3">
+                            <FieldLabel htmlFor={`add-labour-expense-${line.id}-narration-desktop`}>
+                              Narration
+                            </FieldLabel>
+                            <Textarea
+                              id={`add-labour-expense-${line.id}-narration-desktop`}
+                              value={form.bags[line.id]?.narration ?? ''}
+                              onChange={(event) =>
+                                handleBagChange(line.id, 'narration', event.target.value)
+                              }
+                              placeholder="Describe the transaction"
+                              className="min-h-[96px] resize-y"
+                            />
+                          </Field>
+                        ) : null}
                       </div>
                     ))}
                   </div>

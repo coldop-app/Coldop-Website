@@ -29,6 +29,39 @@ describe('buildLabourExpenseCreatePayload', () => {
     }
   });
 
+  it('includes trimmed narration only when it is non-empty', () => {
+    const result = buildLabourExpenseCreatePayload({
+      date: '2026-08-27T00:00:00.000Z',
+      rows: [
+        { label: 'Bags Stored', debitLedgerId: 'ledger-stored', total: 350, narration: '  ' },
+        {
+          label: 'Other Labour Expenses',
+          debitLedgerId: 'ledger-other',
+          total: 500,
+          narration: '  Extra unloading at shed 2  ',
+        },
+      ],
+    });
+
+    expect(result).toEqual({
+      ok: true,
+      payload: {
+        date: '2026-08-27T00:00:00.000Z',
+        debits: [
+          { debitLedgerId: 'ledger-stored', amount: 350 },
+          {
+            debitLedgerId: 'ledger-other',
+            amount: 500,
+            narration: 'Extra unloading at shed 2',
+          },
+        ],
+      },
+    });
+    if (result.ok) {
+      expect(result.payload.debits[0]).not.toHaveProperty('narration');
+    }
+  });
+
   it('fails when a positive-total row is missing debitLedgerId', () => {
     expect(
       buildLabourExpenseCreatePayload({

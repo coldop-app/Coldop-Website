@@ -38,6 +38,7 @@ export type CreateVoucherPayload = {
 export type CreateLabourExpenseDebit = {
   debitLedgerId: string;
   amount: number;
+  narration?: string;
 };
 
 export type CreateLabourExpensePayload = {

@@ -1,8 +1,11 @@
 import { Link } from '@tanstack/react-router';
 import { ArrowLeft } from 'lucide-react';
+import { useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { LedgerStatementTable } from '@/features/finances/components/reports/ledger-statement-table';
 import { ReportStateCard } from '@/features/finances/components/reports/report-state-card';
 import { useLedgerStatement } from '@/features/finances/hooks/use-ledger-statement';
@@ -48,6 +51,7 @@ function LedgerStatementBackButton({
 export function LedgerStatementPage({ ledgerId, search }: LedgerStatementPageProps) {
   const { period } = search;
   const { report, isLoading, isError, error } = useLedgerStatement(ledgerId, period);
+  const [groupByDate, setGroupByDate] = useState(true);
 
   if (isLoading) {
     return (
@@ -109,13 +113,26 @@ export function LedgerStatementPage({ ledgerId, search }: LedgerStatementPagePro
           <span className="text-sm font-medium">
             {report.ledger.name} [{report.ledger.type}]
           </span>
-          <span className="text-base font-semibold tabular-nums">
-            {formatCurrency(Math.abs(report.closingBalance))} {report.isDebitBalance ? 'Dr' : 'Cr'}
-          </span>
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Switch
+                id="ledger-statement-group-by-date"
+                size="sm"
+                checked={groupByDate}
+                onCheckedChange={setGroupByDate}
+              />
+              <Label htmlFor="ledger-statement-group-by-date" className="cursor-pointer text-sm">
+                Group by date
+              </Label>
+            </div>
+            <span className="text-base font-semibold tabular-nums">
+              {formatCurrency(Math.abs(report.closingBalance))} {report.isDebitBalance ? 'Dr' : 'Cr'}
+            </span>
+          </div>
         </div>
 
         <CardContent className="p-4 sm:p-6">
-          <LedgerStatementTable statement={report} />
+          <LedgerStatementTable statement={report} groupByDate={groupByDate} />
         </CardContent>
 
         <div className="border-border bg-muted/50 border-t px-4 py-4 sm:px-6">

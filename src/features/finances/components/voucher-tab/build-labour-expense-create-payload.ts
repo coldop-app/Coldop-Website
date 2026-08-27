@@ -4,6 +4,7 @@ export type LabourExpensePayloadRow = {
   label: string;
   debitLedgerId?: string;
   total: number;
+  narration?: string;
 };
 
 export type LabourExpensePayloadResult =
@@ -39,7 +40,13 @@ export function buildLabourExpenseCreatePayload(input: {
       return { ok: false, error: `Missing debit ledger for ${row.label}` };
     }
 
-    debits.push({ debitLedgerId, amount });
+    const debit: CreateLabourExpensePayload['debits'][number] = { debitLedgerId, amount };
+    const narration = row.narration?.trim();
+    if (narration) {
+      debit.narration = narration;
+    }
+
+    debits.push(debit);
   }
 
   if (debits.length === 0) {
