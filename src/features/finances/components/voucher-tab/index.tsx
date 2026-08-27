@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Plus, Receipt, RefreshCw, Search, Wallet, X } from 'lucide-react';
+import { HardHat, Plus, Receipt, RefreshCw, Search, Wallet, X } from 'lucide-react';
 
 import { DatePickerInput } from '@/components/date-picker';
 import {
@@ -16,6 +16,7 @@ import { buildDateRangeFilters } from '@/features/finances/utils/date-filters';
 import { isCashOrBankLedger, mapLedgersToComboboxOptions } from '@/features/finances/utils/ledger-options';
 import { cn } from '@/lib/utils';
 
+import { AddLabourExpenseDialog } from './add-labour-expense-dialog';
 import { AddVoucherDialog } from './add-voucher-dialog';
 import { createVoucherColumns } from './columns';
 import { DataTable } from './data-table';
@@ -40,6 +41,7 @@ const emptyComboboxState = (): ComboboxUiState => ({
 const VoucherTab = () => {
   const [search, setSearch] = useState('');
   const [voucherDialogMode, setVoucherDialogMode] = useState<VoucherDialogMode | null>(null);
+  const [labourExpenseOpen, setLabourExpenseOpen] = useState(false);
   const [editVoucherOpen, setEditVoucherOpen] = useState(false);
   const [voucherToEdit, setVoucherToEdit] = useState<Voucher | null>(null);
   const [deleteVoucherOpen, setDeleteVoucherOpen] = useState(false);
@@ -169,7 +171,7 @@ const VoucherTab = () => {
           />
         </div>
 
-        <div className="border-border/60 flex flex-col gap-3 border-t pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+        <div className="border-border/60 flex flex-col gap-3 border-t pt-3 lg:flex-row lg:items-center lg:justify-between lg:gap-4">
           <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
             <div className="grid min-w-0 grid-cols-2 gap-2 sm:flex sm:items-center">
               <DatePickerInput
@@ -235,25 +237,38 @@ const VoucherTab = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-row">
+          <div className="flex w-full flex-col gap-2 lg:w-auto lg:shrink-0 lg:flex-row">
             <Button
               type="button"
-              className="min-w-0 px-2.5 sm:px-3"
+              className="w-full min-w-0 px-2.5 sm:px-3 lg:w-auto"
               onClick={() => setVoucherDialogMode('add')}
             >
               <Plus className="h-4 w-4 shrink-0 sm:mr-2" />
               <span className="truncate">Add New</span>
             </Button>
 
-            <Button
-              type="button"
-              variant="secondary"
-              className="min-w-0 px-2.5 sm:px-3"
-              onClick={() => setVoucherDialogMode('general-expense')}
-            >
-              <Wallet className="h-4 w-4 shrink-0 sm:mr-2" />
-              <span className="truncate">General Expense</span>
-            </Button>
+            <div className="grid grid-cols-2 gap-2 lg:contents">
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-w-0 px-2.5 sm:px-3"
+                onClick={() => setVoucherDialogMode('general-expense')}
+              >
+                <Wallet className="h-4 w-4 shrink-0 sm:mr-2" />
+                <span className="truncate">General Expense</span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="secondary"
+                className="min-w-0 px-2.5 sm:px-3"
+                onClick={() => setLabourExpenseOpen(true)}
+              >
+                <HardHat className="h-4 w-4 shrink-0 sm:mr-2" />
+                <span className="truncate lg:hidden">Labour Expense</span>
+                <span className="hidden truncate lg:inline">Add Labour expense</span>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
@@ -265,6 +280,8 @@ const VoucherTab = () => {
       ) : (
         <DataTable columns={voucherColumns} data={vouchers} search={search} />
       )}
+
+      <AddLabourExpenseDialog open={labourExpenseOpen} onOpenChange={setLabourExpenseOpen} />
 
       <AddVoucherDialog
         open={voucherDialogMode !== null}
