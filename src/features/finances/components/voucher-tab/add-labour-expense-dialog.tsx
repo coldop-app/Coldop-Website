@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
 
 import { DatePickerInput } from '@/components/date-picker';
 import { Button } from '@/components/ui/button';
@@ -17,6 +18,13 @@ import {
   getLabourExpenseDialogLines,
   type LabourExpenseDialogLine,
 } from '@/features/auth/utils/labour-expenses';
+import { useCreateLabourExpense } from '@/features/finances/api/use-create-labour-expense';
+import { formatInr } from '@/features/finances/shared/format-currency';
+
+import {
+  buildLabourExpenseCreatePayload,
+  roundLabourExpenseAmount,
+} from './build-labour-expense-create-payload';
 
 const labourExpenseRowGridClass =
   'grid grid-cols-[2.5rem_minmax(8rem,1fr)_6rem_6rem_9rem_7rem] items-center gap-2 px-3';
@@ -142,6 +150,46 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
   const lines = useMemo(() => getLabourExpenseDialogLines(preferences), [preferences]);
   const lineIds = useMemo(() => lines.map((line) => line.id), [lines]);
   const [form, setForm] = useState(() => emptyForm(lineIds));
+  const { mutateAsync: createLabourExpense, isPending } = useCreateLabourExpense();
+
+  const summary = useMemo(() => {
+    const items = lines
+      .map((line) => {
+        const counts = form.bags[line.id];
+        const leno = parseAmount(counts?.leno ?? '');
+        const jute = parseAmount(counts?.jute ?? '');
+
+        return {
+          id: line.id,
+          label: line.label,
+          leno,
+          jute,
+          total: lineTotal(line, counts),
+        };
+      })
+      .filter((item) => item.leno > 0 || item.jute > 0 || item.total > 0);
+
+    return {
+      items,
+      totalLeno: items.reduce((sum, item) => sum + item.leno, 0),
+      totalJute: items.reduce((sum, item) => sum + item.jute, 0),
+      grandTotal: items.reduce((sum, item) => sum + item.total, 0),
+    };
+  }, [form.bags, lines]);
+
+  const payloadRows = useMemo(
+    () =>
+      lines.map((line) => ({
+        label: line.label,
+        debitLedgerId: line.debitLedgerId,
+        total: lineTotal(line, form.bags[line.id]),
+      })),
+    [form.bags, lines],
+  );
+
+  const hasQualifyingDebits = payloadRows.some(
+    (row) => roundLabourExpenseAmount(row.total) >= 0.01,
+  );
 
   const handleOpenChange = (nextOpen: boolean) => {
     setForm(emptyForm(lineIds));
@@ -161,29 +209,31 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
     }));
   };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    console.log('Labour expense', {
+
+    const result = buildLabourExpenseCreatePayload({
       date: form.date,
-      bags: lines.map((line) => ({
-        id: line.id,
-        label: line.label,
-        debitLedgerId: line.debitLedgerId,
-        leno: form.bags[line.id]?.leno ?? '',
-        jute: form.bags[line.id]?.jute ?? '',
-        ...(line.manualRate
-          ? {
-              lenoRate: form.bags[line.id]?.lenoRate ?? '',
-              juteRate: form.bags[line.id]?.juteRate ?? '',
-            }
-          : {
-              lenoRate: line.lenoRate,
-              juteRate: line.juteRate,
-            }),
-        total: lineTotal(line, form.bags[line.id]),
-      })),
+      rows: payloadRows,
     });
-    handleOpenChange(false);
+
+    if (!result.ok) {
+      toast.error(result.error, { position: 'bottom-right' });
+      return;
+    }
+
+    try {
+      const data = await createLabourExpense(result.payload);
+      toast.success(data.message ?? 'Labour expense vouchers created successfully', {
+        position: 'bottom-right',
+      });
+      handleOpenChange(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : 'Failed to create labour expense vouchers',
+        { position: 'bottom-right' },
+      );
+    }
   };
 
   return (
@@ -350,6 +400,41 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                     ))}
                   </div>
                 </div>
+
+                <div className="border-border bg-muted/30 rounded-xl border p-3 sm:p-4">
+                  <p className="font-heading text-sm font-semibold">Summary</p>
+                  {summary.items.length === 0 ? (
+                    <p className="text-muted-foreground mt-2 text-sm">No bags entered yet.</p>
+                  ) : (
+                    <ul className="mt-2 flex flex-col gap-1.5">
+                      {summary.items.map((item) => (
+                        <li
+                          key={item.id}
+                          className="flex items-start justify-between gap-3 text-sm"
+                        >
+                          <span className="min-w-0">
+                            {item.label}
+                            <span className="text-muted-foreground">
+                              {' '}
+                              ({item.leno} Leno, {item.jute} Jute)
+                            </span>
+                          </span>
+                          <span className="shrink-0 tabular-nums">{formatInr(item.total)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  <div className="border-border mt-3 flex flex-col gap-1 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-muted-foreground text-sm">
+                      {summary.totalLeno} Leno, {summary.totalJute} Jute
+                    </p>
+                    <p className="text-sm font-semibold">
+                      Grand total{' '}
+                      <span className="tabular-nums">{formatInr(summary.grandTotal)}</span>
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </FieldGroup>
@@ -359,8 +444,12 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
           <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
             Cancel
           </Button>
-          <Button type="submit" form="add-labour-expense-form" disabled={lines.length === 0}>
-            Add Expense
+          <Button
+            type="submit"
+            form="add-labour-expense-form"
+            disabled={lines.length === 0 || !hasQualifyingDebits || isPending}
+          >
+            {isPending ? 'Adding…' : 'Add Expense'}
           </Button>
         </DialogFooter>
       </DialogContent>

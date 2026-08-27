@@ -35,10 +35,26 @@ export type CreateVoucherPayload = {
   narration?: string;
 };
 
-export type CreateVoucherResponse = {
+export type CreateLabourExpenseDebit = {
+  debitLedgerId: string;
+  amount: number;
+};
+
+export type CreateLabourExpensePayload = {
+  date: string;
+  debits: CreateLabourExpenseDebit[];
+};
+
+export type CreateLabourExpenseResult = {
+  creditLedgerId: string;
+  creditLedgerName: string;
+  vouchers: VoucherApiRecord[];
+};
+
+export type CreateLabourExpenseResponse = {
   success: boolean;
   message?: string;
-  data: VoucherApiRecord | null;
+  data: CreateLabourExpenseResult | null;
 };
 
 export type UpdateVoucherPayload = {
