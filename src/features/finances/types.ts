@@ -35,6 +35,12 @@ export type CreateVoucherPayload = {
   narration?: string;
 };
 
+export type CreateVoucherResponse = {
+  success: boolean;
+  message?: string;
+  data: VoucherApiRecord | null;
+};
+
 export type CreateLabourExpenseDebit = {
   debitLedgerId: string;
   amount: number;
