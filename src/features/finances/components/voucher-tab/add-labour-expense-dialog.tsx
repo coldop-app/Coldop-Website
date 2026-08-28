@@ -13,7 +13,6 @@ import {
 } from '@/components/ui/dialog';
 import { Field, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import {
   getLabourExpenseDialogLines,
@@ -75,13 +74,19 @@ const parseAmount = (value: string): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const lineRates = (line: LabourExpenseDialogLine, counts: BagCounts | undefined) => {
+  const lenoRate = line.manualRate ? parseAmount(counts?.lenoRate ?? '') : line.lenoRate;
+  const juteRate = line.manualRate ? parseAmount(counts?.juteRate ?? '') : line.juteRate;
+
+  return { lenoRate, juteRate };
+};
+
 const lineTotal = (line: LabourExpenseDialogLine, counts: BagCounts | undefined): number => {
   if (!counts) {
     return 0;
   }
 
-  const lenoRate = line.manualRate ? parseAmount(counts.lenoRate) : line.lenoRate;
-  const juteRate = line.manualRate ? parseAmount(counts.juteRate) : line.juteRate;
+  const { lenoRate, juteRate } = lineRates(line, counts);
 
   return parseAmount(counts.leno) * lenoRate + parseAmount(counts.jute) * juteRate;
 };
@@ -148,6 +153,35 @@ function LabourExpenseRateFields({
   );
 }
 
+function OtherLabourExpenseNarrationField({
+  line,
+  value,
+  onChange,
+  desktop = false,
+}: {
+  line: LabourExpenseDialogLine;
+  value: string;
+  onChange: (value: string) => void;
+  desktop?: boolean;
+}) {
+  const fieldId = `add-labour-expense-${line.id}-narration${desktop ? '-desktop' : ''}`;
+
+  return (
+    <Field className="gap-1">
+      <FieldLabel htmlFor={fieldId} className="text-muted-foreground text-xs font-normal">
+        Optional narration
+      </FieldLabel>
+      <Input
+        id={fieldId}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={`Note for ${line.label}`}
+        className="h-8"
+      />
+    </Field>
+  );
+}
+
 type AddLabourExpenseDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -187,12 +221,21 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
 
   const payloadRows = useMemo(
     () =>
-      lines.map((line) => ({
-        label: line.label,
-        debitLedgerId: line.debitLedgerId,
-        total: lineTotal(line, form.bags[line.id]),
-        ...(line.manualRate ? { narration: form.bags[line.id]?.narration } : {}),
-      })),
+      lines.map((line) => {
+        const counts = form.bags[line.id];
+        const { lenoRate, juteRate } = lineRates(line, counts);
+
+        return {
+          label: line.label,
+          debitLedgerId: line.debitLedgerId,
+          total: lineTotal(line, counts),
+          lenoBags: parseAmount(counts?.leno ?? ''),
+          juteBags: parseAmount(counts?.jute ?? ''),
+          lenoRate,
+          juteRate,
+          ...(line.manualRate ? { narration: counts?.narration } : {}),
+        };
+      }),
     [form.bags, lines],
   );
 
@@ -344,20 +387,13 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                         </Field>
                       </div>
                       {line.manualRate ? (
-                        <Field className="mt-2">
-                          <FieldLabel htmlFor={`add-labour-expense-${line.id}-narration`}>
-                            Narration
-                          </FieldLabel>
-                          <Textarea
-                            id={`add-labour-expense-${line.id}-narration`}
+                        <div className="border-border mt-2 border-l-2 pl-3">
+                          <OtherLabourExpenseNarrationField
+                            line={line}
                             value={form.bags[line.id]?.narration ?? ''}
-                            onChange={(event) =>
-                              handleBagChange(line.id, 'narration', event.target.value)
-                            }
-                            placeholder="Describe the transaction"
-                            className="min-h-[96px] resize-y"
+                            onChange={(value) => handleBagChange(line.id, 'narration', value)}
                           />
-                        </Field>
+                        </div>
                       ) : null}
                     </div>
                   ))}
@@ -424,20 +460,19 @@ export function AddLabourExpenseDialog({ open, onOpenChange }: AddLabourExpenseD
                           />
                         </div>
                         {line.manualRate ? (
-                          <Field className="px-3 pb-3">
-                            <FieldLabel htmlFor={`add-labour-expense-${line.id}-narration-desktop`}>
-                              Narration
-                            </FieldLabel>
-                            <Textarea
-                              id={`add-labour-expense-${line.id}-narration-desktop`}
-                              value={form.bags[line.id]?.narration ?? ''}
-                              onChange={(event) =>
-                                handleBagChange(line.id, 'narration', event.target.value)
-                              }
-                              placeholder="Describe the transaction"
-                              className="min-h-[96px] resize-y"
-                            />
-                          </Field>
+                          <div className={`${labourExpenseRowGridClass} items-start pb-2.5`}>
+                            <span aria-hidden className="block" />
+                            <div className="col-span-5 min-w-0">
+                              <OtherLabourExpenseNarrationField
+                                line={line}
+                                value={form.bags[line.id]?.narration ?? ''}
+                                onChange={(value) =>
+                                  handleBagChange(line.id, 'narration', value)
+                                }
+                                desktop
+                              />
+                            </div>
+                          </div>
                         ) : null}
                       </div>
                     ))}

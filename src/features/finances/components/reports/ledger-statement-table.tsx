@@ -62,6 +62,14 @@ function createLedgerStatementColumns(
       cell: ({ getValue }) => getValue<string>(),
     },
     {
+      id: 'voucherNo',
+      accessorKey: 'voucherNo',
+      header: 'Voucher No.',
+      aggregationFn: () => '',
+      aggregatedCell: () => null,
+      cell: ({ getValue }) => getValue<string>(),
+    },
+    {
       id: 'entryType',
       accessorKey: 'entryType',
       header: 'B',
@@ -161,6 +169,7 @@ function cellClassName(columnId: string): string {
   return cn(
     'px-3 py-2.5',
     numeric && 'text-right tabular-nums',
+    columnId === 'voucherNo' && 'tabular-nums',
     columnId === 'balance' && 'font-medium',
     centered && 'text-center',
   );
@@ -224,6 +233,7 @@ export function LedgerStatementTable({
               <TableCell className="px-3 py-2.5">
                 {formatLedgerStatementDate(new Date())}
               </TableCell>
+              <TableCell className="px-3 py-2.5" />
               <TableCell className="px-3 py-2.5 text-center">OB</TableCell>
               <TableCell className="px-3 py-2.5">Opening Balance</TableCell>
               <TableCell className="px-3 py-2.5 text-right tabular-nums">
@@ -273,7 +283,7 @@ export function LedgerStatementTable({
 
           {hasNoData ? (
             <TableRow>
-              <TableCell colSpan={6} className="text-muted-foreground px-3 py-8 text-center">
+              <TableCell colSpan={7} className="text-muted-foreground px-3 py-8 text-center">
                 No transactions found
               </TableCell>
             </TableRow>

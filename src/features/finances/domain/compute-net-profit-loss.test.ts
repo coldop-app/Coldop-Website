@@ -69,6 +69,7 @@ describe('computeNetProfitLoss', () => {
     const vouchers: ReportVoucher[] = [
       {
         id: 'v1',
+        voucherNumber: 101,
         date: '2026-01-10',
         amount: 50,
         narration: '',
@@ -79,6 +80,7 @@ describe('computeNetProfitLoss', () => {
       },
       {
         id: 'v2',
+        voucherNumber: 102,
         date: '2026-01-15',
         amount: 500,
         narration: '',
@@ -124,6 +126,7 @@ describe('computeNetProfitLoss', () => {
     const vouchers: ReportVoucher[] = [
       {
         id: 'v1',
+        voucherNumber: 101,
         date: '2026-01-10',
         amount: 1000,
         narration: '',
@@ -134,6 +137,7 @@ describe('computeNetProfitLoss', () => {
       },
       {
         id: 'v2',
+        voucherNumber: 102,
         date: '2026-01-11',
         amount: 200,
         narration: '',
@@ -167,6 +171,7 @@ describe('computeNetProfitLoss', () => {
     const vouchers: ReportVoucher[] = [
       {
         id: 'v1',
+        voucherNumber: 101,
         date: '2026-01-10',
         amount: 1000,
         narration: '',
@@ -177,6 +182,7 @@ describe('computeNetProfitLoss', () => {
       },
       {
         id: 'v2',
+        voucherNumber: 102,
         date: '2026-01-11',
         amount: 150,
         narration: '',

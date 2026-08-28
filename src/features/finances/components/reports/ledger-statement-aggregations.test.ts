@@ -12,6 +12,7 @@ const sameDayEntries: LedgerStatementEntry[] = [
   {
     id: '1',
     date: '2026-08-27T00:00:00.000Z',
+    voucherNo: '101',
     amount: 350,
     narration: 'Bags stored',
     counterpartyName: 'Labour Thekedar',
@@ -22,6 +23,7 @@ const sameDayEntries: LedgerStatementEntry[] = [
   {
     id: '2',
     date: '2026-08-27T00:00:00.000Z',
+    voucherNo: '102',
     amount: 120,
     narration: 'Payment',
     counterpartyName: 'Cash',
@@ -32,6 +34,7 @@ const sameDayEntries: LedgerStatementEntry[] = [
   {
     id: '3',
     date: '2026-08-27T00:00:00.000Z',
+    voucherNo: '103',
     amount: 50,
     narration: 'Extra labour',
     counterpartyName: 'Labour Thekedar',

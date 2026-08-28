@@ -4,6 +4,10 @@ export type LabourExpensePayloadRow = {
   label: string;
   debitLedgerId?: string;
   total: number;
+  lenoBags: number;
+  juteBags: number;
+  lenoRate: number;
+  juteRate: number;
   narration?: string;
 };
 
@@ -13,6 +17,14 @@ export type LabourExpensePayloadResult =
 
 export function roundLabourExpenseAmount(value: number): number {
   return Math.round(value * 100) / 100;
+}
+
+function nonNegativeNumber(value: number): number {
+  if (!Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+
+  return value;
 }
 
 export function buildLabourExpenseCreatePayload(input: {
@@ -40,7 +52,14 @@ export function buildLabourExpenseCreatePayload(input: {
       return { ok: false, error: `Missing debit ledger for ${row.label}` };
     }
 
-    const debit: CreateLabourExpensePayload['debits'][number] = { debitLedgerId, amount };
+    const debit: CreateLabourExpensePayload['debits'][number] = {
+      debitLedgerId,
+      amount,
+      lenoBags: nonNegativeNumber(row.lenoBags),
+      juteBags: nonNegativeNumber(row.juteBags),
+      lenoRate: roundLabourExpenseAmount(nonNegativeNumber(row.lenoRate)),
+      juteRate: roundLabourExpenseAmount(nonNegativeNumber(row.juteRate)),
+    };
     const narration = row.narration?.trim();
     if (narration) {
       debit.narration = narration;

@@ -3,13 +3,37 @@ import { describe, expect, it } from 'vitest';
 import { buildLabourExpenseCreatePayload } from './build-labour-expense-create-payload';
 
 describe('buildLabourExpenseCreatePayload', () => {
-  it('sends only rows with Total greater than 0 and no credit ledger', () => {
+  it('sends bag counts and rates with only Total > 0 rows and no credit ledger', () => {
     const result = buildLabourExpenseCreatePayload({
       date: '2026-08-27T00:00:00.000Z',
       rows: [
-        { label: 'Bags Stored', debitLedgerId: 'ledger-stored', total: 350 },
-        { label: 'Bags Nikas', debitLedgerId: 'ledger-nikas', total: 0 },
-        { label: 'Bags Restore', debitLedgerId: 'ledger-restore', total: 230.126 },
+        {
+          label: 'Bags Stored',
+          debitLedgerId: 'ledger-stored',
+          total: 350,
+          lenoBags: 10,
+          juteBags: 0,
+          lenoRate: 35,
+          juteRate: 23,
+        },
+        {
+          label: 'Bags Nikas',
+          debitLedgerId: 'ledger-nikas',
+          total: 0,
+          lenoBags: 0,
+          juteBags: 0,
+          lenoRate: 35,
+          juteRate: 23,
+        },
+        {
+          label: 'Bags Restore',
+          debitLedgerId: 'ledger-restore',
+          total: 230.126,
+          lenoBags: 0,
+          juteBags: 10,
+          lenoRate: 35,
+          juteRate: 23.0126,
+        },
       ],
     });
 
@@ -18,8 +42,22 @@ describe('buildLabourExpenseCreatePayload', () => {
       payload: {
         date: '2026-08-27T00:00:00.000Z',
         debits: [
-          { debitLedgerId: 'ledger-stored', amount: 350 },
-          { debitLedgerId: 'ledger-restore', amount: 230.13 },
+          {
+            debitLedgerId: 'ledger-stored',
+            amount: 350,
+            lenoBags: 10,
+            juteBags: 0,
+            lenoRate: 35,
+            juteRate: 23,
+          },
+          {
+            debitLedgerId: 'ledger-restore',
+            amount: 230.13,
+            lenoBags: 0,
+            juteBags: 10,
+            lenoRate: 35,
+            juteRate: 23.01,
+          },
         ],
       },
     });
@@ -33,11 +71,24 @@ describe('buildLabourExpenseCreatePayload', () => {
     const result = buildLabourExpenseCreatePayload({
       date: '2026-08-27T00:00:00.000Z',
       rows: [
-        { label: 'Bags Stored', debitLedgerId: 'ledger-stored', total: 350, narration: '  ' },
+        {
+          label: 'Bags Stored',
+          debitLedgerId: 'ledger-stored',
+          total: 350,
+          lenoBags: 10,
+          juteBags: 0,
+          lenoRate: 35,
+          juteRate: 23,
+          narration: '  ',
+        },
         {
           label: 'Other Labour Expenses',
           debitLedgerId: 'ledger-other',
           total: 500,
+          lenoBags: 8,
+          juteBags: 4,
+          lenoRate: 40,
+          juteRate: 45,
           narration: '  Extra unloading at shed 2  ',
         },
       ],
@@ -48,10 +99,21 @@ describe('buildLabourExpenseCreatePayload', () => {
       payload: {
         date: '2026-08-27T00:00:00.000Z',
         debits: [
-          { debitLedgerId: 'ledger-stored', amount: 350 },
+          {
+            debitLedgerId: 'ledger-stored',
+            amount: 350,
+            lenoBags: 10,
+            juteBags: 0,
+            lenoRate: 35,
+            juteRate: 23,
+          },
           {
             debitLedgerId: 'ledger-other',
             amount: 500,
+            lenoBags: 8,
+            juteBags: 4,
+            lenoRate: 40,
+            juteRate: 45,
             narration: 'Extra unloading at shed 2',
           },
         ],
@@ -66,7 +128,16 @@ describe('buildLabourExpenseCreatePayload', () => {
     expect(
       buildLabourExpenseCreatePayload({
         date: '2026-08-27T00:00:00.000Z',
-        rows: [{ label: 'Bags Stored', total: 350 }],
+        rows: [
+          {
+            label: 'Bags Stored',
+            total: 350,
+            lenoBags: 10,
+            juteBags: 0,
+            lenoRate: 35,
+            juteRate: 23,
+          },
+        ],
       }),
     ).toEqual({
       ok: false,
@@ -78,7 +149,17 @@ describe('buildLabourExpenseCreatePayload', () => {
     expect(
       buildLabourExpenseCreatePayload({
         date: '2026-08-27T00:00:00.000Z',
-        rows: [{ label: 'Bags Stored', debitLedgerId: 'ledger-stored', total: 0 }],
+        rows: [
+          {
+            label: 'Bags Stored',
+            debitLedgerId: 'ledger-stored',
+            total: 0,
+            lenoBags: 0,
+            juteBags: 0,
+            lenoRate: 35,
+            juteRate: 23,
+          },
+        ],
       }),
     ).toEqual({
       ok: false,

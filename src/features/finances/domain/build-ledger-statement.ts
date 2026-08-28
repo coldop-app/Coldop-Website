@@ -14,6 +14,7 @@ export function buildLedgerStatement(
 
   const debitEntries: Array<{
     date: string;
+    voucherNo: string;
     amount: number;
     narration: string;
     counterpartyName: string;
@@ -22,6 +23,7 @@ export function buildLedgerStatement(
   }> = [];
   const creditEntries: Array<{
     date: string;
+    voucherNo: string;
     amount: number;
     narration: string;
     counterpartyName: string;
@@ -30,9 +32,12 @@ export function buildLedgerStatement(
   }> = [];
 
   for (const voucher of vouchers) {
+    const voucherNo = String(voucher.voucherNumber ?? '');
+
     if (voucher.debitLedgerId === ledgerId) {
       debitEntries.push({
         date: voucher.date,
+        voucherNo,
         amount: voucher.amount,
         narration: voucher.narration,
         counterpartyName: voucher.creditLedgerName,
@@ -43,6 +48,7 @@ export function buildLedgerStatement(
     if (voucher.creditLedgerId === ledgerId) {
       creditEntries.push({
         date: voucher.date,
+        voucherNo,
         amount: voucher.amount,
         narration: voucher.narration,
         counterpartyName: voucher.debitLedgerName,
@@ -64,6 +70,7 @@ export function buildLedgerStatement(
     return {
       id: `${entry.date}-${entry.entryType}-${index}`,
       date: entry.date,
+      voucherNo: entry.voucherNo,
       amount: entry.amount,
       narration: entry.narration,
       counterpartyName: entry.counterpartyName,

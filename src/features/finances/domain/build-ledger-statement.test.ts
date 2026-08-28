@@ -29,6 +29,7 @@ describe('buildLedgerStatement', () => {
     const vouchers: ReportVoucher[] = [
       {
         id: 'v1',
+        voucherNumber: 101,
         date: '2026-01-05',
         amount: 50,
         narration: '',
@@ -39,6 +40,7 @@ describe('buildLedgerStatement', () => {
       },
       {
         id: 'v2',
+        voucherNumber: 102,
         date: '2026-01-10',
         amount: 20,
         narration: '',
@@ -56,5 +58,6 @@ describe('buildLedgerStatement', () => {
     expect(statement).not.toBeNull();
     expect(statement!.closingBalance).toBe(balanceMap.get('cash'));
     expect(statement!.entries.at(-1)?.runningBalance).toBe(balanceMap.get('cash'));
+    expect(statement!.entries.map((entry) => entry.voucherNo)).toEqual(['101', '102']);
   });
 });

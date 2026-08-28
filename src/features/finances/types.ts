@@ -44,6 +44,10 @@ export type CreateVoucherResponse = {
 export type CreateLabourExpenseDebit = {
   debitLedgerId: string;
   amount: number;
+  lenoBags: number;
+  juteBags: number;
+  lenoRate: number;
+  juteRate: number;
   narration?: string;
 };
 

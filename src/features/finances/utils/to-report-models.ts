@@ -38,6 +38,7 @@ export function toReportVoucher(voucher: VoucherApiRecord): ReportVoucher {
 
   return {
     id: voucher._id,
+    voucherNumber: voucher.voucherNumber ?? 0,
     date: voucher.date,
     amount: voucher.amount ?? 0,
     narration: voucher.narration ?? '',

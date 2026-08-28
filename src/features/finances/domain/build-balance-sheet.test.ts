@@ -30,6 +30,7 @@ describe('buildBalanceSheetReport', () => {
     const vouchers: ReportVoucher[] = [
       {
         id: 'v1',
+        voucherNumber: 101,
         date: '2026-01-05',
         amount: 1000,
         narration: 'Intro',

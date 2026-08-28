@@ -14,6 +14,7 @@ export type ReportLedger = {
 
 export type ReportVoucher = {
   id: string;
+  voucherNumber: number;
   date: string;
   amount: number;
   narration: string;
@@ -84,6 +85,7 @@ export type ClosingBalancesReport = {
 export type LedgerStatementEntry = {
   id: string;
   date: string;
+  voucherNo: string;
   amount: number;
   narration: string;
   counterpartyName: string;
