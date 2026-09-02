@@ -1,17 +1,16 @@
-import type { Row } from '@tanstack/react-table';
-
 import {
   getFarmerReportRowKey,
   type FarmerReportTableRow,
 } from '@/features/people-report/utils/build-farmer-report-sections';
+import type { AppRow } from '@/lib/table/features';
 
 export function collectLeafRowsInDisplayOrder(
-  tableRows: Row<FarmerReportTableRow>[],
+  tableRows: AppRow<FarmerReportTableRow>[],
 ): FarmerReportTableRow[] {
   const result: FarmerReportTableRow[] = [];
   const seen = new Set<string>();
 
-  const walk = (rows: Row<FarmerReportTableRow>[]) => {
+  const walk = (rows: AppRow<FarmerReportTableRow>[]) => {
     for (const row of rows) {
       if (row.getIsGrouped()) {
         walk(row.subRows);
@@ -32,7 +31,7 @@ export function collectLeafRowsInDisplayOrder(
 
 export function getOrderedRowsForRunningTotals(
   pinnedRows: FarmerReportTableRow[],
-  tableRows: Row<FarmerReportTableRow>[],
+  tableRows: AppRow<FarmerReportTableRow>[],
   isGroupingActive: boolean,
 ): FarmerReportTableRow[] {
   if (isGroupingActive) {

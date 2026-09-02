@@ -1,7 +1,6 @@
-import type { Row } from '@tanstack/react-table';
-
 import type { IncomingGatePassReportRecord } from '@/features/incoming-report/api/types';
 import { cn } from '@/lib/utils';
+import type { AppRow } from '@/lib/table/features';
 
 import { getIncomingReportTotalBags, type IncomingQuantityMode } from './columns';
 
@@ -18,7 +17,7 @@ function renderTotalValue(value: number) {
 }
 
 function sumBagSizeQuantity(
-  rows: readonly Row<IncomingGatePassReportRecord>[],
+  rows: readonly AppRow<IncomingGatePassReportRecord>[],
   sizeName: string,
   quantityMode: IncomingQuantityMode,
 ) {
@@ -42,7 +41,7 @@ export function ReportTotalLabel() {
 
 export function getIncomingReportFooterContent(
   columnId: string,
-  rows: readonly Row<IncomingGatePassReportRecord>[],
+  rows: readonly AppRow<IncomingGatePassReportRecord>[],
   quantityMode: IncomingQuantityMode,
 ) {
   if (columnId === 'totalBags') {

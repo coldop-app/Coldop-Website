@@ -1,7 +1,7 @@
-import type { ColumnDef, FilterFn, SortingFn } from '@tanstack/react-table';
 import { Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import type { AppColumnDef, AppFilterFn, AppSortFn } from '@/lib/table/features';
 
 import type { Voucher } from './types';
 
@@ -22,7 +22,7 @@ function formatDate(value: string) {
   return dateFormatter.format(date);
 }
 
-const voucherDateSortingFn: SortingFn<Voucher> = (rowA, rowB, columnId) => {
+const voucherDateSortingFn: AppSortFn<Voucher> = (rowA, rowB, columnId) => {
   const a = new Date(String(rowA.getValue(columnId))).getTime();
   const b = new Date(String(rowB.getValue(columnId))).getTime();
 
@@ -33,7 +33,7 @@ const voucherDateSortingFn: SortingFn<Voucher> = (rowA, rowB, columnId) => {
   return a === b ? 0 : a > b ? 1 : -1;
 };
 
-const voucherNumericSortingFn: SortingFn<Voucher> = (rowA, rowB, columnId) => {
+const voucherNumericSortingFn: AppSortFn<Voucher> = (rowA, rowB, columnId) => {
   const a = Number(rowA.getValue(columnId));
   const b = Number(rowB.getValue(columnId));
 
@@ -44,12 +44,7 @@ const voucherNumericSortingFn: SortingFn<Voucher> = (rowA, rowB, columnId) => {
   return a === b ? 0 : a > b ? 1 : -1;
 };
 
-export const voucherSortingFns = {
-  voucherDate: voucherDateSortingFn,
-  voucherNumeric: voucherNumericSortingFn,
-};
-
-const voucherSearchFilterFn: FilterFn<Voucher> = (row, _columnId, filterValue) => {
+const voucherSearchFilterFn: AppFilterFn<Voucher> = (row, _columnId, filterValue) => {
   const search = String(filterValue ?? '')
     .trim()
     .toLowerCase();
@@ -67,10 +62,6 @@ const voucherSearchFilterFn: FilterFn<Voucher> = (row, _columnId, filterValue) =
   );
 };
 
-export const voucherFilterFns = {
-  voucherSearch: voucherSearchFilterFn,
-};
-
 type VoucherColumnsOptions = {
   onEdit: (voucher: Voucher) => void;
   onDelete: (voucher: Voucher) => void;
@@ -79,7 +70,7 @@ type VoucherColumnsOptions = {
 export function createVoucherColumns({
   onEdit,
   onDelete,
-}: VoucherColumnsOptions): ColumnDef<Voucher>[] {
+}: VoucherColumnsOptions): AppColumnDef<Voucher>[] {
   return [
     {
       accessorKey: 'voucherNo',
@@ -92,7 +83,7 @@ export function createVoucherColumns({
       accessorKey: 'date',
       header: 'Date',
       meta: { numeric: true },
-      sortingFn: voucherDateSortingFn,
+      sortFn: voucherDateSortingFn,
       cell: ({ row }) => <span>{formatDate(row.getValue('date'))}</span>,
     },
     {
@@ -111,7 +102,7 @@ export function createVoucherColumns({
       accessorKey: 'amount',
       header: 'Amount',
       meta: { align: 'right', numeric: true },
-      sortingFn: voucherNumericSortingFn,
+      sortFn: voucherNumericSortingFn,
       cell: ({ row }) => {
         const amount = parseFloat(row.getValue('amount'));
         return <span>{currencyFormatter.format(amount)}</span>;

@@ -1,5 +1,4 @@
 /* eslint-disable react-refresh/only-export-components */
-import type { ColumnDef, SortingFn } from '@tanstack/react-table';
 import { Link } from '@tanstack/react-router';
 import { Pencil, Trash2 } from 'lucide-react';
 
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import type { FinancesPeriod } from '@/features/finances/search';
 import { DEFAULT_FINANCES_PERIOD } from '@/features/finances/shared/constants';
+import type { AppColumnDef, AppSortFn } from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
 import type { Ledger } from './types';
@@ -39,7 +39,7 @@ function ClosingBalanceCell({ amount }: { amount: number | null }) {
   return <BalanceCell amount={amount} />;
 }
 
-const ledgerNumericSortingFn: SortingFn<Ledger> = (rowA, rowB, columnId) => {
+const ledgerNumericSortingFn: AppSortFn<Ledger> = (rowA, rowB, columnId) => {
   const a = Number(rowA.getValue(columnId));
   const b = Number(rowB.getValue(columnId));
 
@@ -50,15 +50,11 @@ const ledgerNumericSortingFn: SortingFn<Ledger> = (rowA, rowB, columnId) => {
   return a === b ? 0 : a > b ? 1 : -1;
 };
 
-export const ledgerSortingFns = {
-  ledgerNumeric: ledgerNumericSortingFn,
-};
-
 export function createLedgerColumns(options?: {
   period?: FinancesPeriod;
   onEdit?: (ledger: Ledger) => void;
   onDelete?: (ledger: Ledger) => void;
-}): ColumnDef<Ledger>[] {
+}): AppColumnDef<Ledger>[] {
   const period = options?.period ?? DEFAULT_FINANCES_PERIOD;
   const onEdit = options?.onEdit;
   const onDelete = options?.onDelete;
@@ -105,21 +101,21 @@ export function createLedgerColumns(options?: {
       accessorKey: 'openingBalance',
       header: 'Opening Balance',
       meta: { align: 'right', numeric: true },
-      sortingFn: ledgerNumericSortingFn,
+      sortFn: ledgerNumericSortingFn,
       cell: ({ row }) => <BalanceCell amount={parseFloat(row.getValue('openingBalance'))} />,
     },
     {
       accessorKey: 'balance',
       header: 'Balance',
       meta: { align: 'right', numeric: true },
-      sortingFn: ledgerNumericSortingFn,
+      sortFn: ledgerNumericSortingFn,
       cell: ({ row }) => <BalanceCell amount={parseFloat(row.getValue('balance'))} />,
     },
     {
       accessorKey: 'closingBalance',
       header: 'Closing Balance',
       meta: { align: 'right', numeric: true },
-      sortingFn: ledgerNumericSortingFn,
+      sortFn: ledgerNumericSortingFn,
       cell: ({ row }) => <ClosingBalanceCell amount={row.original.closingBalance} />,
     },
     {

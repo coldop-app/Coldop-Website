@@ -1,6 +1,5 @@
-import type { FilterFn } from '@tanstack/react-table';
-
 import type { IncomingGatePassReportRecord } from '@/features/incoming-report/api/types';
+import type { AppFilterFn } from '@/lib/table/features';
 
 export type SelectedValuesFilterValue = string[];
 export type AdvancedFilterLogic = 'AND' | 'OR';
@@ -69,7 +68,7 @@ function parseReportNumber(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export const selectedValuesFilterFn: FilterFn<IncomingGatePassReportRecord> = (
+export const selectedValuesFilterFn: AppFilterFn<IncomingGatePassReportRecord> = (
   row,
   columnId,
   filterValue,
@@ -101,7 +100,7 @@ function normalizeText(value: unknown): string {
 }
 
 function evaluateCondition(
-  row: Parameters<FilterFn<IncomingGatePassReportRecord>>[0],
+  row: Parameters<AppFilterFn<IncomingGatePassReportRecord>>[0],
   condition: AdvancedFilterCondition,
 ) {
   const rawValue = row.getValue(String(condition.columnId));
@@ -166,7 +165,7 @@ function evaluateCondition(
   }
 }
 
-export const advancedReportGlobalFilterFn: FilterFn<IncomingGatePassReportRecord> = (
+export const advancedReportGlobalFilterFn: AppFilterFn<IncomingGatePassReportRecord> = (
   row,
   _columnId,
   filterValue,

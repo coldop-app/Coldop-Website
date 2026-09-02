@@ -1,4 +1,4 @@
-import type { GroupingState, Table } from '@tanstack/react-table';
+import type { GroupingState } from '@tanstack/react-table';
 import { Eye, FileSpreadsheet, Loader2, RefreshCw, Search } from 'lucide-react';
 
 import { DatePickerInput } from '@/components/date-picker';
@@ -15,11 +15,12 @@ import {
   type FarmerReportGroupColumnId,
 } from '@/features/people-report/utils/report-grouping';
 import { cn } from '@/lib/utils';
+import type { AppTable } from '@/lib/table/features';
 
 import { ViewFiltersSheet } from './view-filters';
 
 export interface ReportToolbarProps {
-  table: Table<FarmerReportTableRow> | null;
+  table: AppTable<FarmerReportTableRow> | null;
   dateFrom: string;
   dateTo: string;
   onDateFromChange: (value: string) => void;

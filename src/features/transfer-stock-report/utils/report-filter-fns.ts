@@ -1,6 +1,5 @@
-import type { FilterFn } from '@tanstack/react-table';
-
 import type { TransferStockReportRecord } from '@/features/transfer-stock-report/api/types';
+import type { AppFilterFn } from '@/lib/table/features';
 
 export type SelectedValuesFilterValue = string[];
 export type AdvancedFilterLogic = 'AND' | 'OR';
@@ -75,7 +74,7 @@ function parseReportNumber(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export const selectedValuesFilterFn: FilterFn<TransferStockReportRecord> = (
+export const selectedValuesFilterFn: AppFilterFn<TransferStockReportRecord> = (
   row,
   columnId,
   filterValue,
@@ -107,7 +106,7 @@ function normalizeText(value: unknown): string {
 }
 
 function evaluateCondition(
-  row: Parameters<FilterFn<TransferStockReportRecord>>[0],
+  row: Parameters<AppFilterFn<TransferStockReportRecord>>[0],
   condition: AdvancedFilterCondition,
 ) {
   const rawValue = row.getValue(String(condition.columnId));
@@ -172,7 +171,7 @@ function evaluateCondition(
   }
 }
 
-export const advancedReportGlobalFilterFn: FilterFn<TransferStockReportRecord> = (
+export const advancedReportGlobalFilterFn: AppFilterFn<TransferStockReportRecord> = (
   row,
   _columnId,
   filterValue,

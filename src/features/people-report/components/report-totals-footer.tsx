@@ -1,5 +1,4 @@
 import { useMemo, type ReactNode } from 'react';
-import type { Table as TanStackTable } from '@tanstack/react-table';
 
 import { TableCell, TableFooter, TableRow } from '@/components/ui/table';
 import { formatQuantity } from '@/features/daybook/utils/format';
@@ -9,6 +8,7 @@ import type {
 } from '@/features/people-report/utils/build-farmer-report-sections';
 import { sumFarmerReportRowSizeColumn } from '@/features/people-report/utils/build-farmer-report-sections';
 import { cn } from '@/lib/utils';
+import type { AppTable } from '@/lib/table/features';
 
 import {
   CLOSING_BALANCE_ROW_CLASS,
@@ -17,7 +17,7 @@ import {
 } from './table-styles';
 
 type ReportTotalsFooterProps = {
-  table: TanStackTable<FarmerReportTableRow>;
+  table: AppTable<FarmerReportTableRow>;
   rows: FarmerReportTableRow[];
   sectionMode: FarmerReportSectionMode;
   isFooterElevated: boolean;

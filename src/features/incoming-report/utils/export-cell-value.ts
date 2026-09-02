@@ -1,5 +1,4 @@
 import { format, isValid, parse, parseISO } from 'date-fns';
-import type { Cell, Column, Row, Table } from '@tanstack/react-table';
 
 import type { IncomingBagSize } from '@/features/daybook/types';
 import {
@@ -16,6 +15,7 @@ import type {
   AdvancedFilterCondition,
   AdvancedReportGlobalFilter,
 } from '@/features/incoming-report/utils/report-filter-fns';
+import type { AppTable, AppRow, AppColumn, AppCell } from '@/lib/table/features';
 
 const INTEGER_COLUMNS = new Set<string>(['accountNumber', 'gatePassNo', 'totalBags']);
 
@@ -140,7 +140,7 @@ function getBagsForSizeName(
 }
 
 function sumBagSizeQuantity(
-  rows: readonly Row<IncomingGatePassReportRecord>[],
+  rows: readonly AppRow<IncomingGatePassReportRecord>[],
   size: string,
   quantityMode: IncomingQuantityMode,
 ) {
@@ -154,9 +154,7 @@ function sumBagSizeQuantity(
   }, 0);
 }
 
-export function getColumnExportLabel(
-  column: Column<IncomingGatePassReportRecord, unknown>,
-): string {
+export function getColumnExportLabel(column: AppColumn<IncomingGatePassReportRecord>): string {
   return column.columnDef.meta?.filterLabel ?? column.id;
 }
 
@@ -177,7 +175,7 @@ function formatReportDate(value: unknown): string | null {
 
 function formatDisplayValue(
   value: unknown,
-  column: Column<IncomingGatePassReportRecord, unknown>,
+  column: AppColumn<IncomingGatePassReportRecord>,
 ): string {
   const meta = column.columnDef.meta;
   if (meta?.filterValueFormatter) return meta.filterValueFormatter(value);
@@ -277,10 +275,10 @@ export function formatExportCellValue(
 }
 
 export function getExportCellForRow(
-  row: Row<IncomingGatePassReportRecord>,
-  column: Column<IncomingGatePassReportRecord, unknown>,
+  row: AppRow<IncomingGatePassReportRecord>,
+  column: AppColumn<IncomingGatePassReportRecord>,
   quantityMode: IncomingQuantityMode,
-  cell?: Cell<IncomingGatePassReportRecord, unknown>,
+  cell?: AppCell<IncomingGatePassReportRecord>,
   showLocation = true,
 ): ExportCellValue {
   const resolvedCell = cell ?? row.getVisibleCells().find((item) => item.column.id === column.id);
@@ -326,18 +324,18 @@ export function getExportCellForRow(
 }
 
 export function collectExportRows(
-  table: Table<IncomingGatePassReportRecord>,
-): Row<IncomingGatePassReportRecord>[] {
-  const grouping = table.getState().grouping;
+  table: AppTable<IncomingGatePassReportRecord>,
+): AppRow<IncomingGatePassReportRecord>[] {
+  const grouping = table.store.state.grouping;
 
   if (grouping.length === 0) {
     return table.getSortedRowModel().rows;
   }
 
   function flattenGroupedRows(
-    rows: Row<IncomingGatePassReportRecord>[],
-  ): Row<IncomingGatePassReportRecord>[] {
-    const result: Row<IncomingGatePassReportRecord>[] = [];
+    rows: AppRow<IncomingGatePassReportRecord>[],
+  ): AppRow<IncomingGatePassReportRecord>[] {
+    const result: AppRow<IncomingGatePassReportRecord>[] = [];
 
     for (const row of rows) {
       result.push(row);
@@ -353,12 +351,12 @@ export function collectExportRows(
   return flattenGroupedRows(table.getSortedRowModel().rows);
 }
 
-export function getFilteredLeafRowCount(table: Table<IncomingGatePassReportRecord>): number {
+export function getFilteredLeafRowCount(table: AppTable<IncomingGatePassReportRecord>): number {
   return table.getFilteredRowModel().flatRows.length;
 }
 
 function formatConditionLabel(
-  table: Table<IncomingGatePassReportRecord>,
+  table: AppTable<IncomingGatePassReportRecord>,
   condition: AdvancedFilterCondition,
 ): string {
   const column = table.getColumn(String(condition.columnId));
@@ -375,10 +373,10 @@ function formatConditionLabel(
   return `${columnLabel} ${operatorLabel} "${value}"`;
 }
 
-function formatColumnFilterSummary(table: Table<IncomingGatePassReportRecord>): string[] {
+function formatColumnFilterSummary(table: AppTable<IncomingGatePassReportRecord>): string[] {
   const summaries: string[] = [];
 
-  for (const filter of table.getState().columnFilters) {
+  for (const filter of table.store.state.columnFilters) {
     if (!Array.isArray(filter.value) || filter.value.length === 0) continue;
 
     const column = table.getColumn(filter.id);
@@ -401,7 +399,7 @@ function formatColumnFilterSummary(table: Table<IncomingGatePassReportRecord>): 
 }
 
 function formatAdvancedFilterSummary(
-  table: Table<IncomingGatePassReportRecord>,
+  table: AppTable<IncomingGatePassReportRecord>,
   globalFilter: AdvancedReportGlobalFilter,
 ): string[] {
   const activeConditions = globalFilter.conditions
@@ -417,8 +415,8 @@ function formatAdvancedFilterSummary(
   ];
 }
 
-function formatGroupingSummary(table: Table<IncomingGatePassReportRecord>): string | null {
-  const grouping = table.getState().grouping;
+function formatGroupingSummary(table: AppTable<IncomingGatePassReportRecord>): string | null {
+  const grouping = table.store.state.grouping;
   if (grouping.length === 0) return null;
 
   const labels = grouping
@@ -431,8 +429,8 @@ function formatGroupingSummary(table: Table<IncomingGatePassReportRecord>): stri
   return `Grouped by: ${labels}`;
 }
 
-function formatSortingSummary(table: Table<IncomingGatePassReportRecord>): string | null {
-  const sorting = table.getState().sorting;
+function formatSortingSummary(table: AppTable<IncomingGatePassReportRecord>): string | null {
+  const sorting = table.store.state.sorting;
   if (sorting.length === 0) return null;
 
   const labels = sorting
@@ -447,11 +445,11 @@ function formatSortingSummary(table: Table<IncomingGatePassReportRecord>): strin
 }
 
 export function buildFilterSummaryLines(
-  table: Table<IncomingGatePassReportRecord>,
+  table: AppTable<IncomingGatePassReportRecord>,
   quantityMode: IncomingQuantityMode,
   showLocation = true,
 ): string[] {
-  const globalFilter = table.getState().globalFilter;
+  const globalFilter = table.store.state.globalFilter;
 
   const lines = [
     `Quantity view: ${quantityMode === 'current' ? 'Current Qty' : 'Initial Qty'}`,
@@ -490,7 +488,7 @@ export function isSummableExportColumn(columnId: string): boolean {
 }
 
 export function computeIncomingReportFooterTotals(
-  rows: readonly Row<IncomingGatePassReportRecord>[],
+  rows: readonly AppRow<IncomingGatePassReportRecord>[],
   quantityMode: IncomingQuantityMode,
 ): Map<string, ExportCellValue> {
   let totalBags = 0;
@@ -521,7 +519,7 @@ export function computeIncomingReportFooterTotals(
 
 export function getFooterExportValue(
   columnId: string,
-  rows: readonly Row<IncomingGatePassReportRecord>[],
+  rows: readonly AppRow<IncomingGatePassReportRecord>[],
   quantityMode: IncomingQuantityMode,
 ): ExportCellValue {
   if (columnId === 'totalBags') {

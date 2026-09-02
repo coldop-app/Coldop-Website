@@ -2,13 +2,7 @@ import { useMemo, useState } from 'react';
 import { move } from '@dnd-kit/helpers';
 import { DragDropProvider, type DragEndEvent } from '@dnd-kit/react';
 import { useSortable } from '@dnd-kit/react/sortable';
-import type {
-  Column,
-  ColumnOrderState,
-  RowData,
-  Table,
-  VisibilityState,
-} from '@tanstack/react-table';
+import type { ColumnOrderState, RowData, ColumnVisibilityState } from '@tanstack/react-table';
 import { GripVertical, RotateCcw, Save, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -19,37 +13,41 @@ import {
   saveIncomingReportColumnState,
 } from '@/features/incoming-report/utils/report-column-preferences';
 import { cn } from '@/lib/utils';
+import type { AppTable, AppColumn } from '@/lib/table/features';
 
 const COLUMN_ORDER_GROUP = 'incoming-report-columns';
 
 interface ColumnsTabProps<TData extends RowData> {
-  table: Table<TData>;
-  draftColumnVisibility: VisibilityState;
+  table: AppTable<TData>;
+  draftColumnVisibility: ColumnVisibilityState;
   draftColumnOrder: ColumnOrderState;
-  onDraftColumnVisibilityChange: (visibility: VisibilityState) => void;
+  onDraftColumnVisibilityChange: (visibility: ColumnVisibilityState) => void;
   onDraftColumnOrderChange: (order: ColumnOrderState) => void;
 }
 
 interface ColumnVisibilityRowProps<TData extends RowData> {
-  column: Column<TData, unknown>;
+  column: AppColumn<TData>;
   index: number;
   isVisible: boolean;
   visibleColumnCount: number;
   onVisibilityChange: (columnId: string, visible: boolean) => void;
 }
 
-function getColumnLabel<TData extends RowData>(column: Column<TData, unknown>): string {
+function getColumnLabel<TData extends RowData>(column: AppColumn<TData>): string {
   return column.columnDef.meta?.filterLabel ?? column.id;
 }
 
-function getDraftColumnVisible(columnId: string, draftColumnVisibility: VisibilityState): boolean {
+function getDraftColumnVisible(
+  columnId: string,
+  draftColumnVisibility: ColumnVisibilityState,
+): boolean {
   return draftColumnVisibility[columnId] !== false;
 }
 
 function getOrderedColumns<TData extends RowData>(
-  columns: Column<TData, unknown>[],
+  columns: AppColumn<TData>[],
   draftColumnOrder: ColumnOrderState,
-): Column<TData, unknown>[] {
+): AppColumn<TData>[] {
   const columnsById = new Map(columns.map((column) => [column.id, column]));
   const orderedIds = [
     ...draftColumnOrder.filter((columnId) => columnsById.has(columnId)),
@@ -60,7 +58,7 @@ function getOrderedColumns<TData extends RowData>(
 
   return orderedIds
     .map((columnId) => columnsById.get(columnId))
-    .filter((column): column is Column<TData, unknown> => column != null);
+    .filter((column): column is AppColumn<TData> => column != null);
 }
 
 function ColumnVisibilityRow<TData extends RowData>({

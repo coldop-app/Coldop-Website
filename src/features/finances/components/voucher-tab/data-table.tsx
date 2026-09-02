@@ -1,15 +1,10 @@
 import * as React from 'react';
 import {
-  type ColumnDef,
   type ColumnFiltersState,
   flexRender,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   type PaginationState,
   type SortingState,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table';
 
 import {
@@ -20,11 +15,11 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { type AppColumnDef, appTableFeatures } from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
 import { DataTableColumnHeader } from './data-table-column-header';
 import { DataTablePagination } from './data-table-pagination';
-import { voucherFilterFns, voucherSortingFns } from './columns';
 import {
   getCellClassName,
   getColumnAlign,
@@ -34,7 +29,7 @@ import {
 import type { Voucher } from './types';
 
 interface DataTableProps {
-  columns: ColumnDef<Voucher>[];
+  columns: AppColumnDef<Voucher>[];
   data: Voucher[];
   search: string;
 }
@@ -57,7 +52,8 @@ export function DataTable({ columns, data, search }: DataTableProps) {
     setPagination((current) => ({ ...current, pageIndex: 0 }));
   }, [search]);
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data,
     columns,
     state: {
@@ -67,12 +63,6 @@ export function DataTable({ columns, data, search }: DataTableProps) {
     },
     onSortingChange: setSorting,
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    filterFns: voucherFilterFns,
-    sortingFns: voucherSortingFns,
     enableSortingRemoval: true,
     sortDescFirst: false,
     autoResetPageIndex: false,

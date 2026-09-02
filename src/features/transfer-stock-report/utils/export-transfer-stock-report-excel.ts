@@ -1,6 +1,5 @@
 import { format } from 'date-fns';
 import type ExcelJS from 'exceljs';
-import type { Table } from '@tanstack/react-table';
 
 import type { TransferStockReportRecord } from '@/features/transfer-stock-report/api/types';
 import {
@@ -19,6 +18,7 @@ import {
 import { downloadBlob } from '@/lib/download-blob';
 import { COLDOP_BRANDING, EXPORT_THEME_COLORS } from '@/lib/export-report-theme';
 import { loadExcelJS } from '@/lib/load-exceljs';
+import type { AppTable } from '@/lib/table/features';
 
 const COLORS = EXPORT_THEME_COLORS;
 
@@ -228,7 +228,7 @@ function autoFitColumns(worksheet: ExcelJS.Worksheet, columnCount: number, maxWi
 }
 
 export type ExportTransferStockReportOptions = {
-  table: Table<TransferStockReportRecord>;
+  table: AppTable<TransferStockReportRecord>;
   coldStorageName: string;
   reportTitle?: string;
   dateFrom?: string;

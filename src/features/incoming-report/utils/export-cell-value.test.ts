@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Column, Row } from '@tanstack/react-table';
-
 import type { IncomingGatePassReportRecord } from '@/features/incoming-report/api/types';
+import type { AppRow, AppColumn } from '@/lib/table/features';
 
 import {
   computeIncomingReportFooterTotals,
@@ -190,7 +189,7 @@ describe('computeIncomingReportFooterTotals', () => {
           ],
         }),
       },
-    ] as Row<IncomingGatePassReportRecord>[];
+    ] as AppRow<IncomingGatePassReportRecord>[];
 
     const totals = computeIncomingReportFooterTotals(rows, 'current');
 
@@ -228,7 +227,7 @@ describe('getExportCellForRow aggregated size cells', () => {
     const column = {
       id: 'size-Jumbo',
       columnDef: { meta: { numeric: true } },
-    } as Column<IncomingGatePassReportRecord, unknown>;
+    } as AppColumn<IncomingGatePassReportRecord>;
 
     const cell = {
       getIsGrouped: () => false,
@@ -243,7 +242,7 @@ describe('getExportCellForRow aggregated size cells', () => {
       subRows: [],
       getIsGrouped: () => true,
       getVisibleCells: () => [],
-    } as unknown as Row<IncomingGatePassReportRecord>;
+    } as unknown as AppRow<IncomingGatePassReportRecord>;
 
     const result = getExportCellForRow(row, column, 'current', cell as never, true);
 
@@ -259,7 +258,7 @@ describe('getExportCellForRow aggregated size cells', () => {
     const column = {
       id: 'variety',
       columnDef: { meta: {} },
-    } as Column<IncomingGatePassReportRecord, unknown>;
+    } as AppColumn<IncomingGatePassReportRecord>;
 
     const cell = {
       getIsGrouped: () => false,
@@ -274,7 +273,7 @@ describe('getExportCellForRow aggregated size cells', () => {
       subRows: [],
       getIsGrouped: () => true,
       getVisibleCells: () => [],
-    } as unknown as Row<IncomingGatePassReportRecord>;
+    } as unknown as AppRow<IncomingGatePassReportRecord>;
 
     expect(getExportCellForRow(row, column, 'current', cell as never, true)).toEqual({
       kind: 'empty',

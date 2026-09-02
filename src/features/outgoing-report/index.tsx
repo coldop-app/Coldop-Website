@@ -1,5 +1,4 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import type { Table as TanStackTable } from '@tanstack/react-table';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -13,6 +12,7 @@ import {
   shouldShowStockFilter,
 } from '@/features/incoming/utils/incoming-preferences';
 import type { OutgoingGatePassReportRecord } from '@/features/outgoing-report/api/types';
+import type { AppTable } from '@/lib/table/features';
 
 import {
   useOutgoingGatePassReport,
@@ -44,7 +44,7 @@ const OutgoingReportPage = () => {
   const [appliedParams, setAppliedParams] =
     useState<OutgoingGatePassReportParams>(DEFAULT_REPORT_PARAMS);
   const [isExporting, setIsExporting] = useState(false);
-  const reportTableRef = useRef<TanStackTable<OutgoingGatePassReportRecord> | null>(null);
+  const reportTableRef = useRef<AppTable<OutgoingGatePassReportRecord> | null>(null);
   const previewWindowRef = useRef<Window | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -79,7 +79,7 @@ const OutgoingReportPage = () => {
     [quantityMode, reportRows, showCustomMarka, showStockFilter, showLocation],
   );
 
-  const handleTableReady = useCallback((table: TanStackTable<OutgoingGatePassReportRecord>) => {
+  const handleTableReady = useCallback((table: AppTable<OutgoingGatePassReportRecord>) => {
     reportTableRef.current = table;
     setIsReportTableReady((ready) => ready || true);
   }, []);

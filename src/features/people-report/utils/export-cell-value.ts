@@ -1,5 +1,4 @@
 import { format, isValid, parse, parseISO } from 'date-fns';
-import type { Column, Row, Table } from '@tanstack/react-table';
 
 import { formatDaybookDate } from '@/features/daybook/utils/format';
 import type { FarmerReportTableRow } from '@/features/people-report/utils/build-farmer-report-sections';
@@ -7,6 +6,7 @@ import type {
   AdvancedFilterCondition,
   AdvancedReportGlobalFilter,
 } from '@/features/people-report/utils/report-filter-fns';
+import type { AppTable, AppRow, AppColumn } from '@/lib/table/features';
 
 const INTEGER_COLUMNS = new Set<string>(['gatePassNo', 'rowBags', 'totalBags']);
 
@@ -53,14 +53,16 @@ export type LedgerExportColumn = {
   header: string;
 };
 
-export function buildLedgerExportColumns(table: Table<FarmerReportTableRow>): LedgerExportColumn[] {
+export function buildLedgerExportColumns(
+  table: AppTable<FarmerReportTableRow>,
+): LedgerExportColumn[] {
   return table.getVisibleLeafColumns().map((column) => ({
     id: column.id,
     header: getColumnExportLabel(column),
   }));
 }
 
-export function getColumnExportLabel(column: Column<FarmerReportTableRow, unknown>): string {
+export function getColumnExportLabel(column: AppColumn<FarmerReportTableRow>): string {
   return column.columnDef.meta?.filterLabel ?? column.id;
 }
 
@@ -81,7 +83,7 @@ function formatReportDate(value: unknown): string | null {
   return format(parsed, 'do MMMM yyyy');
 }
 
-function formatDisplayValue(value: unknown, column: Column<FarmerReportTableRow, unknown>): string {
+function formatDisplayValue(value: unknown, column: AppColumn<FarmerReportTableRow>): string {
   const meta = column.columnDef.meta;
   if (meta?.filterValueFormatter) return meta.filterValueFormatter(value);
   if (value == null || value === '') return 'Blank';
@@ -109,8 +111,8 @@ export function formatExportCellValue(columnId: string, rawValue: unknown): Expo
 }
 
 export function getExportCellForRow(
-  row: Row<FarmerReportTableRow>,
-  column: Column<FarmerReportTableRow, unknown>,
+  row: AppRow<FarmerReportTableRow>,
+  column: AppColumn<FarmerReportTableRow>,
 ): ExportCellValue {
   const cell = row.getVisibleCells().find((item) => item.column.id === column.id);
 
@@ -145,15 +147,19 @@ export function getExportCellForRow(
   return formatExportCellValue(columnId, cell.getValue());
 }
 
-export function collectExportRows(table: Table<FarmerReportTableRow>): Row<FarmerReportTableRow>[] {
-  const grouping = table.getState().grouping;
+export function collectExportRows(
+  table: AppTable<FarmerReportTableRow>,
+): AppRow<FarmerReportTableRow>[] {
+  const grouping = table.store.state.grouping;
 
   if (grouping.length === 0) {
     return table.getSortedRowModel().rows;
   }
 
-  function flattenGroupedRows(rows: Row<FarmerReportTableRow>[]): Row<FarmerReportTableRow>[] {
-    const result: Row<FarmerReportTableRow>[] = [];
+  function flattenGroupedRows(
+    rows: AppRow<FarmerReportTableRow>[],
+  ): AppRow<FarmerReportTableRow>[] {
+    const result: AppRow<FarmerReportTableRow>[] = [];
 
     for (const row of rows) {
       result.push(row);
@@ -169,12 +175,12 @@ export function collectExportRows(table: Table<FarmerReportTableRow>): Row<Farme
   return flattenGroupedRows(table.getSortedRowModel().rows);
 }
 
-export function getFilteredLeafRowCount(table: Table<FarmerReportTableRow>): number {
+export function getFilteredLeafRowCount(table: AppTable<FarmerReportTableRow>): number {
   return table.getFilteredRowModel().flatRows.filter((row) => row.original.kind === 'gate-pass')
     .length;
 }
 
-export function getFilteredGatePassEntriesFromTable(table: Table<FarmerReportTableRow>) {
+export function getFilteredGatePassEntriesFromTable(table: AppTable<FarmerReportTableRow>) {
   return table
     .getFilteredRowModel()
     .flatRows.filter((row) => row.original.kind === 'gate-pass' && row.original.entry)
@@ -182,7 +188,7 @@ export function getFilteredGatePassEntriesFromTable(table: Table<FarmerReportTab
 }
 
 function formatConditionLabel(
-  table: Table<FarmerReportTableRow>,
+  table: AppTable<FarmerReportTableRow>,
   condition: AdvancedFilterCondition,
 ): string {
   const column = table.getColumn(String(condition.columnId));
@@ -199,10 +205,10 @@ function formatConditionLabel(
   return `${columnLabel} ${operatorLabel} "${value}"`;
 }
 
-function formatColumnFilterSummary(table: Table<FarmerReportTableRow>): string[] {
+function formatColumnFilterSummary(table: AppTable<FarmerReportTableRow>): string[] {
   const summaries: string[] = [];
 
-  for (const filter of table.getState().columnFilters) {
+  for (const filter of table.store.state.columnFilters) {
     if (!Array.isArray(filter.value) || filter.value.length === 0) continue;
 
     const column = table.getColumn(filter.id);
@@ -225,7 +231,7 @@ function formatColumnFilterSummary(table: Table<FarmerReportTableRow>): string[]
 }
 
 function formatAdvancedFilterSummary(
-  table: Table<FarmerReportTableRow>,
+  table: AppTable<FarmerReportTableRow>,
   globalFilter: AdvancedReportGlobalFilter,
 ): string[] {
   const activeConditions = globalFilter.conditions
@@ -241,8 +247,8 @@ function formatAdvancedFilterSummary(
   ];
 }
 
-function formatGroupingSummary(table: Table<FarmerReportTableRow>): string | null {
-  const grouping = table.getState().grouping;
+function formatGroupingSummary(table: AppTable<FarmerReportTableRow>): string | null {
+  const grouping = table.store.state.grouping;
   if (grouping.length === 0) return null;
 
   const labels = grouping
@@ -255,8 +261,8 @@ function formatGroupingSummary(table: Table<FarmerReportTableRow>): string | nul
   return `Grouped by: ${labels}`;
 }
 
-function formatSortingSummary(table: Table<FarmerReportTableRow>): string | null {
-  const sorting = table.getState().sorting;
+function formatSortingSummary(table: AppTable<FarmerReportTableRow>): string | null {
+  const sorting = table.store.state.sorting;
   if (sorting.length === 0) return null;
 
   const labels = sorting
@@ -270,8 +276,8 @@ function formatSortingSummary(table: Table<FarmerReportTableRow>): string | null
   return `Sorted by: ${labels}`;
 }
 
-export function buildFilterSummaryLines(table: Table<FarmerReportTableRow>): string[] {
-  const globalFilter = table.getState().globalFilter;
+export function buildFilterSummaryLines(table: AppTable<FarmerReportTableRow>): string[] {
+  const globalFilter = table.store.state.globalFilter;
 
   const lines = [
     ...formatColumnFilterSummary(table),
@@ -309,7 +315,7 @@ export function isSummableExportColumn(columnId: string): boolean {
 
 export function getFooterExportValue(
   columnId: string,
-  rows: readonly Row<FarmerReportTableRow>[],
+  rows: readonly AppRow<FarmerReportTableRow>[],
 ): ExportCellValue {
   if (columnId === 'rowBags') {
     const total = rows.reduce((sum, row) => sum + (row.original.rowBags ?? 0), 0);

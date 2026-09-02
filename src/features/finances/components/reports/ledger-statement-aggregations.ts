@@ -1,6 +1,7 @@
-import type { AggregationFn } from '@tanstack/react-table';
+import { constructAggregationFn } from '@tanstack/react-table';
 
 import type { LedgerStatementEntry } from '@/features/finances/domain/types';
+import type { AppTableFeatures } from '@/lib/table/features';
 
 const dateFormatter = new Intl.DateTimeFormat('en-IN', {
   day: '2-digit',
@@ -30,17 +31,30 @@ export function lastLedgerStatementRunningBalance(
   return entries.at(-1)?.runningBalance ?? 0;
 }
 
-export const ledgerStatementDebitAggregation: AggregationFn<LedgerStatementEntry> = (
-  _columnId,
-  leafRows,
-) => sumLedgerStatementDebits(leafRows.map((row) => row.original));
+/**
+ * These aggregations read `row.original`, so they must receive *leaf* rows.
+ * Columns using them set `maxAggregationDepth: Infinity` to preserve the v8
+ * leaf-row semantics (v9 defaults to direct child rows only).
+ */
+export const ledgerStatementDebitAggregation = constructAggregationFn<
+  AppTableFeatures,
+  LedgerStatementEntry
+>({
+  aggregate: ({ rows }) => sumLedgerStatementDebits(rows.map((row) => row.original)),
+});
 
-export const ledgerStatementCreditAggregation: AggregationFn<LedgerStatementEntry> = (
-  _columnId,
-  leafRows,
-) => sumLedgerStatementCredits(leafRows.map((row) => row.original));
+export const ledgerStatementCreditAggregation = constructAggregationFn<
+  AppTableFeatures,
+  LedgerStatementEntry
+>({
+  aggregate: ({ rows }) => sumLedgerStatementCredits(rows.map((row) => row.original)),
+});
 
-export const ledgerStatementBalanceAggregation: AggregationFn<LedgerStatementEntry> = (
-  _columnId,
-  leafRows,
-) => lastLedgerStatementRunningBalance(leafRows.map((row) => row.original));
+export const ledgerStatementBalanceAggregation = constructAggregationFn<
+  AppTableFeatures,
+  LedgerStatementEntry
+>({
+  aggregate: ({ rows }) => lastLedgerStatementRunningBalance(rows.map((row) => row.original)),
+});
+
+export const ledgerStatementEmptyAggregation = constructAggregationFn({ aggregate: () => '' });

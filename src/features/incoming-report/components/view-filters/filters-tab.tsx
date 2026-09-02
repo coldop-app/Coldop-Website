@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import type { Column, ColumnFiltersState, RowData, Table } from '@tanstack/react-table';
+import type { ColumnFiltersState, RowData } from '@tanstack/react-table';
 import { ChevronDown, Search, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import {
   getReportFilterValueKey,
   type SelectedValuesFilterValue,
 } from '@/features/incoming-report/utils/report-filter-fns';
+import type { AppTable, AppColumn } from '@/lib/table/features';
 
 type FilterOption = {
   key: string;
@@ -19,13 +20,13 @@ type FilterOption = {
 };
 
 interface FiltersTabProps<TData extends RowData> {
-  table: Table<TData>;
+  table: AppTable<TData>;
   draftColumnFilters: ColumnFiltersState;
   onDraftColumnFiltersChange: (filters: ColumnFiltersState) => void;
 }
 
 interface ColumnFilterSectionProps<TData extends RowData> {
-  column: Column<TData, unknown>;
+  column: AppColumn<TData>;
   isOpen: boolean;
   draftColumnFilters: ColumnFiltersState;
   searchQuery: string;
@@ -34,7 +35,7 @@ interface ColumnFilterSectionProps<TData extends RowData> {
   onDraftColumnFiltersChange: (filters: ColumnFiltersState) => void;
 }
 
-function getColumnLabel<TData extends RowData>(column: Column<TData, unknown>): string {
+function getColumnLabel<TData extends RowData>(column: AppColumn<TData>): string {
   return column.columnDef.meta?.filterLabel ?? column.id;
 }
 

@@ -1,14 +1,5 @@
 import { useRef, useState, type ReactNode } from 'react';
-import {
-  flexRender,
-  getCoreRowModel,
-  getSortedRowModel,
-  useReactTable,
-  type Column,
-  type ColumnDef,
-  type SortingFn,
-  type SortingState,
-} from '@tanstack/react-table';
+import { flexRender, useTable, type RowData, type SortingState } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +13,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { formatDaybookDate, formatQuantity, locationKey } from '@/features/daybook/utils/format';
+import {
+  type AppColumn,
+  type AppColumnDef,
+  type AppColumnMeta,
+  type AppSortFn,
+  appTableFeatures,
+} from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
 import type { FilteredChamberOrder } from '../utils/filter-chamber-orders';
@@ -30,13 +28,6 @@ type ChamberOrdersTableProps = {
   orders: FilteredChamberOrder[];
   chamberLabel: string;
   floorLabel: string;
-};
-
-type ColumnMeta = {
-  align?: 'left' | 'right';
-  emphasize?: boolean;
-  mono?: boolean;
-  numeric?: boolean;
 };
 
 const TABLE_GRID_CLASS = cn(
@@ -74,11 +65,11 @@ function SortIcon({ sorted }: { sorted: false | 'asc' | 'desc' }) {
   return <ArrowUpDown className="size-3.5 shrink-0" aria-hidden />;
 }
 
-function getColumnAlign(meta: ColumnMeta | undefined): 'left' | 'right' {
+function getColumnAlign(meta: AppColumnMeta | undefined): 'left' | 'right' {
   return meta?.align ?? 'left';
 }
 
-function getHeadClassName(meta: ColumnMeta | undefined, isHeaderScrolled: boolean) {
+function getHeadClassName(meta: AppColumnMeta | undefined, isHeaderScrolled: boolean) {
   const align = getColumnAlign(meta);
 
   return cn(
@@ -92,7 +83,7 @@ function getHeadClassName(meta: ColumnMeta | undefined, isHeaderScrolled: boolea
   );
 }
 
-function getCellClassName(meta: ColumnMeta | undefined) {
+function getCellClassName(meta: AppColumnMeta | undefined) {
   const align = getColumnAlign(meta);
 
   return cn(
@@ -105,7 +96,7 @@ function getCellClassName(meta: ColumnMeta | undefined) {
   );
 }
 
-function getFooterClassName(meta: ColumnMeta | undefined) {
+function getFooterClassName(meta: AppColumnMeta | undefined) {
   const align = getColumnAlign(meta);
 
   return cn(
@@ -116,13 +107,13 @@ function getFooterClassName(meta: ColumnMeta | undefined) {
   );
 }
 
-function DataTableColumnHeader<TData, TValue>({
+function DataTableColumnHeader<TData extends RowData, TValue>({
   column,
   sorted,
   align,
   children,
 }: {
-  column: Column<TData, TValue>;
+  column: AppColumn<TData, TValue>;
   sorted: false | 'asc' | 'desc';
   align: 'left' | 'right';
   children: ReactNode;
@@ -161,7 +152,7 @@ function DataTableColumnHeader<TData, TValue>({
   );
 }
 
-const numericSortingFn: SortingFn<FilteredChamberOrder> = (rowA, rowB, columnId) => {
+const numericSortingFn: AppSortFn<FilteredChamberOrder> = (rowA, rowB, columnId) => {
   const a = Number(rowA.getValue(columnId));
   const b = Number(rowB.getValue(columnId));
   if (Number.isNaN(a) && Number.isNaN(b)) return 0;
@@ -170,7 +161,7 @@ const numericSortingFn: SortingFn<FilteredChamberOrder> = (rowA, rowB, columnId)
   return a - b;
 };
 
-const dateSortingFn: SortingFn<FilteredChamberOrder> = (rowA, rowB, columnId) => {
+const dateSortingFn: AppSortFn<FilteredChamberOrder> = (rowA, rowB, columnId) => {
   const a = new Date(String(rowA.getValue(columnId))).getTime();
   const b = new Date(String(rowB.getValue(columnId))).getTime();
   if (Number.isNaN(a) && Number.isNaN(b)) return 0;
@@ -179,13 +170,13 @@ const dateSortingFn: SortingFn<FilteredChamberOrder> = (rowA, rowB, columnId) =>
   return a - b;
 };
 
-const sortText = { sortingFn: 'text' as const, sortUndefined: 'last' as const };
+const sortText = { sortFn: 'text' as const, sortUndefined: 'last' as const };
 const sortNumeric = {
-  sortingFn: numericSortingFn,
+  sortFn: numericSortingFn,
   sortUndefined: 'last' as const,
 };
 const sortDate = {
-  sortingFn: dateSortingFn,
+  sortFn: dateSortingFn,
   sortUndefined: 'last' as const,
 };
 
@@ -197,12 +188,12 @@ function bagRowLabel(order: FilteredChamberOrder) {
   return order.bagSizes.map((bag) => bag.location.row || '—').join(', ');
 }
 
-const columns: ColumnDef<FilteredChamberOrder, unknown>[] = [
+const columns: AppColumnDef<FilteredChamberOrder>[] = [
   {
     id: 'gatePassNo',
     accessorFn: (row) => row.order.gatePassNo,
     header: 'GP #',
-    meta: { mono: true, numeric: true } satisfies ColumnMeta,
+    meta: { mono: true, numeric: true } satisfies AppColumnMeta,
     ...sortNumeric,
     cell: ({ row }) => row.original.order.gatePassNo,
   },
@@ -210,7 +201,7 @@ const columns: ColumnDef<FilteredChamberOrder, unknown>[] = [
     id: 'date',
     accessorFn: (row) => row.order.date,
     header: 'Date',
-    meta: { numeric: true } satisfies ColumnMeta,
+    meta: { numeric: true } satisfies AppColumnMeta,
     ...sortDate,
     cell: ({ row }) => formatDaybookDate(row.original.order.date),
   },
@@ -218,7 +209,7 @@ const columns: ColumnDef<FilteredChamberOrder, unknown>[] = [
     id: 'farmerName',
     accessorFn: (row) => row.order.farmerName,
     header: 'Farmer',
-    meta: { emphasize: true } satisfies ColumnMeta,
+    meta: { emphasize: true } satisfies AppColumnMeta,
     ...sortText,
     cell: ({ row }) => {
       const name = row.original.order.farmerName;
@@ -258,7 +249,7 @@ const columns: ColumnDef<FilteredChamberOrder, unknown>[] = [
     id: 'row',
     accessorFn: bagRowLabel,
     header: 'Row',
-    meta: { numeric: true } satisfies ColumnMeta,
+    meta: { numeric: true } satisfies AppColumnMeta,
     ...sortText,
     cell: ({ row }) => (
       <ul className="space-y-1">
@@ -277,7 +268,7 @@ const columns: ColumnDef<FilteredChamberOrder, unknown>[] = [
     id: 'bags',
     accessorFn: (row) => row.totalBags,
     header: 'Bags',
-    meta: { align: 'right', numeric: true } satisfies ColumnMeta,
+    meta: { align: 'right', numeric: true } satisfies AppColumnMeta,
     ...sortNumeric,
     cell: ({ row }) => formatQuantity(row.original.totalBags),
   },
@@ -289,11 +280,10 @@ export function ChamberOrdersTable({ orders, chamberLabel, floorLabel }: Chamber
   const [isFooterElevated, setIsFooterElevated] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data: orders,
     columns,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
     onSortingChange: setSorting,
     sortDescFirst: false,
     enableSortingRemoval: true,
@@ -358,7 +348,7 @@ export function ChamberOrdersTable({ orders, chamberLabel, floorLabel }: Chamber
                   {table.getHeaderGroups().map((headerGroup) => (
                     <TableRow key={headerGroup.id} className="border-0">
                       {headerGroup.headers.map((header) => {
-                        const meta = header.column.columnDef.meta as ColumnMeta | undefined;
+                        const meta = header.column.columnDef.meta;
                         const align = getColumnAlign(meta);
                         const sorted = header.column.getIsSorted();
                         const columnWidth = COLUMN_WIDTHS[header.column.id] ?? '8rem';
@@ -396,7 +386,7 @@ export function ChamberOrdersTable({ orders, chamberLabel, floorLabel }: Chamber
                   {rows.map((row) => (
                     <TableRow key={row.id} className="even:bg-muted/20 hover:bg-muted/40 border-0">
                       {row.getVisibleCells().map((cell) => {
-                        const meta = cell.column.columnDef.meta as ColumnMeta | undefined;
+                        const meta = cell.column.columnDef.meta;
                         const columnWidth = COLUMN_WIDTHS[cell.column.id] ?? '8rem';
 
                         return (
@@ -421,7 +411,7 @@ export function ChamberOrdersTable({ orders, chamberLabel, floorLabel }: Chamber
                 >
                   <TableRow className="border-0 hover:bg-transparent">
                     {leafColumns.map((column, columnIndex) => {
-                      const meta = column.columnDef.meta as ColumnMeta | undefined;
+                      const meta = column.columnDef.meta;
                       const columnWidth = COLUMN_WIDTHS[column.id] ?? '8rem';
 
                       if (columnIndex === 0) {

@@ -1,6 +1,5 @@
-import type { FilterFn } from '@tanstack/react-table';
-
 import type { FarmerReportTableRow } from '@/features/people-report/utils/build-farmer-report-sections';
+import type { AppFilterFn } from '@/lib/table/features';
 
 export type SelectedValuesFilterValue = string[];
 export type AdvancedFilterLogic = 'AND' | 'OR';
@@ -72,7 +71,7 @@ function parseReportNumber(value: unknown): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
-export const selectedValuesFilterFn: FilterFn<FarmerReportTableRow> = (
+export const selectedValuesFilterFn: AppFilterFn<FarmerReportTableRow> = (
   row,
   columnId,
   filterValue,
@@ -104,7 +103,7 @@ function normalizeText(value: unknown): string {
 }
 
 function evaluateCondition(
-  row: Parameters<FilterFn<FarmerReportTableRow>>[0],
+  row: Parameters<AppFilterFn<FarmerReportTableRow>>[0],
   condition: AdvancedFilterCondition,
 ) {
   const rawValue = row.getValue(String(condition.columnId));
@@ -169,7 +168,7 @@ function evaluateCondition(
   }
 }
 
-export const advancedReportGlobalFilterFn: FilterFn<FarmerReportTableRow> = (
+export const advancedReportGlobalFilterFn: AppFilterFn<FarmerReportTableRow> = (
   row,
   _columnId,
   filterValue,

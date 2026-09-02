@@ -1,14 +1,10 @@
 import * as React from 'react';
 import {
-  type ColumnDef,
   type ColumnFiltersState,
   flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
   type PaginationState,
   type SortingState,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table';
 
 import {
@@ -19,9 +15,9 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { type AppColumnDef, appTableFeatures } from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
-import { ledgerSortingFns } from './columns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import { DataTablePagination } from './data-table-pagination';
 import {
@@ -33,7 +29,7 @@ import {
 import type { Ledger } from './types';
 
 interface DataTableProps {
-  columns: ColumnDef<Ledger>[];
+  columns: AppColumnDef<Ledger>[];
   data: Ledger[];
 }
 
@@ -51,7 +47,8 @@ export function DataTable({ columns, data }: DataTableProps) {
     setPagination((current) => ({ ...current, pageIndex: 0 }));
   }, [data]);
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data,
     columns,
     state: {
@@ -62,10 +59,6 @@ export function DataTable({ columns, data }: DataTableProps) {
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    sortingFns: ledgerSortingFns,
     enableSortingRemoval: true,
     sortDescFirst: false,
     autoResetPageIndex: false,

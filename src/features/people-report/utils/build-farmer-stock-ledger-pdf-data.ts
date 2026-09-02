@@ -1,4 +1,4 @@
-import type { GroupingState, SortingState, Table } from '@tanstack/react-table';
+import type { GroupingState, SortingState } from '@tanstack/react-table';
 
 import type { CommodityPreference } from '@/features/auth/types';
 import type { DaybookEntry, OutgoingDaybookEntry } from '@/features/daybook/types';
@@ -40,6 +40,7 @@ import {
   hasMultipleOutgoingVarieties,
   orderBagSizes,
 } from '@/features/people-report/utils/gate-pass-table-helpers';
+import type { AppTable } from '@/lib/table/features';
 
 export type PdfLedgerSizeValue =
   { type: 'stacked'; main: string; sub: string } | { type: 'plain'; value: string };
@@ -160,8 +161,8 @@ export type BuildFarmerStockLedgerPdfDataInput = {
   outgoingSorting?: SortingState;
   visibleColumnIds?: string[];
   exportColumns?: LedgerExportColumn[];
-  incomingTable?: Table<FarmerReportTableRow> | null;
-  outgoingTable?: Table<FarmerReportTableRow> | null;
+  incomingTable?: AppTable<FarmerReportTableRow> | null;
+  outgoingTable?: AppTable<FarmerReportTableRow> | null;
   generatedAt?: Date;
 };
 

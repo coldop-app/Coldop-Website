@@ -10,20 +10,14 @@ import {
   type SetStateAction,
 } from 'react';
 import {
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
   type GroupingState,
   type SortingState,
-  type Table as TanStackTable,
-  useReactTable,
-  type ColumnDef,
+  useTable,
   type ColumnFiltersState,
   type ColumnOrderState,
   type ExpandedState,
   type OnChangeFn,
-  type VisibilityState,
+  type ColumnVisibilityState,
 } from '@tanstack/react-table';
 import { FileText, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -46,7 +40,6 @@ import {
 } from '@/features/incoming/utils/incoming-preferences';
 import { useFarmerGatePasses } from '@/features/people/api/use-farmer-gate-passes';
 import {
-  farmerReportSortingFns,
   getFarmerReportBagSizeSignature,
   getFarmerReportColumnsForSizes,
 } from '@/features/people-report/components/columns';
@@ -87,6 +80,8 @@ import {
   type AdvancedReportGlobalFilter,
   selectedValuesFilterFn,
 } from '@/features/people-report/utils/report-filter-fns';
+import { type AppColumnDef, type AppTable, appTableFeatures } from '@/lib/table/features';
+
 type FarmerReportGatePassesSectionProps = {
   linkId: string;
   search: PersonDetailSearch;
@@ -96,7 +91,7 @@ type ReportTableSectionProps = {
   title: string;
   subtitle: string;
   rowCount: number;
-  columns: ColumnDef<FarmerReportTableRow>[];
+  columns: AppColumnDef<FarmerReportTableRow>[];
   data: FarmerReportTableRow[];
   viewState: FarmerReportViewState;
   activeGrouping: GroupingState;
@@ -104,22 +99,18 @@ type ReportTableSectionProps = {
   sorting: SortingState;
   onSortingChange: Dispatch<SetStateAction<SortingState>>;
   onColumnFiltersChange: OnChangeFn<ColumnFiltersState>;
-  onColumnVisibilityChange: OnChangeFn<VisibilityState>;
+  onColumnVisibilityChange: OnChangeFn<ColumnVisibilityState>;
   onColumnOrderChange: OnChangeFn<ColumnOrderState>;
   onGroupingChange: OnChangeFn<GroupingState>;
   onGlobalFilterChange: OnChangeFn<AdvancedReportGlobalFilter>;
   onExpandedChange: OnChangeFn<ExpandedState>;
-  onTableReady?: (table: TanStackTable<FarmerReportTableRow>) => void;
+  onTableReady?: (table: AppTable<FarmerReportTableRow>) => void;
   sectionMode?: 'incoming' | 'outgoing';
 };
 
-const defaultTableColumn: Partial<ColumnDef<FarmerReportTableRow, unknown>> = {
+const defaultTableColumn: Partial<AppColumnDef<FarmerReportTableRow>> = {
   filterFn: selectedValuesFilterFn,
 };
-
-const tableFilterFns = {
-  selectedValues: selectedValuesFilterFn,
-} as const;
 
 const ReportTableSection = memo(function ReportTableSection({
   title,
@@ -185,8 +176,8 @@ const ReportTableSection = memo(function ReportTableSection({
 
 function getExportFilteredEntries(
   searchFilteredEntries: ReturnType<typeof filterFarmerReportSearchIndex>,
-  incomingTable: TanStackTable<FarmerReportTableRow> | null,
-  outgoingTable: TanStackTable<FarmerReportTableRow> | null,
+  incomingTable: AppTable<FarmerReportTableRow> | null,
+  outgoingTable: AppTable<FarmerReportTableRow> | null,
 ) {
   const filteredIncoming = incomingTable
     ? getFilteredGatePassEntriesFromTable(incomingTable)
@@ -242,8 +233,8 @@ export function FarmerReportGatePassesSection({
   const [incomingFilteredCount, setIncomingFilteredCount] = useState(0);
   const [outgoingFilteredCount, setOutgoingFilteredCount] = useState(0);
   const previewWindowRef = useRef<Window | null>(null);
-  const incomingTableRef = useRef<TanStackTable<FarmerReportTableRow> | null>(null);
-  const outgoingTableRef = useRef<TanStackTable<FarmerReportTableRow> | null>(null);
+  const incomingTableRef = useRef<AppTable<FarmerReportTableRow> | null>(null);
+  const outgoingTableRef = useRef<AppTable<FarmerReportTableRow> | null>(null);
   const columnsInitializedRef = useRef(false);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -260,7 +251,7 @@ export function FarmerReportGatePassesSection({
     }));
   }, []);
 
-  const onColumnVisibilityChange = useCallback<OnChangeFn<VisibilityState>>((updater) => {
+  const onColumnVisibilityChange = useCallback<OnChangeFn<ColumnVisibilityState>>((updater) => {
     setViewState((current) => ({
       ...current,
       columnVisibility: typeof updater === 'function' ? updater(current.columnVisibility) : updater,
@@ -380,11 +371,11 @@ export function FarmerReportGatePassesSection({
     [sections.incoming, sections.outgoing],
   );
 
-  const controlTable = useReactTable({
+  const controlTable = useTable({
+    features: appTableFeatures,
     data: combinedGatePassRows,
     columns,
     defaultColumn: defaultTableColumn,
-    filterFns: tableFilterFns,
     globalFilterFn: advancedReportGlobalFilterFn,
     state: {
       columnFilters: viewState.columnFilters,
@@ -398,11 +389,6 @@ export function FarmerReportGatePassesSection({
     onColumnOrderChange,
     onGroupingChange,
     onGlobalFilterChange,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    sortingFns: farmerReportSortingFns,
   });
 
   const hasAnyRows = sections.incoming.length > 0 || sections.outgoing.length > 0;
@@ -430,12 +416,12 @@ export function FarmerReportGatePassesSection({
     updateFilteredCounts();
   }, [updateFilteredCounts, viewState, sections, columns]);
 
-  const handleIncomingTableReady = useCallback((table: TanStackTable<FarmerReportTableRow>) => {
+  const handleIncomingTableReady = useCallback((table: AppTable<FarmerReportTableRow>) => {
     incomingTableRef.current = table;
     setIncomingFilteredCount(getFilteredLeafRowCount(table));
   }, []);
 
-  const handleOutgoingTableReady = useCallback((table: TanStackTable<FarmerReportTableRow>) => {
+  const handleOutgoingTableReady = useCallback((table: AppTable<FarmerReportTableRow>) => {
     outgoingTableRef.current = table;
     setOutgoingFilteredCount(getFilteredLeafRowCount(table));
   }, []);

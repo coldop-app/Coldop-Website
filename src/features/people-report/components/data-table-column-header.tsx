@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react';
-import type { Column } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 
 import { cn } from '@/lib/utils';
+import type { AppColumn } from '@/lib/table/features';
 
 function SortIcon({ sorted }: { sorted: false | 'asc' | 'desc' }) {
   if (sorted === 'desc') {
@@ -16,14 +17,14 @@ function SortIcon({ sorted }: { sorted: false | 'asc' | 'desc' }) {
   return <ArrowUpDown className="size-3.5 shrink-0" aria-hidden />;
 }
 
-interface DataTableColumnHeaderProps<TData, TValue> {
-  column: Column<TData, TValue>;
+interface DataTableColumnHeaderProps<TData extends RowData, TValue> {
+  column: AppColumn<TData, TValue>;
   sorted: false | 'asc' | 'desc';
   align: 'left' | 'right';
   children: ReactNode;
 }
 
-export function DataTableColumnHeader<TData, TValue>({
+export function DataTableColumnHeader<TData extends RowData, TValue>({
   column,
   sorted,
   align,

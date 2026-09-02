@@ -1,5 +1,3 @@
-import type { Table } from '@tanstack/react-table';
-
 import type { TransferStockReportRecord } from '@/features/transfer-stock-report/api/types';
 import {
   buildFilterSummaryLines,
@@ -14,9 +12,10 @@ import {
 } from '@/features/transfer-stock-report/utils/export-cell-value';
 import { buildTableReportPdfData } from '@/lib/gate-pass-report-pdf/build-table-report-pdf-data';
 import type { GatePassReportPdfData } from '@/lib/gate-pass-report-pdf/types';
+import type { AppTable } from '@/lib/table/features';
 
 export type BuildTransferStockReportPdfDataInput = {
-  table: Table<TransferStockReportRecord>;
+  table: AppTable<TransferStockReportRecord>;
   reportTitle?: string;
   dateFrom?: string;
   dateTo?: string;

@@ -1,15 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  type Cell,
-  type ColumnDef,
   type ExpandedState,
   type GroupingState,
   flexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getGroupedRowModel,
-  type Row,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table';
 import { ChevronRight } from 'lucide-react';
 
@@ -24,6 +18,12 @@ import {
 import { isDebitNatureType } from '@/features/finances/domain/ledger-classification';
 import type { LedgerStatementEntry, LedgerStatementReport } from '@/features/finances/domain/types';
 import { formatCurrency } from '@/features/finances/shared/format-currency';
+import {
+  type AppCell,
+  type AppColumnDef,
+  type AppRow,
+  appTableFeatures,
+} from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
 import {
@@ -31,6 +31,7 @@ import {
   ledgerStatementBalanceAggregation,
   ledgerStatementCreditAggregation,
   ledgerStatementDebitAggregation,
+  ledgerStatementEmptyAggregation,
 } from './ledger-statement-aggregations';
 
 type LedgerStatementTableProps = {
@@ -53,7 +54,7 @@ function entryNarration(entry: LedgerStatementEntry): string {
 
 function createLedgerStatementColumns(
   isDebitNature: boolean,
-): ColumnDef<LedgerStatementEntry>[] {
+): AppColumnDef<LedgerStatementEntry>[] {
   return [
     {
       id: 'date',
@@ -65,7 +66,7 @@ function createLedgerStatementColumns(
       id: 'voucherNo',
       accessorKey: 'voucherNo',
       header: 'Voucher No.',
-      aggregationFn: () => '',
+      aggregationFn: ledgerStatementEmptyAggregation,
       aggregatedCell: () => null,
       cell: ({ getValue }) => getValue<string>(),
     },
@@ -73,7 +74,7 @@ function createLedgerStatementColumns(
       id: 'entryType',
       accessorKey: 'entryType',
       header: 'B',
-      aggregationFn: () => '',
+      aggregationFn: ledgerStatementEmptyAggregation,
       aggregatedCell: () => null,
       cell: ({ getValue }) => getValue<string>(),
     },
@@ -81,7 +82,7 @@ function createLedgerStatementColumns(
       id: 'narration',
       accessorFn: (entry) => entryNarration(entry),
       header: 'Narration',
-      aggregationFn: () => '',
+      aggregationFn: ledgerStatementEmptyAggregation,
       aggregatedCell: () => null,
       cell: ({ getValue }) => getValue<string>(),
     },
@@ -90,6 +91,7 @@ function createLedgerStatementColumns(
       accessorFn: (entry) => (entry.isDebit ? entry.amount : 0),
       header: 'Debit',
       aggregationFn: ledgerStatementDebitAggregation,
+      maxAggregationDepth: Infinity,
       aggregatedCell: ({ getValue }) => formatAmount(Number(getValue()) || 0),
       cell: ({ row }) => (row.original.isDebit ? formatAmount(row.original.amount) : ''),
     },
@@ -98,6 +100,7 @@ function createLedgerStatementColumns(
       accessorFn: (entry) => (entry.isDebit ? 0 : entry.amount),
       header: 'Credit',
       aggregationFn: ledgerStatementCreditAggregation,
+      maxAggregationDepth: Infinity,
       aggregatedCell: ({ getValue }) => formatAmount(Number(getValue()) || 0),
       cell: ({ row }) => (row.original.isDebit ? '' : formatAmount(row.original.amount)),
     },
@@ -106,6 +109,7 @@ function createLedgerStatementColumns(
       accessorKey: 'runningBalance',
       header: 'Balance',
       aggregationFn: ledgerStatementBalanceAggregation,
+      maxAggregationDepth: Infinity,
       aggregatedCell: ({ getValue }) =>
         formatRunningBalance(Number(getValue()) || 0, isDebitNature),
       cell: ({ row }) => formatRunningBalance(row.original.runningBalance, isDebitNature),
@@ -113,7 +117,10 @@ function createLedgerStatementColumns(
   ];
 }
 
-function renderGroupedDateCell(row: Row<LedgerStatementEntry>, cell: Cell<LedgerStatementEntry, unknown>) {
+function renderGroupedDateCell(
+  row: AppRow<LedgerStatementEntry>,
+  cell: AppCell<LedgerStatementEntry>,
+) {
   const canExpand = row.getCanExpand();
 
   return (
@@ -143,7 +150,7 @@ function renderGroupedDateCell(row: Row<LedgerStatementEntry>, cell: Cell<Ledger
   );
 }
 
-function renderDataCell(row: Row<LedgerStatementEntry>, cell: Cell<LedgerStatementEntry, unknown>) {
+function renderDataCell(row: AppRow<LedgerStatementEntry>, cell: AppCell<LedgerStatementEntry>) {
   if (cell.getIsGrouped()) {
     return renderGroupedDateCell(row, cell);
   }
@@ -189,16 +196,14 @@ export function LedgerStatementTable({
     setExpanded({});
   }, [groupByDate]);
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data: entries,
     columns,
     state: { grouping, expanded },
     onExpandedChange: setExpanded,
     onGroupingChange: () => undefined,
     groupedColumnMode: false,
-    getCoreRowModel: getCoreRowModel(),
-    getGroupedRowModel: getGroupedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
     getRowId: (entry) => entry.id,
     getRowCanExpand: (row) => row.getIsGrouped(),
   });
@@ -230,9 +235,7 @@ export function LedgerStatementTable({
         <TableBody>
           {hasOpeningBalance ? (
             <TableRow className="border-border hover:bg-muted/50 border-b">
-              <TableCell className="px-3 py-2.5">
-                {formatLedgerStatementDate(new Date())}
-              </TableCell>
+              <TableCell className="px-3 py-2.5">{formatLedgerStatementDate(new Date())}</TableCell>
               <TableCell className="px-3 py-2.5" />
               <TableCell className="px-3 py-2.5 text-center">OB</TableCell>
               <TableCell className="px-3 py-2.5">Opening Balance</TableCell>
@@ -258,7 +261,7 @@ export function LedgerStatementTable({
               className={cn(
                 'border-border border-b',
                 row.getIsGrouped()
-                  ? 'bg-muted/50 font-medium hover:bg-muted/50'
+                  ? 'bg-muted/50 hover:bg-muted/50 font-medium'
                   : 'hover:bg-muted/50',
               )}
             >

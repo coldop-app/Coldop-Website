@@ -1,3 +1,4 @@
+import type { AppColumnMeta } from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
 export const TABLE_GRID_CLASS = cn(
@@ -9,18 +10,11 @@ export const TABLE_GRID_CLASS = cn(
   '[&_th:last-child]:border-r-0 [&_td:last-child]:border-r-0',
 );
 
-type ColumnMeta = {
-  align?: 'left' | 'right';
-  numeric?: boolean;
-  mono?: boolean;
-  wrap?: boolean;
-};
-
-export function getColumnAlign(meta: ColumnMeta | undefined): 'left' | 'right' {
+export function getColumnAlign(meta: AppColumnMeta | undefined): 'left' | 'right' {
   return meta?.align ?? 'left';
 }
 
-export function getHeadClassName(meta: ColumnMeta | undefined, isHeaderScrolled: boolean) {
+export function getHeadClassName(meta: AppColumnMeta | undefined, isHeaderScrolled: boolean) {
   const align = getColumnAlign(meta);
 
   return cn(
@@ -35,7 +29,7 @@ export function getHeadClassName(meta: ColumnMeta | undefined, isHeaderScrolled:
   );
 }
 
-export function getCellClassName(meta: ColumnMeta | undefined) {
+export function getCellClassName(meta: AppColumnMeta | undefined) {
   const align = getColumnAlign(meta);
 
   return cn(

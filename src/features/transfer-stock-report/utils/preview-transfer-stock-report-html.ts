@@ -1,5 +1,4 @@
 import { format } from 'date-fns';
-import type { Table } from '@tanstack/react-table';
 
 import type { TransferStockReportRecord } from '@/features/transfer-stock-report/api/types';
 import {
@@ -14,6 +13,7 @@ import {
   isSummableExportColumn,
 } from '@/features/transfer-stock-report/utils/export-cell-value';
 import { COLDOP_BRANDING, EXPORT_THEME_CSS } from '@/lib/export-report-theme';
+import type { AppTable } from '@/lib/table/features';
 
 export const TRANSFER_STOCK_REPORT_DOWNLOAD_EXCEL_MESSAGE =
   'kf-transfer-stock-report-download-excel' as const;
@@ -22,7 +22,7 @@ export const TRANSFER_STOCK_REPORT_DOWNLOAD_EXCEL_DONE_MESSAGE =
   'kf-transfer-stock-report-download-excel-done' as const;
 
 export type PreviewTransferStockReportOptions = {
-  table: Table<TransferStockReportRecord>;
+  table: AppTable<TransferStockReportRecord>;
   coldStorageName: string;
   reportTitle?: string;
   dateFrom?: string;

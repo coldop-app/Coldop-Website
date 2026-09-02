@@ -1,26 +1,14 @@
 import * as React from 'react';
 import {
-  type Cell,
-  type Column,
-  type ColumnDef,
   type ColumnFiltersState,
   type ColumnOrderState,
+  type ColumnVisibilityState,
   type ExpandedState,
   flexRender,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getGroupedRowModel,
-  getSortedRowModel,
   type GroupingState,
   type OnChangeFn,
-  type Row,
   type SortingState,
-  type Table as TanStackTable,
-  type VisibilityState,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table';
 import { ChevronRight } from 'lucide-react';
 
@@ -47,9 +35,16 @@ import {
   type AdvancedReportGlobalFilter,
   selectedValuesFilterFn,
 } from '@/features/people-report/utils/report-filter-fns';
+import {
+  type AppCell,
+  type AppColumn,
+  type AppColumnDef,
+  type AppRow,
+  type AppTable,
+  appTableFeatures,
+} from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
-import { farmerReportSortingFns } from './columns';
 import { DataTableColumnHeader } from './data-table-column-header';
 import { ReportTotalsFooter } from './report-totals-footer';
 import {
@@ -70,7 +65,7 @@ export const RunningTotalsContext = React.createContext<Map<string, number>>(new
 
 export type FarmerReportViewState = {
   columnFilters: ColumnFiltersState;
-  columnVisibility: VisibilityState;
+  columnVisibility: ColumnVisibilityState;
   columnOrder: ColumnOrderState;
   grouping: GroupingState;
   globalFilter: AdvancedReportGlobalFilter;
@@ -90,36 +85,29 @@ export function createDefaultFarmerReportViewState(
   };
 }
 
-const defaultTableColumn: Partial<ColumnDef<FarmerReportTableRow, unknown>> = {
+const defaultTableColumn: Partial<AppColumnDef<FarmerReportTableRow>> = {
   filterFn: selectedValuesFilterFn,
 };
 
-const tableFilterFns = {
-  selectedValues: selectedValuesFilterFn,
-} as const;
-
 interface DataTableProps {
-  columns: ColumnDef<FarmerReportTableRow>[];
+  columns: AppColumnDef<FarmerReportTableRow>[];
   data: FarmerReportTableRow[];
   sorting: SortingState;
   onSortingChange: OnChangeFn<SortingState>;
   viewState: FarmerReportViewState;
   expanded: ExpandedState;
   onColumnFiltersChange: OnChangeFn<ColumnFiltersState>;
-  onColumnVisibilityChange: OnChangeFn<VisibilityState>;
+  onColumnVisibilityChange: OnChangeFn<ColumnVisibilityState>;
   onColumnOrderChange: OnChangeFn<ColumnOrderState>;
   onGroupingChange: OnChangeFn<GroupingState>;
   onGlobalFilterChange: OnChangeFn<AdvancedReportGlobalFilter>;
   onExpandedChange: OnChangeFn<ExpandedState>;
   sectionMode?: FarmerReportSectionMode;
   flush?: boolean;
-  onTableReady?: (table: TanStackTable<FarmerReportTableRow>) => void;
+  onTableReady?: (table: AppTable<FarmerReportTableRow>) => void;
 }
 
-function renderGroupedCell(
-  row: Row<FarmerReportTableRow>,
-  cell: Cell<FarmerReportTableRow, unknown>,
-) {
+function renderGroupedCell(row: AppRow<FarmerReportTableRow>, cell: AppCell<FarmerReportTableRow>) {
   const canExpand = row.getCanExpand();
 
   return (
@@ -149,7 +137,7 @@ function renderGroupedCell(
   );
 }
 
-function renderDataCell(row: Row<FarmerReportTableRow>, cell: Cell<FarmerReportTableRow, unknown>) {
+function renderDataCell(row: AppRow<FarmerReportTableRow>, cell: AppCell<FarmerReportTableRow>) {
   if (cell.getIsGrouped()) {
     return renderGroupedCell(row, cell);
   }
@@ -168,7 +156,7 @@ function renderDataCell(row: Row<FarmerReportTableRow>, cell: Cell<FarmerReportT
   return flexRender(cell.column.columnDef.cell, cell.getContext());
 }
 
-function getTableRowClassName(row: Row<FarmerReportTableRow>) {
+function getTableRowClassName(row: AppRow<FarmerReportTableRow>) {
   if (row.original.kind === 'opening-balance') {
     return OPENING_BALANCE_ROW_CLASS;
   }
@@ -181,7 +169,7 @@ function getTableRowClassName(row: Row<FarmerReportTableRow>) {
   );
 }
 
-function renderTableRow(row: Row<FarmerReportTableRow>, isGroupingActive: boolean) {
+function renderTableRow(row: AppRow<FarmerReportTableRow>, isGroupingActive: boolean) {
   return (
     <TableRow key={row.id} className={getTableRowClassName(row)}>
       {row.getVisibleCells().map((cell, cellIndex) => (
@@ -205,8 +193,8 @@ function renderTableRow(row: Row<FarmerReportTableRow>, isGroupingActive: boolea
 }
 
 function renderPinnedTableRow(
-  row: Row<FarmerReportTableRow>,
-  visibleColumns: Column<FarmerReportTableRow, unknown>[],
+  row: AppRow<FarmerReportTableRow>,
+  visibleColumns: AppColumn<FarmerReportTableRow>[],
 ) {
   const cellsByColumnId = new Map(row.getVisibleCells().map((cell) => [cell.column.id, cell]));
 
@@ -283,11 +271,11 @@ export function DataTable({
     [data, isGroupingActive],
   );
 
-  const table = useReactTable({
+  const table = useTable({
+    features: appTableFeatures,
     data: groupableData,
     columns,
     defaultColumn: defaultTableColumn,
-    filterFns: tableFilterFns,
     globalFilterFn: advancedReportGlobalFilterFn,
     state: {
       sorting,
@@ -305,20 +293,13 @@ export function DataTable({
     onGroupingChange,
     onGlobalFilterChange,
     onExpandedChange,
-    getCoreRowModel: getCoreRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getSortedRowModel: getSortedRowModel(),
-    getGroupedRowModel: getGroupedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    sortingFns: farmerReportSortingFns,
     enableSortingRemoval: true,
     sortDescFirst: false,
     groupedColumnMode: 'reorder',
   });
 
-  const pinnedTable = useReactTable({
+  const pinnedTable = useTable({
+    features: appTableFeatures,
     data: pinnedRows,
     columns,
     state: {
@@ -327,7 +308,6 @@ export function DataTable({
     },
     onColumnVisibilityChange,
     onColumnOrderChange,
-    getCoreRowModel: getCoreRowModel(),
   });
 
   const pinnedTableRows = pinnedTable.getRowModel().rows;

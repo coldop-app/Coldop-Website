@@ -3,8 +3,7 @@ import type {
   ColumnFiltersState,
   ColumnOrderState,
   GroupingState,
-  Table,
-  VisibilityState,
+  ColumnVisibilityState,
 } from '@tanstack/react-table';
 import { CheckCircle2, RotateCcw, SlidersHorizontal } from 'lucide-react';
 
@@ -22,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { OutgoingGatePassReportRecord } from '@/features/outgoing-report/api/types';
 import { getStoredOutgoingReportColumnState } from '@/features/outgoing-report/utils/report-column-preferences';
 import type { AdvancedReportGlobalFilter } from '@/features/outgoing-report/utils/report-filter-fns';
+import type { AppTable } from '@/lib/table/features';
 
 import AdvancedTab from './advanced-tab';
 import ColumnsTab from './columns-tab';
@@ -29,42 +29,40 @@ import FiltersTab from './filters-tab';
 import GroupingTab from './grouping-tab';
 
 interface ViewFiltersSheetProps {
-  table: Table<OutgoingGatePassReportRecord>;
+  table: AppTable<OutgoingGatePassReportRecord>;
 }
 
 export function ViewFiltersSheet({ table }: ViewFiltersSheetProps) {
   const [open, setOpen] = useState(false);
   const [draftColumnFilters, setDraftColumnFilters] = useState<ColumnFiltersState>(
-    () => table.getState().columnFilters,
+    () => table.store.state.columnFilters,
   );
-  const [draftColumnVisibility, setDraftColumnVisibility] = useState<VisibilityState>(
-    () => table.getState().columnVisibility,
+  const [draftColumnVisibility, setDraftColumnVisibility] = useState<ColumnVisibilityState>(
+    () => table.store.state.columnVisibility,
   );
   const [draftColumnOrder, setDraftColumnOrder] = useState<ColumnOrderState>(
-    () => table.getState().columnOrder,
+    () => table.store.state.columnOrder,
   );
   const [draftGrouping, setDraftGrouping] = useState<GroupingState>(
-    () => table.getState().grouping,
+    () => table.store.state.grouping,
   );
   const [draftGlobalFilter, setDraftGlobalFilter] = useState<AdvancedReportGlobalFilter>(() => ({
     logic: 'AND',
     conditions: [],
-    ...table.getState().globalFilter,
+    ...table.store.state.globalFilter,
   }));
-  const activeFilterCount = table.getState().columnFilters.length;
-  const activeGroupingCount = table.getState().grouping.length;
+  const activeFilterCount = table.store.state.columnFilters.length;
+  const activeGroupingCount = table.store.state.grouping.length;
   const activeAdvancedCount =
-    table
-      .getState()
-      .globalFilter?.conditions?.filter(
-        (condition: { operator: string; value: string }) =>
-          condition.operator === 'isEmpty' ||
-          condition.operator === 'isNotEmpty' ||
-          condition.value.trim().length > 0,
-      ).length ?? 0;
+    table.store.state.globalFilter?.conditions?.filter(
+      (condition: { operator: string; value: string }) =>
+        condition.operator === 'isEmpty' ||
+        condition.operator === 'isNotEmpty' ||
+        condition.value.trim().length > 0,
+    ).length ?? 0;
   const hiddenColumnCount = table
     .getAllLeafColumns()
-    .filter((column) => table.getState().columnVisibility[column.id] === false).length;
+    .filter((column) => table.store.state.columnVisibility[column.id] === false).length;
   const defaultColumnState = getStoredOutgoingReportColumnState(
     table.getAllLeafColumns().map((column) => column.id),
   );
@@ -78,7 +76,7 @@ export function ViewFiltersSheet({ table }: ViewFiltersSheetProps) {
 
   const handleOpenChange = (nextOpen: boolean) => {
     if (nextOpen) {
-      const tableState = table.getState();
+      const tableState = table.store.state;
 
       setDraftColumnFilters(tableState.columnFilters);
       setDraftColumnVisibility(tableState.columnVisibility);
@@ -249,7 +247,7 @@ export function ViewFiltersSheet({ table }: ViewFiltersSheetProps) {
   );
 }
 
-function areVisibilityStatesEqual(a: VisibilityState, b: VisibilityState) {
+function areVisibilityStatesEqual(a: ColumnVisibilityState, b: ColumnVisibilityState) {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
 
   for (const key of keys) {

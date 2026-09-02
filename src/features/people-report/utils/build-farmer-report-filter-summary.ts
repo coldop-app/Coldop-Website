@@ -1,4 +1,4 @@
-import type { GroupingState, Table } from '@tanstack/react-table';
+import type { GroupingState } from '@tanstack/react-table';
 
 import { parseDateParam } from '@/features/people/search';
 import type { FarmerReportTableRow } from '@/features/people-report/utils/build-farmer-report-sections';
@@ -7,6 +7,7 @@ import {
   FARMER_REPORT_GROUP_COLUMN_IDS,
   type FarmerReportGroupColumnId,
 } from '@/features/people-report/utils/report-grouping';
+import type { AppTable } from '@/lib/table/features';
 
 const GROUP_COLUMN_LABELS: Record<FarmerReportGroupColumnId, string> = {
   [FARMER_REPORT_GROUP_COLUMN_IDS.variety]: 'Variety',
@@ -69,7 +70,7 @@ export function buildFarmerReportFilterSummaryLines({
   appliedFrom?: string;
   appliedTo?: string;
   grouping: GroupingState;
-  viewTable?: Table<FarmerReportTableRow> | null;
+  viewTable?: AppTable<FarmerReportTableRow> | null;
 }): string[] {
   const lines = [buildFarmerReportDateRangeSummary(appliedFrom, appliedTo)];
 

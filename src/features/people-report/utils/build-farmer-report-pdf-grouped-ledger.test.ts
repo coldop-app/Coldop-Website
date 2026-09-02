@@ -1,22 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createTable,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getGroupedRowModel,
-  getSortedRowModel,
-} from '@tanstack/react-table';
 
 import type { IncomingDaybookEntry, OutgoingDaybookEntry } from '@/features/daybook/types';
-import {
-  farmerReportSortingFns,
-  getFarmerReportColumns,
-} from '@/features/people-report/components/columns';
+import { getFarmerReportColumns } from '@/features/people-report/components/columns';
 import { buildFarmerReportSections } from '@/features/people-report/utils/build-farmer-report-sections';
 import {
   buildPdfGroupedLedgerItems,
   buildPdfGroupedLedgerItemsFromTable,
 } from '@/features/people-report/utils/build-farmer-report-pdf-grouped-ledger';
+import { constructHeadlessTable } from '@/lib/table/construct-headless-table';
 
 const farmerLink = {
   _id: 'link-1',
@@ -317,7 +308,7 @@ describe('buildPdfGroupedLedgerItems', () => {
     const grouping = ['variety'];
     const sorting = [{ id: 'gatePassNo', desc: true }];
 
-    const table = createTable({
+    const table = constructHeadlessTable({
       data: sections.incoming,
       columns,
       state: {
@@ -325,12 +316,6 @@ describe('buildPdfGroupedLedgerItems', () => {
         grouping,
         expanded: true,
       },
-      onStateChange: () => undefined,
-      getCoreRowModel: getCoreRowModel(),
-      getSortedRowModel: getSortedRowModel(),
-      getGroupedRowModel: getGroupedRowModel(),
-      getExpandedRowModel: getExpandedRowModel(),
-      sortingFns: farmerReportSortingFns,
       enableSortingRemoval: true,
       sortDescFirst: false,
       groupedColumnMode: 'reorder',

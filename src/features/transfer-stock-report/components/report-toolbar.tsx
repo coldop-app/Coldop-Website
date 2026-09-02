@@ -1,4 +1,3 @@
-import type { Table } from '@tanstack/react-table';
 import { Eye, FileSpreadsheet, Loader2, RefreshCw, Search } from 'lucide-react';
 
 import { DatePickerInput } from '@/components/date-picker';
@@ -9,11 +8,12 @@ import type { TransferStockReportRecord } from '@/features/transfer-stock-report
 import { GatePassReportPdfButton } from '@/lib/gate-pass-report-pdf/gate-pass-report-pdf-button';
 import type { GatePassReportPdfData } from '@/lib/gate-pass-report-pdf/types';
 import { cn } from '@/lib/utils';
+import type { AppTable } from '@/lib/table/features';
 
 import { ViewFiltersSheet } from './view-filters';
 
 export interface ReportToolbarProps {
-  table: Table<TransferStockReportRecord> | null;
+  table: AppTable<TransferStockReportRecord> | null;
   dateFrom: string;
   dateTo: string;
   onDateFromChange: (value: string) => void;

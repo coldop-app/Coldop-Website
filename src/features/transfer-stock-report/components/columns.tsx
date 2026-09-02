@@ -1,10 +1,16 @@
-import type { AggregationFn, ColumnDef, SortingFn } from '@tanstack/react-table';
+import { constructAggregationFn } from '@tanstack/react-table';
 
 import type { DaybookLocation } from '@/features/daybook/types';
 import type {
   TransferStockReportItem,
   TransferStockReportRecord,
 } from '@/features/transfer-stock-report/api/types';
+import type { AppColumnDef, AppSortFn } from '@/lib/table/features';
+
+type TransferStockReportColumnDef<TValue = unknown> = AppColumnDef<
+  TransferStockReportRecord,
+  TValue
+>;
 
 const numberFormatter = new Intl.NumberFormat('en-IN');
 
@@ -29,7 +35,7 @@ function parseReportDateValue(value: unknown): number | null {
   return Number.isNaN(timestamp) ? null : timestamp;
 }
 
-const reportNumericSortingFn: SortingFn<TransferStockReportRecord> = (rowA, rowB, columnId) => {
+const reportNumericSortingFn: AppSortFn<TransferStockReportRecord> = (rowA, rowB, columnId) => {
   const a = parseReportNumber(rowA.getValue(columnId));
   const b = parseReportNumber(rowB.getValue(columnId));
 
@@ -40,7 +46,7 @@ const reportNumericSortingFn: SortingFn<TransferStockReportRecord> = (rowA, rowB
   return a === b ? 0 : a > b ? 1 : -1;
 };
 
-const reportDateSortingFn: SortingFn<TransferStockReportRecord> = (rowA, rowB, columnId) => {
+const reportDateSortingFn: AppSortFn<TransferStockReportRecord> = (rowA, rowB, columnId) => {
   const a = parseReportDateValue(rowA.getValue(columnId));
   const b = parseReportDateValue(rowB.getValue(columnId));
 
@@ -49,11 +55,6 @@ const reportDateSortingFn: SortingFn<TransferStockReportRecord> = (rowA, rowB, c
   if (b == null) return 1;
 
   return a === b ? 0 : a > b ? 1 : -1;
-};
-
-export const transferStockReportSortingFns = {
-  reportNumeric: reportNumericSortingFn,
-  reportDate: reportDateSortingFn,
 };
 
 const formatDate = (date: string) => {
@@ -71,22 +72,24 @@ const formatDate = (date: string) => {
 };
 
 const formatQuantity = (quantity: number) => numberFormatter.format(quantity);
-const sortText = { sortingFn: 'text' as const, sortUndefined: 'last' as const };
+const sortText = { sortFn: 'text' as const, sortUndefined: 'last' as const };
 const sortNumeric = {
-  sortingFn: reportNumericSortingFn,
+  sortFn: reportNumericSortingFn,
   sortUndefined: 'last' as const,
 };
 const sortDate = {
-  sortingFn: reportDateSortingFn,
+  sortFn: reportDateSortingFn,
   sortUndefined: 'last' as const,
 };
-const reportEmptyAggregation: AggregationFn<TransferStockReportRecord> = () => null;
-const reportSumAggregation: AggregationFn<TransferStockReportRecord> = (columnId, leafRows) =>
-  leafRows.reduce((sum, row) => {
-    const value = row.getValue(columnId);
+const reportEmptyAggregation = constructAggregationFn({ aggregate: () => null });
+const reportSumAggregation = constructAggregationFn({
+  aggregate: ({ rows, getValue }) =>
+    rows.reduce((sum, row) => {
+      const value = getValue(row);
 
-    return sum + (typeof value === 'number' && Number.isFinite(value) ? value : 0);
-  }, 0);
+      return sum + (typeof value === 'number' && Number.isFinite(value) ? value : 0);
+    }, 0),
+});
 const aggregateNone = { aggregationFn: reportEmptyAggregation };
 const aggregateSum = { aggregationFn: reportSumAggregation };
 
@@ -119,7 +122,7 @@ const renderItemValue = (item: TransferStockReportItem) => {
   );
 };
 
-const baseColumns: ColumnDef<TransferStockReportRecord>[] = [
+const baseColumns: TransferStockReportColumnDef[] = [
   {
     accessorKey: 'gatePassNo',
     header: 'Gate Pass No',
@@ -233,7 +236,7 @@ const baseColumns: ColumnDef<TransferStockReportRecord>[] = [
   },
 ];
 
-const totalBagsColumn: ColumnDef<TransferStockReportRecord> = {
+const totalBagsColumn: TransferStockReportColumnDef = {
   accessorKey: 'totalBags',
   header: () => (
     <span className="flex min-w-0 flex-col gap-0.5">
@@ -260,7 +263,7 @@ const totalBagsColumn: ColumnDef<TransferStockReportRecord> = {
   },
 };
 
-const trailingColumns: ColumnDef<TransferStockReportRecord>[] = [
+const trailingColumns: TransferStockReportColumnDef[] = [
   {
     id: 'createdBy',
     accessorFn: (row) => row.createdBy?.name ?? '-',
@@ -279,7 +282,7 @@ const trailingColumns: ColumnDef<TransferStockReportRecord>[] = [
   },
 ];
 
-const columnCache = new Map<string, ColumnDef<TransferStockReportRecord>[]>();
+const columnCache = new Map<string, TransferStockReportColumnDef[]>();
 
 export function collectTransferStockReportBagSizeNames(
   rows: TransferStockReportRecord[],
@@ -295,8 +298,8 @@ export function collectTransferStockReportBagSizeNames(
   return Array.from(sizes);
 }
 
-function buildTransferStockReportColumns(sizes: string[]): ColumnDef<TransferStockReportRecord>[] {
-  const sizeColumns: ColumnDef<TransferStockReportRecord>[] = sizes.map((bagSizeName) => ({
+function buildTransferStockReportColumns(sizes: string[]): TransferStockReportColumnDef[] {
+  const sizeColumns: TransferStockReportColumnDef[] = sizes.map((bagSizeName) => ({
     id: `size-${bagSizeName}`,
     accessorFn: (row) => getBagSizeQuantity(row, bagSizeName),
     header: bagSizeName,
@@ -336,7 +339,7 @@ function buildTransferStockReportColumns(sizes: string[]): ColumnDef<TransferSto
 
 export function getTransferStockReportColumns(
   rows: TransferStockReportRecord[],
-): ColumnDef<TransferStockReportRecord>[] {
+): TransferStockReportColumnDef[] {
   const sizes = collectTransferStockReportBagSizeNames(rows);
   const cacheKey = sizes.join('\0');
   const cached = columnCache.get(cacheKey);
@@ -349,7 +352,7 @@ export function getTransferStockReportColumns(
   return columns;
 }
 
-export const columns: ColumnDef<TransferStockReportRecord>[] = getTransferStockReportColumns([]);
+export const columns: TransferStockReportColumnDef[] = getTransferStockReportColumns([]);
 
 export const DEFAULT_HIDDEN_COLUMN_IDS = [
   'fromAddress',

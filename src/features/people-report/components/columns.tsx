@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { memo, useContext } from 'react';
-import type { ColumnDef, Row, SortingFn } from '@tanstack/react-table';
+import { constructAggregationFn } from '@tanstack/react-table';
 
 import { RunningTotalsContext } from '@/features/people-report/components/data-table';
 import type { CommodityPreference } from '@/features/auth/types';
@@ -29,8 +29,11 @@ import {
   hasMultipleOutgoingVarieties,
   orderBagSizes,
 } from '@/features/people-report/utils/gate-pass-table-helpers';
+import type { AppColumnDef, AppRow, AppSortFn } from '@/lib/table/features';
 
-const farmerReportNumericSortingFn: SortingFn<FarmerReportTableRow> = (rowA, rowB, columnId) => {
+type FarmerReportColumnDef = AppColumnDef<FarmerReportTableRow>;
+
+const farmerReportNumericSortingFn: AppSortFn<FarmerReportTableRow> = (rowA, rowB, columnId) => {
   const a = Number(rowA.getValue(columnId));
   const b = Number(rowB.getValue(columnId));
 
@@ -39,10 +42,6 @@ const farmerReportNumericSortingFn: SortingFn<FarmerReportTableRow> = (rowA, row
   if (!Number.isFinite(b)) return 1;
 
   return a === b ? 0 : a > b ? 1 : -1;
-};
-
-export const farmerReportSortingFns = {
-  farmerReportNumeric: farmerReportNumericSortingFn,
 };
 
 function getRowDateSortValue(row: FarmerReportTableRow): number | null {
@@ -85,7 +84,7 @@ function RunningTotalCell({ value }: { value: number }) {
   return <span className="text-foreground font-medium tabular-nums">{formatQuantity(value)}</span>;
 }
 
-function CumulativeTotalCell({ row }: { row: Row<FarmerReportTableRow> }) {
+function CumulativeTotalCell({ row }: { row: AppRow<FarmerReportTableRow> }) {
   const runningTotalByRowKey = useContext(RunningTotalsContext);
   const rowKey = getFarmerReportRowKey(row.original);
   const value = runningTotalByRowKey.get(rowKey) ?? row.original.runningTotal;
@@ -233,9 +232,9 @@ function emptyGroupedAggregatedCell() {
   return <span className="text-muted-foreground">—</span>;
 }
 
-const noGroupAggregation = () => null;
+const noGroupAggregation = constructAggregationFn({ aggregate: () => null });
 
-const columnCache = new Map<string, ColumnDef<FarmerReportTableRow>[]>();
+const columnCache = new Map<string, FarmerReportColumnDef[]>();
 
 export function getFarmerReportBagSizeSignature(
   rows: DaybookEntry[],
@@ -248,14 +247,14 @@ function buildFarmerReportColumnsForSizes(
   orderedSizes: string[],
   showCustomMarka: boolean,
   showStockFilter: boolean,
-): ColumnDef<FarmerReportTableRow>[] {
-  const staticColumns: ColumnDef<FarmerReportTableRow>[] = [
+): FarmerReportColumnDef[] {
+  const staticColumns: FarmerReportColumnDef[] = [
     {
       id: 'date',
       accessorFn: (row) => getRowDateSortValue(row),
       header: 'Date',
       meta: { filterLabel: 'Date' },
-      sortingFn: farmerReportNumericSortingFn,
+      sortFn: farmerReportNumericSortingFn,
       sortUndefined: 'first',
       aggregationFn: noGroupAggregation,
       aggregatedCell: emptyGroupedAggregatedCell,
@@ -276,7 +275,7 @@ function buildFarmerReportColumnsForSizes(
       accessorFn: (row) => row.entry?.gatePassNo ?? null,
       header: 'Gate Pass No',
       meta: { mono: true, numeric: true, filterLabel: 'Gate pass number' },
-      sortingFn: farmerReportNumericSortingFn,
+      sortFn: farmerReportNumericSortingFn,
       sortUndefined: 'first',
       aggregationFn: noGroupAggregation,
       aggregatedCell: emptyGroupedAggregatedCell,
@@ -297,7 +296,7 @@ function buildFarmerReportColumnsForSizes(
       accessorFn: (row) => getRowManualParchiSortValue(row),
       header: 'Manual Parchi No',
       meta: { mono: true, compact: true, numeric: true, filterLabel: 'Manual parchi number' },
-      sortingFn: farmerReportNumericSortingFn,
+      sortFn: farmerReportNumericSortingFn,
       sortUndefined: 'first',
       aggregationFn: noGroupAggregation,
       aggregatedCell: emptyGroupedAggregatedCell,
@@ -329,7 +328,7 @@ function buildFarmerReportColumnsForSizes(
       meta: { groupable: true, wrap: true, filterLabel: 'Variety' },
       enableGrouping: true,
       getGroupingValue: getRowVarietyGroupingValue,
-      sortingFn: 'text',
+      sortFn: 'text',
       aggregationFn: noGroupAggregation,
       aggregatedCell: emptyGroupedAggregatedCell,
       cell: ({ row }) => <VarietyCell row={row.original} />,
@@ -344,7 +343,7 @@ function buildFarmerReportColumnsForSizes(
       meta: { groupable: true, filterLabel: 'Stock filter' },
       enableGrouping: true,
       getGroupingValue: getRowStockFilterGroupingValue,
-      sortingFn: 'text',
+      sortFn: 'text',
       aggregationFn: noGroupAggregation,
       aggregatedCell: emptyGroupedAggregatedCell,
       cell: ({ row }) => {
@@ -370,7 +369,7 @@ function buildFarmerReportColumnsForSizes(
         row.entry && isIncomingDaybookEntry(row.entry) ? row.entry.customMarka?.trim() || '—' : '—',
       header: 'Marka',
       meta: { compact: true, filterLabel: 'Custom marka' },
-      sortingFn: 'text',
+      sortFn: 'text',
       aggregationFn: noGroupAggregation,
       aggregatedCell: emptyGroupedAggregatedCell,
       cell: ({ row }) => {
@@ -391,7 +390,7 @@ function buildFarmerReportColumnsForSizes(
     });
   }
 
-  const sizeColumns: ColumnDef<FarmerReportTableRow>[] = orderedSizes.map((size, index) => ({
+  const sizeColumns: FarmerReportColumnDef[] = orderedSizes.map((size, index) => ({
     id: `size-${size}`,
     accessorFn: (row) => getRowSizeSortValue(row, size),
     header: size,
@@ -401,7 +400,7 @@ function buildFarmerReportColumnsForSizes(
       groupStart: index === 0,
       filterLabel: size,
     },
-    sortingFn: farmerReportNumericSortingFn,
+    sortFn: farmerReportNumericSortingFn,
     sortUndefined: 'last',
     aggregationFn: 'sum',
     aggregatedCell: ({ getValue }) => {
@@ -415,13 +414,13 @@ function buildFarmerReportColumnsForSizes(
     cell: ({ row }) => <MemoizedSizeQuantityCell row={row.original} size={size} />,
   }));
 
-  const trailingColumns: ColumnDef<FarmerReportTableRow>[] = [
+  const trailingColumns: FarmerReportColumnDef[] = [
     {
       id: 'rowBags',
       accessorFn: (row) => getFarmerReportRowBagTotal(row),
       header: 'Total Bags',
       meta: { align: 'right', numeric: true, filterLabel: 'Total bags' },
-      sortingFn: farmerReportNumericSortingFn,
+      sortFn: farmerReportNumericSortingFn,
       aggregationFn: 'sum',
       aggregatedCell: ({ getValue }) => {
         const value = Number(getValue());
@@ -442,7 +441,7 @@ function buildFarmerReportColumnsForSizes(
         numeric: true,
         filterLabel: 'Cumulative total',
       },
-      sortingFn: farmerReportNumericSortingFn,
+      sortFn: farmerReportNumericSortingFn,
       aggregationFn: noGroupAggregation,
       aggregatedCell: emptyGroupedAggregatedCell,
       cell: ({ row }) => <CumulativeTotalCell row={row} />,
@@ -452,7 +451,7 @@ function buildFarmerReportColumnsForSizes(
       accessorFn: (row) => row.entry?.remarks?.trim() || '—',
       header: 'Remarks',
       meta: { wrap: true, filterLabel: 'Remarks' },
-      sortingFn: 'text',
+      sortFn: 'text',
       aggregationFn: noGroupAggregation,
       aggregatedCell: emptyGroupedAggregatedCell,
       cell: ({ row }) => {
@@ -477,7 +476,7 @@ export function getFarmerReportColumnsForSizes(
   orderedSizes: string[],
   showCustomMarka = false,
   showStockFilter = false,
-): ColumnDef<FarmerReportTableRow>[] {
+): FarmerReportColumnDef[] {
   const cacheKey = `${orderedSizes.join('\0')}|cm:${showCustomMarka}|sf:${showStockFilter}|rb:1`;
   const cached = columnCache.get(cacheKey);
   if (cached) return cached;
@@ -492,7 +491,7 @@ export function getFarmerReportColumns(
   commodities: CommodityPreference[] = [],
   showCustomMarka = false,
   showStockFilter = false,
-): ColumnDef<FarmerReportTableRow>[] {
+): FarmerReportColumnDef[] {
   const orderedSizes = orderBagSizes(collectUniqueBagSizes(rows), commodities);
   return getFarmerReportColumnsForSizes(orderedSizes, showCustomMarka, showStockFilter);
 }

@@ -1,5 +1,4 @@
 import { format, isValid, parse, parseISO } from 'date-fns';
-import type { Column, Row, Table } from '@tanstack/react-table';
 
 import type {
   TransferStockReportItem,
@@ -9,6 +8,7 @@ import type {
   AdvancedFilterCondition,
   AdvancedReportGlobalFilter,
 } from '@/features/transfer-stock-report/utils/report-filter-fns';
+import type { AppTable, AppRow, AppColumn } from '@/lib/table/features';
 
 const INTEGER_COLUMNS = new Set<string>([
   'fromAccountNumber',
@@ -69,7 +69,7 @@ function formatItemText(item: TransferStockReportItem): string {
   return parts.join(' ');
 }
 
-function sumBagSizeQuantity(rows: readonly Row<TransferStockReportRecord>[], bagSize: string) {
+function sumBagSizeQuantity(rows: readonly AppRow<TransferStockReportRecord>[], bagSize: string) {
   return rows.reduce((total, row) => {
     return (
       total +
@@ -80,7 +80,7 @@ function sumBagSizeQuantity(rows: readonly Row<TransferStockReportRecord>[], bag
   }, 0);
 }
 
-export function getColumnExportLabel(column: Column<TransferStockReportRecord, unknown>): string {
+export function getColumnExportLabel(column: AppColumn<TransferStockReportRecord>): string {
   return column.columnDef.meta?.filterLabel ?? column.id;
 }
 
@@ -99,10 +99,7 @@ function formatReportDate(value: unknown): string | null {
   return format(parsed, 'do MMMM yyyy');
 }
 
-function formatDisplayValue(
-  value: unknown,
-  column: Column<TransferStockReportRecord, unknown>,
-): string {
+function formatDisplayValue(value: unknown, column: AppColumn<TransferStockReportRecord>): string {
   const meta = column.columnDef.meta;
   if (meta?.filterValueFormatter) return meta.filterValueFormatter(value);
   if (value == null || value === '') return 'Blank';
@@ -158,8 +155,8 @@ export function formatExportCellValue(
 }
 
 export function getExportCellForRow(
-  row: Row<TransferStockReportRecord>,
-  column: Column<TransferStockReportRecord, unknown>,
+  row: AppRow<TransferStockReportRecord>,
+  column: AppColumn<TransferStockReportRecord>,
 ): ExportCellValue {
   const cell = row.getVisibleCells().find((item) => item.column.id === column.id);
 
@@ -195,18 +192,18 @@ export function getExportCellForRow(
 }
 
 export function collectExportRows(
-  table: Table<TransferStockReportRecord>,
-): Row<TransferStockReportRecord>[] {
-  const grouping = table.getState().grouping;
+  table: AppTable<TransferStockReportRecord>,
+): AppRow<TransferStockReportRecord>[] {
+  const grouping = table.store.state.grouping;
 
   if (grouping.length === 0) {
     return table.getSortedRowModel().rows;
   }
 
   function flattenGroupedRows(
-    rows: Row<TransferStockReportRecord>[],
-  ): Row<TransferStockReportRecord>[] {
-    const result: Row<TransferStockReportRecord>[] = [];
+    rows: AppRow<TransferStockReportRecord>[],
+  ): AppRow<TransferStockReportRecord>[] {
+    const result: AppRow<TransferStockReportRecord>[] = [];
 
     for (const row of rows) {
       result.push(row);
@@ -221,12 +218,12 @@ export function collectExportRows(
   return flattenGroupedRows(table.getGroupedRowModel().rows);
 }
 
-export function getFilteredLeafRowCount(table: Table<TransferStockReportRecord>): number {
+export function getFilteredLeafRowCount(table: AppTable<TransferStockReportRecord>): number {
   return table.getFilteredRowModel().flatRows.length;
 }
 
 function formatConditionLabel(
-  table: Table<TransferStockReportRecord>,
+  table: AppTable<TransferStockReportRecord>,
   condition: AdvancedFilterCondition,
 ): string {
   const column = table.getColumn(String(condition.columnId));
@@ -243,10 +240,10 @@ function formatConditionLabel(
   return `${columnLabel} ${operatorLabel} "${value}"`;
 }
 
-function formatColumnFilterSummary(table: Table<TransferStockReportRecord>): string[] {
+function formatColumnFilterSummary(table: AppTable<TransferStockReportRecord>): string[] {
   const summaries: string[] = [];
 
-  for (const filter of table.getState().columnFilters) {
+  for (const filter of table.store.state.columnFilters) {
     if (!Array.isArray(filter.value) || filter.value.length === 0) continue;
 
     const column = table.getColumn(filter.id);
@@ -269,7 +266,7 @@ function formatColumnFilterSummary(table: Table<TransferStockReportRecord>): str
 }
 
 function formatAdvancedFilterSummary(
-  table: Table<TransferStockReportRecord>,
+  table: AppTable<TransferStockReportRecord>,
   globalFilter: AdvancedReportGlobalFilter,
 ): string[] {
   const activeConditions = globalFilter.conditions
@@ -285,8 +282,8 @@ function formatAdvancedFilterSummary(
   ];
 }
 
-function formatGroupingSummary(table: Table<TransferStockReportRecord>): string | null {
-  const grouping = table.getState().grouping;
+function formatGroupingSummary(table: AppTable<TransferStockReportRecord>): string | null {
+  const grouping = table.store.state.grouping;
   if (grouping.length === 0) return null;
 
   const labels = grouping
@@ -299,8 +296,8 @@ function formatGroupingSummary(table: Table<TransferStockReportRecord>): string 
   return `Grouped by: ${labels}`;
 }
 
-function formatSortingSummary(table: Table<TransferStockReportRecord>): string | null {
-  const sorting = table.getState().sorting;
+function formatSortingSummary(table: AppTable<TransferStockReportRecord>): string | null {
+  const sorting = table.store.state.sorting;
   if (sorting.length === 0) return null;
 
   const labels = sorting
@@ -314,8 +311,8 @@ function formatSortingSummary(table: Table<TransferStockReportRecord>): string |
   return `Sorted by: ${labels}`;
 }
 
-export function buildFilterSummaryLines(table: Table<TransferStockReportRecord>): string[] {
-  const globalFilter = table.getState().globalFilter;
+export function buildFilterSummaryLines(table: AppTable<TransferStockReportRecord>): string[] {
+  const globalFilter = table.store.state.globalFilter;
 
   const lines = [
     ...formatColumnFilterSummary(table),
@@ -353,7 +350,7 @@ export function isSummableExportColumn(columnId: string): boolean {
 
 export function getFooterExportValue(
   columnId: string,
-  rows: readonly Row<TransferStockReportRecord>[],
+  rows: readonly AppRow<TransferStockReportRecord>[],
 ): ExportCellValue {
   if (columnId === 'totalBags') {
     const total = rows.reduce(

@@ -1,6 +1,7 @@
-import type { ColumnDef, ColumnOrderState, VisibilityState } from '@tanstack/react-table';
+import type { ColumnOrderState, ColumnVisibilityState, RowData } from '@tanstack/react-table';
 
 import { DEFAULT_HIDDEN_COLUMN_IDS } from '@/features/transfer-stock-report/components/columns';
+import type { AppColumnDef } from '@/lib/table/features';
 
 const STORAGE_KEY = 'transfer-stock-report:column-preferences:v1';
 
@@ -11,7 +12,7 @@ type StoredColumnPreferences = {
 };
 
 export type TransferStockReportColumnState = {
-  columnVisibility: VisibilityState;
+  columnVisibility: ColumnVisibilityState;
   columnOrder: ColumnOrderState;
 };
 
@@ -25,7 +26,7 @@ function getStorage(): Storage | null {
   }
 }
 
-function getColumnId(column: ColumnDef<unknown, unknown>, index: number) {
+function getColumnId<TData extends RowData>(column: AppColumnDef<TData>, index: number) {
   const candidate = column as {
     id?: string;
     accessorKey?: string | number | symbol;
@@ -64,10 +65,10 @@ function parsePreferences(value: string | null): StoredColumnPreferences | null 
   }
 }
 
-function getDefaultHiddenVisibility(columnIds: string[]): VisibilityState {
+function getDefaultHiddenVisibility(columnIds: string[]): ColumnVisibilityState {
   const columnIdSet = new Set(columnIds);
 
-  return DEFAULT_HIDDEN_COLUMN_IDS.reduce<VisibilityState>((visibility, columnId) => {
+  return DEFAULT_HIDDEN_COLUMN_IDS.reduce<ColumnVisibilityState>((visibility, columnId) => {
     if (columnIdSet.has(columnId)) visibility[columnId] = false;
     return visibility;
   }, {});
@@ -87,7 +88,7 @@ function toColumnState(
   const columnIdSet = new Set(columnIds);
   const columnVisibility = {
     ...getDefaultHiddenVisibility(columnIds),
-    ...preferences.hiddenColumnIds.reduce<VisibilityState>((visibility, columnId) => {
+    ...preferences.hiddenColumnIds.reduce<ColumnVisibilityState>((visibility, columnId) => {
       if (columnIdSet.has(columnId)) visibility[columnId] = false;
       return visibility;
     }, {}),
@@ -99,8 +100,10 @@ function toColumnState(
   };
 }
 
-export function getTransferStockReportColumnIds(columns: ColumnDef<unknown, unknown>[]) {
-  return columns.map(getColumnId);
+export function getTransferStockReportColumnIds<TData extends RowData>(
+  columns: AppColumnDef<TData>[],
+) {
+  return columns.map((column, index) => getColumnId(column, index));
 }
 
 export function getStoredTransferStockReportColumnState(
@@ -118,7 +121,7 @@ export function hasStoredTransferStockReportColumnState() {
 
 export function saveTransferStockReportColumnState(
   columnIds: string[],
-  columnVisibility: VisibilityState,
+  columnVisibility: ColumnVisibilityState,
   columnOrder: ColumnOrderState,
 ) {
   const storage = getStorage();

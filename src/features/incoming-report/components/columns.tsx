@@ -1,7 +1,10 @@
-import type { AggregationFn, ColumnDef, SortingFn } from '@tanstack/react-table';
+import { constructAggregationFn } from '@tanstack/react-table';
 
 import type { IncomingBagSize } from '@/features/daybook/types';
 import type { IncomingGatePassReportRecord } from '@/features/incoming-report/api/types';
+import type { AppColumnDef, AppSortFn } from '@/lib/table/features';
+
+type IncomingReportColumnDef<TValue = unknown> = AppColumnDef<IncomingGatePassReportRecord, TValue>;
 
 const numberFormatter = new Intl.NumberFormat('en-IN');
 
@@ -28,7 +31,7 @@ function parseReportDateValue(value: unknown): number | null {
   return Number.isNaN(timestamp) ? null : timestamp;
 }
 
-const reportNumericSortingFn: SortingFn<IncomingGatePassReportRecord> = (rowA, rowB, columnId) => {
+const reportNumericSortingFn: AppSortFn<IncomingGatePassReportRecord> = (rowA, rowB, columnId) => {
   const a = parseReportNumber(rowA.getValue(columnId));
   const b = parseReportNumber(rowB.getValue(columnId));
 
@@ -39,7 +42,7 @@ const reportNumericSortingFn: SortingFn<IncomingGatePassReportRecord> = (rowA, r
   return a === b ? 0 : a > b ? 1 : -1;
 };
 
-const reportDateSortingFn: SortingFn<IncomingGatePassReportRecord> = (rowA, rowB, columnId) => {
+const reportDateSortingFn: AppSortFn<IncomingGatePassReportRecord> = (rowA, rowB, columnId) => {
   const a = parseReportDateValue(rowA.getValue(columnId));
   const b = parseReportDateValue(rowB.getValue(columnId));
 
@@ -48,11 +51,6 @@ const reportDateSortingFn: SortingFn<IncomingGatePassReportRecord> = (rowA, rowB
   if (b == null) return 1;
 
   return a === b ? 0 : a > b ? 1 : -1;
-};
-
-export const incomingReportSortingFns = {
-  reportNumeric: reportNumericSortingFn,
-  reportDate: reportDateSortingFn,
 };
 
 const formatDate = (date: string) => {
@@ -70,22 +68,24 @@ const formatDate = (date: string) => {
 };
 
 const formatQuantity = (quantity: number) => numberFormatter.format(quantity);
-const sortText = { sortingFn: 'text' as const, sortUndefined: 'last' as const };
+const sortText = { sortFn: 'text' as const, sortUndefined: 'last' as const };
 const sortNumeric = {
-  sortingFn: reportNumericSortingFn,
+  sortFn: reportNumericSortingFn,
   sortUndefined: 'last' as const,
 };
 const sortDate = {
-  sortingFn: reportDateSortingFn,
+  sortFn: reportDateSortingFn,
   sortUndefined: 'last' as const,
 };
-const reportEmptyAggregation: AggregationFn<IncomingGatePassReportRecord> = () => null;
-const reportSumAggregation: AggregationFn<IncomingGatePassReportRecord> = (columnId, leafRows) =>
-  leafRows.reduce((sum, row) => {
-    const value = row.getValue(columnId);
+const reportEmptyAggregation = constructAggregationFn({ aggregate: () => null });
+const reportSumAggregation = constructAggregationFn({
+  aggregate: ({ rows, getValue }) =>
+    rows.reduce((sum, row) => {
+      const value = getValue(row);
 
-    return sum + (typeof value === 'number' && Number.isFinite(value) ? value : 0);
-  }, 0);
+      return sum + (typeof value === 'number' && Number.isFinite(value) ? value : 0);
+    }, 0),
+});
 const aggregateNone = { aggregationFn: reportEmptyAggregation };
 const aggregateSum = { aggregationFn: reportSumAggregation };
 
@@ -128,7 +128,7 @@ const renderBagSizeValue = (
   );
 };
 
-const baseColumns: ColumnDef<IncomingGatePassReportRecord>[] = [
+const baseColumns: IncomingReportColumnDef[] = [
   {
     id: 'name',
     accessorFn: (row) => row.farmerStorageLinkId.name,
@@ -195,7 +195,7 @@ const baseColumns: ColumnDef<IncomingGatePassReportRecord>[] = [
   },
 ];
 
-const stockFilterColumn: ColumnDef<IncomingGatePassReportRecord> = {
+const stockFilterColumn: IncomingReportColumnDef = {
   accessorKey: 'stockFilter',
   header: 'Stock filter',
   meta: { filterLabel: 'Stock filter' },
@@ -204,7 +204,7 @@ const stockFilterColumn: ColumnDef<IncomingGatePassReportRecord> = {
   cell: ({ getValue }) => getValue<string | undefined>() || '-',
 };
 
-const customMarkaColumn: ColumnDef<IncomingGatePassReportRecord> = {
+const customMarkaColumn: IncomingReportColumnDef = {
   accessorKey: 'customMarka',
   header: 'Custom marka',
   meta: { filterLabel: 'Custom marka' },
@@ -213,9 +213,7 @@ const customMarkaColumn: ColumnDef<IncomingGatePassReportRecord> = {
   cell: ({ getValue }) => getValue<string | undefined>() || '-',
 };
 
-function createTotalBagsColumn(
-  quantityMode: IncomingQuantityMode,
-): ColumnDef<IncomingGatePassReportRecord> {
+function createTotalBagsColumn(quantityMode: IncomingQuantityMode): IncomingReportColumnDef {
   return {
     id: 'totalBags',
     accessorFn: (row) => getIncomingReportTotalBags(row, quantityMode),
@@ -245,7 +243,7 @@ function createTotalBagsColumn(
   };
 }
 
-const trailingColumns: ColumnDef<IncomingGatePassReportRecord>[] = [
+const trailingColumns: IncomingReportColumnDef[] = [
   {
     id: 'createdBy',
     accessorFn: (row) => row.createdBy?.name ?? '-',
@@ -264,7 +262,7 @@ const trailingColumns: ColumnDef<IncomingGatePassReportRecord>[] = [
   },
 ];
 
-const columnCache = new Map<string, ColumnDef<IncomingGatePassReportRecord>[]>();
+const columnCache = new Map<string, IncomingReportColumnDef[]>();
 
 export function collectIncomingReportBagSizeNames(rows: IncomingGatePassReportRecord[]): string[] {
   const sizes = new Set<string>();
@@ -294,8 +292,8 @@ function buildIncomingReportColumns(
   showCustomMarka: boolean,
   showStockFilter: boolean,
   showLocation: boolean,
-): ColumnDef<IncomingGatePassReportRecord>[] {
-  const sizeColumns: ColumnDef<IncomingGatePassReportRecord>[] = sizes.map((sizeName) => ({
+): IncomingReportColumnDef[] {
+  const sizeColumns: IncomingReportColumnDef[] = sizes.map((sizeName) => ({
     id: `size-${sizeName}`,
     accessorFn: (row) => getBagSizeQuantity(row, sizeName, quantityMode),
     header: sizeName,
@@ -330,7 +328,7 @@ function buildIncomingReportColumns(
     },
   }));
 
-  const preferenceColumns: ColumnDef<IncomingGatePassReportRecord>[] = [];
+  const preferenceColumns: IncomingReportColumnDef[] = [];
 
   if (showStockFilter) {
     preferenceColumns.push(stockFilterColumn);
@@ -355,7 +353,7 @@ export function getIncomingReportColumns(
   showCustomMarka = false,
   showStockFilter = false,
   showLocation = true,
-): ColumnDef<IncomingGatePassReportRecord>[] {
+): IncomingReportColumnDef[] {
   const sizes = collectIncomingReportBagSizeNames(rows);
   const cacheKey = getIncomingReportColumnCacheKey(
     sizes,
@@ -380,4 +378,4 @@ export function getIncomingReportColumns(
   return columns;
 }
 
-export const columns: ColumnDef<IncomingGatePassReportRecord>[] = getIncomingReportColumns([]);
+export const columns: IncomingReportColumnDef[] = getIncomingReportColumns([]);

@@ -1,7 +1,6 @@
-import type { Row } from '@tanstack/react-table';
-
 import type { TransferStockReportRecord } from '@/features/transfer-stock-report/api/types';
 import { cn } from '@/lib/utils';
+import type { AppRow } from '@/lib/table/features';
 
 const numberFormatter = new Intl.NumberFormat('en-IN');
 
@@ -15,7 +14,10 @@ function renderTotalValue(value: number) {
   );
 }
 
-function sumBagSizeQuantity(rows: readonly Row<TransferStockReportRecord>[], bagSizeName: string) {
+function sumBagSizeQuantity(
+  rows: readonly AppRow<TransferStockReportRecord>[],
+  bagSizeName: string,
+) {
   return rows.reduce((total, row) => {
     return (
       total +
@@ -32,7 +34,7 @@ export function ReportTotalLabel() {
 
 export function getTransferStockReportFooterContent(
   columnId: string,
-  rows: readonly Row<TransferStockReportRecord>[],
+  rows: readonly AppRow<TransferStockReportRecord>[],
 ) {
   if (columnId === 'totalBags') {
     const total = rows.reduce(

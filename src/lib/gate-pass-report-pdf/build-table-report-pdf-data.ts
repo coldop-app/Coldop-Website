@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import type { Cell, Column, Row, Table } from '@tanstack/react-table';
+import type { RowData } from '@tanstack/react-table';
 
 import type {
   GatePassReportPdfCell,
@@ -7,6 +7,7 @@ import type {
   GatePassReportPdfDisplayAlign,
   GatePassReportPdfTableVariant,
 } from '@/lib/gate-pass-report-pdf/types';
+import type { AppTable, AppRow, AppColumn, AppCell } from '@/lib/table/features';
 
 type ExportCellValue =
   | { kind: 'text'; value: string }
@@ -17,14 +18,14 @@ const INTEGER_FORMATTER = new Intl.NumberFormat('en-IN', {
   maximumFractionDigits: 0,
 });
 
-type PreparedPdfColumn<TRow> = {
-  column: Column<TRow, unknown>;
+type PreparedPdfColumn<TRow extends RowData> = {
+  column: AppColumn<TRow>;
   label: string;
   align: 'left' | 'right';
 };
 
-export type BuildTableReportPdfDataOptions<TRow> = {
-  table: Table<TRow>;
+export type BuildTableReportPdfDataOptions<TRow extends RowData> = {
+  table: AppTable<TRow>;
   reportTitle: string;
   dateFrom?: string;
   dateTo?: string;
@@ -32,23 +33,23 @@ export type BuildTableReportPdfDataOptions<TRow> = {
   tableVariant?: GatePassReportPdfTableVariant;
   rowsPerPage?: number;
   formatDateRangeLabel: (dateFrom?: string, dateTo?: string) => string;
-  getFilteredLeafRowCount: (table: Table<TRow>) => number;
-  buildFilterSummaryLines: (table: Table<TRow>) => string[];
-  collectExportRows: (table: Table<TRow>) => Row<TRow>[];
-  getColumnExportLabel: (column: Column<TRow, unknown>) => string;
+  getFilteredLeafRowCount: (table: AppTable<TRow>) => number;
+  buildFilterSummaryLines: (table: AppTable<TRow>) => string[];
+  collectExportRows: (table: AppTable<TRow>) => AppRow<TRow>[];
+  getColumnExportLabel: (column: AppColumn<TRow>) => string;
   getExportCellForRow: (
-    row: Row<TRow>,
-    column: Column<TRow, unknown>,
-    cell?: Cell<TRow, unknown>,
+    row: AppRow<TRow>,
+    column: AppColumn<TRow>,
+    cell?: AppCell<TRow>,
   ) => ExportCellValue;
-  getFooterExportValue: (columnId: string, rows: readonly Row<TRow>[]) => ExportCellValue;
+  getFooterExportValue: (columnId: string, rows: readonly AppRow<TRow>[]) => ExportCellValue;
   isSummableExportColumn: (columnId: string) => boolean;
   exportCellValueToDisplay: (cell: ExportCellValue) => string;
   footerValuesByColumnId?: ReadonlyMap<string, ExportCellValue>;
   mapExportCellToPdfCell?: (
-    row: Row<TRow>,
+    row: AppRow<TRow>,
     exportCell: ExportCellValue,
-    column: Column<TRow, unknown>,
+    column: AppColumn<TRow>,
     align: 'left' | 'right',
   ) => GatePassReportPdfCell;
 };
@@ -91,9 +92,9 @@ function getLedgerDisplayAlign(
   return align === 'right' ? 'right' : 'left';
 }
 
-function preparePdfColumns<TRow>(
-  visibleColumns: Column<TRow, unknown>[],
-  getColumnExportLabel: (column: Column<TRow, unknown>) => string,
+function preparePdfColumns<TRow extends RowData>(
+  visibleColumns: AppColumn<TRow>[],
+  getColumnExportLabel: (column: AppColumn<TRow>) => string,
 ): PreparedPdfColumn<TRow>[] {
   return visibleColumns.map((column) => ({
     column,
@@ -102,8 +103,8 @@ function preparePdfColumns<TRow>(
   }));
 }
 
-function buildVisibleCellMap<TRow>(row: Row<TRow>): Map<string, Cell<TRow, unknown>> {
-  const cellsByColumnId = new Map<string, Cell<TRow, unknown>>();
+function buildVisibleCellMap<TRow extends RowData>(row: AppRow<TRow>): Map<string, AppCell<TRow>> {
+  const cellsByColumnId = new Map<string, AppCell<TRow>>();
 
   for (const cell of row.getVisibleCells()) {
     cellsByColumnId.set(cell.column.id, cell);
@@ -112,7 +113,7 @@ function buildVisibleCellMap<TRow>(row: Row<TRow>): Map<string, Cell<TRow, unkno
   return cellsByColumnId;
 }
 
-export function buildTableReportPdfData<TRow>({
+export function buildTableReportPdfData<TRow extends RowData>({
   table,
   reportTitle,
   dateFrom,

@@ -1,5 +1,3 @@
-import type { Table } from '@tanstack/react-table';
-
 import type { OutgoingGatePassReportRecord } from '@/features/outgoing-report/api/types';
 import type { OutgoingQuantityMode } from '@/features/outgoing-report/components/columns';
 import {
@@ -17,9 +15,10 @@ import {
 import { mapOutgoingSizeCellForPdf } from '@/features/outgoing-report/utils/map-outgoing-pdf-size-cell';
 import { buildTableReportPdfData } from '@/lib/gate-pass-report-pdf/build-table-report-pdf-data';
 import type { GatePassReportPdfData } from '@/lib/gate-pass-report-pdf/types';
+import type { AppTable } from '@/lib/table/features';
 
 export type BuildOutgoingReportPdfDataInput = {
-  table: Table<OutgoingGatePassReportRecord>;
+  table: AppTable<OutgoingGatePassReportRecord>;
   quantityMode: OutgoingQuantityMode;
   showLocation?: boolean;
   reportTitle?: string;

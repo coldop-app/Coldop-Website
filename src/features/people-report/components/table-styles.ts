@@ -1,3 +1,4 @@
+import type { AppColumnMeta as ColumnMeta } from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
 export const TABLE_GRID_CLASS = cn(
@@ -8,16 +9,6 @@ export const TABLE_GRID_CLASS = cn(
   '[&_thead_th]:border-t [&_thead_th]:border-b-2 [&_thead_th]:border-b-border/60',
   '[&_th:last-child]:border-r-0 [&_td:last-child]:border-r-0',
 );
-
-type ColumnMeta = {
-  align?: 'left' | 'right';
-  numeric?: boolean;
-  mono?: boolean;
-  wrap?: boolean;
-  compact?: boolean;
-  groupable?: boolean;
-  groupStart?: boolean;
-};
 
 export function getColumnAlign(meta: ColumnMeta | undefined): 'left' | 'right' {
   return meta?.align ?? 'left';

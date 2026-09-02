@@ -9,26 +9,16 @@ import {
   useState,
 } from 'react';
 import {
-  type Column,
-  type ColumnDef,
   type ColumnFiltersState,
   type ColumnOrderState,
+  type ColumnVisibilityState,
   type ExpandedState,
   type GroupingState,
   type PaginationState,
+  type RowData,
   type SortingState,
-  type Table as TanStackTable,
-  type VisibilityState,
   flexRender,
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getFilteredRowModel,
-  getExpandedRowModel,
-  getGroupedRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
+  useTable,
 } from '@tanstack/react-table';
 import {
   ArrowDown,
@@ -76,29 +66,23 @@ import {
   getTransferStockReportColumnWidth,
   getTransferStockReportTableMinWidth,
 } from '@/features/transfer-stock-report/utils/report-column-layout';
+import {
+  type AppColumn,
+  type AppColumnDef,
+  type AppTable,
+  appTableFeatures,
+} from '@/lib/table/features';
 import { cn } from '@/lib/utils';
 
-import { transferStockReportSortingFns } from './columns';
 import {
   getTransferStockReportFooterContent,
   ReportTotalLabel,
   transferStockReportFooterCellClassName,
 } from './report-totals-footer';
 
-const coreRowModel = getCoreRowModel();
-const filteredRowModel = getFilteredRowModel();
-const groupedRowModel = getGroupedRowModel();
-const expandedRowModel = getExpandedRowModel();
-const sortedRowModel = getSortedRowModel();
-const paginationRowModel = getPaginationRowModel();
-
-const defaultTableColumn: Partial<ColumnDef<TransferStockReportRecord, unknown>> = {
+const defaultTableColumn: Partial<AppColumnDef<TransferStockReportRecord>> = {
   filterFn: selectedValuesFilterFn,
 };
-
-const tableFilterFns = {
-  selectedValues: selectedValuesFilterFn,
-} as const;
 
 type PaginationItemValue = number | 'ellipsis';
 
@@ -221,14 +205,14 @@ function getFooterClassName(meta: ColumnMeta | undefined) {
   );
 }
 
-interface DataTableColumnHeaderProps<TData, TValue> {
-  column: Column<TData, TValue>;
+interface DataTableColumnHeaderProps<TData extends RowData, TValue> {
+  column: AppColumn<TData, TValue>;
   sorted: false | 'asc' | 'desc';
   align: 'left' | 'right';
   children: ReactNode;
 }
 
-function DataTableColumnHeader<TData, TValue>({
+function DataTableColumnHeader<TData extends RowData, TValue>({
   column,
   sorted,
   align,
@@ -269,10 +253,10 @@ function DataTableColumnHeader<TData, TValue>({
 }
 
 interface DataTableProps {
-  columns: ColumnDef<TransferStockReportRecord, unknown>[];
+  columns: AppColumnDef<TransferStockReportRecord>[];
   data: TransferStockReportRecord[];
   quickSearch?: string;
-  onTableReady?: (table: TanStackTable<TransferStockReportRecord>) => void;
+  onTableReady?: (table: AppTable<TransferStockReportRecord>) => void;
 }
 
 export const DataTable = memo(function DataTable({
@@ -290,12 +274,12 @@ export const DataTable = memo(function DataTable({
   const onTableReadyRef = useRef(onTableReady);
 
   onTableReadyRef.current = onTableReady;
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(() => {
-    const columnIds = getTransferStockReportColumnIds(columns as ColumnDef<unknown, unknown>[]);
+  const [columnVisibility, setColumnVisibility] = useState<ColumnVisibilityState>(() => {
+    const columnIds = getTransferStockReportColumnIds(columns);
     return getStoredTransferStockReportColumnState(columnIds).columnVisibility;
   });
   const [columnOrder, setColumnOrder] = useState<ColumnOrderState>(() => {
-    const columnIds = getTransferStockReportColumnIds(columns as ColumnDef<unknown, unknown>[]);
+    const columnIds = getTransferStockReportColumnIds(columns);
     return getStoredTransferStockReportColumnState(columnIds).columnOrder;
   });
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -314,21 +298,12 @@ export const DataTable = memo(function DataTable({
   const [isFooterElevated, setIsFooterElevated] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable<TransferStockReportRecord>({
+  const table = useTable({
+    features: appTableFeatures,
     data: filteredData,
     columns,
     defaultColumn: defaultTableColumn,
-    filterFns: tableFilterFns,
     globalFilterFn: advancedReportGlobalFilterFn,
-    getCoreRowModel: coreRowModel,
-    getFilteredRowModel: filteredRowModel,
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-    getGroupedRowModel: groupedRowModel,
-    getExpandedRowModel: expandedRowModel,
-    getSortedRowModel: sortedRowModel,
-    getPaginationRowModel: paginationRowModel,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
@@ -337,7 +312,6 @@ export const DataTable = memo(function DataTable({
     onExpandedChange: setExpanded,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
-    sortingFns: transferStockReportSortingFns,
     sortDescFirst: false,
     enableSortingRemoval: true,
     paginateExpandedRows: false,
@@ -491,7 +465,6 @@ export const DataTable = memo(function DataTable({
                       isGroupedRow &&
                         'bg-primary/5 even:bg-primary/5 hover:bg-primary/10 [&>td]:border-b-border/60 [&>td]:border-t-border/60 [&>td]:shadow-[inset_0_1px_0_hsl(var(--primary)/0.12)]',
                     )}
-                    data-state={row.getIsSelected() ? 'selected' : undefined}
                   >
                     {row.getVisibleCells().map((cell) => {
                       const meta = cell.column.columnDef.meta;

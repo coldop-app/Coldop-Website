@@ -1,4 +1,3 @@
-import type { Column, Table } from '@tanstack/react-table';
 import { Plus, RotateCcw, X } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
@@ -19,9 +18,10 @@ import type {
 } from '@/features/outgoing-report/utils/report-filter-fns';
 import { isAdvancedNumericColumn } from '@/features/outgoing-report/utils/report-filter-fns';
 import { cn } from '@/lib/utils';
+import type { AppTable, AppColumn } from '@/lib/table/features';
 
 interface AdvancedTabProps {
-  table: Table<OutgoingGatePassReportRecord>;
+  table: AppTable<OutgoingGatePassReportRecord>;
   draftGlobalFilter: AdvancedReportGlobalFilter;
   onDraftGlobalFilterChange: (filter: AdvancedReportGlobalFilter) => void;
 }
@@ -64,21 +64,21 @@ const NUMERIC_OPERATOR_OPTIONS: OperatorOption[] = [
 
 const OPERATOR_OPTIONS = [...STRING_OPERATOR_OPTIONS, ...NUMERIC_OPERATOR_OPTIONS];
 
-function getColumnLabel(column: Column<OutgoingGatePassReportRecord, unknown>) {
+function getColumnLabel(column: AppColumn<OutgoingGatePassReportRecord>) {
   return column.columnDef.meta?.filterLabel ?? column.id;
 }
 
-function getDefaultOperator(column: Column<OutgoingGatePassReportRecord, unknown>) {
+function getDefaultOperator(column: AppColumn<OutgoingGatePassReportRecord>) {
   return isAdvancedNumericColumn(column.id) ? 'greaterThan' : 'contains';
 }
 
-function getOperatorOptions(column: Column<OutgoingGatePassReportRecord, unknown> | undefined) {
+function getOperatorOptions(column: AppColumn<OutgoingGatePassReportRecord> | undefined) {
   return column && isAdvancedNumericColumn(column.id)
     ? NUMERIC_OPERATOR_OPTIONS
     : STRING_OPERATOR_OPTIONS;
 }
 
-function getColumnValueOptions(column: Column<OutgoingGatePassReportRecord, unknown> | undefined) {
+function getColumnValueOptions(column: AppColumn<OutgoingGatePassReportRecord> | undefined) {
   if (!column) return [];
 
   return Array.from(column.getFacetedUniqueValues().keys())
@@ -92,9 +92,7 @@ function getColumnValueOptions(column: Column<OutgoingGatePassReportRecord, unkn
     );
 }
 
-function createCondition(
-  column: Column<OutgoingGatePassReportRecord, unknown>,
-): AdvancedFilterCondition {
+function createCondition(column: AppColumn<OutgoingGatePassReportRecord>): AdvancedFilterCondition {
   return {
     id: `condition-${Date.now()}-${Math.random().toString(36).slice(2)}`,
     columnId: column.id as OutgoingReportColumnId,

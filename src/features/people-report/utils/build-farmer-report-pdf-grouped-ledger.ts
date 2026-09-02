@@ -1,17 +1,5 @@
-import {
-  createTable,
-  getCoreRowModel,
-  getExpandedRowModel,
-  getGroupedRowModel,
-  getSortedRowModel,
-  type ColumnDef,
-  type GroupingState,
-  type Row,
-  type SortingState,
-  type Table,
-} from '@tanstack/react-table';
+import type { GroupingState, SortingState } from '@tanstack/react-table';
 
-import { farmerReportSortingFns } from '@/features/people-report/components/columns';
 import { FARMER_REPORT_DEFAULT_SORTING } from '@/features/people-report/components/data-table';
 import type {
   FarmerReportSectionMode,
@@ -31,6 +19,8 @@ import {
   type PdfLedgerLeafRow,
 } from '@/features/people-report/utils/build-farmer-stock-ledger-pdf-data';
 import type { FarmerReportGroupColumnId } from '@/features/people-report/utils/report-grouping';
+import { constructHeadlessTable } from '@/lib/table/construct-headless-table';
+import type { AppColumnDef, AppRow, AppTable } from '@/lib/table/features';
 
 function isGroupColumnId(columnId: string | undefined): columnId is FarmerReportGroupColumnId {
   return columnId === 'variety' || columnId === 'stockFilter';
@@ -46,7 +36,7 @@ function getSuppressedGroupColumns(
 }
 
 function mapTableRowToPdfItem(
-  row: Row<FarmerReportTableRow>,
+  row: AppRow<FarmerReportTableRow>,
   sizeColumns: string[],
   grouping: GroupingState,
   runningTotalByRowKey: Map<string, number>,
@@ -92,7 +82,7 @@ function mapTableRowToPdfItem(
 }
 
 function flattenTableRows(
-  rows: Row<FarmerReportTableRow>[],
+  rows: AppRow<FarmerReportTableRow>[],
   sizeColumns: string[],
   grouping: GroupingState,
   runningTotalByRowKey: Map<string, number>,
@@ -104,7 +94,7 @@ function flattenTableRows(
 
 export type BuildPdfGroupedLedgerItemsInput = {
   rows: FarmerReportTableRow[];
-  columns: ColumnDef<FarmerReportTableRow>[];
+  columns: AppColumnDef<FarmerReportTableRow>[];
   grouping: GroupingState;
   sorting?: SortingState;
   sizeColumns: string[];
@@ -118,11 +108,11 @@ export type BuildPdfGroupedLedgerItemsResult = {
 
 function createFarmerReportPdfTable(
   data: FarmerReportTableRow[],
-  columns: ColumnDef<FarmerReportTableRow>[],
+  columns: AppColumnDef<FarmerReportTableRow>[],
   grouping: GroupingState,
   sorting: SortingState,
 ) {
-  return createTable({
+  return constructHeadlessTable({
     data,
     columns,
     state: {
@@ -130,12 +120,6 @@ function createFarmerReportPdfTable(
       grouping,
       expanded: true,
     },
-    onStateChange: () => undefined,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getGroupedRowModel: getGroupedRowModel(),
-    getExpandedRowModel: getExpandedRowModel(),
-    sortingFns: farmerReportSortingFns,
     enableSortingRemoval: true,
     sortDescFirst: false,
     groupedColumnMode: 'reorder',
@@ -195,12 +179,12 @@ export function buildPdfGroupedLedgerItems({
 }
 
 export function buildPdfGroupedLedgerItemsFromTable(
-  table: Table<FarmerReportTableRow>,
+  table: AppTable<FarmerReportTableRow>,
   sizeColumns: string[],
   sectionRows: FarmerReportTableRow[],
   sectionMode: FarmerReportSectionMode,
 ): BuildPdfGroupedLedgerItemsResult {
-  const grouping = table.getState().grouping;
+  const grouping = table.store.state.grouping;
   const isGroupingActive = grouping.length > 0;
   const exportRows = collectExportRows(table);
 

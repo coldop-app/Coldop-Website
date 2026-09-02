@@ -1,6 +1,5 @@
 import { format } from 'date-fns';
 import type ExcelJS from 'exceljs';
-import type { Table } from '@tanstack/react-table';
 
 import type { OutgoingGatePassReportRecord } from '@/features/outgoing-report/api/types';
 import type { OutgoingQuantityMode } from '@/features/outgoing-report/components/columns';
@@ -23,6 +22,7 @@ import {
 } from '@/lib/export-report-theme';
 import type { ExcelPreviewRow } from '@/lib/excel-preview-tab';
 import { loadExcelJS } from '@/lib/load-exceljs';
+import type { AppTable } from '@/lib/table/features';
 
 const COLORS = EXPORT_THEME_COLORS;
 
@@ -328,7 +328,7 @@ function applyBrandingToCell(cell: ExcelJS.Cell) {
 }
 
 export type BuildOutgoingReportExcelInput = {
-  table: Table<OutgoingGatePassReportRecord>;
+  table: AppTable<OutgoingGatePassReportRecord>;
   coldStorageName: string;
   quantityMode: OutgoingQuantityMode;
   showLocation?: boolean;

@@ -1,5 +1,4 @@
 import { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from 'react';
-import type { Table as TanStackTable } from '@tanstack/react-table';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -7,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import type { TransferStockReportRecord } from '@/features/transfer-stock-report/api/types';
+import type { AppTable } from '@/lib/table/features';
 
 import {
   useTransferStockReport,
@@ -36,7 +36,7 @@ const TransferStockReportPage = () => {
   const [appliedParams, setAppliedParams] =
     useState<TransferStockReportParams>(DEFAULT_REPORT_PARAMS);
   const [isExporting, setIsExporting] = useState(false);
-  const reportTableRef = useRef<TanStackTable<TransferStockReportRecord> | null>(null);
+  const reportTableRef = useRef<AppTable<TransferStockReportRecord> | null>(null);
   const previewWindowRef = useRef<Window | null>(null);
   const deferredSearchQuery = useDeferredValue(searchQuery);
 
@@ -57,7 +57,7 @@ const TransferStockReportPage = () => {
   );
   const tableColumns = useMemo(() => getTransferStockReportColumns(reportRows), [reportRows]);
 
-  const handleTableReady = useCallback((table: TanStackTable<TransferStockReportRecord>) => {
+  const handleTableReady = useCallback((table: AppTable<TransferStockReportRecord>) => {
     reportTableRef.current = table;
     setIsReportTableReady((ready) => ready || true);
   }, []);

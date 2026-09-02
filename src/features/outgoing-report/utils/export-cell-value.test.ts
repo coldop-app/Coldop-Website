@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Column, Row } from '@tanstack/react-table';
-
 import type { OutgoingGatePassReportRecord } from '@/features/outgoing-report/api/types';
+import type { AppRow, AppColumn } from '@/lib/table/features';
 
 import {
   computeOutgoingReportFooterTotals,
@@ -304,7 +303,7 @@ describe('computeOutgoingReportFooterTotals', () => {
           ],
         }),
       },
-    ] as Row<OutgoingGatePassReportRecord>[];
+    ] as AppRow<OutgoingGatePassReportRecord>[];
 
     const totals = computeOutgoingReportFooterTotals(rows, 'issued');
 
@@ -342,7 +341,7 @@ describe('getExportCellForRow aggregated size cells', () => {
     const column = {
       id: 'size-Ration',
       columnDef: { meta: { numeric: true } },
-    } as Column<OutgoingGatePassReportRecord, unknown>;
+    } as AppColumn<OutgoingGatePassReportRecord>;
 
     const cell = {
       column,
@@ -358,7 +357,7 @@ describe('getExportCellForRow aggregated size cells', () => {
       subRows: [],
       getIsGrouped: () => true,
       getVisibleCells: () => [cell],
-    } as unknown as Row<OutgoingGatePassReportRecord>;
+    } as unknown as AppRow<OutgoingGatePassReportRecord>;
 
     const result = getExportCellForRow(row, column, 'issued', true);
 
@@ -374,7 +373,7 @@ describe('getExportCellForRow aggregated size cells', () => {
     const column = {
       id: 'variety',
       columnDef: { meta: {} },
-    } as Column<OutgoingGatePassReportRecord, unknown>;
+    } as AppColumn<OutgoingGatePassReportRecord>;
 
     const cell = {
       column,
@@ -390,7 +389,7 @@ describe('getExportCellForRow aggregated size cells', () => {
       subRows: [],
       getIsGrouped: () => true,
       getVisibleCells: () => [cell],
-    } as unknown as Row<OutgoingGatePassReportRecord>;
+    } as unknown as AppRow<OutgoingGatePassReportRecord>;
 
     expect(getExportCellForRow(row, column, 'issued', true)).toEqual({
       kind: 'empty',
