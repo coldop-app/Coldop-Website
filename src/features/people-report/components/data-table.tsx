@@ -7,6 +7,7 @@ import {
   flexRender,
   type GroupingState,
   type OnChangeFn,
+  type PaginationState,
   type SortingState,
   useTable,
 } from '@tanstack/react-table';
@@ -46,6 +47,7 @@ import {
 import { cn } from '@/lib/utils';
 
 import { DataTableColumnHeader } from './data-table-column-header';
+import { DataTablePagination } from './data-table-pagination';
 import { ReportTotalsFooter } from './report-totals-footer';
 import {
   getCellClassName,
@@ -56,6 +58,8 @@ import {
 } from './table-styles';
 
 export const FARMER_REPORT_DEFAULT_SORTING: SortingState = [{ id: 'date', desc: false }];
+
+const DEFAULT_PAGE_SIZE = 10;
 
 export type FarmerReportTableMeta = {
   runningTotalByRowKey?: Map<string, number>;
@@ -250,6 +254,10 @@ export function DataTable({
 }: DataTableProps) {
   const [isHeaderScrolled, setIsHeaderScrolled] = React.useState(false);
   const [isFooterElevated, setIsFooterElevated] = React.useState(false);
+  const [pagination, setPagination] = React.useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: DEFAULT_PAGE_SIZE,
+  });
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
   const scrollRafRef = React.useRef<number | null>(null);
   const isHeaderScrolledRef = React.useRef(false);
@@ -258,8 +266,13 @@ export function DataTable({
 
   onTableReadyRef.current = onTableReady;
 
-  const { grouping } = viewState;
+  const { grouping, columnFilters, globalFilter } = viewState;
   const isGroupingActive = grouping.length > 0;
+
+  const effectivePagination = React.useMemo<PaginationState>(
+    () => (isGroupingActive ? { pageIndex: 0, pageSize: Infinity } : pagination),
+    [isGroupingActive, pagination],
+  );
 
   const pinnedRows = React.useMemo(
     () => (isGroupingActive ? data.filter((row) => row.kind === 'opening-balance') : []),
@@ -270,6 +283,10 @@ export function DataTable({
     () => (isGroupingActive ? data.filter((row) => row.kind !== 'opening-balance') : data),
     [data, isGroupingActive],
   );
+
+  React.useEffect(() => {
+    setPagination((current) => ({ ...current, pageIndex: 0 }));
+  }, [data, sorting, columnFilters, globalFilter, isGroupingActive]);
 
   const table = useTable({
     features: appTableFeatures,
@@ -285,6 +302,7 @@ export function DataTable({
       columnVisibility: viewState.columnVisibility,
       columnOrder: viewState.columnOrder,
       globalFilter: viewState.globalFilter,
+      pagination: effectivePagination,
     },
     onSortingChange,
     onColumnFiltersChange,
@@ -293,6 +311,11 @@ export function DataTable({
     onGroupingChange,
     onGlobalFilterChange,
     onExpandedChange,
+    onPaginationChange: (updater) => {
+      if (isGroupingActive) return;
+      setPagination(updater);
+    },
+    autoResetPageIndex: false,
     enableSortingRemoval: true,
     sortDescFirst: false,
     groupedColumnMode: 'reorder',
@@ -311,22 +334,37 @@ export function DataTable({
   });
 
   const pinnedTableRows = pinnedTable.getRowModel().rows;
+  const prePaginatedRows = table.getPrePaginatedRowModel().rows;
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
   const hasDataRows = pinnedTableRows.length > 0 || rows.length > 0;
+  const totalRows = prePaginatedRows.length;
+  const { pageIndex, pageSize } = pagination;
+  const pageCount = Math.max(Math.ceil(totalRows / pageSize), 1);
+  const showPagination = !isGroupingActive && totalRows > 0;
+
+  React.useEffect(() => {
+    if (isGroupingActive) return;
+    if (pagination.pageIndex < pageCount) return;
+
+    setPagination((current) => ({
+      ...current,
+      pageIndex: Math.max(pageCount - 1, 0),
+    }));
+  }, [isGroupingActive, pageCount, pagination.pageIndex]);
 
   const runningTotalByRowKey = React.useMemo(
     () =>
       applyRunningTotalsInDisplayOrder(
         getOrderedRowsForRunningTotals(
           pinnedTableRows.map((row) => row.original),
-          rows,
+          prePaginatedRows,
           isGroupingActive,
         ),
         sectionMode,
         getFarmerReportSectionStartingBalance(data, sectionMode),
       ),
-    [data, isGroupingActive, pinnedTableRows, rows, sectionMode],
+    [data, isGroupingActive, pinnedTableRows, prePaginatedRows, sectionMode],
   );
 
   const handleTableScroll = React.useCallback(() => {
@@ -367,8 +405,23 @@ export function DataTable({
   }, [handleTableScroll, rows.length, columns.length]);
 
   React.useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+
+    el.scrollTo({ left: el.scrollLeft, top: 0 });
+  }, [pageIndex]);
+
+  React.useEffect(() => {
     onTableReadyRef.current?.(table);
   }, [table]);
+
+  const handlePageChange = (nextPageIndex: number) => {
+    setPagination((current) => ({ ...current, pageIndex: nextPageIndex }));
+  };
+
+  const handlePageSizeChange = (nextPageSize: number) => {
+    setPagination({ pageIndex: 0, pageSize: nextPageSize });
+  };
 
   return (
     <RunningTotalsContext.Provider value={runningTotalByRowKey}>
@@ -449,6 +502,16 @@ export function DataTable({
             ) : null}
           </Table>
         </div>
+
+        {showPagination ? (
+          <DataTablePagination
+            pageIndex={pageIndex}
+            pageSize={pageSize}
+            totalRows={totalRows}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
+        ) : null}
       </div>
     </RunningTotalsContext.Provider>
   );
