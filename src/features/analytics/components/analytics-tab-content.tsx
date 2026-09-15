@@ -36,16 +36,24 @@ import { RefreshCw } from 'lucide-react';
 type AnalyticsTabContentProps = {
   quantityMode: StockQuantityMode;
   enabled: boolean;
+  transferStock?: boolean;
 };
 
-export function AnalyticsTabContent({ quantityMode, enabled }: AnalyticsTabContentProps) {
+export function AnalyticsTabContent({
+  quantityMode,
+  enabled,
+  transferStock = false,
+}: AnalyticsTabContentProps) {
   const preferences = usePreferencesStore((state) => state.preferences);
   const showStockFilterTabs = shouldShowStockFilter(preferences?.stockFilter);
   const [stockFilterTab, setStockFilterTab] = useState<StockFilterTab>('all');
 
   const coldStorageCapacity = useColdStorageStore((state) => state.coldStorage?.capacity);
 
-  const summary = useAnalyticsSummary({ stockFilter: showStockFilterTabs }, { enabled });
+  const summary = useAnalyticsSummary(
+    { stockFilter: showStockFilterTabs, transferStock },
+    { enabled },
+  );
   const topFarmers = useAnalyticsTopFarmers({ enabled });
 
   const isLoading = summary.isLoading || topFarmers.isLoading;

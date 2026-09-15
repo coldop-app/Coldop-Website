@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { getRouteApi, Link } from '@tanstack/react-router';
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { BarChart3, ChevronRight, LineChart, Loader2, RefreshCw } from 'lucide-react';
@@ -11,6 +12,8 @@ import {
   ItemMedia,
   ItemTitle,
 } from '@/components/ui/item';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 import { preserveScroll } from '@/lib/preserve-scroll';
@@ -31,6 +34,7 @@ const AnalyticsPage = () => {
   const { tab } = analyticsRouteApi.useSearch();
   const navigate = analyticsRouteApi.useNavigate();
   const queryClient = useQueryClient();
+  const [includeTransfers, setIncludeTransfers] = useState(false);
   const summaryFetching = useIsFetching({ queryKey: ANALYTICS_SUMMARY_QUERY_KEY });
   const topFarmersFetching = useIsFetching({
     queryKey: ANALYTICS_TOP_FARMERS_QUERY_KEY,
@@ -110,22 +114,52 @@ const AnalyticsPage = () => {
       </Item>
 
       <Tabs value={tab} onValueChange={handleTabChange} className="w-full gap-4">
-        <TabsList className="h-11 w-full">
-          <TabsTrigger value="current">Current</TabsTrigger>
-          <TabsTrigger value="initial">Initial</TabsTrigger>
-          <TabsTrigger value="outgoing">Outgoing</TabsTrigger>
-        </TabsList>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <TabsList className="h-11 w-full sm:min-w-0 sm:flex-1">
+            <TabsTrigger value="current">Current</TabsTrigger>
+            <TabsTrigger value="initial">Initial</TabsTrigger>
+            <TabsTrigger value="outgoing">Outgoing</TabsTrigger>
+          </TabsList>
+
+          <div className="flex shrink-0 items-center gap-2">
+            <Switch
+              id="analytics-include-transfers"
+              size="sm"
+              checked={includeTransfers}
+              onCheckedChange={setIncludeTransfers}
+              aria-label="Include transfers"
+            />
+            <Label
+              htmlFor="analytics-include-transfers"
+              className="cursor-pointer text-sm font-medium"
+            >
+              Include transfers
+            </Label>
+          </div>
+        </div>
 
         <TabsContent value="current" className="min-w-0">
-          <AnalyticsTabContent quantityMode="current" enabled={tab === 'current'} />
+          <AnalyticsTabContent
+            quantityMode="current"
+            enabled={tab === 'current'}
+            transferStock={includeTransfers}
+          />
         </TabsContent>
 
         <TabsContent value="initial" className="min-w-0">
-          <AnalyticsTabContent quantityMode="initial" enabled={tab === 'initial'} />
+          <AnalyticsTabContent
+            quantityMode="initial"
+            enabled={tab === 'initial'}
+            transferStock={includeTransfers}
+          />
         </TabsContent>
 
         <TabsContent value="outgoing" className="min-w-0">
-          <AnalyticsTabContent quantityMode="outgoing" enabled={tab === 'outgoing'} />
+          <AnalyticsTabContent
+            quantityMode="outgoing"
+            enabled={tab === 'outgoing'}
+            transferStock={includeTransfers}
+          />
         </TabsContent>
       </Tabs>
     </div>
