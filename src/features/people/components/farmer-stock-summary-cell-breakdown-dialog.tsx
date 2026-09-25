@@ -7,6 +7,8 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
+import { formatLotNo } from '@/features/daybook/utils/format';
 import { cn } from '@/lib/utils';
 import type {
   StockQuantityMode,
@@ -42,10 +44,11 @@ export function FarmerStockSummaryCellBreakdownDialog({
   quantityMode,
 }: FarmerStockSummaryCellBreakdownDialogProps) {
   const accentTextClass = stockSummaryAccentTextClass(quantityMode);
+  const preferences = usePreferencesStore((state) => state.preferences);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex max-h-[min(85vh,40rem)] flex-col gap-4 sm:max-w-xl">
+      <DialogContent className="flex max-h-[min(85vh,40rem)] flex-col gap-4 sm:max-w-3xl">
         <DialogHeader className="gap-1 text-left">
           <DialogTitle className="font-heading text-base leading-snug font-semibold">
             <span className="text-foreground">Variety: {variety}</span>
@@ -65,6 +68,7 @@ export function FarmerStockSummaryCellBreakdownDialog({
                 <TableRow className="border-0">
                   <TableHead className={getHeadClassName(undefined, false)}>Size</TableHead>
                   <TableHead className={getHeadClassName(undefined, false)}>Location</TableHead>
+                  <TableHead className={getHeadClassName(undefined, false)}>Lot No</TableHead>
                   <TableHead className={getHeadClassName({ numeric: true, align: 'right' }, false)}>
                     Quantity
                   </TableHead>
@@ -110,6 +114,11 @@ export function FarmerStockSummaryCellBreakdownDialog({
                       className={cn(getCellClassName(undefined), 'font-mono text-xs tabular-nums')}
                     >
                       {line.location}
+                    </TableCell>
+                    <TableCell className={cn(getCellClassName(undefined), 'font-mono tabular-nums')}>
+                      {line.lotNo
+                        ? formatLotNo(line.lotNo, preferences, line.lotNo.totalBags)
+                        : '—'}
                     </TableCell>
                     <TableCell className={cn(getCellClassName({ numeric: true, align: 'right' }))}>
                       {bagCountFormatter.format(line.quantity)}

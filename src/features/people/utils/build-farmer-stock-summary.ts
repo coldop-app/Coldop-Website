@@ -8,7 +8,7 @@ import type {
   OutgoingOrderDetail,
 } from '@/features/daybook/types';
 import { isOutgoingDaybookEntry } from '@/features/daybook/types';
-import { formatManualParchi, locationKey } from '@/features/daybook/utils/format';
+import { formatManualParchi, locationKey, sumBagQuantities } from '@/features/daybook/utils/format';
 import { getMergedBagSizeOrder } from '@/features/incoming/utils/incoming-preferences';
 
 export type StockQuantityMode = 'current' | 'initial' | 'outgoing';
@@ -29,6 +29,13 @@ export type StockSummaryMatrix = {
   modeTotals: Record<StockQuantityMode, number>;
 };
 
+export type StockSummaryLotNoSource = {
+  gatePassNo: number;
+  accountNumber: number;
+  customMarka?: string;
+  totalBags: number;
+};
+
 export type StockSummaryBreakdownLine = {
   variety: string;
   size: string;
@@ -36,6 +43,7 @@ export type StockSummaryBreakdownLine = {
   quantity: number;
   gatePassNo: number;
   reference?: string;
+  lotNo?: StockSummaryLotNoSource;
   manualParchiNumber?: string;
   manualGatePassNumber?: string;
 };
@@ -74,6 +82,27 @@ function getQuantityForMode(
 
 export function formatStockSummaryLocation(location: DaybookLocation): string {
   return `${location.chamber}/${location.floor}/${location.row}`;
+}
+
+function lotNoSourceFromIncoming(pass: IncomingDaybookEntry): StockSummaryLotNoSource {
+  return {
+    gatePassNo: pass.gatePassNo,
+    accountNumber: pass.farmerStorageLinkId.accountNumber,
+    ...(pass.customMarka != null ? { customMarka: pass.customMarka } : {}),
+    totalBags: sumBagQuantities(pass.bagSizes, 'initialQuantity'),
+  };
+}
+
+function lotNoSourceFromSnapshot(
+  snapshot: IncomingGatePassSnapshot,
+  accountNumber: number,
+): StockSummaryLotNoSource {
+  return {
+    gatePassNo: snapshot.gatePassNo,
+    accountNumber,
+    ...(snapshot.customMarka != null ? { customMarka: snapshot.customMarka } : {}),
+    totalBags: sumBagQuantities(snapshot.bagSizes, 'initialQuantity'),
+  };
 }
 
 function findSnapshotForOrderLine(
@@ -133,6 +162,14 @@ function buildOutgoingStockSummaryCellBreakdown(
       }
 
       const manualGatePass = formatManualParchi(pass.manualParchiNumber);
+      const incomingPass = snapshot
+        ? passes.find((candidate) => candidate._id === snapshot._id)
+        : undefined;
+      const lotNo = incomingPass
+        ? lotNoSourceFromIncoming(incomingPass)
+        : snapshot
+          ? lotNoSourceFromSnapshot(snapshot, pass.farmerStorageLinkId.accountNumber)
+          : undefined;
 
       lines.push({
         variety: lineVariety,
@@ -141,6 +178,7 @@ function buildOutgoingStockSummaryCellBreakdown(
         quantity: orderLine.quantityIssued,
         gatePassNo: pass.gatePassNo,
         reference: snapshot?.gatePassNo != null ? String(snapshot.gatePassNo) : undefined,
+        ...(lotNo ? { lotNo } : {}),
         ...(manualGatePass !== '—' ? { manualGatePassNumber: manualGatePass } : {}),
       });
     }
@@ -184,6 +222,7 @@ export function buildStockSummaryCellBreakdown(
         location: formatStockSummaryLocation(bagSize.location),
         quantity,
         gatePassNo: pass.gatePassNo,
+        lotNo: lotNoSourceFromIncoming(pass),
         ...(manualParchi !== '—' ? { manualParchiNumber: manualParchi } : {}),
       });
     }

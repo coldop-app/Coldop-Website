@@ -258,6 +258,37 @@ describe('buildStockSummaryCellBreakdown', () => {
     expect(lines[0]?.manualParchiNumber).toBe('P-4521');
   });
 
+  it('includes custom marka on incoming breakdown lines', () => {
+    const lines = buildStockSummaryCellBreakdown({
+      passes: [
+        createPass({
+          gatePassNo: 36,
+          customMarka: '  TS-42  ',
+          variety: 'Diamond',
+          bagSizes: [
+            {
+              name: 'Keri',
+              initialQuantity: 100,
+              currentQuantity: 100,
+              location: { chamber: '2', floor: '1', row: '2' },
+            },
+          ],
+        }),
+      ],
+      stockFilterTab: 'all',
+      quantityMode: 'current',
+      variety: 'Diamond',
+      size: 'Keri',
+    });
+
+    expect(lines[0]?.lotNo).toEqual({
+      gatePassNo: 36,
+      accountNumber: 1,
+      customMarka: '  TS-42  ',
+      totalBags: 100,
+    });
+  });
+
   it('returns breakdown lines for a variety and size cell', () => {
     const lines = buildStockSummaryCellBreakdown({
       passes,
@@ -346,6 +377,7 @@ describe('buildStockSummaryCellBreakdown', () => {
             _id: 'incoming-1',
             gatePassNo: 101,
             variety: 'Atlantic',
+            customMarka: 'MK-9',
             bagSizes: [
               {
                 name: 'Ration',
@@ -378,6 +410,11 @@ describe('buildStockSummaryCellBreakdown', () => {
       quantity: 30,
       gatePassNo: 202,
       reference: '101',
+      lotNo: {
+        gatePassNo: 101,
+        accountNumber: 1,
+        totalBags: 100,
+      },
       manualGatePassNumber: 'OGP-55',
     });
   });
