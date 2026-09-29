@@ -55,6 +55,9 @@ function resolvePageTitle(pathname: string, coldStorageName?: string, personName
 
     return personName?.trim() || 'Farmer';
   }
+  if (pathname.startsWith('/incoming-gate-pass/')) {
+    return 'Incoming Gate Pass';
+  }
   if (pathname === '/incoming/edit-history') {
     return 'Incoming Edit History';
   }

@@ -18,6 +18,7 @@ import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authe
 import { Route as AuthenticatedAnalyticsAdvancedRouteImport } from './routes/_authenticated/analytics.advanced'
 import { Route as AuthenticatedAnalyticsVarietyBreakdownRouteImport } from './routes/_authenticated/analytics.variety-breakdown'
 import { Route as AuthenticatedFinancesIndexRouteImport } from './routes/_authenticated/finances.index'
+import { Route as AuthenticatedIncomingGatePassIdRouteImport } from './routes/_authenticated/incoming-gate-pass.$id'
 import { Route as AuthenticatedIncomingIndexRouteImport } from './routes/_authenticated/incoming.index'
 import { Route as AuthenticatedIncomingIdRouteImport } from './routes/_authenticated/incoming.$id'
 import { Route as AuthenticatedIncomingEditHistoryRouteImport } from './routes/_authenticated/incoming.edit-history'
@@ -83,6 +84,12 @@ const AuthenticatedFinancesIndexRoute =
   AuthenticatedFinancesIndexRouteImport.update({
     id: '/finances/',
     path: '/finances/',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedIncomingGatePassIdRoute =
+  AuthenticatedIncomingGatePassIdRouteImport.update({
+    id: '/incoming-gate-pass/$id',
+    path: '/incoming-gate-pass/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedIncomingIndexRoute =
@@ -198,6 +205,7 @@ export interface FileRoutesByFullPath {
   '/more': typeof AuthenticatedMoreRoute
   '/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
+  '/incoming-gate-pass/$id': typeof AuthenticatedIncomingGatePassIdRoute
   '/incoming/$id': typeof AuthenticatedIncomingIdRoute
   '/incoming/edit-history': typeof AuthenticatedIncomingEditHistoryRoute
   '/outgoing/$id': typeof AuthenticatedOutgoingIdRoute
@@ -226,6 +234,7 @@ export interface FileRoutesByTo {
   '/more': typeof AuthenticatedMoreRoute
   '/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
+  '/incoming-gate-pass/$id': typeof AuthenticatedIncomingGatePassIdRoute
   '/incoming/$id': typeof AuthenticatedIncomingIdRoute
   '/incoming/edit-history': typeof AuthenticatedIncomingEditHistoryRoute
   '/outgoing/$id': typeof AuthenticatedOutgoingIdRoute
@@ -255,6 +264,7 @@ export interface FileRoutesById {
   '/_authenticated/more': typeof AuthenticatedMoreRoute
   '/_authenticated/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/_authenticated/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
+  '/_authenticated/incoming-gate-pass/$id': typeof AuthenticatedIncomingGatePassIdRoute
   '/_authenticated/incoming/$id': typeof AuthenticatedIncomingIdRoute
   '/_authenticated/incoming/edit-history': typeof AuthenticatedIncomingEditHistoryRoute
   '/_authenticated/outgoing/$id': typeof AuthenticatedOutgoingIdRoute
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/more'
     | '/analytics/advanced'
     | '/analytics/variety-breakdown'
+    | '/incoming-gate-pass/$id'
     | '/incoming/$id'
     | '/incoming/edit-history'
     | '/outgoing/$id'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/more'
     | '/analytics/advanced'
     | '/analytics/variety-breakdown'
+    | '/incoming-gate-pass/$id'
     | '/incoming/$id'
     | '/incoming/edit-history'
     | '/outgoing/$id'
@@ -341,6 +353,7 @@ export interface FileRouteTypes {
     | '/_authenticated/more'
     | '/_authenticated/analytics/advanced'
     | '/_authenticated/analytics/variety-breakdown'
+    | '/_authenticated/incoming-gate-pass/$id'
     | '/_authenticated/incoming/$id'
     | '/_authenticated/incoming/edit-history'
     | '/_authenticated/outgoing/$id'
@@ -432,6 +445,13 @@ declare module '@tanstack/react-router' {
       path: '/finances'
       fullPath: '/finances/'
       preLoaderRoute: typeof AuthenticatedFinancesIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/incoming-gate-pass/$id': {
+      id: '/_authenticated/incoming-gate-pass/$id'
+      path: '/incoming-gate-pass/$id'
+      fullPath: '/incoming-gate-pass/$id'
+      preLoaderRoute: typeof AuthenticatedIncomingGatePassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/incoming/': {
@@ -583,6 +603,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMoreRoute: typeof AuthenticatedMoreRoute
   AuthenticatedAnalyticsAdvancedRoute: typeof AuthenticatedAnalyticsAdvancedRoute
   AuthenticatedAnalyticsVarietyBreakdownRoute: typeof AuthenticatedAnalyticsVarietyBreakdownRoute
+  AuthenticatedIncomingGatePassIdRoute: typeof AuthenticatedIncomingGatePassIdRoute
   AuthenticatedIncomingIdRoute: typeof AuthenticatedIncomingIdRoute
   AuthenticatedIncomingEditHistoryRoute: typeof AuthenticatedIncomingEditHistoryRoute
   AuthenticatedOutgoingIdRoute: typeof AuthenticatedOutgoingIdRoute
@@ -609,6 +630,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsAdvancedRoute: AuthenticatedAnalyticsAdvancedRoute,
   AuthenticatedAnalyticsVarietyBreakdownRoute:
     AuthenticatedAnalyticsVarietyBreakdownRoute,
+  AuthenticatedIncomingGatePassIdRoute: AuthenticatedIncomingGatePassIdRoute,
   AuthenticatedIncomingIdRoute: AuthenticatedIncomingIdRoute,
   AuthenticatedIncomingEditHistoryRoute: AuthenticatedIncomingEditHistoryRoute,
   AuthenticatedOutgoingIdRoute: AuthenticatedOutgoingIdRoute,

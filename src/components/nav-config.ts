@@ -86,7 +86,13 @@ const REPORTS_ROUTE_PREFIXES = [
   '/reports/transfer-stock',
 ] as const;
 
-const DAYBOOK_ACTIVE_ROUTE_PREFIXES = ['/daybook', '/incoming', '/outgoing', '/transfer'] as const;
+const DAYBOOK_ACTIVE_ROUTE_PREFIXES = [
+  '/daybook',
+  '/incoming',
+  '/incoming-gate-pass',
+  '/outgoing',
+  '/transfer',
+] as const;
 
 export function isDaybookNavActive(pathname: string) {
   return DAYBOOK_ACTIVE_ROUTE_PREFIXES.some(

@@ -21,6 +21,7 @@ import {
   Pencil,
   Loader2,
   Printer,
+  QrCode,
   Truck,
   User,
   Warehouse,
@@ -167,6 +168,7 @@ export function IncomingGatePassCard({ entry, editSearch }: IncomingGatePassCard
   const navigate = useNavigate();
   const [isExpanded, setIsExpanded] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [isGeneratingQr, setIsGeneratingQr] = useState(false);
   const preferences = usePreferencesStore((state) => state.preferences);
   const coldStorageName = useColdStorageStore((state) => state.coldStorage?.name);
   const coldStorageAddress = useColdStorageStore((state) => state.coldStorage?.address);
@@ -225,6 +227,36 @@ export function IncomingGatePassCard({ entry, editSearch }: IncomingGatePassCard
       setIsGeneratingPdf(false);
     }
   }, [coldStorageAddress, coldStorageLogo, coldStorageName, entry, preferences]);
+
+  const handlePrintQr = useCallback(async () => {
+    if (!coldStorageName) {
+      toast.error('Cold storage details are not ready yet.');
+      return;
+    }
+
+    try {
+      setIsGeneratingQr(true);
+
+      const { generateIncomingGatePassQrPdf } =
+        await import('@/features/daybook/utils/generate-incoming-gate-pass-qr-pdf');
+
+      const blob = await generateIncomingGatePassQrPdf({
+        gatePassId: entry._id,
+        gatePassNo: entry.gatePassNo,
+        farmerName: farmerLink.name,
+        lotNo,
+        coldStorageName,
+      });
+
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error('Failed to generate QR PDF:', error);
+      toast.error('Failed to generate QR code. Please try again.');
+    } finally {
+      setIsGeneratingQr(false);
+    }
+  }, [coldStorageName, entry._id, entry.gatePassNo, farmerLink.name, lotNo]);
 
   return (
     <Card className="card-hover border-border/60 overflow-hidden">
@@ -412,6 +444,16 @@ export function IncomingGatePassCard({ entry, editSearch }: IncomingGatePassCard
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
+            size="icon-sm"
+            className="bg-background"
+            aria-label="Print QR code"
+            disabled={isGeneratingQr || !coldStorageName}
+            onClick={() => void handlePrintQr()}
+          >
+            {isGeneratingQr ? <Loader2 className="animate-spin" /> : <QrCode />}
+          </Button>
+          <Button
+            variant="outline"
             size="sm"
             className="bg-background h-8"
             disabled={!canEdit}
@@ -482,6 +524,7 @@ export function IncomingGatePassCardSkeleton() {
       <CardFooter className="border-border/40 bg-muted/10 flex items-center justify-between border-t px-4 py-3">
         <Skeleton className="h-8 w-32" />
         <div className="flex gap-2">
+          <Skeleton className="size-8 rounded-md" />
           <Skeleton className="h-8 w-16 rounded-md" />
           <Skeleton className="h-8 w-16 rounded-md" />
         </div>
