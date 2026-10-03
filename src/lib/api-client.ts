@@ -35,10 +35,17 @@ apiClient.interceptors.response.use(
     const { status } = error.response;
 
     if (status === 401) {
+      const path = window.location.pathname;
+      const isPublicIncomingGatePass = path.startsWith('/incoming-gate-pass/');
+
+      if (isPublicIncomingGatePass) {
+        return Promise.reject(error);
+      }
+
       clearSession();
 
-      if (window.location.pathname !== '/login') {
-        const redirect = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+      if (path !== '/login') {
+        const redirect = `${path}${window.location.search}${window.location.hash}`;
         void router.navigate({
           to: '/login',
           search: { redirect },

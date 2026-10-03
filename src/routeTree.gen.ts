@@ -14,11 +14,11 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedDaybookRouteImport } from './routes/_authenticated/daybook'
 import { Route as AuthenticatedMoreRouteImport } from './routes/_authenticated/more'
+import { Route as IncomingGatePassIdRouteImport } from './routes/incoming-gate-pass.$id'
 import { Route as AuthenticatedAnalyticsIndexRouteImport } from './routes/_authenticated/analytics.index'
 import { Route as AuthenticatedAnalyticsAdvancedRouteImport } from './routes/_authenticated/analytics.advanced'
 import { Route as AuthenticatedAnalyticsVarietyBreakdownRouteImport } from './routes/_authenticated/analytics.variety-breakdown'
 import { Route as AuthenticatedFinancesIndexRouteImport } from './routes/_authenticated/finances.index'
-import { Route as AuthenticatedIncomingGatePassIdRouteImport } from './routes/_authenticated/incoming-gate-pass.$id'
 import { Route as AuthenticatedIncomingIndexRouteImport } from './routes/_authenticated/incoming.index'
 import { Route as AuthenticatedIncomingIdRouteImport } from './routes/_authenticated/incoming.$id'
 import { Route as AuthenticatedIncomingEditHistoryRouteImport } from './routes/_authenticated/incoming.edit-history'
@@ -62,6 +62,11 @@ const AuthenticatedMoreRoute = AuthenticatedMoreRouteImport.update({
   path: '/more',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const IncomingGatePassIdRoute = IncomingGatePassIdRouteImport.update({
+  id: '/incoming-gate-pass/$id',
+  path: '/incoming-gate-pass/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedAnalyticsIndexRoute =
   AuthenticatedAnalyticsIndexRouteImport.update({
     id: '/analytics/',
@@ -84,12 +89,6 @@ const AuthenticatedFinancesIndexRoute =
   AuthenticatedFinancesIndexRouteImport.update({
     id: '/finances/',
     path: '/finances/',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
-const AuthenticatedIncomingGatePassIdRoute =
-  AuthenticatedIncomingGatePassIdRouteImport.update({
-    id: '/incoming-gate-pass/$id',
-    path: '/incoming-gate-pass/$id',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedIncomingIndexRoute =
@@ -203,9 +202,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/daybook': typeof AuthenticatedDaybookRoute
   '/more': typeof AuthenticatedMoreRoute
+  '/incoming-gate-pass/$id': typeof IncomingGatePassIdRoute
   '/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
-  '/incoming-gate-pass/$id': typeof AuthenticatedIncomingGatePassIdRoute
   '/incoming/$id': typeof AuthenticatedIncomingIdRoute
   '/incoming/edit-history': typeof AuthenticatedIncomingEditHistoryRoute
   '/outgoing/$id': typeof AuthenticatedOutgoingIdRoute
@@ -232,9 +231,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/daybook': typeof AuthenticatedDaybookRoute
   '/more': typeof AuthenticatedMoreRoute
+  '/incoming-gate-pass/$id': typeof IncomingGatePassIdRoute
   '/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
-  '/incoming-gate-pass/$id': typeof AuthenticatedIncomingGatePassIdRoute
   '/incoming/$id': typeof AuthenticatedIncomingIdRoute
   '/incoming/edit-history': typeof AuthenticatedIncomingEditHistoryRoute
   '/outgoing/$id': typeof AuthenticatedOutgoingIdRoute
@@ -262,9 +261,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/_authenticated/daybook': typeof AuthenticatedDaybookRoute
   '/_authenticated/more': typeof AuthenticatedMoreRoute
+  '/incoming-gate-pass/$id': typeof IncomingGatePassIdRoute
   '/_authenticated/analytics/advanced': typeof AuthenticatedAnalyticsAdvancedRoute
   '/_authenticated/analytics/variety-breakdown': typeof AuthenticatedAnalyticsVarietyBreakdownRoute
-  '/_authenticated/incoming-gate-pass/$id': typeof AuthenticatedIncomingGatePassIdRoute
   '/_authenticated/incoming/$id': typeof AuthenticatedIncomingIdRoute
   '/_authenticated/incoming/edit-history': typeof AuthenticatedIncomingEditHistoryRoute
   '/_authenticated/outgoing/$id': typeof AuthenticatedOutgoingIdRoute
@@ -293,9 +292,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/daybook'
     | '/more'
+    | '/incoming-gate-pass/$id'
     | '/analytics/advanced'
     | '/analytics/variety-breakdown'
-    | '/incoming-gate-pass/$id'
     | '/incoming/$id'
     | '/incoming/edit-history'
     | '/outgoing/$id'
@@ -322,9 +321,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/daybook'
     | '/more'
+    | '/incoming-gate-pass/$id'
     | '/analytics/advanced'
     | '/analytics/variety-breakdown'
-    | '/incoming-gate-pass/$id'
     | '/incoming/$id'
     | '/incoming/edit-history'
     | '/outgoing/$id'
@@ -351,9 +350,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/_authenticated/daybook'
     | '/_authenticated/more'
+    | '/incoming-gate-pass/$id'
     | '/_authenticated/analytics/advanced'
     | '/_authenticated/analytics/variety-breakdown'
-    | '/_authenticated/incoming-gate-pass/$id'
     | '/_authenticated/incoming/$id'
     | '/_authenticated/incoming/edit-history'
     | '/_authenticated/outgoing/$id'
@@ -380,6 +379,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  IncomingGatePassIdRoute: typeof IncomingGatePassIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -419,6 +419,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMoreRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/incoming-gate-pass/$id': {
+      id: '/incoming-gate-pass/$id'
+      path: '/incoming-gate-pass/$id'
+      fullPath: '/incoming-gate-pass/$id'
+      preLoaderRoute: typeof IncomingGatePassIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/analytics/': {
       id: '/_authenticated/analytics/'
       path: '/analytics'
@@ -445,13 +452,6 @@ declare module '@tanstack/react-router' {
       path: '/finances'
       fullPath: '/finances/'
       preLoaderRoute: typeof AuthenticatedFinancesIndexRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/incoming-gate-pass/$id': {
-      id: '/_authenticated/incoming-gate-pass/$id'
-      path: '/incoming-gate-pass/$id'
-      fullPath: '/incoming-gate-pass/$id'
-      preLoaderRoute: typeof AuthenticatedIncomingGatePassIdRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/incoming/': {
@@ -603,7 +603,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedMoreRoute: typeof AuthenticatedMoreRoute
   AuthenticatedAnalyticsAdvancedRoute: typeof AuthenticatedAnalyticsAdvancedRoute
   AuthenticatedAnalyticsVarietyBreakdownRoute: typeof AuthenticatedAnalyticsVarietyBreakdownRoute
-  AuthenticatedIncomingGatePassIdRoute: typeof AuthenticatedIncomingGatePassIdRoute
   AuthenticatedIncomingIdRoute: typeof AuthenticatedIncomingIdRoute
   AuthenticatedIncomingEditHistoryRoute: typeof AuthenticatedIncomingEditHistoryRoute
   AuthenticatedOutgoingIdRoute: typeof AuthenticatedOutgoingIdRoute
@@ -630,7 +629,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAnalyticsAdvancedRoute: AuthenticatedAnalyticsAdvancedRoute,
   AuthenticatedAnalyticsVarietyBreakdownRoute:
     AuthenticatedAnalyticsVarietyBreakdownRoute,
-  AuthenticatedIncomingGatePassIdRoute: AuthenticatedIncomingGatePassIdRoute,
   AuthenticatedIncomingIdRoute: AuthenticatedIncomingIdRoute,
   AuthenticatedIncomingEditHistoryRoute: AuthenticatedIncomingEditHistoryRoute,
   AuthenticatedOutgoingIdRoute: AuthenticatedOutgoingIdRoute,
@@ -660,6 +658,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  IncomingGatePassIdRoute: IncomingGatePassIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
