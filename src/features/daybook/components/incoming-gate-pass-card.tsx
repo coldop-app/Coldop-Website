@@ -422,27 +422,29 @@ export function IncomingGatePassCard({ entry, editSearch }: IncomingGatePassCard
         )}
       </CardContent>
 
-      <CardFooter className="border-border/40 bg-muted/10 flex items-center justify-between border-t px-4 py-3">
+      <CardFooter className="border-border/40 bg-muted/10 flex items-center justify-between gap-2 border-t px-3 py-3 sm:px-4">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setIsExpanded(!isExpanded)}
-          className="text-muted-foreground hover:text-foreground text-xs"
+          className="text-muted-foreground hover:text-foreground h-8 min-w-0 shrink px-2 text-xs sm:px-3"
         >
           {isExpanded ? (
             <>
-              <ChevronUp className="mr-2 h-4 w-4" />
-              View less
+              <ChevronUp className="mr-1.5 h-4 w-4 shrink-0 sm:mr-2" />
+              <span className="truncate sm:hidden">Less</span>
+              <span className="hidden truncate sm:inline">View less</span>
             </>
           ) : (
             <>
-              <ChevronDown className="mr-2 h-4 w-4" />
-              View full details
+              <ChevronDown className="mr-1.5 h-4 w-4 shrink-0 sm:mr-2" />
+              <span className="truncate sm:hidden">Details</span>
+              <span className="hidden truncate sm:inline">View full details</span>
             </>
           )}
         </Button>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
           <Button
             variant="outline"
             size="icon-sm"
@@ -456,7 +458,8 @@ export function IncomingGatePassCard({ entry, editSearch }: IncomingGatePassCard
           <Button
             variant="outline"
             size="sm"
-            className="bg-background h-8"
+            className="bg-background h-8 px-2 sm:px-3"
+            aria-label="Edit"
             disabled={!canEdit}
             title={editDisabledTitle}
             onClick={() =>
@@ -467,27 +470,23 @@ export function IncomingGatePassCard({ entry, editSearch }: IncomingGatePassCard
               })
             }
           >
-            <Pencil className="mr-2 h-3.5 w-3.5" />
-            Edit
+            <Pencil className="h-3.5 w-3.5 sm:mr-2" />
+            <span className="hidden sm:inline">Edit</span>
           </Button>
           <Button
             variant="secondary"
             size="sm"
-            className="h-8"
+            className="h-8 px-2 sm:px-3"
+            aria-label={isGeneratingPdf ? 'Generating PDF' : 'Print'}
             disabled={isGeneratingPdf || !coldStorageName}
             onClick={() => void handlePrint()}
           >
             {isGeneratingPdf ? (
-              <>
-                <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" />
-                Generating…
-              </>
+              <Loader2 className="h-3.5 w-3.5 animate-spin sm:mr-2" />
             ) : (
-              <>
-                <Printer className="mr-2 h-3.5 w-3.5" />
-                Print
-              </>
+              <Printer className="h-3.5 w-3.5 sm:mr-2" />
             )}
+            <span className="hidden sm:inline">{isGeneratingPdf ? 'Generating…' : 'Print'}</span>
           </Button>
         </div>
       </CardFooter>
@@ -522,12 +521,12 @@ export function IncomingGatePassCardSkeleton() {
           ))}
         </div>
       </CardContent>
-      <CardFooter className="border-border/40 bg-muted/10 flex items-center justify-between border-t px-4 py-3">
-        <Skeleton className="h-8 w-32" />
-        <div className="flex gap-2">
+      <CardFooter className="border-border/40 bg-muted/10 flex items-center justify-between gap-2 border-t px-3 py-3 sm:px-4">
+        <Skeleton className="h-8 w-20 sm:w-32" />
+        <div className="flex gap-1.5 sm:gap-2">
           <Skeleton className="size-8 rounded-md" />
-          <Skeleton className="h-8 w-16 rounded-md" />
-          <Skeleton className="h-8 w-16 rounded-md" />
+          <Skeleton className="size-8 rounded-md sm:h-8 sm:w-16" />
+          <Skeleton className="size-8 rounded-md sm:h-8 sm:w-16" />
         </div>
       </CardFooter>
     </Card>
