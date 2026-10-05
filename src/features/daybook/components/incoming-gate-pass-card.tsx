@@ -33,11 +33,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useColdStorageStore } from '@/features/auth/store/use-cold-storage-store';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
 import type { GatePassEditSearch } from '@/features/daybook/gate-pass-edit-search';
-import type {
-  DaybookLocation,
-  IncomingBagSize,
-  IncomingDaybookEntry,
-} from '@/features/daybook/types';
+import type { DaybookLocation, IncomingDaybookEntry } from '@/features/daybook/types';
 import {
   formatDaybookDateTime,
   formatIncomingLotNo,
@@ -95,12 +91,17 @@ const SummaryField = ({ label, value, icon: Icon, valueClassName }: SummaryField
   </div>
 );
 
+type LocationTrailBag = {
+  location: DaybookLocation;
+  previousLocation?: DaybookLocation[];
+};
+
 type LocationTrailStop = {
   location: DaybookLocation;
   isCurrent: boolean;
 };
 
-function getLocationTrail(bag: IncomingBagSize): LocationTrailStop[] {
+function getLocationTrail(bag: LocationTrailBag): LocationTrailStop[] {
   const history = bag.previousLocation ?? [];
   return [
     ...history.map((location) => ({ location, isCurrent: false })),
@@ -108,7 +109,7 @@ function getLocationTrail(bag: IncomingBagSize): LocationTrailStop[] {
   ];
 }
 
-function BagLocationTrail({ bag }: { bag: IncomingBagSize }) {
+export function BagLocationTrail({ bag }: { bag: LocationTrailBag }) {
   const trail = getLocationTrail(bag);
   const hasHistory = trail.length > 1;
 

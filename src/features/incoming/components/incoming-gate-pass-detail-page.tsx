@@ -1,5 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,9 +14,9 @@ import {
 } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
+import { BagLocationTrail } from '@/features/daybook/components/incoming-gate-pass-card';
 import {
   formatDaybookDateTime,
-  formatLocation,
   formatManualParchi,
   formatQuantity,
 } from '@/features/daybook/utils/format';
@@ -170,29 +170,23 @@ function GatePassBody({ entry }: { entry: IncomingGatePassDetail }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {bagSizes.map((bag, index) => {
-                    const location = formatLocation(bag.location);
-                    return (
-                      <tr
-                        key={`${bag.name}-${index}`}
-                        className="border-border/40 border-b last:border-0"
-                      >
-                        <td className="text-foreground px-3 py-2.5 font-medium">{bag.name}</td>
-                        <td className="text-foreground px-3 py-2.5 text-right font-medium tabular-nums">
-                          {formatQuantity(bag.initialQuantity)}
-                        </td>
-                        <td className="text-foreground px-3 py-2.5 text-right font-medium tabular-nums">
-                          {formatQuantity(bag.currentQuantity)}
-                        </td>
-                        <td className="text-foreground px-3 py-2.5">
-                          <span className="inline-flex items-center gap-1.5 text-sm">
-                            <MapPin className="text-primary size-3.5 shrink-0" aria-hidden />
-                            {location}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {bagSizes.map((bag, index) => (
+                    <tr
+                      key={`${bag.name}-${index}`}
+                      className="border-border/40 border-b last:border-0"
+                    >
+                      <td className="text-foreground px-3 py-2.5 font-medium">{bag.name}</td>
+                      <td className="text-foreground px-3 py-2.5 text-right font-medium tabular-nums">
+                        {formatQuantity(bag.initialQuantity)}
+                      </td>
+                      <td className="text-foreground px-3 py-2.5 text-right font-medium tabular-nums">
+                        {formatQuantity(bag.currentQuantity)}
+                      </td>
+                      <td className="px-3 py-2.5 align-top">
+                        <BagLocationTrail bag={bag} />
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>

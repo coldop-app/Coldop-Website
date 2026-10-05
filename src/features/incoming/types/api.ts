@@ -85,6 +85,7 @@ export type IncomingGatePassDetailBagSize = {
   initialQuantity: number;
   currentQuantity: number;
   location: DaybookLocation;
+  previousLocation?: DaybookLocation[];
 };
 
 export type IncomingGatePassDetailLedger = {
