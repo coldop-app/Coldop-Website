@@ -1,6 +1,5 @@
 import { useMemo, type ReactNode } from 'react';
-import { useNavigate } from '@tanstack/react-router';
-import { AlertCircle, ArrowLeft, MapPin, RefreshCw } from 'lucide-react';
+import { AlertCircle, MapPin, RefreshCw } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,11 +14,6 @@ import {
 } from '@/components/ui/empty';
 import { Skeleton } from '@/components/ui/skeleton';
 import { usePreferencesStore } from '@/features/auth/store/use-preferences-store';
-import {
-  buildGatePassEditBackTarget,
-  navigateToGatePassEditBackTarget,
-  type GatePassEditSearch,
-} from '@/features/daybook/gate-pass-edit-search';
 import {
   formatDaybookDateTime,
   formatLocation,
@@ -39,7 +33,6 @@ import { cn } from '@/lib/utils';
 
 type IncomingGatePassDetailPageProps = {
   id: string;
-  search: GatePassEditSearch;
 };
 
 function DetailField({
@@ -70,26 +63,9 @@ function DetailField({
   );
 }
 
-function BackButton({ search }: { search: GatePassEditSearch }) {
-  const navigate = useNavigate();
-  const back = buildGatePassEditBackTarget(search);
-
-  return (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={() => navigateToGatePassEditBackTarget(navigate, search)}
-    >
-      <ArrowLeft className="mr-2 h-4 w-4" />
-      {back.label}
-    </Button>
-  );
-}
-
 function DetailSkeleton() {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-4 sm:gap-6">
-      <Skeleton className="h-8 w-36" />
       <Card className="border-border/60 overflow-hidden">
         <CardHeader className="border-border/40 bg-muted/10 gap-3 border-b">
           <Skeleton className="h-7 w-40" />
@@ -114,19 +90,16 @@ function DetailSkeleton() {
 }
 
 function DetailStatus({
-  search,
   title,
   description,
   action,
 }: {
-  search: GatePassEditSearch;
   title: string;
   description: string;
   action?: ReactNode;
 }) {
   return (
     <div className="flex min-w-0 flex-1 flex-col gap-4 sm:gap-6">
-      <BackButton search={search} />
       <Empty className="border-border border border-dashed">
         <EmptyHeader>
           <EmptyMedia variant="icon">
@@ -238,7 +211,7 @@ function GatePassBody({ entry }: { entry: IncomingGatePassDetail }) {
   );
 }
 
-export function IncomingGatePassDetailPage({ id, search }: IncomingGatePassDetailPageProps) {
+export function IncomingGatePassDetailPage({ id }: IncomingGatePassDetailPageProps) {
   const { data, isLoading, isError, error, refetch, isFetching } = useIncomingGatePass(id);
 
   if (isLoading) {
@@ -248,7 +221,6 @@ export function IncomingGatePassDetailPage({ id, search }: IncomingGatePassDetai
   if (isError && isIncomingGatePassNotFound(error)) {
     return (
       <DetailStatus
-        search={search}
         title="Gate pass not found"
         description="This incoming gate pass is missing, or it does not belong to this cold storage."
       />
@@ -260,7 +232,6 @@ export function IncomingGatePassDetailPage({ id, search }: IncomingGatePassDetai
 
     return (
       <DetailStatus
-        search={search}
         title="Could not load gate pass"
         description={message}
         action={
@@ -279,10 +250,5 @@ export function IncomingGatePassDetailPage({ id, search }: IncomingGatePassDetai
     );
   }
 
-  return (
-    <div className="flex min-w-0 flex-1 flex-col gap-4 sm:gap-6">
-      <BackButton search={search} />
-      <GatePassBody entry={data} />
-    </div>
-  );
+  return <GatePassBody entry={data} />;
 }
