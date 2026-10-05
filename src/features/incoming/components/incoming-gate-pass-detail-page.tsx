@@ -147,14 +147,29 @@ function GatePassBody({ entry }: { entry: IncomingGatePassDetail }) {
         <CardContent className="pt-5">
           <div className="grid grid-cols-2 gap-x-4 gap-y-5 sm:grid-cols-3">
             <DetailField label="Farmer" value={farmer.name} wrap />
-            <DetailField label="Variety" value={entry.variety} />
             <DetailField label="Marka" value={marka} mono />
+            <div className="min-w-0 space-y-1">
+              <p className="text-muted-foreground text-xs">Location</p>
+              <div className="space-y-3">
+                {bagSizes.map((bag, index) => (
+                  <div key={`${bag.name}-${index}`} className="min-w-0">
+                    {bagSizes.length > 1 ? (
+                      <p className="text-muted-foreground mb-1 text-xs font-medium">{bag.name}</p>
+                    ) : null}
+                    <BagLocationTrail bag={bag} />
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
           <div className="border-border/40 mt-6 border-t pt-5">
             <div className="border-border/50 overflow-x-auto rounded-xl border">
               <table className="w-full text-sm">
                 <thead className="border-border/50 bg-muted/50 border-b">
                   <tr>
+                    <th className="text-muted-foreground h-10 px-3 text-left text-xs font-medium">
+                      Variety
+                    </th>
                     <th className="text-muted-foreground h-10 px-3 text-left text-xs font-medium">
                       Size
                     </th>
@@ -164,9 +179,6 @@ function GatePassBody({ entry }: { entry: IncomingGatePassDetail }) {
                     <th className="text-muted-foreground h-10 px-3 text-right text-xs font-medium">
                       Current qty
                     </th>
-                    <th className="text-muted-foreground h-10 px-3 text-left text-xs font-medium">
-                      Location
-                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -175,15 +187,17 @@ function GatePassBody({ entry }: { entry: IncomingGatePassDetail }) {
                       key={`${bag.name}-${index}`}
                       className="border-border/40 border-b last:border-0"
                     >
-                      <td className="text-foreground px-3 py-2.5 font-medium">{bag.name}</td>
-                      <td className="text-foreground px-3 py-2.5 text-right font-medium tabular-nums">
+                      <td className="text-foreground px-3 py-2.5 align-top font-semibold">
+                        {entry.variety}
+                      </td>
+                      <td className="text-foreground px-3 py-2.5 align-top font-medium">
+                        {bag.name}
+                      </td>
+                      <td className="text-foreground px-3 py-2.5 text-right align-top font-medium tabular-nums">
                         {formatQuantity(bag.initialQuantity)}
                       </td>
-                      <td className="text-foreground px-3 py-2.5 text-right font-medium tabular-nums">
+                      <td className="text-foreground px-3 py-2.5 text-right align-top font-medium tabular-nums">
                         {formatQuantity(bag.currentQuantity)}
-                      </td>
-                      <td className="px-3 py-2.5 align-top">
-                        <BagLocationTrail bag={bag} />
                       </td>
                     </tr>
                   ))}
@@ -198,7 +212,6 @@ function GatePassBody({ entry }: { entry: IncomingGatePassDetail }) {
         <span>
           Created by <span className="text-foreground font-medium">{entry.createdBy.name}</span>
         </span>
-        <span>Created {formatDaybookDateTime(entry.createdAt)}</span>
         <span>Updated {formatDaybookDateTime(entry.updatedAt)}</span>
       </p>
     </div>
