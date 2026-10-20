@@ -8,7 +8,6 @@ export const ANALYTICS_SUMMARY_QUERY_KEY = ['analytics', 'summary'] as const;
 
 export type AnalyticsSummaryParams = {
   stockFilter?: boolean;
-  transferStock?: boolean;
 };
 
 function analyticsSummaryQueryKey(params: AnalyticsSummaryParams = {}) {
@@ -21,7 +20,6 @@ export async function fetchAnalyticsSummaryApi(
   const { data } = await apiClient.get<AnalyticsSummaryResponse>('/analytics/summary', {
     params: {
       ...(params.stockFilter === true ? { stockFilter: 'true' } : {}),
-      ...(params.transferStock === true ? { transferStock: 'true' } : {}),
     },
   });
 
