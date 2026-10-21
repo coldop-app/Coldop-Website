@@ -1,5 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
+import { ANALYTICS_SUMMARY_QUERY_KEY } from '@/features/analytics/api/use-analytics-summary';
+import { ANALYTICS_TOP_FARMERS_QUERY_KEY } from '@/features/analytics/api/use-analytics-top-farmers';
 import { DAYBOOK_QUERY_KEY } from '@/features/daybook/api/use-daybook';
 import { DAYBOOK_SEARCH_QUERY_KEY } from '@/features/daybook/api/use-daybook-search';
 import { INCOMING_GATE_PASSES_BY_FARMER_LINK_QUERY_KEY } from '@/features/incoming/api/use-incoming-gate-passes-by-farmer-link';
@@ -52,6 +54,8 @@ export function useUpdateOutgoingGatePass() {
       void queryClient.invalidateQueries({
         queryKey: INCOMING_GATE_PASSES_BY_FARMER_LINK_QUERY_KEY,
       });
+      void queryClient.invalidateQueries({ queryKey: ANALYTICS_SUMMARY_QUERY_KEY });
+      void queryClient.invalidateQueries({ queryKey: ANALYTICS_TOP_FARMERS_QUERY_KEY });
     },
   });
 }
