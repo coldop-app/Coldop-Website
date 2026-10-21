@@ -13,7 +13,7 @@ import type { AppTable, AppRow, AppColumn } from '@/lib/table/features';
 const INTEGER_COLUMNS = new Set<string>([
   'fromAccountNumber',
   'toAccountNumber',
-  'gatePassNo',
+  'serialNo',
   'totalBags',
 ]);
 

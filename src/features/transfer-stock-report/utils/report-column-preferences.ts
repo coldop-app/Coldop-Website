@@ -3,10 +3,10 @@ import type { ColumnOrderState, ColumnVisibilityState, RowData } from '@tanstack
 import { DEFAULT_HIDDEN_COLUMN_IDS } from '@/features/transfer-stock-report/components/columns';
 import type { AppColumnDef } from '@/lib/table/features';
 
-const STORAGE_KEY = 'transfer-stock-report:column-preferences:v1';
+const STORAGE_KEY = 'transfer-stock-report:column-preferences:v2';
 
 type StoredColumnPreferences = {
-  version: 1;
+  version: 2;
   hiddenColumnIds: string[];
   columnOrder: string[];
 };
@@ -44,7 +44,7 @@ function parsePreferences(value: string | null): StoredColumnPreferences | null 
     const parsed = JSON.parse(value) as Partial<StoredColumnPreferences>;
 
     if (
-      parsed.version !== 1 ||
+      parsed.version !== 2 ||
       !Array.isArray(parsed.hiddenColumnIds) ||
       !Array.isArray(parsed.columnOrder)
     ) {
@@ -52,7 +52,7 @@ function parsePreferences(value: string | null): StoredColumnPreferences | null 
     }
 
     return {
-      version: 1,
+      version: 2,
       hiddenColumnIds: parsed.hiddenColumnIds.filter(
         (columnId): columnId is string => typeof columnId === 'string',
       ),
@@ -129,7 +129,7 @@ export function saveTransferStockReportColumnState(
 
   const columnIdSet = new Set(columnIds);
   const preferences: StoredColumnPreferences = {
-    version: 1,
+    version: 2,
     hiddenColumnIds: columnIds.filter((columnId) => columnVisibility[columnId] === false),
     columnOrder: columnOrder.filter((columnId) => columnIdSet.has(columnId)),
   };

@@ -16,6 +16,7 @@ function buildIncomingReportSearchText(row: IncomingGatePassReportRecord): strin
     row.manualParchiNumber,
     row.date,
     row.variety,
+    row.type,
     row.stockFilter,
     row.customMarka,
     row.remarks,

@@ -24,6 +24,7 @@ import {
   countTransferStockReportSearchMatches,
   createTransferStockReportSearchIndex,
 } from './utils/report-search';
+import { assignTransferStockReportSerialNumbers } from './utils/assign-serial-numbers';
 import { buildTransferStockReportPdfData } from './utils/build-transfer-stock-report-pdf-data';
 
 const DEFAULT_REPORT_PARAMS = {} satisfies TransferStockReportParams;
@@ -47,7 +48,7 @@ const TransferStockReportPage = () => {
   const { data, error, isFetching, isLoading, refetch } = useTransferStockReport(appliedParams);
 
   const reportRows = useMemo(
-    () => data?.data.transferStockGatePasses ?? [],
+    () => assignTransferStockReportSerialNumbers(data?.data.transferStockGatePasses ?? []),
     [data?.data.transferStockGatePasses],
   );
   const searchIndex = useMemo(() => createTransferStockReportSearchIndex(reportRows), [reportRows]);

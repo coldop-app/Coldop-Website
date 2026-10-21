@@ -10,7 +10,8 @@ function buildTransferStockReportSearchText(row: TransferStockReportRecord): str
   const to = row.toFarmerStorageLinkId;
 
   return [
-    String(row.gatePassNo),
+    row.serialNo == null ? null : String(row.serialNo),
+    row.variety,
     row.date,
     row.customMarka,
     row.truckNumber,

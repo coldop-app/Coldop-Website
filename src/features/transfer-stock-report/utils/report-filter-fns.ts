@@ -46,7 +46,7 @@ export type AdvancedReportGlobalFilter = {
 const ADVANCED_NUMERIC_COLUMN_IDS = new Set<TransferStockReportColumnId>([
   'fromAccountNumber',
   'toAccountNumber',
-  'gatePassNo',
+  'serialNo',
   'totalBags',
 ]);
 

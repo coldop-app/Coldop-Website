@@ -1,6 +1,7 @@
 const TRANSFER_STOCK_REPORT_COLUMN_WIDTHS = {
-  gatePassNo: '6.5rem',
+  serialNo: '4.5rem',
   date: '7.5rem',
+  variety: '8rem',
   fromName: '11rem',
   fromAccountNumber: '7.5rem',
   fromAddress: '14rem',

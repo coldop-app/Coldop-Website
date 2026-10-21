@@ -124,12 +124,17 @@ const renderItemValue = (item: TransferStockReportItem) => {
 
 const baseColumns: TransferStockReportColumnDef[] = [
   {
-    accessorKey: 'gatePassNo',
-    header: 'Gate Pass No',
-    meta: { filterLabel: 'Gate pass number', numeric: true },
+    id: 'serialNo',
+    accessorKey: 'serialNo',
+    header: 'Serial No',
+    meta: { filterLabel: 'Serial number', numeric: true },
     ...sortNumeric,
     ...aggregateNone,
-    cell: ({ getValue }) => <span className="tabular-nums">{String(getValue())}</span>,
+    cell: ({ getValue }) => {
+      const value = getValue<number | undefined>();
+
+      return value == null ? '-' : <span className="tabular-nums">{String(value)}</span>;
+    },
   },
   {
     accessorKey: 'date',
@@ -142,6 +147,14 @@ const baseColumns: TransferStockReportColumnDef[] = [
     ...sortDate,
     ...aggregateNone,
     cell: ({ getValue }) => formatDate(getValue<string>()),
+  },
+  {
+    accessorKey: 'variety',
+    header: 'Variety',
+    meta: { filterLabel: 'Variety' },
+    ...sortText,
+    ...aggregateNone,
+    cell: ({ getValue }) => getValue<string | undefined>() || '-',
   },
   {
     id: 'fromName',

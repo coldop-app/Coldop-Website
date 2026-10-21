@@ -6,6 +6,7 @@ const INCOMING_REPORT_COLUMN_WIDTHS = {
   manualParchiNumber: '8rem',
   date: '7.5rem',
   variety: '8rem',
+  type: '8rem',
   stockFilter: '7.5rem',
   customMarka: '7.5rem',
   totalBags: '5.5rem',

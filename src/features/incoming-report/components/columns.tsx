@@ -193,6 +193,14 @@ const baseColumns: IncomingReportColumnDef[] = [
     ...sortText,
     ...aggregateNone,
   },
+  {
+    accessorKey: 'type',
+    header: 'Type',
+    meta: { filterLabel: 'Type' },
+    ...sortText,
+    ...aggregateNone,
+    cell: ({ getValue }) => getValue<string | undefined>() || '-',
+  },
 ];
 
 const stockFilterColumn: IncomingReportColumnDef = {

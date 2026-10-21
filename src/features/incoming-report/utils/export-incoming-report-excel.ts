@@ -96,6 +96,7 @@ const COLUMN_WIDTHS: Record<string, number> = {
   manualParchiNumber: 14,
   date: 14,
   variety: 12,
+  type: 16,
   stockFilter: 10,
   customMarka: 10,
   totalBags: 11,

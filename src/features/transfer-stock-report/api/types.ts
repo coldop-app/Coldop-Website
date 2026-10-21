@@ -21,6 +21,7 @@ export type TransferStockReportRecord = {
   _id: string;
   gatePassNo: number;
   date: string;
+  variety?: string;
   truckNumber?: string;
   remarks?: string;
   customMarka?: string;
@@ -31,6 +32,8 @@ export type TransferStockReportRecord = {
   createdIncomingGatePassId?: string;
   createdOutgoingGatePassId?: string;
   createdBy?: DaybookCreatedBy;
+  /** Assigned in the report from date order. Not returned by the API. */
+  serialNo?: number;
 };
 
 export type TransferStockReportResult = {
